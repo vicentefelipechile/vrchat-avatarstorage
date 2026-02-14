@@ -14,6 +14,7 @@ export interface User {
     password_hash: string;
     avatar_url: string | null;
     created_at: number; // Unix timestamp
+    is_admin: number;
 }
 
 // Tipo para crear un nuevo usuario (sin campos generados automáticamente)
@@ -33,6 +34,7 @@ export interface Media {
     uuid: string;
     r2_key: string;           // Clave en Cloudflare R2
     media_type: MediaType;    // 'image' o 'file'
+    file_name: string;
     created_at: number;       // Unix timestamp
 }
 
@@ -40,6 +42,7 @@ export interface CreateMedia {
     uuid: string;
     r2_key: string;
     media_type: MediaType;
+    file_name: string;
 }
 
 // ----------------------------------------------------------------------------
@@ -73,6 +76,7 @@ export interface Resource {
     reference_image_uuid: string | null; // Imagen de referencia adicional
     author_uuid: string;
     download_count: number;
+    is_active: number;    // 0 or 1
     created_at: number;   // Unix timestamp
     updated_at: number;   // Unix timestamp
 }

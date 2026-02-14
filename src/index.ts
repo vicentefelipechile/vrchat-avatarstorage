@@ -49,7 +49,7 @@ app.use('/download/*', async (c, next) => {
  * Este endpoint existe para que la pagina principal "/" pueda mostrar los ultimos 6 recursos subidos.
  */
 app.get('/api/latest', async (c) => {
-	const stmt = c.env.DB.prepare('SELECT * FROM resources ORDER BY created_at DESC LIMIT 6');
+	const stmt = c.env.DB.prepare('SELECT * FROM resources WHERE is_active = 1 ORDER BY created_at DESC LIMIT 6');
 	const { results } = await stmt.all<Resource>();
 
 	const mapped = results.map(r => ({
@@ -69,7 +69,7 @@ app.get('/api/category/:category', async (c) => {
 
 	if (!RESOURCE_CATEGORIES.includes(category as ResourceCategory)) return c.json({ error: 'Invalid category' }, 400);
 
-	const stmt = c.env.DB.prepare('SELECT * FROM resources WHERE category = ? ORDER BY created_at DESC').bind(category);
+	const stmt = c.env.DB.prepare('SELECT * FROM resources WHERE category = ? AND is_active = 1 ORDER BY created_at DESC').bind(category);
 	const { results } = await stmt.all<Resource>();
 
 	const mapped = results.map(r => ({
@@ -225,7 +225,7 @@ app.post('/api/login', async (c) => {
 	const isValid = await verifyTurnstile(token, c.env.TURNSTILE_SECRET_KEY);
 	if (!isValid) return c.json({ error: 'Invalid CAPTCHA' }, 403);
 
-	const user = await c.env.DB.prepare('SELECT * FROM users WHERE username = ?').bind(username).first<any>();
+	const user = await c.env.DB.prepare('SELECT * FROM users WHERE username = ?').bind(username).first<User>();
 
 	if (user) {
 		const isMatch = await verifyPassword(password, user.password_hash);
@@ -250,11 +250,12 @@ app.get('/api/auth/status', async (c) => {
 	}
 
 	// Verify user exists
-	const user = await c.env.DB.prepare('SELECT username FROM users WHERE username = ?').bind(username).first<any>();
+	const user = await c.env.DB.prepare('SELECT username, is_admin FROM users WHERE username = ?').bind(username).first<User>();
 
 	return c.json({
 		loggedIn: !!user,
-		username: user ? user.username : null
+		username: user ? user.username : null,
+		is_admin: user ? user.is_admin === 1 : false,
 	});
 });
 
@@ -352,8 +353,8 @@ app.put('/api/upload', async (c) => {
 	const formData = await c.req.parseBody();
 	const file = formData['file'];
 	const mediaType = formData['media_type'] as string || 'file';
-
 	if (file instanceof File) {
+		const filename = file.name;
 		const r2Key = crypto.randomUUID();
 		const mediaUuid = crypto.randomUUID();
 
@@ -363,13 +364,14 @@ app.put('/api/upload', async (c) => {
 
 			// Create media record
 			await c.env.DB.prepare(
-				'INSERT INTO media (uuid, r2_key, media_type) VALUES (?, ?, ?)'
-			).bind(mediaUuid, r2Key, mediaType).run();
+				'INSERT INTO media (uuid, r2_key, media_type, file_name) VALUES (?, ?, ?, ?)'
+			).bind(mediaUuid, r2Key, mediaType, filename).run();
 
 			return c.json({
 				media_uuid: mediaUuid,
 				r2_key: r2Key,
-				media_type: mediaType
+				media_type: mediaType,
+				file_name: filename
 			});
 		} catch (e) {
 			console.error('Upload error:', e);
@@ -402,9 +404,13 @@ app.get('/api/download/:key', async (c) => {
 	const object = await c.env.BUCKET.get(key);
 	if (!object) return c.json({ error: 'Not found' }, 404);
 
+	const disposition = (result.media_type === 'image' || result.media_type === 'video') ? 'inline' : 'attachment';
+	const filename = result.file_name.replace(/"/g, '');
+
 	const headers = new Headers();
 	object.writeHttpMetadata(headers);
 	headers.set('etag', object.httpEtag);
+	headers.set('Content-Disposition', `${disposition}; filename="${filename}"; filename*=UTF-8''${encodeURIComponent(filename)}`);
 
 	return new Response(object.body, {
 		headers,
@@ -480,6 +486,112 @@ app.post('/api/comments/:uuid', async (c) => {
 	} catch (e) {
 		console.error('Comment error:', e);
 		return c.json({ error: 'Failed to post comment' }, 500);
+	}
+});
+
+
+// =========================================================================================================
+// Admin Routes
+// =========================================================================================================
+
+/**
+ * Endpoint: /api/admin/pending
+ * Obtiene todos los recursos pendientes de aprobación.
+ */
+app.get('/api/admin/pending', async (c) => {
+	const auth = getCookie(c, 'auth');
+	if (!auth) return c.json({ error: 'Unauthorized' }, 401);
+
+	const user = await c.env.DB.prepare('SELECT is_admin FROM users WHERE username = ?').bind(auth).first<any>();
+	if (!user || user.is_admin !== 1) return c.json({ error: 'Forbidden' }, 403);
+
+	try {
+		const resources = await c.env.DB.prepare(
+			'SELECT * FROM resources WHERE is_active = 0 ORDER BY created_at DESC'
+		).all<Resource>();
+
+		return c.json(resources.results);
+	} catch (e) {
+		console.error('Admin pending fetch error:', e);
+		return c.json({ error: 'Failed to fetch pending resources' }, 500);
+	}
+});
+
+/**
+ * Endpoint: /api/admin/resource/:uuid/approve
+ * Aprueba un recurso pendiente.
+ */
+app.post('/api/admin/resource/:uuid/approve', async (c) => {
+	const auth = getCookie(c, 'auth');
+	if (!auth) return c.json({ error: 'Unauthorized' }, 401);
+
+	const user = await c.env.DB.prepare('SELECT is_admin FROM users WHERE username = ?').bind(auth).first<any>();
+	if (!user || user.is_admin !== 1) return c.json({ error: 'Forbidden' }, 403);
+
+	const uuid = c.req.param('uuid');
+	try {
+		await c.env.DB.prepare('UPDATE resources SET is_active = 1 WHERE uuid = ?').bind(uuid).run();
+		return c.json({ success: true });
+	} catch (e) {
+		console.error('Admin approve error:', e);
+		return c.json({ error: 'Failed to approve resource' }, 500);
+	}
+});
+
+/**
+ * Endpoint: /api/admin/resource/:uuid/reject
+ * Rechaza y elimina un recurso pendiente.
+ */
+app.post('/api/admin/resource/:uuid/reject', async (c) => {
+	const auth = getCookie(c, 'auth');
+	if (!auth) return c.json({ error: 'Unauthorized' }, 401);
+
+	const user = await c.env.DB.prepare('SELECT is_admin FROM users WHERE username = ?').bind(auth).first<any>();
+	if (!user || user.is_admin !== 1) return c.json({ error: 'Forbidden' }, 403);
+
+	const uuid = c.req.param('uuid');
+	try {
+		const mediaFiles = await c.env.DB.prepare(
+			`SELECT m.r2_key FROM media m
+			 JOIN resource_n_media rm ON m.uuid = rm.media_uuid
+			 WHERE rm.resource_uuid = ?`
+		).bind(uuid).all<Media>();
+
+		const thumbnail = await c.env.DB.prepare('SELECT m.r2_key FROM media m JOIN resources r ON m.uuid = r.thumbnail_uuid WHERE r.uuid = ?').bind(uuid).first<Media>();
+
+		// Delete from R2
+		if (thumbnail) await c.env.BUCKET.delete(thumbnail.r2_key);
+		for (const media of mediaFiles.results) {
+			await c.env.BUCKET.delete(media.r2_key);
+		}
+
+		await c.env.DB.prepare('DELETE FROM resources WHERE uuid = ?').bind(uuid).run();
+
+		return c.json({ success: true });
+	} catch (e) {
+		console.error('Admin reject error:', e);
+		return c.json({ error: 'Failed to reject resource' }, 500);
+	}
+});
+
+/**
+ * Endpoint: /api/admin/resource/:uuid/deactivate
+ * Desactiva un recurso aprobado (lo oculta).
+ */
+app.post('/api/admin/resource/:uuid/deactivate', async (c) => {
+	const auth = getCookie(c, 'auth');
+	if (!auth) return c.json({ error: 'Unauthorized' }, 401);
+
+	const user = await c.env.DB.prepare('SELECT is_admin FROM users WHERE username = ?').bind(auth).first<any>();
+	if (!user || user.is_admin !== 1) return c.json({ error: 'Forbidden' }, 403);
+
+	const uuid = c.req.param('uuid');
+	try {
+		await c.env.DB.prepare('UPDATE resources SET is_active = 0 WHERE uuid = ?').bind(uuid).run();
+		return c.json({ success: true });
+	} catch (e) {
+		console.error('Admin deactivate error:', e);
+		return c.json({ error: 'Failed to deactivate resource' }, 500);
 	}
 });
 

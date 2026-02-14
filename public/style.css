@@ -265,6 +265,11 @@ hr {
     background: #f9f9f9;
 }
 
+.under-revision {
+    font-size: 0.5em;
+    color: #e67e22;
+}
+
 @media (max-width: 768px) {
 
     /* Layout */

@@ -25,7 +25,8 @@ CREATE TABLE users (
     username TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
     avatar_url TEXT,
-    created_at INTEGER DEFAULT (unixepoch())
+    created_at INTEGER DEFAULT (unixepoch()),
+    is_admin BOOLEAN DEFAULT 0
 );
 
 -- Índices para optimizar búsquedas de usuarios
@@ -40,6 +41,7 @@ CREATE TABLE media (
     uuid TEXT PRIMARY KEY,
     r2_key TEXT NOT NULL,              -- Clave en Cloudflare R2
     media_type TEXT NOT NULL,          -- 'image' o 'file'
+    file_name TEXT NOT NULL,
     created_at INTEGER DEFAULT (unixepoch())
 );
 
@@ -74,6 +76,7 @@ CREATE TABLE resources (
     reference_image_uuid TEXT,         -- Imagen de referencia adicional
     author_uuid TEXT NOT NULL,
     download_count INTEGER DEFAULT 0,
+    is_active BOOLEAN DEFAULT 0,
     created_at INTEGER DEFAULT (unixepoch()),
     updated_at INTEGER DEFAULT (unixepoch()),
     FOREIGN KEY(author_uuid) REFERENCES users(uuid) ON DELETE CASCADE,
