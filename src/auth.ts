@@ -3,6 +3,7 @@ import { hashSync, compareSync } from 'bcryptjs';
 import { Context } from 'hono';
 import { sign, verify } from 'hono/jwt';
 import { getCookie, setCookie } from 'hono/cookie';
+import { User } from './types';
 
 export async function hashPassword(password: string): Promise<{ hash: string; salt?: string }> {
     const hash = hashSync(password, 10);
@@ -51,9 +52,13 @@ export async function getAuthUser(c: Context<{ Bindings: Env }>): Promise<{ user
 
     try {
         const payload = await verify(token, secret, 'HS256');
+
+        const user = await c.env.DB.prepare('SELECT * FROM users WHERE username = ?').bind(payload.sub).first<User>();
+        if (!user) return null;
+
         return {
             username: payload.sub as string,
-            is_admin: payload.role === 'admin',
+            is_admin: user.is_admin === 1,
         };
     } catch (e) {
         // Invalid token

@@ -50,6 +50,9 @@ export const ResourceSchema = z.object({
 // ============================================================================
 
 export const CommentSchema = z.object({
-    text: z.string().min(1, 'Comment cannot be empty').max(500, 'Comment too long'),
+    text: z.string()
+        .min(3, 'Comment must be at least 3 characters')
+        .max(500, 'Comment too long')
+        .transform(val => val.trim().replace(/\n{3,}/g, '\n\n')), // Limit max 2 newlines
     token: z.string().optional()
 });

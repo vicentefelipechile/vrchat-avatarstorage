@@ -245,7 +245,7 @@ app.post('/api/register', async (c) => {
 
 	const { hash } = await hashPassword(password);
 	const uuid = crypto.randomUUID();
-	const avatarUrl = 'https://example.com/avatar.png';
+	const avatarUrl = 'https://vrchat-avatarstorage.vicentefelipechile.workers.dev/avatar.png';
 
 	try {
 		await c.env.DB.prepare(
@@ -556,7 +556,7 @@ app.get('/api/comments/:uuid', async (c) => {
 	const uuid = c.req.param('uuid');
 	// Join with users to get username
 	const { results } = await c.env.DB.prepare(
-		`SELECT c.text, c.created_at, u.username as author 
+		`SELECT c.text, c.created_at, u.username as author, u.avatar_url as author_avatar
          FROM comments c 
          JOIN users u ON c.author_uuid = u.uuid 
          WHERE c.resource_uuid = ? 
@@ -566,6 +566,7 @@ app.get('/api/comments/:uuid', async (c) => {
 	const mapped = results.map(c => ({
 		text: c.text,
 		author: c.author,
+		author_avatar: c.author_avatar,
 		timestamp: c.created_at * 1000 // Convert unixepoch to ms for frontend
 	}));
 	return c.json(mapped);
@@ -598,13 +599,14 @@ app.post('/api/comments/:uuid', async (c) => {
 	try {
 		await c.env.DB.prepare(
 			'INSERT INTO comments (uuid, resource_uuid, author_uuid, text) VALUES (?, ?, ?, ?)'
-		).bind(commentUuid, uuid, user.uuid, body.text).run();
+		).bind(commentUuid, uuid, user.uuid, text).run();
 
 		const newComment = {
 			commentUuid,
 			resourceUuid: uuid,
 			author: authUser.username,
-			text: body.text,
+			author_avatar: user.avatar_url,
+			text: text,
 			timestamp: new Date().toISOString()
 		};
 
