@@ -27,7 +27,7 @@ export interface CreateUser {
 // ----------------------------------------------------------------------------
 // MEDIOS (IMÁGENES Y ARCHIVOS)
 // ----------------------------------------------------------------------------
-export type MediaType = 'image' | 'file';
+export type MediaType = 'image' | 'video' | 'file';
 
 export interface Media {
     uuid: string;

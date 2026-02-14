@@ -27,6 +27,7 @@ import {
 
 const app = new Hono<{ Bindings: Env }>();
 
+
 // =========================================================================================================
 // Middleware
 // =========================================================================================================
@@ -387,12 +388,18 @@ app.put('/api/upload', async (c) => {
  * Descarga un archivo.
  */
 app.get('/api/download/:key', async (c) => {
-	const auth = getCookie(c, 'auth');
-	if (!auth) return c.json({ error: 'Unauthorized' }, 401);
-
 	const key = c.req.param('key');
-	const object = await c.env.BUCKET.get(key);
+	const stmt = c.env.DB.prepare('SELECT * FROM media WHERE r2_key = ?').bind(key);
+	const result = await stmt.first<Media>();
 
+	if (!result) return c.json({ error: 'Not found' }, 404);
+
+	if (result.media_type !== 'image' && result.media_type !== 'video') {
+		const auth = getCookie(c, 'auth');
+		if (!auth) return c.json({ error: 'Unauthorized' }, 401);
+	}
+
+	const object = await c.env.BUCKET.get(key);
 	if (!object) return c.json({ error: 'Not found' }, 404);
 
 	const headers = new Headers();
@@ -482,7 +489,7 @@ app.post('/api/comments/:uuid', async (c) => {
 // =========================================================================================================
 
 app.get('/*', async (c) => {
-	return (c.env as any).ASSETS.fetch(new URL('/index.html', c.req.url));
+	return c.env.ASSETS.fetch(new URL('/index.html', c.req.url));
 });
 
 
