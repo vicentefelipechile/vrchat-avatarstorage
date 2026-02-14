@@ -170,8 +170,23 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.target.matches('[data-link]')) {
             e.preventDefault();
             navigateTo(e.target.href);
+
+            // Close mobile menu if open
+            const navLinks = document.querySelector('.nav-links');
+            if (navLinks && navLinks.classList.contains('active')) {
+                navLinks.classList.remove('active');
+            }
         }
     });
+
+    // Mobile Menu Toggle
+    const menuBtn = document.getElementById('mobile-menu-btn');
+    const navLinks = document.querySelector('.nav-links');
+    if (menuBtn && navLinks) {
+        menuBtn.addEventListener('click', () => {
+            navLinks.classList.toggle('active');
+        });
+    }
 
     // Initialize Lang Selector
     const langSelector = document.getElementById('lang-selector');
@@ -491,12 +506,12 @@ class UploadView extends AbstractView {
 
                     <div class="form-group">
                         <label><strong>${t('upload.desc')} (Markdown)</strong></label>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div class="upload-grid">
                             <div>
                                 <textarea id="description" rows="12" placeholder="${t('upload.markdownPlaceholder')}" style="width: 100%; font-family: monospace; resize: vertical;"></textarea>
                             </div>
                             <div>
-                                <div style="border: 1px solid #ccc; padding: 15px; min-height: 300px; background: #f9f9f9;">
+                                <div class="preview-container">
                                     <strong>${t('upload.preview')}:</strong>
                                     <hr>
                                     <div id="markdown-preview" class="markdown-body"></div>
@@ -505,7 +520,7 @@ class UploadView extends AbstractView {
                         </div>
                     </div>
 
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                    <div class="upload-grid" style="margin-bottom: 20px;">
                         <div class="form-group">
                             <label><strong>${t('upload.thumbnail')} ${t('upload.required')}</strong></label>
                             <input type="file" id="thumbnail" accept="image/png,image/jpg,image/jpeg" required>

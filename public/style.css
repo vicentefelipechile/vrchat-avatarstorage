@@ -237,3 +237,85 @@ hr {
 .gallery-item video {
     background: #000;
 }
+
+/* --- Mobile Responsiveness --- */
+
+/* Hamburger Menu (Hidden by default) */
+.menu-toggle {
+    display: none;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 5px;
+}
+
+/* Upload Grid Layout (Desktop default) */
+.upload-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+/* Preview Container */
+.preview-container {
+    border: 1px solid #ccc;
+    padding: 15px;
+    min-height: 300px;
+    background: #f9f9f9;
+}
+
+@media (max-width: 768px) {
+
+    /* Layout */
+    .container {
+        padding: 15px;
+    }
+
+    /* Navbar */
+    nav .container {
+        flex-wrap: wrap;
+    }
+
+    .logo {
+        flex: 1;
+    }
+
+    .menu-toggle {
+        display: block;
+        /* Show hamburger on mobile */
+    }
+
+    .nav-links {
+        display: none;
+        /* Hide links by default on mobile */
+        width: 100%;
+        flex-direction: column;
+        padding-top: 15px;
+        gap: 10px;
+    }
+
+    .nav-links.active {
+        display: flex;
+        /* Show when toggled */
+    }
+
+    .nav-links a,
+    .nav-links select {
+        width: 100%;
+        margin: 0 !important;
+        /* Override potential margins */
+        text-align: center;
+    }
+
+    /* Upload View */
+    .upload-grid {
+        grid-template-columns: 1fr;
+        /* Stack columns */
+    }
+
+    /* Adjust gallery items */
+    .gallery-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    }
+}
