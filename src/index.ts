@@ -10,8 +10,7 @@
 // =========================================================================================================
 
 import { Hono } from 'hono';
-import { getCookie, setCookie } from 'hono/cookie';
-import { hashPassword, verifyPassword } from './auth';
+import { hashPassword, verifyPassword, createSession, getAuthUser, deleteSession } from './auth';
 import {
 	Resource,
 	ResourceCategory,
@@ -32,9 +31,10 @@ const app = new Hono<{ Bindings: Env }>();
 // Middleware
 // =========================================================================================================
 // Simple auth check for download links
+// Simple auth check for download links
 app.use('/download/*', async (c, next) => {
-	const auth = getCookie(c, 'auth');
-	if (auth !== 'true') {
+	const user = await getAuthUser(c);
+	if (!user) {
 		return c.redirect('/login');
 	}
 	await next();
@@ -119,7 +119,7 @@ app.get('/api/item/:uuid', async (c) => {
 		'SELECT * FROM resource_links WHERE resource_uuid = ? ORDER BY display_order ASC'
 	).bind(uuid).all<ResourceLink>();
 
-	const isLoggedIn = !!getCookie(c, 'auth');
+	const isLoggedIn = !!(await getAuthUser(c));
 
 	// Construct download URLs from links
 	const downloadLinks = links.results.filter(l => l.link_type === 'download');
@@ -231,8 +231,8 @@ app.post('/api/login', async (c) => {
 		const isMatch = await verifyPassword(password, user.password_hash);
 		if (isMatch) {
 			// Secure: false for localhost development
-			// In a real app, use a session token or JWT here
-			setCookie(c, 'auth', username, { httpOnly: true, secure: false, path: '/' });
+			// Secure session
+			await createSession(c, { username: user.username, is_admin: user.is_admin });
 			return c.json({ success: true });
 		}
 	}
@@ -244,18 +244,11 @@ app.post('/api/login', async (c) => {
  * Verifica si el usuario esta logueado.
  */
 app.get('/api/auth/status', async (c) => {
-	const username = getCookie(c, 'auth');
-	if (!username) {
-		return c.json({ loggedIn: false, username: null });
-	}
-
-	// Verify user exists
-	const user = await c.env.DB.prepare('SELECT username, is_admin FROM users WHERE username = ?').bind(username).first<User>();
-
+	const user = await getAuthUser(c);
 	return c.json({
 		loggedIn: !!user,
 		username: user ? user.username : null,
-		is_admin: user ? user.is_admin === 1 : false,
+		is_admin: user ? user.is_admin : false,
 	});
 });
 
@@ -264,7 +257,7 @@ app.get('/api/auth/status', async (c) => {
  * Cierra sesion de un usuario.
  */
 app.post('/api/logout', (c) => {
-	setCookie(c, 'auth', '', { maxAge: 0, path: '/' });
+	deleteSession(c);
 	return c.json({ success: true });
 });
 
@@ -277,11 +270,11 @@ app.post('/api/logout', (c) => {
  * Sube un nuevo recurso.
  */
 app.post('/api/resources', async (c) => {
-	const auth = getCookie(c, 'auth');
-	if (!auth) return c.json({ error: 'Unauthorized' }, 401);
+	const authUser = await getAuthUser(c);
+	if (!authUser) return c.json({ error: 'Unauthorized' }, 401);
 
 	// Get author
-	const user = await c.env.DB.prepare('SELECT uuid FROM users WHERE username = ?').bind(auth).first<User>();
+	const user = await c.env.DB.prepare('SELECT uuid FROM users WHERE username = ?').bind(authUser.username).first<User>();
 	if (!user) return c.json({ error: 'User not found' }, 404);
 
 	const body = await c.req.json();
@@ -347,8 +340,8 @@ app.post('/api/resources', async (c) => {
  * Sube un nuevo archivo y crea un registro en la tabla media.
  */
 app.put('/api/upload', async (c) => {
-	const auth = getCookie(c, 'auth');
-	if (!auth) return c.json({ error: 'Unauthorized' }, 401);
+	const user = await getAuthUser(c);
+	if (!user) return c.json({ error: 'Unauthorized' }, 401);
 
 	const formData = await c.req.parseBody();
 	const file = formData['file'];
@@ -397,8 +390,8 @@ app.get('/api/download/:key', async (c) => {
 	if (!result) return c.json({ error: 'Not found' }, 404);
 
 	if (result.media_type !== 'image' && result.media_type !== 'video') {
-		const auth = getCookie(c, 'auth');
-		if (!auth) return c.json({ error: 'Unauthorized' }, 401);
+		const user = await getAuthUser(c);
+		if (!user) return c.json({ error: 'Unauthorized' }, 401);
 	}
 
 	const object = await c.env.BUCKET.get(key);
@@ -449,11 +442,11 @@ app.get('/api/comments/:uuid', async (c) => {
  * Crea un nuevo comentario.
  */
 app.post('/api/comments/:uuid', async (c) => {
-	const auth = getCookie(c, 'auth');
-	if (!auth) return c.json({ error: 'Unauthorized' }, 401);
+	const authUser = await getAuthUser(c);
+	if (!authUser) return c.json({ error: 'Unauthorized' }, 401);
 
 	// Get author
-	const user = await c.env.DB.prepare('SELECT uuid FROM users WHERE username = ?').bind(auth).first<any>();
+	const user = await c.env.DB.prepare('SELECT uuid FROM users WHERE username = ?').bind(authUser.username).first<any>();
 	if (!user) return c.json({ error: 'User not found' }, 404);
 
 	const uuid = c.req.param('uuid');
@@ -477,7 +470,7 @@ app.post('/api/comments/:uuid', async (c) => {
 		const newComment = {
 			commentUuid,
 			resourceUuid: uuid,
-			author: auth,
+			author: authUser.username,
 			text: body.text,
 			timestamp: new Date().toISOString()
 		};
@@ -499,11 +492,9 @@ app.post('/api/comments/:uuid', async (c) => {
  * Obtiene todos los recursos pendientes de aprobación.
  */
 app.get('/api/admin/pending', async (c) => {
-	const auth = getCookie(c, 'auth');
-	if (!auth) return c.json({ error: 'Unauthorized' }, 401);
-
-	const user = await c.env.DB.prepare('SELECT is_admin FROM users WHERE username = ?').bind(auth).first<any>();
-	if (!user || user.is_admin !== 1) return c.json({ error: 'Forbidden' }, 403);
+	const user = await getAuthUser(c);
+	if (!user) return c.json({ error: 'Unauthorized' }, 401);
+	if (!user.is_admin) return c.json({ error: 'Forbidden' }, 403);
 
 	try {
 		const resources = await c.env.DB.prepare(
@@ -522,11 +513,9 @@ app.get('/api/admin/pending', async (c) => {
  * Aprueba un recurso pendiente.
  */
 app.post('/api/admin/resource/:uuid/approve', async (c) => {
-	const auth = getCookie(c, 'auth');
-	if (!auth) return c.json({ error: 'Unauthorized' }, 401);
-
-	const user = await c.env.DB.prepare('SELECT is_admin FROM users WHERE username = ?').bind(auth).first<any>();
-	if (!user || user.is_admin !== 1) return c.json({ error: 'Forbidden' }, 403);
+	const user = await getAuthUser(c);
+	if (!user) return c.json({ error: 'Unauthorized' }, 401);
+	if (!user.is_admin) return c.json({ error: 'Forbidden' }, 403);
 
 	const uuid = c.req.param('uuid');
 	try {
@@ -543,11 +532,9 @@ app.post('/api/admin/resource/:uuid/approve', async (c) => {
  * Rechaza y elimina un recurso pendiente.
  */
 app.post('/api/admin/resource/:uuid/reject', async (c) => {
-	const auth = getCookie(c, 'auth');
-	if (!auth) return c.json({ error: 'Unauthorized' }, 401);
-
-	const user = await c.env.DB.prepare('SELECT is_admin FROM users WHERE username = ?').bind(auth).first<any>();
-	if (!user || user.is_admin !== 1) return c.json({ error: 'Forbidden' }, 403);
+	const user = await getAuthUser(c);
+	if (!user) return c.json({ error: 'Unauthorized' }, 401);
+	if (!user.is_admin) return c.json({ error: 'Forbidden' }, 403);
 
 	const uuid = c.req.param('uuid');
 	try {
@@ -579,11 +566,9 @@ app.post('/api/admin/resource/:uuid/reject', async (c) => {
  * Desactiva un recurso aprobado (lo oculta).
  */
 app.post('/api/admin/resource/:uuid/deactivate', async (c) => {
-	const auth = getCookie(c, 'auth');
-	if (!auth) return c.json({ error: 'Unauthorized' }, 401);
-
-	const user = await c.env.DB.prepare('SELECT is_admin FROM users WHERE username = ?').bind(auth).first<any>();
-	if (!user || user.is_admin !== 1) return c.json({ error: 'Forbidden' }, 403);
+	const user = await getAuthUser(c);
+	if (!user) return c.json({ error: 'Unauthorized' }, 401);
+	if (!user.is_admin) return c.json({ error: 'Forbidden' }, 403);
 
 	const uuid = c.req.param('uuid');
 	try {
