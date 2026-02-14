@@ -15,6 +15,7 @@ DROP TABLE IF EXISTS resources;
 DROP TABLE IF EXISTS resource_n_media;
 DROP TABLE IF EXISTS media;
 DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS rate_limits;
 
 -- ----------------------------------------------------------------------------
 -- SECCIÓN 2: TABLA DE USUARIOS
@@ -133,3 +134,15 @@ CREATE INDEX idx_comments_created_at ON comments(created_at DESC);
 -- ============================================================================
 -- FIN DEL SCHEMA
 -- ============================================================================
+-- ----------------------------------------------------------------------------
+-- SECCIÓN 7: RATE LIMITING
+-- ----------------------------------------------------------------------------
+-- Tabla para almacenar el conteo de peticiones por IP
+CREATE TABLE rate_limits (
+    key TEXT PRIMARY KEY,               -- IP o Identificador único (ej: "ip:127.0.0.1")
+    count INTEGER DEFAULT 1,            -- Número de peticiones
+    timestamp INTEGER DEFAULT (unixepoch()) -- Momento del primer request en la ventana
+);
+
+-- Índices para limpieza
+CREATE INDEX idx_rate_limits_timestamp ON rate_limits(timestamp);

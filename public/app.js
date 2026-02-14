@@ -319,6 +319,7 @@ class HomeView extends AbstractView {
 
         const cardsHtml = latest.map(res => `
             <div class="card">
+                ${res.thumbnail_key ? `<div class="card-image"><img src="/api/download/${res.thumbnail_key}" alt="${res.title}" loading="lazy"></div>` : ''}
                 <h3>${res.title}</h3>
                 <div class="meta">${t('cats.' + res.category) || res.category} | ${new Date(res.timestamp).toLocaleDateString()}</div>
                 <p>${stripMarkdown(res.description).substring(0, 100)}...</p>
@@ -348,6 +349,7 @@ class CategoryView extends AbstractView {
 
         const cardsHtml = data.resources.map(res => `
             <div class="card">
+                ${res.thumbnail_key ? `<div class="card-image"><img src="/api/download/${res.thumbnail_key}" alt="${res.title}" loading="lazy"></div>` : ''}
                 <h3>${res.title}</h3>
                 <div class="meta">${t('cats.' + res.category) || res.category} | ${new Date(res.timestamp).toLocaleDateString()}</div>
                 <p>${stripMarkdown(res.description).substring(0, 100)}...</p>
@@ -376,6 +378,7 @@ class AdminView extends AbstractView {
         } else {
             const cardsHtml = pending.map(res => `
                 <div class="card">
+                    ${res.thumbnail_key ? `<div class="card-image"><img src="/api/download/${res.thumbnail_key}" alt="${res.title}" loading="lazy"></div>` : ''}
                     <h3>${res.title}</h3>
                     <div class="meta">${t('cats.' + res.category) || res.category} | ${new Date(res.timestamp).toLocaleDateString()}</div>
                     <p>${stripMarkdown(res.description).substring(0, 100)}...</p>
@@ -466,9 +469,9 @@ class ItemView extends AbstractView {
         }
 
         const commentsList = comments.length > 0 ? comments.map(c => `
-            <div style="border: 2px solid #000; padding: 10px; margin-bottom: 10px; background: #fff;">
+            <div style="border: 2px solid #000; padding: 10px; margin-bottom: 15px; background: #fff; box-shadow: 5px 5px 0px #888;">
                 <div style="font-weight: bold; margin-bottom: 5px;">${c.author} <span style="font-weight: normal; font-size: 0.8em; color: #666;">(${new Date(c.timestamp).toLocaleString()})</span></div>
-                <div>${c.text}</div>
+                <div style="white-space: pre-wrap;">${c.text}</div>
             </div>
         `).join('') : `<p>${t('item.noComments')}</p>`;
 

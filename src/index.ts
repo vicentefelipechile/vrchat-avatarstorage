@@ -19,12 +19,45 @@ import {
 	Media,
 	ResourceLink,
 } from './types';
+import { z } from 'zod';
+import { RegisterSchema, LoginSchema, ResourceSchema, CommentSchema } from './validators';
+import { securityMiddleware } from './middleware/security';
+import { rateLimit } from './middleware/rate-limit';
 
 // =========================================================================================================
 // Variables
 // =========================================================================================================
 
 const app = new Hono<{ Bindings: Env }>();
+
+// Security Headers & CORS
+securityMiddleware(app);
+
+// =========================================================================================================
+// Rate Limiting
+// =========================================================================================================
+
+// Auth Rate Limits (Stricter)
+app.use('/api/login', rateLimit({ limit: 10, windowSeconds: 60 * 15, keyPrefix: 'auth_login' }));
+app.use('/api/register', rateLimit({ limit: 5, windowSeconds: 60 * 60, keyPrefix: 'auth_register' }));
+app.use('/api/comments/*', async (c, next) => {
+	if (c.req.method === 'POST') {
+		return rateLimit({ limit: 10, windowSeconds: 60 * 5, keyPrefix: 'comments_post' })(c, next);
+	}
+	return rateLimit({ limit: 50, windowSeconds: 60 * 5, keyPrefix: 'comments_get' })(c, next);
+});
+
+// Global Rate Limit
+app.use('*', rateLimit({ limit: 500, windowSeconds: 60 * 5 })); // 100 req / 5 min
+
+// Error Handler for Zod
+app.onError((err, c) => {
+	if (err instanceof z.ZodError) {
+		return c.json({ error: 'Validation error', details: err.issues }, 400);
+	}
+	console.error(err);
+	return c.json({ error: 'Internal Server Error' }, 500);
+});
 
 
 // =========================================================================================================
@@ -49,8 +82,15 @@ app.use('/download/*', async (c, next) => {
  * Este endpoint existe para que la pagina principal "/" pueda mostrar los ultimos 6 recursos subidos.
  */
 app.get('/api/latest', async (c) => {
-	const stmt = c.env.DB.prepare('SELECT * FROM resources WHERE is_active = 1 ORDER BY created_at DESC LIMIT 6');
-	const { results } = await stmt.all<Resource>();
+	const stmt = c.env.DB.prepare(`
+		SELECT r.*, m.r2_key as thumbnail_key 
+		FROM resources r 
+		LEFT JOIN media m ON r.thumbnail_uuid = m.uuid 
+		WHERE r.is_active = 1 
+		ORDER BY r.created_at DESC 
+		LIMIT 6
+	`);
+	const { results } = await stmt.all<Resource & { thumbnail_key: string | null }>();
 
 	const mapped = results.map(r => ({
 		...r,
@@ -69,8 +109,14 @@ app.get('/api/category/:category', async (c) => {
 
 	if (!RESOURCE_CATEGORIES.includes(category as ResourceCategory)) return c.json({ error: 'Invalid category' }, 400);
 
-	const stmt = c.env.DB.prepare('SELECT * FROM resources WHERE category = ? AND is_active = 1 ORDER BY created_at DESC').bind(category);
-	const { results } = await stmt.all<Resource>();
+	const stmt = c.env.DB.prepare(`
+		SELECT r.*, m.r2_key as thumbnail_key 
+		FROM resources r 
+		LEFT JOIN media m ON r.thumbnail_uuid = m.uuid 
+		WHERE r.category = ? AND r.is_active = 1 
+		ORDER BY r.created_at DESC
+	`).bind(category);
+	const { results } = await stmt.all<Resource & { thumbnail_key: string | null }>();
 
 	const mapped = results.map(r => ({
 		...r,
@@ -183,12 +229,12 @@ async function verifyTurnstile(token: string, secret: string) {
  */
 app.post('/api/register', async (c) => {
 	const body = await c.req.json();
-	const { username, password, token } = body;
 
-	if (!username || !password) return c.json({ error: 'Missing fields' }, 400);
+	// Validation
+	const { username, password, token } = RegisterSchema.parse(body);
 
 	// Turnstile Verification
-	const isValid = await verifyTurnstile(token, c.env.TURNSTILE_SECRET_KEY);
+	const isValid = await verifyTurnstile(token || '', c.env.TURNSTILE_SECRET_KEY);
 	if (!isValid) return c.json({ error: 'Invalid CAPTCHA' }, 403);
 
 	// User Check
@@ -219,10 +265,12 @@ app.post('/api/register', async (c) => {
  */
 app.post('/api/login', async (c) => {
 	const body = await c.req.json();
-	const { username, password, token } = body;
+
+	// Validation
+	const { username, password, token } = LoginSchema.parse(body);
 
 	// Turnstile Verification
-	const isValid = await verifyTurnstile(token, c.env.TURNSTILE_SECRET_KEY);
+	const isValid = await verifyTurnstile(token || '', c.env.TURNSTILE_SECRET_KEY);
 	if (!isValid) return c.json({ error: 'Invalid CAPTCHA' }, 403);
 
 	const user = await c.env.DB.prepare('SELECT * FROM users WHERE username = ?').bind(username).first<User>();
@@ -278,20 +326,16 @@ app.post('/api/resources', async (c) => {
 	if (!user) return c.json({ error: 'User not found' }, 404);
 
 	const body = await c.req.json();
-	const { title, description, category, thumbnail_uuid, reference_image_uuid, links, media_files, token } = body;
+
+	// Validation
+	const { title, description, category, thumbnail_uuid, reference_image_uuid, links, media_files, token } = ResourceSchema.parse(body);
 
 	// Turnstile Verification
-	const isValid = await verifyTurnstile(token, c.env.TURNSTILE_SECRET_KEY);
+	const isValid = await verifyTurnstile(token || '', c.env.TURNSTILE_SECRET_KEY);
 	if (!isValid) return c.json({ error: 'Invalid CAPTCHA' }, 403);
 
-	if (!title || !category || !thumbnail_uuid) {
-		return c.json({ error: 'Missing required fields: title, category, thumbnail_uuid' }, 400);
-	}
+	// Category is already validated by Zod schema
 
-	// Validate category
-	if (!RESOURCE_CATEGORIES.includes(category as ResourceCategory)) {
-		return c.json({ error: 'Invalid category' }, 400);
-	}
 
 	const resourceUuid = crypto.randomUUID();
 	try {
@@ -347,6 +391,38 @@ app.put('/api/upload', async (c) => {
 	const file = formData['file'];
 	const mediaType = formData['media_type'] as string || 'file';
 	if (file instanceof File) {
+		// Validate File Size (e.g., 100MB max)
+		if (file.size > 100 * 1024 * 1024) {
+			return c.json({ error: 'File too large (max 100MB)' }, 400);
+		}
+
+		// Validate Magic Bytes
+		const buffer = await file.arrayBuffer();
+		const bytes = new Uint8Array(buffer).slice(0, 4);
+		const hex = [...bytes].map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
+
+		let isValidType = false;
+		// PNG
+		if (hex.startsWith('89504E47')) isValidType = true;
+		// JPEG
+		if (hex.startsWith('FFD8FF')) isValidType = true;
+		// WEBP
+		if (hex.startsWith('52494646') && [...new Uint8Array(buffer).slice(8, 12)].map(b => String.fromCharCode(b)).join('') === 'WEBP') isValidType = true;
+		// GIF
+		if (hex.startsWith('47494638')) isValidType = true;
+		// ZIP / UnityPackage (Standard Zip)
+		if (hex.startsWith('504B0304')) isValidType = true;
+		// UnityPackage (GZIP/Tar.gz)
+		if (hex.startsWith('1F8B')) isValidType = true;
+		// 7z
+		if (hex.startsWith('377ABCAF271C')) isValidType = true;
+		// RAR
+		if (hex.startsWith('52617221')) isValidType = true;
+
+		if (!isValidType) {
+			return c.json({ error: 'Invalid file type. Only images and Unity Packages/Zips are allowed.' }, 400);
+		}
+
 		const filename = file.name;
 		const r2Key = crypto.randomUUID();
 		const mediaUuid = crypto.randomUUID();
@@ -452,12 +528,11 @@ app.post('/api/comments/:uuid', async (c) => {
 	const uuid = c.req.param('uuid');
 	const body = await c.req.json();
 
-	if (!body.text) {
-		return c.json({ error: 'Missing fields' }, 400);
-	}
+	// Validation
+	const { text, token } = CommentSchema.parse(body);
 
 	// Turnstile Verification for Comments (Optional but requested)
-	const isValid = await verifyTurnstile(body.token, c.env.TURNSTILE_SECRET_KEY);
+	const isValid = await verifyTurnstile(token || '', c.env.TURNSTILE_SECRET_KEY);
 	if (!isValid) return c.json({ error: 'Invalid CAPTCHA' }, 403);
 
 	const commentUuid = crypto.randomUUID();
@@ -497,9 +572,13 @@ app.get('/api/admin/pending', async (c) => {
 	if (!user.is_admin) return c.json({ error: 'Forbidden' }, 403);
 
 	try {
-		const resources = await c.env.DB.prepare(
-			'SELECT * FROM resources WHERE is_active = 0 ORDER BY created_at DESC'
-		).all<Resource>();
+		const resources = await c.env.DB.prepare(`
+			SELECT r.*, m.r2_key as thumbnail_key 
+			FROM resources r 
+			LEFT JOIN media m ON r.thumbnail_uuid = m.uuid 
+			WHERE r.is_active = 0 
+			ORDER BY r.created_at DESC
+		`).all<Resource & { thumbnail_key: string | null }>();
 
 		return c.json(resources.results);
 	} catch (e) {
