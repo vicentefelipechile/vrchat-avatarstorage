@@ -1,32 +1,48 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-	<head>
-		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>Hello, World!</title>
-	</head>
-	<body>
-		<h1 id="heading"></h1>
-		<p>This page comes from a static asset stored at `public/index.html` as configured in `wrangler.jsonc`.</p>
-		<button id="button" type="button">Fetch a random UUID</button>
-		<output id="random" for="button"></output>
-		<script>
-			fetch('/message')
-				.then((resp) => resp.text())
-				.then((text) => {
-					const h1 = document.getElementById('heading');
-					h1.textContent = text;
-				});
 
-			const button = document.getElementById("button");
-			button.addEventListener("click", () => {
-				fetch('/random')
-					.then((resp) => resp.text())
-					.then((text) => {
-						const random = document.getElementById('random');
-						random.textContent = text;
-					});
-			});
-		</script>
-	</body>
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>VRChat Storage</title>
+	<link rel="stylesheet" href="/style.css">
+	<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+</head>
+
+<body>
+	<nav>
+		<div class="container">
+			<div class="logo"><strong>VRC Storage</strong></div>
+			<div class="nav-links">
+				<select id="lang-selector" style="margin-right: 15px; padding: 5px;">
+					<option value="es">Español</option>
+					<option value="en">English</option>
+					<option value="ru">Русский</option>
+					<option value="jp">日本語</option>
+					<option value="cn">中文</option>
+					<option value="fr">Français</option>
+				</select>
+				<a href="/" data-link data-i18n="nav.home">Home</a>
+				<a href="/category/avatars" data-link data-i18n="nav.avatars">Avatares</a>
+				<a href="/category/worlds" data-link data-i18n="nav.worlds">Mundos</a>
+				<a href="/category/assets" data-link data-i18n="nav.assets">Assets</a>
+				<a href="/category/clothes" data-link data-i18n="nav.clothes">Ropa</a>
+				<a href="/category/others" data-link data-i18n="nav.others">Otros</a>
+				<a href="/login" data-link style="margin-left: 20px;" data-i18n="nav.login">Login</a>
+			</div>
+		</div>
+	</nav>
+
+	<main class="container" id="app">
+		<!-- Content injected here by app.js -->
+		<p>Loading...</p>
+	</main>
+
+	<footer>
+		<p>&copy; 2026 VRChat Avatar Storage - Grayscale Edition</p>
+	</footer>
+
+	<script src="/app.js"></script>
+</body>
+
 </html>
