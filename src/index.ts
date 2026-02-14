@@ -426,7 +426,7 @@ app.get('/api/comments/:uuid', async (c) => {
          FROM comments c 
          JOIN users u ON c.author_uuid = u.uuid 
          WHERE c.resource_uuid = ? 
-         ORDER BY c.created_at DESC`
+         ORDER BY c.created_at ASC`
 	).bind(uuid).all<any>(); // any because of join
 
 	const mapped = results.map(c => ({

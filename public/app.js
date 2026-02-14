@@ -466,7 +466,7 @@ class ItemView extends AbstractView {
         }
 
         const commentsList = comments.length > 0 ? comments.map(c => `
-            <div style="border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; border-radius: 4px; background: #fff;">
+            <div style="border: 2px solid #000; padding: 10px; margin-bottom: 10px; background: #fff;">
                 <div style="font-weight: bold; margin-bottom: 5px;">${c.author} <span style="font-weight: normal; font-size: 0.8em; color: #666;">(${new Date(c.timestamp).toLocaleString()})</span></div>
                 <div>${c.text}</div>
             </div>
@@ -628,6 +628,47 @@ class UploadView extends AbstractView {
                         </select>
                     </div>
 
+                    <div id="avatar-fields" style="display: none; background: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 20px; border: 1px solid #dee2e6;">
+                        <h3 style="margin-top: 0; margin-bottom: 15px;">Avatar Options</h3>
+                        <div class="upload-grid">
+                            <div class="form-group">
+                                <label><strong>Platform</strong></label>
+                                <select id="avatar-platform" class="form-control">
+                                    <option value="PC Only" selected>PC Only (Default)</option>
+                                    <option value="Quest">Quest</option>
+                                    <option value="PC / Quest">PC / Quest</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label><strong>SDK</strong></label>
+                                <select id="avatar-sdk" class="form-control">
+                                    <option value="3.0">3.0</option>
+                                    <option value="2.0" selected>2.0 (Default)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="upload-grid">
+                             <div class="form-group">
+                                <label><strong>Version</strong> (e.g. v1.0)</label>
+                                <input type="text" id="avatar-version" placeholder="v1.0">
+                            </div>
+                            <div class="form-group" style="display: flex; align-items: center; margin-top: 30px;">
+                                <input type="checkbox" id="avatar-blend" style="width: auto; margin-right: 10px;">
+                                <label for="avatar-blend" style="margin-bottom: 0;"><strong>Contains .blend file?</strong></label>
+                            </div>
+                        </div>
+                        <div class="upload-grid" style="margin-top: 10px;">
+                             <div class="form-group" style="display: flex; align-items: center;">
+                                <input type="checkbox" id="avatar-poiyomi" style="width: auto; margin-right: 10px;">
+                                <label for="avatar-poiyomi" style="margin-bottom: 0;"><strong>Uses Poiyomi?</strong></label>
+                            </div>
+                            <div class="form-group" style="display: flex; align-items: center;">
+                                <input type="checkbox" id="avatar-vrcfury" style="width: auto; margin-right: 10px;">
+                                <label for="avatar-vrcfury" style="margin-bottom: 0;"><strong>Uses VRCFury?</strong></label>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="form-group">
                         <label><strong>${t('upload.desc')} (Markdown)</strong></label>
                         <div class="upload-grid">
@@ -712,6 +753,21 @@ class UploadView extends AbstractView {
         } catch (e) {
             console.error('Failed to load Turnstile config', e);
         }
+
+        // Avatar Fields Logic
+        const categorySelect = document.getElementById('category');
+        const avatarFields = document.getElementById('avatar-fields');
+
+        const toggleAvatarFields = () => {
+            if (categorySelect.value === 'avatars') {
+                avatarFields.style.display = 'block';
+            } else {
+                avatarFields.style.display = 'none';
+            }
+        };
+
+        categorySelect.addEventListener('change', toggleAvatarFields);
+        toggleAvatarFields(); // Initial check
 
         // Markdown Preview
         descriptionField.addEventListener('input', () => {
@@ -798,8 +854,28 @@ class UploadView extends AbstractView {
             uploadError.textContent = '';
 
             const title = document.getElementById('title').value;
-            const description = descriptionField.value;
+            let description = descriptionField.value; // Use let to allow modification
             const category = document.getElementById('category').value;
+
+            // Append Avatar Information if Category is Avatars
+            if (category === 'avatars') {
+                const platform = document.getElementById('avatar-platform').value;
+                const sdk = document.getElementById('avatar-sdk').value;
+                const version = document.getElementById('avatar-version').value;
+                const hasBlend = document.getElementById('avatar-blend').checked;
+                const usesPoiyomi = document.getElementById('avatar-poiyomi').checked;
+                const usesVrcFury = document.getElementById('avatar-vrcfury').checked;
+
+                let extraInfo = '\n\n---\n\n### Avatar Details\n';
+                extraInfo += `* Platform: ${platform}\n`;
+                extraInfo += `* SDK: ${sdk}\n`;
+                extraInfo += `* Version: ${version || 'Not specified'}\n`;
+                extraInfo += `* Contains .blend: ${hasBlend ? 'Yes' : 'No'}\n`;
+                extraInfo += `* Uses Poiyomi: ${usesPoiyomi ? 'Yes' : 'No'}\n`;
+                extraInfo += `* Uses VRCFury: ${usesVrcFury ? 'Yes' : 'No'}\n`;
+
+                description += extraInfo;
+            }
             const file = fileInput.files[0];
             const thumbnail = thumbnailInput.files[0];
             const referenceFiles = referenceInput.files;
