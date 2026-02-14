@@ -20,7 +20,7 @@ import {
 	ResourceLink,
 } from './types';
 import { z } from 'zod';
-import { RegisterSchema, LoginSchema, ResourceSchema, CommentSchema } from './validators';
+import { RegisterSchema, LoginSchema, ResourceSchema, CommentSchema, UserUpdateSchema } from './validators';
 import { securityMiddleware } from './middleware/security';
 import { rateLimit } from './middleware/rate-limit';
 
@@ -288,15 +288,73 @@ app.post('/api/login', async (c) => {
 });
 
 /**
+ * Endpoint: /api/user
+ * Actualiza el perfil del usuario (username, avatar).
+ */
+app.put('/api/user', async (c) => {
+	const authUser = await getAuthUser(c);
+	if (!authUser) return c.json({ error: 'Unauthorized' }, 401);
+
+	const body = await c.req.json();
+	const { username, avatar_url, token } = UserUpdateSchema.parse(body); // Use UserUpdateSchema (needs import)
+
+	// Turnstile check if provided (optional for updates but good for security)
+	if (token) {
+		const isValid = await verifyTurnstile(token, c.env.TURNSTILE_SECRET_KEY);
+		if (!isValid) return c.json({ error: 'Invalid CAPTCHA' }, 403);
+	}
+
+	const user = await c.env.DB.prepare('SELECT * FROM users WHERE username = ?').bind(authUser.username).first<User>();
+	if (!user) return c.json({ error: 'User not found' }, 404);
+
+	let newUsername = user.username;
+	let newAvatarUrl = user.avatar_url;
+
+	if (username && username !== user.username) {
+		// Check uniqueness
+		const existing = await c.env.DB.prepare('SELECT 1 FROM users WHERE username = ?').bind(username).first();
+		if (existing) return c.json({ error: 'Username taken' }, 409);
+		newUsername = username;
+	}
+
+	if (avatar_url) {
+		newAvatarUrl = avatar_url;
+	}
+
+	try {
+		await c.env.DB.prepare(
+			'UPDATE users SET username = ?, avatar_url = ? WHERE uuid = ?'
+		).bind(newUsername, newAvatarUrl, user.uuid).run();
+
+		// Update Session if username changed
+		if (newUsername !== user.username) {
+			await createSession(c, { username: newUsername, is_admin: user.is_admin });
+		}
+
+		return c.json({ success: true, username: newUsername, avatar_url: newAvatarUrl });
+	} catch (e) {
+		console.error('Update user error:', e);
+		return c.json({ error: 'Failed to update user' }, 500);
+	}
+});
+
+/**
  * Endpoint: /api/auth/status
  * Verifica si el usuario esta logueado.
  */
 app.get('/api/auth/status', async (c) => {
-	const user = await getAuthUser(c);
+	const authUser = await getAuthUser(c);
+	if (!authUser) {
+		return c.json({ loggedIn: false, username: null, is_admin: false, avatar_url: null });
+	}
+
+	const user = await c.env.DB.prepare('SELECT * FROM users WHERE username = ?').bind(authUser.username).first<User>();
+
 	return c.json({
 		loggedIn: !!user,
 		username: user ? user.username : null,
-		is_admin: user ? user.is_admin : false,
+		is_admin: user ? !!user.is_admin : false,
+		avatar_url: user ? user.avatar_url : null
 	});
 });
 

@@ -5,7 +5,8 @@ const appPayload = {
 // --- I18n Configuration ---
 const translations = {
     es: {
-        nav: { home: 'Inicio', avatars: 'Avatares', worlds: 'Mundos', assets: 'Assets', clothes: 'Ropa', others: 'Otros', login: 'Login', upload: 'Subir', admin: 'Admin' },
+        nav: { home: 'Inicio', avatars: 'Avatares', worlds: 'Mundos', assets: 'Assets', clothes: 'Ropa', others: 'Otros', login: 'Login', upload: 'Subir', admin: 'Admin', settings: 'Configuración' },
+        settings: { title: 'Configuración de Usuario', avatar: 'Foto de Perfil', save: 'Guardar Cambios', success: 'Perfil actualizado correctamente', logout: 'Cerrar Sesión' },
         home: { welcome: 'Bienvenido a VRCStorage', browse: 'Explora recursos por categoría:', latest: 'Últimos Recursos' },
         card: { view: 'Ver Detalles' },
         category: { showing: 'Mostrando', of: 'de', resources: 'recursos', prev: 'Anterior', next: 'Siguiente' },
@@ -17,7 +18,8 @@ const translations = {
         cats: { avatars: 'Avatares', worlds: 'Mundos', assets: 'Assets', clothes: 'Ropa', others: 'Otros' }
     },
     en: {
-        nav: { home: 'Home', avatars: 'Avatars', worlds: 'Worlds', assets: 'Assets', clothes: 'Clothes', others: 'Others', login: 'Login', upload: 'Upload', admin: 'Admin' },
+        nav: { home: 'Home', avatars: 'Avatars', worlds: 'Worlds', assets: 'Assets', clothes: 'Clothes', others: 'Others', login: 'Login', upload: 'Upload', admin: 'Admin', settings: 'Settings' },
+        settings: { title: 'User Settings', avatar: 'Profile Picture', save: 'Save Changes', success: 'Profile updated successfully', logout: 'Logout' },
         home: { welcome: 'Welcome to VRCStorage', browse: 'Browse resources by category:', latest: 'Latest Resources' },
         card: { view: 'View Details' },
         category: { showing: 'Showing', of: 'of', resources: 'resources', prev: 'Previous', next: 'Next' },
@@ -29,7 +31,8 @@ const translations = {
         cats: { avatars: 'Avatars', worlds: 'Worlds', assets: 'Assets', clothes: 'Clothes', others: 'Others' }
     },
     ru: {
-        nav: { home: 'Главная', avatars: 'Аватары', worlds: 'Миры', assets: 'Ассеты', clothes: 'Одежда', others: 'Другое', login: 'Войти', upload: 'Загрузить', admin: 'Админ' },
+        nav: { home: 'Главная', avatars: 'Аватары', worlds: 'Миры', assets: 'Ассеты', clothes: 'Одежда', others: 'Другое', login: 'Войти', upload: 'Загрузить', admin: 'Админ', settings: 'Настройки' },
+        settings: { title: 'Настройки профиля', avatar: 'Фото профиля', save: 'Сохранить изменения', success: 'Профиль успешно обновлен', logout: 'Выйти' },
         home: { welcome: 'Добро пожаловать в VRCStorage', browse: 'Просмотр ресурсов по категориям:', latest: 'Последние ресурсы' },
         card: { view: 'Подробнее' },
         category: { showing: 'Показано', of: 'из', resources: 'ресурсов', prev: 'Назад', next: 'Вперед' },
@@ -41,7 +44,8 @@ const translations = {
         cats: { avatars: 'Аватары', worlds: 'Миры', assets: 'Ассеты', clothes: 'Одежда', others: 'Другое' }
     },
     jp: {
-        nav: { home: 'ホーム', avatars: 'アバター', worlds: 'ワールド', assets: 'アセット', clothes: '服', others: 'その他', login: 'ログイン', upload: 'アップロード', admin: '管理' },
+        nav: { home: 'ホーム', avatars: 'アバター', worlds: 'ワールド', assets: 'アセット', clothes: '服', others: 'その他', login: 'ログイン', upload: 'アップロード', admin: '管理', settings: '設定' },
+        settings: { title: 'プロフィール設定', avatar: 'プロフィール画像', save: '変更を保存', success: 'プロフィールが正常に更新されました', logout: 'ログアウト' },
         home: { welcome: 'VRCStorageへようこそ', browse: 'カテゴリー別リソース:', latest: '最新のリソース' },
         card: { view: '詳細を見る' },
         category: { showing: '表示中', of: '/', resources: '件', prev: '前へ', next: '次へ' },
@@ -53,7 +57,8 @@ const translations = {
         cats: { avatars: 'アバター', worlds: 'ワールド', assets: 'アセット', clothes: '服', others: 'その他' }
     },
     cn: {
-        nav: { home: '主页', avatars: '模型', worlds: '世界', assets: '资源', clothes: '服装', others: '其他', login: '登录', upload: '上传', admin: '管理' },
+        nav: { home: '主页', avatars: '模型', worlds: '世界', assets: '资源', clothes: '服装', others: '其他', login: '登录', upload: '上传', admin: '管理', settings: '设置' },
+        settings: { title: '个人资料设置', avatar: '头像', save: '保存更改', success: '个人资料已成功更新', logout: '退出登录' },
         home: { welcome: '欢迎来到 VRCStorage', browse: '按类别浏览资源：', latest: '最新资源' },
         card: { view: '查看详情' },
         category: { showing: '显示', of: '/', resources: '资源', prev: '上一页', next: '下一页' },
@@ -65,7 +70,8 @@ const translations = {
         cats: { avatars: '模型', worlds: '世界', assets: '资源', clothes: '服装', others: '其他' }
     },
     fr: {
-        nav: { home: 'Accueil', avatars: 'Avatars', worlds: 'Mondes', assets: 'Actifs', clothes: 'Vêtements', others: 'Autres', login: 'Connexion', upload: 'Upload', admin: 'Admin' },
+        nav: { home: 'Accueil', avatars: 'Avatars', worlds: 'Mondes', assets: 'Actifs', clothes: 'Vêtements', others: 'Autres', login: 'Connexion', upload: 'Upload', admin: 'Admin', settings: 'Paramètres' },
+        settings: { title: 'Paramètres du profil', avatar: 'Photo de profil', save: 'Enregistrer les modifications', success: 'Profil mis à jour avec succès', logout: 'Déconnexion' },
         home: { welcome: 'Bienvenue sur VRCStorage', browse: 'Parcourir les ressources par catégorie :', latest: 'Dernières ressources' },
         card: { view: 'Voir les détails' },
         category: { showing: 'Affichage de', of: 'sur', resources: 'ressources', prev: 'Précédent', next: 'Suivant' },
@@ -103,7 +109,9 @@ async function updateNav() {
         const data = await res.json();
         isLoggedIn = data.loggedIn;
         isAdmin = data.is_admin;
-        window.appState = { isLoggedIn, isAdmin };
+        isLoggedIn = data.loggedIn;
+        isAdmin = data.is_admin;
+        window.appState = { isLoggedIn, isAdmin, user: data };
     } catch (e) {
         console.error('Auth check failed', e);
     }
@@ -113,8 +121,8 @@ async function updateNav() {
 
         // Dynamic Login/Logout
         if (key === 'nav.login') {
-            el.textContent = isLoggedIn ? t('login.logout') : t('nav.login');
-            el.setAttribute('href', isLoggedIn ? '/logout' : '/login');
+            el.textContent = isLoggedIn ? t('nav.settings') : t('nav.login');
+            el.setAttribute('href', isLoggedIn ? '/settings' : '/login');
         } else if (key === 'nav.upload') {
             if (isLoggedIn) {
                 el.style.display = 'inline-block';
@@ -148,7 +156,7 @@ const router = async () => {
         { path: '/category/:id', view: CategoryView },
         { path: '/item/:id', view: ItemView },
         { path: '/login', view: LoginView },
-        { path: '/logout', view: LogoutView },
+        { path: '/settings', view: SettingsView },
         { path: '/register', view: RegisterView },
         { path: '/upload', view: UploadView },
         { path: '/admin', view: AdminView }
@@ -1023,25 +1031,145 @@ class UploadView extends AbstractView {
     }
 }
 
-class LogoutView extends AbstractView {
+class SettingsView extends AbstractView {
     async getHtml() {
+        const user = window.appState.user || {};
+        const avatarUrl = user.avatar_url || 'https://placehold.co/100';
+
         return `
-            <div class="login-box" style="text-align: center;">
-                <h1>${t('login.logout')}</h1>
-                <p>${t('login.logoutConfirm')}</p>
-                <div style="margin-top: 20px;">
-                    <button id="confirm-logout" class="btn">${t('login.logout')}</button>
-                    <a href="/" data-link class="btn" style="background: #666; margin-left: 10px;">${t('item.backup').replace('Backup', 'Cancel')}</a>
+            <div class="login-box" style="max-width: 500px;">
+                <h1>${t('settings.title')}</h1>
+                <div id="settings-error" class="danger"></div>
+                <div id="settings-success" class="success" style="color: green; margin-bottom: 20px; text-align: center;"></div>
+                
+                <div style="text-align: center; margin-bottom: 30px;">
+                    <img id="current-avatar" src="${avatarUrl}" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid #ddd;">
+                </div>
+
+                <form id="settings-form">
+                    <div class="form-group">
+                        <label for="username">${t('login.username')}</label>
+                        <input type="text" id="username" value="${user.username || ''}" required minlength="3" maxlength="32">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="avatar">${t('settings.avatar')}</label>
+                        <input type="file" id="avatar" accept="image/png,image/jpg,image/jpeg,image/gif">
+                        <small style="color: #666; display: block; margin-top: 5px;">Optional. Max 5MB.</small>
+                    </div>
+
+                    <div id="turnstile-settings" class="mb-10"></div>
+
+                    <button type="submit" class="btn" style="width: 100%; margin-bottom: 20px;">${t('settings.save')}</button>
+                </form>
+
+                <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
+
+                <div style="text-align: center;">
+                    <button id="logout-btn" class="btn" style="background-color: #dc3545;">${t('settings.logout')}</button>
                 </div>
             </div>
         `;
     }
 
     async postRender() {
-        document.getElementById('confirm-logout').addEventListener('click', async () => {
-            const res = await fetch('/api/logout', { method: 'POST' });
-            if (res.ok) {
-                navigateTo('/');
+        renderTurnstile('#turnstile-settings');
+
+        // Logout Handler
+        document.getElementById('logout-btn').addEventListener('click', async () => {
+            if (confirm(t('login.logoutConfirm'))) {
+                const res = await fetch('/api/logout', { method: 'POST' });
+                if (res.ok) {
+                    window.location.href = '/';
+                }
+            }
+        });
+
+        // Settings Form Handler
+        const form = document.getElementById('settings-form');
+        const errorDiv = document.getElementById('settings-error');
+        const successDiv = document.getElementById('settings-success');
+        const avatarInput = document.getElementById('avatar');
+        const imgPreview = document.getElementById('current-avatar');
+
+        // Avatar Preview
+        avatarInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const url = URL.createObjectURL(file);
+                imgPreview.src = url;
+            }
+        });
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = e.target.querySelector('button[type="submit"]');
+            const originalText = btn.textContent;
+            btn.textContent = 'Saving...';
+            btn.disabled = true;
+            errorDiv.textContent = '';
+            successDiv.textContent = '';
+
+            const username = document.getElementById('username').value;
+            const avatarFile = avatarInput.files[0];
+            const formData = new FormData(form);
+            const token = formData.get('cf-turnstile-response');
+
+            let avatarUrl = null;
+
+            try {
+                // 1. Upload new avatar if selected
+                if (avatarFile) {
+                    const uploadFormData = new FormData();
+                    uploadFormData.append('file', avatarFile);
+                    uploadFormData.append('media_type', 'image');
+
+                    const uploadRes = await fetch('/api/upload', {
+                        method: 'PUT',
+                        body: uploadFormData
+                    });
+
+                    if (!uploadRes.ok) throw new Error('Error uploading avatar');
+                    const uploadData = await uploadRes.json();
+                    avatarUrl = `/api/download/${uploadData.r2_key}`;
+                }
+
+                // 2. Update User Profile
+                const updateBody = {
+                    username,
+                    token
+                };
+                if (avatarUrl) updateBody.avatar_url = avatarUrl;
+
+                const res = await fetch('/api/user', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updateBody)
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    successDiv.textContent = t('settings.success');
+                    // Update global state
+                    window.appState.user.username = data.username;
+                    if (data.avatar_url) window.appState.user.avatar_url = data.avatar_url;
+                    updateNav(); // Refresh nav
+
+                    // Reset turnstile
+                    if (window.turnstile) window.turnstile.reset();
+
+                } else {
+                    throw new Error(data.error || 'Update failed');
+                }
+
+            } catch (err) {
+                console.error(err);
+                errorDiv.textContent = err.message;
+                if (window.turnstile) window.turnstile.reset();
+            } finally {
+                btn.textContent = originalText;
+                btn.disabled = false;
             }
         });
     }

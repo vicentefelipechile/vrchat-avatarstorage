@@ -17,6 +17,12 @@ export const LoginSchema = z.object({
     token: z.string().optional()
 });
 
+export const UserUpdateSchema = z.object({
+    username: z.string().min(3, 'Username must be at least 3 characters').max(32, 'Username too long').regex(/^[a-zA-Z0-9_]+$/, 'Username must be alphanumeric').optional(),
+    avatar_url: z.string().optional(),
+    token: z.string().optional()
+});
+
 // ============================================================================
 // Resource Schemas
 // ============================================================================
