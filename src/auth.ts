@@ -52,14 +52,26 @@ export async function getAuthUser(c: Context<{ Bindings: Env }>): Promise<{ user
 
     try {
         const payload = await verify(token, secret, 'HS256');
+        const username = payload.sub as string;
 
-        const user = await c.env.DB.prepare('SELECT * FROM users WHERE username = ?').bind(payload.sub).first<User>();
+        const cachedUser = await c.env.VRCSTORAGE_KV.get(`user:${username}`, 'json') as { username: string; is_admin: boolean } | null;
+        if (cachedUser) {
+            return cachedUser;
+        }
+
+        // 2. Query DB
+        const user = await c.env.DB.prepare('SELECT * FROM users WHERE username = ?').bind(username).first<User>();
         if (!user) return null;
 
-        return {
-            username: payload.sub as string,
+        const sessionUser = {
+            username: user.username,
             is_admin: user.is_admin === 1,
         };
+
+        // 3. Update KV
+        await c.env.VRCSTORAGE_KV.put(`user:${username}`, JSON.stringify(sessionUser), { expirationTtl: 60 * 60 * 24 * 7 }); // 7 Days
+
+        return sessionUser;
     } catch (e) {
         // Invalid token
         return null;

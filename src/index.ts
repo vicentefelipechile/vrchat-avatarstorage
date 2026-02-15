@@ -80,23 +80,45 @@ app.use('/download/*', async (c, next) => {
 /**
  * Endpoint: /api/latest
  * Este endpoint existe para que la pagina principal "/" pueda mostrar los ultimos 6 recursos subidos.
+ * 
+ * Solo enviar:
+ * - r.category
+ * - r.uuid
+ * - r.title
+ * - m.r2_key => r.thumbnail_key
+ * - r.created_at
+ * - r.download_count
  */
 app.get('/api/latest', async (c) => {
-	const stmt = c.env.DB.prepare(`
-		SELECT r.*, m.r2_key as thumbnail_key 
-		FROM resources r 
-		LEFT JOIN media m ON r.thumbnail_uuid = m.uuid 
-		WHERE r.is_active = 1 
-		ORDER BY r.created_at DESC 
-		LIMIT 6
-	`);
-	const { results } = await stmt.all<Resource & { thumbnail_key: string | null }>();
+	// 1. Try KV
+	const cached = await c.env.VRCSTORAGE_KV.get('resource:latest', 'json');
+	if (cached) {
+		return c.json(cached);
+	}
 
-	const mapped = results.map(r => ({
-		...r,
-		timestamp: r.created_at * 1000
-	}));
-	return c.json(mapped);
+	const stmt = c.env.DB.prepare(`
+        SELECT
+            r.category,
+            r.uuid,
+            r.title,
+            r.thumbnail_uuid,
+            r.created_at,
+            r.download_count,
+            m.r2_key as thumbnail_key
+        FROM resources r
+        INNER JOIN media m ON r.thumbnail_uuid = m.uuid
+        WHERE r.is_active = 1
+        ORDER BY r.created_at DESC
+        LIMIT 6
+    `);
+
+	const { results } = await stmt.all();
+	c.header('Cache-Control', 'public, max-age=60');
+
+	// 2. Update KV
+	await c.env.VRCSTORAGE_KV.put('resource:latest', JSON.stringify(results), { expirationTtl: 60 });
+
+	return c.json(results);
 });
 
 /**
@@ -108,6 +130,12 @@ app.get('/api/category/:category', async (c) => {
 	if (!category) return c.json({ error: 'Missing category' }, 400);
 
 	if (!RESOURCE_CATEGORIES.includes(category as ResourceCategory)) return c.json({ error: 'Invalid category' }, 400);
+
+	// 1. Try KV
+	const cached = await c.env.VRCSTORAGE_KV.get(`resource:category:${category}`, 'json');
+	if (cached) {
+		return c.json(cached);
+	}
 
 	const stmt = c.env.DB.prepare(`
 		SELECT r.*, m.r2_key as thumbnail_key 
@@ -123,7 +151,12 @@ app.get('/api/category/:category', async (c) => {
 		timestamp: r.created_at * 1000
 	}));
 
-	return c.json({ resources: mapped });
+	const response = { resources: mapped };
+
+	// 2. Update KV
+	await c.env.VRCSTORAGE_KV.put(`resource:category:${category}`, JSON.stringify(response), { expirationTtl: 300 }); // 5 mins
+
+	return c.json(response);
 });
 
 /**
@@ -134,7 +167,12 @@ app.get('/api/item/:uuid', async (c) => {
 	const uuid = c.req.param('uuid');
 	if (!uuid) return c.json({ error: 'Missing uuid' }, 400);
 
-	// Get resource with author info
+	// 1. Try KV
+	const cached = await c.env.VRCSTORAGE_KV.get(`resource:${uuid}`, 'json');
+	if (cached) {
+		return c.json(cached);
+	}
+
 	const resource = await c.env.DB.prepare('SELECT * FROM resources WHERE uuid = ?').bind(uuid).first<Resource>();
 	if (!resource) return c.json({ error: 'Not found' }, 404);
 
@@ -281,6 +319,11 @@ app.post('/api/login', async (c) => {
 			// Secure: false for localhost development
 			// Secure session
 			await createSession(c, { username: user.username, is_admin: user.is_admin });
+
+			// Cache user in KV
+			const sessionUser = { username: user.username, is_admin: user.is_admin === 1 };
+			await c.env.VRCSTORAGE_KV.put(`user:${user.username}`, JSON.stringify(sessionUser), { expirationTtl: 60 * 60 * 24 * 7 });
+
 			return c.json({ success: true });
 		}
 	}
@@ -330,6 +373,13 @@ app.put('/api/user', async (c) => {
 		if (newUsername !== user.username) {
 			await createSession(c, { username: newUsername, is_admin: user.is_admin });
 		}
+
+		// If username changed, delete old key
+		if (newUsername !== user.username) {
+			await c.env.VRCSTORAGE_KV.delete(`user:${user.username}`);
+		}
+		const sessionUser = { username: newUsername, is_admin: user.is_admin === 1 };
+		await c.env.VRCSTORAGE_KV.put(`user:${newUsername}`, JSON.stringify(sessionUser), { expirationTtl: 60 * 60 * 24 * 7 });
 
 		return c.json({ success: true, username: newUsername, avatar_url: newAvatarUrl });
 	} catch (e) {
@@ -392,9 +442,6 @@ app.post('/api/resources', async (c) => {
 	const isValid = await verifyTurnstile(token || '', c.env.TURNSTILE_SECRET_KEY);
 	if (!isValid) return c.json({ error: 'Invalid CAPTCHA' }, 403);
 
-	// Category is already validated by Zod schema
-
-
 	const resourceUuid = crypto.randomUUID();
 	try {
 		// Insert resource
@@ -429,6 +476,10 @@ app.post('/api/resources', async (c) => {
 				).bind(relationUuid, resourceUuid, mediaUuid).run();
 			}
 		}
+
+		// Invalidate KV Caches
+		await c.env.VRCSTORAGE_KV.delete('resource:latest');
+		await c.env.VRCSTORAGE_KV.delete(`resource:category:${category}`);
 
 		return c.json({ success: true, uuid: resourceUuid });
 	} catch (e) {
@@ -622,12 +673,14 @@ app.post('/api/upload/complete', async (c) => {
  */
 app.get('/api/download/:key', async (c) => {
 	const key = c.req.param('key');
+
 	const stmt = c.env.DB.prepare('SELECT * FROM media WHERE r2_key = ?').bind(key);
 	const result = await stmt.first<Media>();
 
 	if (!result) return c.json({ error: 'Not found' }, 404);
+	const isMedia: boolean = result.media_type === 'image' || result.media_type === 'video';
 
-	if (result.media_type !== 'image' && result.media_type !== 'video') {
+	if (!isMedia) {
 		const user = await getAuthUser(c);
 		if (!user) return c.json({ error: 'Unauthorized' }, 401);
 	}
@@ -635,7 +688,7 @@ app.get('/api/download/:key', async (c) => {
 	const object = await c.env.BUCKET.get(key);
 	if (!object) return c.json({ error: 'Not found' }, 404);
 
-	const disposition = (result.media_type === 'image' || result.media_type === 'video') ? 'inline' : 'attachment';
+	const disposition = isMedia ? 'inline' : 'attachment';
 	const filename = result.file_name.replace(/"/g, '');
 
 	const headers = new Headers();
@@ -660,20 +713,19 @@ app.get('/api/comments/:uuid', async (c) => {
 	const uuid = c.req.param('uuid');
 	// Join with users to get username
 	const { results } = await c.env.DB.prepare(
-		`SELECT c.text, c.created_at, u.username as author, u.avatar_url as author_avatar
+		`SELECT
+			c.uuid,
+			c.text,
+			(c.created_at * 1000) as timestamp,
+			u.username as author,
+			u.avatar_url as author_avatar
          FROM comments c 
          JOIN users u ON c.author_uuid = u.uuid 
          WHERE c.resource_uuid = ? 
          ORDER BY c.created_at ASC`
 	).bind(uuid).all<any>(); // any because of join
 
-	const mapped = results.map(c => ({
-		text: c.text,
-		author: c.author,
-		author_avatar: c.author_avatar,
-		timestamp: c.created_at * 1000 // Convert unixepoch to ms for frontend
-	}));
-	return c.json(mapped);
+	return c.json(results);
 });
 
 /**
@@ -711,13 +763,31 @@ app.post('/api/comments/:uuid', async (c) => {
 			author: authUser.username,
 			author_avatar: user.avatar_url,
 			text: text,
-			timestamp: new Date().toISOString()
+			created_at: new Date().toISOString()
 		};
 
 		return c.json(newComment);
 	} catch (e) {
 		console.error('Comment error:', e);
 		return c.json({ error: 'Failed to post comment' }, 500);
+	}
+});
+
+/**
+ * Endpoint: /api/comments/:uuid
+ * Elimina un comentario.
+ */
+app.delete('/api/comments/:uuid', async (c) => {
+	const authUser = await getAuthUser(c);
+	if (!authUser) return c.json({ error: 'Unauthorized' }, 401);
+
+	const uuid = c.req.param('uuid');
+	try {
+		await c.env.DB.prepare('DELETE FROM comments WHERE uuid = ?').bind(uuid).run();
+		return c.json({ success: true });
+	} catch (e) {
+		console.error('Comment error:', e);
+		return c.json({ error: 'Failed to delete comment' }, 500);
 	}
 });
 
@@ -834,10 +904,10 @@ app.post('/api/admin/resource/:uuid/deactivate', async (c) => {
  */
 app.get('/item/:uuid', async (c) => {
 	const uuid = c.req.param('uuid');
-	const userAgent = c.req.header('User-Agent') || '';
+	if (!uuid) return c.json({ error: 'UUID is required' }, 400);
 
-	// Solo procesar para bots o compartir enlaces si es necesario, pero aqui lo haremos para todos
-	// para que al pegar el link salga la preview.
+	const cached = await c.env.VRCSTORAGE_KV.get(`og:${uuid}`);
+	if (cached) return c.html(cached);
 
 	try {
 		const resource = await c.env.DB.prepare('SELECT * FROM resources WHERE uuid = ?').bind(uuid).first<Resource>();
@@ -862,6 +932,8 @@ app.get('/item/:uuid', async (c) => {
 			html = html.replace(/<meta property="og:url" content="[^"]*">/, `<meta property="og:url" content="${url}">`);
 			html = html.replace(/<meta property="og:image" content="[^"]*">/, `<meta property="og:image" content="${imageUrl}">`);
 			html = html.replace(/<title>[^<]*<\/title>/, `<title>${title} - VRCStorage</title>`);
+
+			c.env.VRCSTORAGE_KV.put(`og:${uuid}`, html);
 
 			return c.html(html);
 		}

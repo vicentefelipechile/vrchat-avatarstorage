@@ -1,3 +1,49 @@
+const DataCache = {
+    cache: new Map(),
+    async fetch(url, ttl = 60000) {
+        const now = Date.now();
+        if (this.cache.has(url)) {
+            const { data, timestamp } = this.cache.get(url);
+            if (now - timestamp < ttl) {
+                return data;
+            }
+        }
+
+        // Check if there is a pending promise for this URL
+        if (this.pending && this.pending.has(url)) {
+            return this.pending.get(url);
+        }
+
+        const promise = (async () => {
+            try {
+                const res = await fetch(url);
+                if (!res.ok) throw new Error(`Fetch error: ${res.status}`);
+                const data = await res.json();
+                this.cache.set(url, { data, timestamp: Date.now() });
+                return data;
+            } finally {
+                if (this.pending) this.pending.delete(url);
+            }
+        })();
+
+        if (!this.pending) this.pending = new Map();
+        this.pending.set(url, promise);
+
+        return promise;
+    },
+    prefetch(url, ttl = 60000) {
+        if (this.cache.has(url)) {
+            const { timestamp } = this.cache.get(url);
+            if (Date.now() - timestamp < ttl) return;
+        }
+        this.fetch(url, ttl).catch(err => console.error('Prefetch failed', err));
+    },
+    clear(url) {
+        if (url) this.cache.delete(url);
+        else this.cache.clear();
+    }
+};
+
 const appPayload = {
     content: document.getElementById('app')
 };
@@ -10,7 +56,7 @@ const translations = {
         home: { welcome: 'Bienvenido a VRCStorage', browse: 'Explora recursos por categoría:', latest: 'Últimos Recursos' },
         card: { view: 'Ver Detalles' },
         category: { showing: 'Mostrando', of: 'de', resources: 'recursos', prev: 'Anterior', next: 'Siguiente' },
-        admin: { title: 'Panel de Administrador', noPending: 'No hay recursos pendientes de aprobación.' },
+        admin: { title: 'Panel de Administrador', noPending: 'No hay recursos pendientes de aprobación.', delete: 'Eliminar', deleteConfirm: '¿Estás seguro de que deseas eliminar este comentario?' },
         item: { notFound: 'Recurso No Encontrado', category: 'Categoría', uploaded: 'Subido', uuid: 'UUID', description: 'Descripción', downloads: 'Descargas', downloadMain: 'Descargar (R2 Main)', backup: 'Backup', loginReq: 'Login Requerido', loginMsg: 'Debes iniciar sesión para descargar recursos.', goToLogin: 'Ir al Login', comments: 'Comentarios', noComments: 'No hay comentarios aún.', postComment: 'Publicar Comentario', commentPlaceholder: 'Escribe tu comentario...', send: 'Enviar', loginToComment: 'Inicia sesión para comentar', underReview: 'Esperando aprobación del administrador', approve: 'Aprobar', reject: 'Rechazar', deactivate: 'Desactivar', confirmDeactivate: '¿Estás seguro de que deseas desactivar este recurso?', confirmReject: '¿Estás seguro de que deseas rechazar y eliminar este recurso?', adminPanel: 'Panel de Administrador', pendingApproval: 'Este recurso espera aprobación.' },
         login: { title: 'Login', username: 'Usuario', password: 'Password', btn: 'Entrar', hint: 'Pista: user / password', error: 'Credenciales inválidas', register: '¿No tienes cuenta? Regístrate', logout: 'Logout', logoutConfirm: '¿Seguro que quieres cerrar sesión?' },
         register: { title: 'Registro', btn: 'Registrarse', loginLink: '¿Ya tienes cuenta? Inicia sesión', success: 'Registro exitoso. Por favor inicia sesión.' },
@@ -23,7 +69,7 @@ const translations = {
         home: { welcome: 'Welcome to VRCStorage', browse: 'Browse resources by category:', latest: 'Latest Resources' },
         card: { view: 'View Details' },
         category: { showing: 'Showing', of: 'of', resources: 'resources', prev: 'Previous', next: 'Next' },
-        admin: { title: 'Admin Panel', noPending: 'No resources pending approval.' },
+        admin: { title: 'Admin Panel', noPending: 'No resources pending approval.', delete: 'Delete', deleteConfirm: 'Are you sure you want to delete this comment?' },
         item: { notFound: 'Resource Not Found', category: 'Category', uploaded: 'Uploaded', uuid: 'UUID', description: 'Description', downloads: 'Downloads', downloadMain: 'Download (R2 Main)', backup: 'Backup', loginReq: 'Login Required', loginMsg: 'You must be logged in to download resources.', goToLogin: 'Go to Login', comments: 'Comments', noComments: 'No comments yet.', postComment: 'Post Comment', commentPlaceholder: 'Write your comment...', send: 'Send', loginToComment: 'Login to comment', underReview: 'Waiting for admin approval', approve: 'Approve', reject: 'Reject', deactivate: 'Deactivate', confirmDeactivate: 'Are you sure you want to deactivate this resource?', confirmReject: 'Are you sure you want to reject and delete this resource?', adminPanel: 'Admin Panel', pendingApproval: 'This resource is pending approval.' },
         login: { title: 'Login', username: 'Username', password: 'Password', btn: 'Login', hint: 'Hint: user / password', error: 'Invalid credentials', register: 'No account? Register', logout: 'Logout', logoutConfirm: 'Are you sure you want to log out?' },
         register: { title: 'Register', btn: 'Sign Up', loginLink: 'Already have an account? Login', success: 'Registration successful. Please login.' },
@@ -36,7 +82,7 @@ const translations = {
         home: { welcome: 'Добро пожаловать в VRCStorage', browse: 'Просмотр ресурсов по категориям:', latest: 'Последние ресурсы' },
         card: { view: 'Подробнее' },
         category: { showing: 'Показано', of: 'из', resources: 'ресурсов', prev: 'Назад', next: 'Вперед' },
-        admin: { title: 'Панель администратора', noPending: 'Нет ресурсов, ожидающих одобрения.' },
+        admin: { title: 'Панель администратора', noPending: 'Нет ресурсов, ожидающих одобрения.', delete: 'Удалить', deleteConfirm: 'Вы уверены, что хотите удалить этот комментарий?' },
         item: { notFound: 'Ресурс не найден', category: 'Категория', uploaded: 'Загружено', uuid: 'UUID', description: 'Описание', downloads: 'Скачать', downloadMain: 'Скачать (R2 Main)', backup: 'Резерв', loginReq: 'Требуется вход', loginMsg: 'Вы должны войти, чтобы скачивать ресурсы.', goToLogin: 'Войти', comments: 'Комментарии', noComments: 'Комментариев пока нет.', postComment: 'Оставить комментарий', commentPlaceholder: 'Напишите ваш комментарий...', send: 'Отправить', loginToComment: 'Войдите, чтобы комментировать', underReview: 'Ожидает одобрения администратора', approve: 'Одобрить', reject: 'Отклонить', deactivate: 'Деактивировать', confirmDeactivate: 'Вы уверены, что хотите деактивировать этот ресурс?', confirmReject: 'Вы уверены, что хотите отклонить и удалить этот ресурс?', adminPanel: 'Панель администратора', pendingApproval: 'Этот ресурс ожидает одобрения.' },
         login: { title: 'Вход', username: 'Имя пользователя', password: 'Пароль', btn: 'Войти', hint: 'Подсказка: user / password', error: 'Неверные данные', register: 'Нет аккаунта? Регистрация', logout: 'Выйти', logoutConfirm: 'Вы уверены, что хотите выйти?' },
         register: { title: 'Регистрация', btn: 'Зарегистрироваться', loginLink: 'Уже есть аккаунт? Войти', success: 'Регистрация успешна. Войдите.' },
@@ -49,7 +95,7 @@ const translations = {
         home: { welcome: 'VRCStorageへようこそ', browse: 'カテゴリー別リソース:', latest: '最新のリソース' },
         card: { view: '詳細を見る' },
         category: { showing: '表示中', of: '/', resources: '件', prev: '前へ', next: '次へ' },
-        admin: { title: '管理パネル', noPending: '承認待ちのリソースはありません。' },
+        admin: { title: '管理パネル', noPending: '承認待ちのリソースはありません。', delete: '削除', deleteConfirm: 'このコメントを削除してもよろしいですか？' },
         item: { notFound: 'リソースが見つかりません', category: 'カテゴリー', uploaded: 'アップロード日時', uuid: 'UUID', description: '説明', downloads: 'ダウンロード', downloadMain: 'ダウンロード (R2 Main)', backup: 'バックアップ', loginReq: 'ログインが必要です', loginMsg: 'リソースをダウンロードするにはログインしてください。', goToLogin: 'ログイン画面へ', comments: 'コメント', noComments: 'まだコメントはありません。', postComment: 'コメントを投稿', commentPlaceholder: 'コメントを入力...', send: '送信', loginToComment: 'コメントするにはログインしてください', underReview: '管理者による承認待ち', approve: '承認', reject: '拒否', deactivate: '無効化', confirmDeactivate: 'このリソースを無効にしてもよろしいですか？', confirmReject: 'このリソースを拒否して削除してもよろしいですか？', adminPanel: '管理パネル', pendingApproval: 'このリソースは承認待ちです。' },
         login: { title: 'ログイン', username: 'ユーザー名', password: 'パスワード', btn: 'ログイン', hint: 'ヒント: user / password', error: '認証情報が無効です', register: 'アカウントをお持ちでないですか？ 登録', logout: 'ログアウト', logoutConfirm: 'ログアウトしますか？' },
         register: { title: '登録', btn: '登録する', loginLink: 'すでにアカウントをお持ちですか？ ログイン', success: '登録が完了しました。ログインしてください。' },
@@ -62,7 +108,7 @@ const translations = {
         home: { welcome: '欢迎来到 VRCStorage', browse: '按类别浏览资源：', latest: '最新资源' },
         card: { view: '查看详情' },
         category: { showing: '显示', of: '/', resources: '资源', prev: '上一页', next: '下一页' },
-        admin: { title: '管理员面板', noPending: '没有等待批准的资源。' },
+        admin: { title: '管理员面板', noPending: '没有等待批准的资源。', delete: '删除', deleteConfirm: '您确定要删除此评论吗？' },
         item: { notFound: '未找到资源', category: '类别', uploaded: '上传时间', uuid: 'UUID', description: '描述', downloads: '下载', downloadMain: '下载 (R2 Main)', backup: '备用', loginReq: '需要登录', loginMsg: '您必须登录才能下载资源。', goToLogin: '去登录', comments: '评论', noComments: '暂无评论。', postComment: '发表评论', commentPlaceholder: '写下你的评论...', send: '发送', loginToComment: '登录后评论', underReview: '等待管理员批准', approve: '批准', reject: '拒绝', deactivate: '停用', confirmDeactivate: '您确定要停用此资源吗？', confirmReject: '您确定要拒绝并删除此资源吗？', adminPanel: '管理员面板', pendingApproval: '此资源正在等待批准。' },
         login: { title: '登录', username: '用户名', password: '密码', btn: '登录', hint: '提示: user / password', error: '凭据无效', register: '没有账号？注册', logout: '退出', logoutConfirm: '确定要退出吗？' },
         register: { title: '注册', btn: '注册', loginLink: '已有账号？登录', success: '注册成功。请登录。' },
@@ -75,7 +121,7 @@ const translations = {
         home: { welcome: 'Bienvenue sur VRCStorage', browse: 'Parcourir les ressources par catégorie :', latest: 'Dernières ressources' },
         card: { view: 'Voir les détails' },
         category: { showing: 'Affichage de', of: 'sur', resources: 'ressources', prev: 'Précédent', next: 'Suivant' },
-        admin: { title: 'Panneau d\'administration', noPending: 'Aucune ressource en attente d\'approbation.' },
+        admin: { title: 'Panneau d\'administration', noPending: 'Aucune ressource en attente d\'approbation.', delete: 'Supprimer', deleteConfirm: 'Êtes-vous sûr de vouloir supprimer ce commentaire ?' },
         item: { notFound: 'Ressource introuvable', category: 'Catégorie', uploaded: 'Mis en ligne', uuid: 'UUID', description: 'Description', downloads: 'Téléchargements', downloadMain: 'Télécharger (R2 Main)', backup: 'Secours', loginReq: 'Connexion requise', loginMsg: 'Vous devez être connecté pour télécharger.', goToLogin: 'Se connecter', comments: 'Commentaires', noComments: 'Aucun commentaire pour le moment.', postComment: 'Poster un commentaire', commentPlaceholder: 'Écrivez votre commentaire...', send: 'Envoyer', loginToComment: 'Connectez-vous pour commenter', underReview: 'En attente d\'approbation par l\'administrateur', approve: 'Approuver', reject: 'Rejeter', deactivate: 'Désactiver', confirmDeactivate: 'Êtes-vous sûr de vouloir désactiver cette ressource ?', confirmReject: 'Êtes-vous sûr de vouloir rejeter et supprimer cette ressource ?', adminPanel: 'Panneau d\'administration', pendingApproval: 'Cette ressource est en attente d\'approbation.' },
         login: { title: 'Connexion', username: 'Nom d\'utilisateur', password: 'Mot de passe', btn: 'Se connecter', hint: 'Indice : user / password', error: 'Identifiants invalides', register: 'Pas encore de compte ? S\'inscrire', logout: 'Déconnexion', logoutConfirm: 'Voulez-vous vraiment vous déconnecter ?' },
         register: { title: 'Inscription', btn: 'S\'inscrire', loginLink: 'Déjà un compte ? Se connecter', success: 'Inscription réussie. Veuillez vous connecter.' },
@@ -105,8 +151,7 @@ async function updateNav() {
     let isLoggedIn = false;
     let isAdmin = false;
     try {
-        const res = await fetch('/api/auth/status');
-        const data = await res.json();
+        const data = await DataCache.fetch('/api/auth/status', 60000);
         isLoggedIn = data.loggedIn;
         isAdmin = data.is_admin;
         isLoggedIn = data.loggedIn;
@@ -259,7 +304,55 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     router();
+
+    // Prefetching on hover
+    document.body.addEventListener('mouseover', e => {
+        // Check for direct link or button
+        let link = e.target.closest('a[href^="/item/"]');
+
+        // If not a link, check if we are hovering a card that contains such a link
+        if (!link) {
+            const card = e.target.closest('.card');
+            if (card) {
+                link = card.querySelector('a[href^="/item/"]');
+            }
+        }
+
+        if (link) {
+            const href = link.getAttribute('href');
+            if (href) {
+                const uuid = href.split('/item/')[1];
+                if (uuid) {
+                    DataCache.prefetch(`/api/item/${uuid}`, 300000); // 5 min cache
+                    DataCache.prefetch(`/api/comments/${uuid}`, 300000);
+                }
+            }
+        }
+    });
 });
+
+// Admin Comment Deletion
+window.deleteComment = async (uuid) => {
+    if (!confirm(t('admin.deleteConfirm'))) return;
+
+    try {
+        const res = await fetch(`/api/comments/${uuid}`, { method: 'DELETE' });
+        const data = await res.json();
+
+        if (data.success) {
+            const el = document.getElementById(`comment-${uuid}`);
+            if (el) el.remove();
+            // Invalidate cache
+            const itemId = window.location.pathname.split('/item/')[1];
+            if (itemId) DataCache.clear(`/api/comments/${itemId}`);
+        } else {
+            alert('Failed to delete comment: ' + (data.error || 'Unknown error'));
+        }
+    } catch (e) {
+        console.error('Delete error:', e);
+        alert('Error deleting comment');
+    }
+};
 
 // Utilities
 const pathToRegex = path => new RegExp('^' + path.replace(/\//g, '\\/').replace(/:\w+/g, '(.+)') + '$');
@@ -357,7 +450,7 @@ class AbstractView {
 class HomeView extends AbstractView {
     async getHtml() {
         const apiCategories = ['avatars', 'worlds', 'assets', 'clothes', 'others'];
-        const latest = await fetch('/api/latest').then(res => res.json());
+        const latest = await DataCache.fetch('/api/latest', 60000);
 
         const categoriesHtml = apiCategories.map(cat =>
             `<a href="/category/${cat}" data-link class="btn mr-10 mb-10">${t('cats.' + cat)}</a>`
@@ -367,7 +460,7 @@ class HomeView extends AbstractView {
             <div class="card">
                 ${res.thumbnail_key ? `<div class="card-image"><img src="/api/download/${res.thumbnail_key}" alt="${res.title}" loading="lazy"></div>` : ''}
                 <h3>${res.title}</h3>
-                <div class="meta">${t('cats.' + res.category) || res.category} | ${new Date(res.timestamp).toLocaleDateString()}</div>
+                <div class="meta">${t('cats.' + res.category) || res.category} | ${new Date(res.created_at * 1000).toLocaleDateString()}</div>
                 <p>${stripMarkdown(res.description).substring(0, 100)}...</p>
                 <a href="/item/${res.uuid}" data-link class="btn">${t('card.view')}</a>
             </div>
@@ -391,7 +484,7 @@ class CategoryView extends AbstractView {
     async getHtml() {
         const categoryKey = decodeURIComponent(this.params.id);
         const displayName = t('cats.' + categoryKey) || categoryKey;
-        const data = await fetch(`/api/category/${categoryKey}`).then(res => res.json());
+        const data = await DataCache.fetch(`/api/category/${categoryKey}`, 300000);
 
         const cardsHtml = data.resources.map(res => `
             <div class="card">
@@ -487,10 +580,8 @@ async function renderTurnstile(containerId) {
 class ItemView extends AbstractView {
     async getHtml() {
         const uuid = this.params.id;
-        const [res, comments] = await Promise.all([
-            fetch(`/api/item/${uuid}`).then(r => r.ok ? r.json() : null),
-            fetch(`/api/comments/${uuid}`).then(r => r.ok ? r.json() : [])
-        ]);
+        // Fetch item details immediately
+        const res = await DataCache.fetch(`/api/item/${uuid}`, 300000); // 5 min cache
 
         if (!res) return `<h1>${t('item.notFound')}</h1>`;
 
@@ -513,18 +604,6 @@ class ItemView extends AbstractView {
                     <a href="/login" data-link class="btn">${t('item.goToLogin')}</a>
                 </div>`;
         }
-
-        const commentsList = comments.length > 0 ? comments.map(c => `
-            <div style="border: 2px solid #000; padding: 10px; margin-bottom: 15px; background: #fff; box-shadow: 5px 5px 0px #888; display: flex; gap: 10px;">
-                <div style="flex-shrink: 0;">
-                    <img src="${c.author_avatar}" alt="${c.author}" style="width: 50px; height: 50px; object-fit: cover; border: 2px solid #000;">
-                </div>
-                <div style="flex-grow: 1;">
-                    <div style="font-weight: bold; margin-bottom: 5px;">${c.author} <span style="font-weight: normal; font-size: 0.8em; color: #666;">(${new Date(c.timestamp).toLocaleString()})</span></div>
-                    <div style="white-space: pre-wrap;">${c.text}</div>
-                </div>
-            </div>
-        `).join('') : `<p>${t('item.noComments')}</p>`;
 
         const canComment = res.canDownload; // Logged in check
 
@@ -593,7 +672,7 @@ class ItemView extends AbstractView {
                 <hr>
                 <h3>${t('item.comments')}</h3>
                 <div id="comments-container">
-                    ${commentsList}
+                    <p>Loading comments...</p>
                 </div>
                 ${commentForm}
 
@@ -602,6 +681,26 @@ class ItemView extends AbstractView {
                 </div>
             </div>
         `;
+    }
+
+    renderComments(comments, isAdmin) {
+        if (!comments || comments.length === 0) {
+            return `<p>${t('item.noComments')}</p>`;
+        }
+        return comments.map(c => `
+            <div id="comment-${c.uuid}" style="border: 2px solid #000; padding: 10px; margin-bottom: 15px; background: #fff; box-shadow: 5px 5px 0px #888; display: flex; gap: 10px;">
+                <div style="flex-shrink: 0;">
+                    <img src="${c.author_avatar}" alt="${c.author}" style="width: 50px; height: 50px; object-fit: cover; border: 2px solid #000;">
+                </div>
+                <div style="flex-grow: 1;">
+                    <div style="font-weight: bold; margin-bottom: 5px; display: flex; justify-content: space-between; align-items: center;">
+                        <span>${c.author} <span style="font-weight: normal; font-size: 0.8em; color: #666;">(${new Date(c.timestamp).toLocaleString()})</span></span>
+                        ${isAdmin ? `<button onclick="deleteComment('${c.uuid}')" class="btn" style="padding: 2px 5px; font-size: 0.8em; background: #ff4444; color: white;">${t('admin.delete')}</button>` : ''}
+                    </div>
+                    <div style="white-space: pre-wrap;">${c.text}</div>
+                </div>
+            </div>
+        `).join('');
     }
 
     getAdminActions(res) {
@@ -631,13 +730,25 @@ class ItemView extends AbstractView {
     }
 
     async postRender() {
+        const uuid = this.params.id;
+        const commentsContainer = document.getElementById('comments-container');
+
+        // Fetch and render comments asynchronously
+        try {
+            const comments = await DataCache.fetch(`/api/comments/${uuid}`, 300000);
+            const isAdmin = window.appState && window.appState.isAdmin;
+            commentsContainer.innerHTML = this.renderComments(comments, isAdmin);
+        } catch (e) {
+            console.error('Failed to load comments', e);
+            commentsContainer.innerHTML = `<p>Error loading comments.</p>`;
+        }
+
         const form = document.getElementById('comment-form');
         if (form) {
             renderTurnstile('#turnstile-comment');
             form.addEventListener('submit', async e => {
                 e.preventDefault();
                 const text = document.getElementById('comment-text').value;
-                const uuid = this.params.id;
 
                 // Get Turnstile Token
                 const formData = new FormData(form);
@@ -650,7 +761,16 @@ class ItemView extends AbstractView {
                 });
 
                 if (res.ok) {
-                    router();
+                    // Clear form
+                    document.getElementById('comment-text').value = '';
+                    if (window.turnstile) window.turnstile.reset();
+
+                    // Refresh comments
+                    const comments = await fetch(`/api/comments/${uuid}`).then(res => res.json());
+                    // Update cache
+                    DataCache.cache.set(`/api/comments/${uuid}`, { data: comments, timestamp: Date.now() });
+                    const isAdmin = window.appState && window.appState.isAdmin;
+                    commentsContainer.innerHTML = this.renderComments(comments, isAdmin);
                 } else {
                     const data = await res.json();
                     let msg = data.error || 'Unknown';
