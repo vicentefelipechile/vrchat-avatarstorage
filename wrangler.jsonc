@@ -18,7 +18,8 @@
 		{
 			"binding": "DB",
 			"database_name": "vrcstorage",
-			"database_id": "ba294f40-ddf9-4c5c-9c7f-32740a4f55df"
+			"database_id": "ba294f40-ddf9-4c5c-9c7f-32740a4f55df",
+			"remote": true
 		}
 	],
 	"r2_buckets": [

@@ -508,6 +508,110 @@ app.put('/api/upload', async (c) => {
 	return c.json({ error: 'No file uploaded' }, 400);
 });
 
+/**
+ * Endpoint: /api/upload/init
+ * Inicia una carga multiparte para archivos grandes.
+ */
+app.post('/api/upload/init', async (c) => {
+	const user = await getAuthUser(c);
+	if (!user) return c.json({ error: 'Unauthorized' }, 401);
+
+	const body = await c.req.json();
+	const { filename, media_type } = body;
+
+	if (!filename || !media_type) {
+		return c.json({ error: 'Missing filename or media_type' }, 400);
+	}
+
+	const r2Key = crypto.randomUUID();
+	try {
+		const multipartUpload = await c.env.BUCKET.createMultipartUpload(r2Key);
+		return c.json({
+			uploadId: multipartUpload.uploadId,
+			key: r2Key
+		});
+	} catch (e) {
+		console.error('Init multipart upload error:', e);
+		return c.json({ error: 'Failed to init upload' }, 500);
+	}
+});
+
+/**
+ * Endpoint: /api/upload/part
+ * Sube una parte de un archivo grande.
+ */
+app.put('/api/upload/part', async (c) => {
+	const user = await getAuthUser(c);
+	if (!user) return c.json({ error: 'Unauthorized' }, 401);
+
+	const uploadId = c.req.header('X-Upload-ID');
+	const key = c.req.header('X-Key');
+	const partNumberStr = c.req.header('X-Part-Number');
+
+	if (!uploadId || !key || !partNumberStr) {
+		return c.json({ error: 'Missing upload headers' }, 400);
+	}
+
+	const partNumber = parseInt(partNumberStr);
+	if (isNaN(partNumber)) {
+		return c.json({ error: 'Invalid part number' }, 400);
+	}
+
+	if (!c.req.raw.body) {
+		return c.json({ error: 'Missing request body' }, 400);
+	}
+
+
+	const multipartUpload = c.env.BUCKET.resumeMultipartUpload(key, uploadId);
+	try {
+		const uploadedPart = await multipartUpload.uploadPart(partNumber, c.req.raw.body);
+		return c.json(uploadedPart);
+	} catch (e) {
+		await multipartUpload.abort();
+		console.error('Upload part error:', e);
+		return c.json({ error: 'Failed to upload part' }, 500);
+	}
+});
+
+/**
+ * Endpoint: /api/upload/complete
+ * Completa una carga multiparte.
+ */
+app.post('/api/upload/complete', async (c) => {
+	const user = await getAuthUser(c);
+	if (!user) return c.json({ error: 'Unauthorized' }, 401);
+
+	const body = await c.req.json();
+	const { key, uploadId, parts, filename, media_type } = body;
+
+	if (!key || !uploadId || !parts || !Array.isArray(parts) || !filename || !media_type) {
+		return c.json({ error: 'Missing required fields' }, 400);
+	}
+
+	try {
+		const multipartUpload = c.env.BUCKET.resumeMultipartUpload(key, uploadId);
+		await multipartUpload.complete(parts);
+
+		const mediaUuid = crypto.randomUUID();
+
+		// Create media record
+		await c.env.DB.prepare(
+			'INSERT INTO media (uuid, r2_key, media_type, file_name) VALUES (?, ?, ?, ?)'
+		).bind(mediaUuid, key, media_type, filename).run();
+
+		return c.json({
+			media_uuid: mediaUuid,
+			r2_key: key,
+			media_type: media_type,
+			file_name: filename
+		});
+
+	} catch (e) {
+		console.error('Complete multipart upload error:', e);
+		return c.json({ error: 'Failed to complete upload' }, 500);
+	}
+});
+
 // =========================================================================================================
 // Download Routes
 // =========================================================================================================
@@ -719,6 +823,55 @@ app.post('/api/admin/resource/:uuid/deactivate', async (c) => {
 	}
 });
 
+
+// =========================================================================================================
+// SEO / OG Tags Route
+// =========================================================================================================
+
+/**
+ * Endpoint: /item/:uuid
+ * Sirve el HTML principal pero con los metadatos OG inyectados para el recurso especifico.
+ */
+app.get('/item/:uuid', async (c) => {
+	const uuid = c.req.param('uuid');
+	const userAgent = c.req.header('User-Agent') || '';
+
+	// Solo procesar para bots o compartir enlaces si es necesario, pero aqui lo haremos para todos
+	// para que al pegar el link salga la preview.
+
+	try {
+		const resource = await c.env.DB.prepare('SELECT * FROM resources WHERE uuid = ?').bind(uuid).first<Resource>();
+
+		if (resource && resource.is_active) {
+			// Get thumbnail
+			const thumbnail = await c.env.DB.prepare('SELECT * FROM media WHERE uuid = ?').bind(resource.thumbnail_uuid).first<Media>();
+
+			// Fetch original index.html
+			const indexResponse = await c.env.ASSETS.fetch(new URL('/index.html', c.req.url));
+			let html = await indexResponse.text();
+
+			// Replace Meta Tags
+			const title = resource.title;
+			const description = resource.description || 'VRChat Avatar & Asset Storage';
+			const imageUrl = thumbnail ? `${new URL(c.req.url).origin}/api/download/${thumbnail.r2_key}` : `${new URL(c.req.url).origin}/favicon.svg`;
+			const url = `${new URL(c.req.url).origin}/item/${uuid}`;
+
+			// Simple replacements (asegurandose que coincidan con lo que hay en public/index.html)
+			html = html.replace(/<meta property="og:title" content="[^"]*">/, `<meta property="og:title" content="${title}">`);
+			html = html.replace(/<meta property="og:description" content="[^"]*">/, `<meta property="og:description" content="${description}">`);
+			html = html.replace(/<meta property="og:url" content="[^"]*">/, `<meta property="og:url" content="${url}">`);
+			html = html.replace(/<meta property="og:image" content="[^"]*">/, `<meta property="og:image" content="${imageUrl}">`);
+			html = html.replace(/<title>[^<]*<\/title>/, `<title>${title} - VRCStorage</title>`);
+
+			return c.html(html);
+		}
+	} catch (e) {
+		console.error('Error injecting OG tags:', e);
+	}
+
+	// Fallback to normal serving if not found or error
+	return c.env.ASSETS.fetch(new URL('/index.html', c.req.url));
+});
 
 // =========================================================================================================
 // Serve Static Files (SPA Fallback)

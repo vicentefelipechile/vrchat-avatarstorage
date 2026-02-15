@@ -14,7 +14,7 @@ const translations = {
         item: { notFound: 'Recurso No Encontrado', category: 'Categoría', uploaded: 'Subido', uuid: 'UUID', description: 'Descripción', downloads: 'Descargas', downloadMain: 'Descargar (R2 Main)', backup: 'Backup', loginReq: 'Login Requerido', loginMsg: 'Debes iniciar sesión para descargar recursos.', goToLogin: 'Ir al Login', comments: 'Comentarios', noComments: 'No hay comentarios aún.', postComment: 'Publicar Comentario', commentPlaceholder: 'Escribe tu comentario...', send: 'Enviar', loginToComment: 'Inicia sesión para comentar', underReview: 'Esperando aprobación del administrador', approve: 'Aprobar', reject: 'Rechazar', deactivate: 'Desactivar', confirmDeactivate: '¿Estás seguro de que deseas desactivar este recurso?', confirmReject: '¿Estás seguro de que deseas rechazar y eliminar este recurso?', adminPanel: 'Panel de Administrador', pendingApproval: 'Este recurso espera aprobación.' },
         login: { title: 'Login', username: 'Usuario', password: 'Password', btn: 'Entrar', hint: 'Pista: user / password', error: 'Credenciales inválidas', register: '¿No tienes cuenta? Regístrate', logout: 'Logout', logoutConfirm: '¿Seguro que quieres cerrar sesión?' },
         register: { title: 'Registro', btn: 'Registrarse', loginLink: '¿Ya tienes cuenta? Inicia sesión', success: 'Registro exitoso. Por favor inicia sesión.' },
-        upload: { title: 'Subir Recurso', name: 'Título', desc: 'Descripción', cat: 'Categoría', file: 'Archivo', btn: 'Subir', success: 'Subido correctamente', thumbnail: 'Miniatura (Thumbnail)', reference: 'Galería (Imágenes/Videos)', mainFile: 'Archivo Principal', preview: 'Vista Previa', optional: 'Opcional', required: '*', uploading: 'Subiendo archivos...', uploadingThumbnail: 'Subiendo miniatura...', uploadingReference: 'Subiendo archivos de galería...', uploadingFile: 'Subiendo archivo principal...', creating: 'Creando recurso...', error: 'Error', fileTypes: 'Solo archivos RAR, ZIP o UnityPackage', imageVideo: 'Imagen o video para la vista previa', imageVideoAdditional: 'Máximo 8 archivos (Imágenes/Videos)', validFile: 'archivo válido', invalidFile: 'Archivo inválido', markdownPlaceholder: 'Escribe la descripción usando Markdown...', noContent: 'Sin contenido', resourceName: 'Nombre del recurso', errorMainFile: 'El archivo principal debe ser .rar, .zip o .unitypackage', errorThumbnail: 'Debes seleccionar una miniatura', errorThumbnailUpload: 'Error al subir miniatura', errorReferenceUpload: 'Error al subir archivos de galería', errorFileUpload: 'Error al subir archivo principal', errorCreateResource: 'Error al crear recurso', errorUnknown: 'Error desconocido', errorCaptcha: 'Por favor completa el CAPTCHA', maxFiles: 'Máximo 8 archivos permitidos', backupLinks: 'Enlaces de Respaldo (Opcional)', backupLinksHint: 'Un enlace por línea (Google Drive, Dropbox, etc.)' },
+        upload: { title: 'Subir Recurso', name: 'Título', desc: 'Descripción', cat: 'Categoría', file: 'Archivo', btn: 'Subir', success: 'Subido correctamente', thumbnail: 'Miniatura (Thumbnail)', reference: 'Galería (Imágenes/Videos)', mainFile: 'Archivo Principal', preview: 'Vista Previa', optional: 'Opcional', required: '*', uploading: 'Subiendo archivos...', uploadingThumbnail: 'Subiendo miniatura...', uploadingReference: 'Subiendo archivos de galería...', uploadingFile: 'Subiendo archivo principal...', creating: 'Creando recurso...', error: 'Error', fileTypes: 'Solo archivos RAR, ZIP o UnityPackage', imageVideo: 'Imagen o video para la vista previa', imageVideoAdditional: 'Máximo 8 archivos (Imágenes/Videos)', validFile: 'archivo válido', invalidFile: 'Archivo inválido', markdownPlaceholder: 'Escribe la descripción usando Markdown...', noContent: 'Sin contenido', resourceName: 'Nombre del recurso', errorMainFile: 'El archivo principal debe ser .rar, .zip o .unitypackage', errorThumbnail: 'Debes seleccionar una miniatura', errorThumbnailUpload: 'Error al subir miniatura', errorReferenceUpload: 'Error al subir archivos de galería', errorFileUpload: 'Error al subir archivo principal', errorCreateResource: 'Error al crear recurso', errorUnknown: 'Error desconocido', errorCaptcha: 'Por favor completa el CAPTCHA', maxFiles: 'Máximo 8 archivos permitidos', backupLinks: 'Enlaces de Respaldo (Opcional)', backupLinksHint: 'Un enlace por línea (Google Drive, Dropbox, etc.). Tambien puede ser el enlace original del producto.' },
         cats: { avatars: 'Avatares', worlds: 'Mundos', assets: 'Assets', clothes: 'Ropa', others: 'Otros' }
     },
     en: {
@@ -27,7 +27,7 @@ const translations = {
         item: { notFound: 'Resource Not Found', category: 'Category', uploaded: 'Uploaded', uuid: 'UUID', description: 'Description', downloads: 'Downloads', downloadMain: 'Download (R2 Main)', backup: 'Backup', loginReq: 'Login Required', loginMsg: 'You must be logged in to download resources.', goToLogin: 'Go to Login', comments: 'Comments', noComments: 'No comments yet.', postComment: 'Post Comment', commentPlaceholder: 'Write your comment...', send: 'Send', loginToComment: 'Login to comment', underReview: 'Waiting for admin approval', approve: 'Approve', reject: 'Reject', deactivate: 'Deactivate', confirmDeactivate: 'Are you sure you want to deactivate this resource?', confirmReject: 'Are you sure you want to reject and delete this resource?', adminPanel: 'Admin Panel', pendingApproval: 'This resource is pending approval.' },
         login: { title: 'Login', username: 'Username', password: 'Password', btn: 'Login', hint: 'Hint: user / password', error: 'Invalid credentials', register: 'No account? Register', logout: 'Logout', logoutConfirm: 'Are you sure you want to log out?' },
         register: { title: 'Register', btn: 'Sign Up', loginLink: 'Already have an account? Login', success: 'Registration successful. Please login.' },
-        upload: { title: 'Upload Resource', name: 'Title', desc: 'Description', cat: 'Category', file: 'File', btn: 'Upload', success: 'Upload successful', thumbnail: 'Thumbnail', reference: 'Gallery (Images/Videos)', mainFile: 'Main File', preview: 'Preview', optional: 'Optional', required: '*', uploading: 'Uploading files...', uploadingThumbnail: 'Uploading thumbnail...', uploadingReference: 'Uploading gallery files...', uploadingFile: 'Uploading main file...', creating: 'Creating resource...', error: 'Error', fileTypes: 'RAR, ZIP or UnityPackage files only', imageVideo: 'Image or video for preview', imageVideoAdditional: 'Max 8 files (Images/Videos)', validFile: 'valid file', invalidFile: 'Invalid file', markdownPlaceholder: 'Write description using Markdown...', noContent: 'No content', resourceName: 'Resource name', errorMainFile: 'Main file must be .rar, .zip or .unitypackage', errorThumbnail: 'You must select a thumbnail', errorThumbnailUpload: 'Error uploading thumbnail', errorReferenceUpload: 'Error uploading gallery files', errorFileUpload: 'Error uploading main file', errorCreateResource: 'Failed to create resource', errorUnknown: 'Unknown error', errorCaptcha: 'Please complete the CAPTCHA', maxFiles: 'Max 8 files allowed', backupLinks: 'Backup Links (Optional)', backupLinksHint: 'One URL per line (Google Drive, Dropbox, etc.)' },
+        upload: { title: 'Upload Resource', name: 'Title', desc: 'Description', cat: 'Category', file: 'File', btn: 'Upload', success: 'Upload successful', thumbnail: 'Thumbnail', reference: 'Gallery (Images/Videos)', mainFile: 'Main File', preview: 'Preview', optional: 'Optional', required: '*', uploading: 'Uploading files...', uploadingThumbnail: 'Uploading thumbnail...', uploadingReference: 'Uploading gallery files...', uploadingFile: 'Uploading main file...', creating: 'Creating resource...', error: 'Error', fileTypes: 'RAR, ZIP or UnityPackage files only', imageVideo: 'Image or video for preview', imageVideoAdditional: 'Max 8 files (Images/Videos)', validFile: 'valid file', invalidFile: 'Invalid file', markdownPlaceholder: 'Write description using Markdown...', noContent: 'No content', resourceName: 'Resource name', errorMainFile: 'Main file must be .rar, .zip or .unitypackage', errorThumbnail: 'You must select a thumbnail', errorThumbnailUpload: 'Error uploading thumbnail', errorReferenceUpload: 'Error uploading gallery files', errorFileUpload: 'Error uploading main file', errorCreateResource: 'Failed to create resource', errorUnknown: 'Unknown error', errorCaptcha: 'Please complete the CAPTCHA', maxFiles: 'Max 8 files allowed', backupLinks: 'Backup Links (Optional)', backupLinksHint: 'One URL per line (Google Drive, Dropbox, etc.). Also can be the original link of the product.' },
         cats: { avatars: 'Avatars', worlds: 'Worlds', assets: 'Assets', clothes: 'Clothes', others: 'Others' }
     },
     ru: {
@@ -40,7 +40,7 @@ const translations = {
         item: { notFound: 'Ресурс не найден', category: 'Категория', uploaded: 'Загружено', uuid: 'UUID', description: 'Описание', downloads: 'Скачать', downloadMain: 'Скачать (R2 Main)', backup: 'Резерв', loginReq: 'Требуется вход', loginMsg: 'Вы должны войти, чтобы скачивать ресурсы.', goToLogin: 'Войти', comments: 'Комментарии', noComments: 'Комментариев пока нет.', postComment: 'Оставить комментарий', commentPlaceholder: 'Напишите ваш комментарий...', send: 'Отправить', loginToComment: 'Войдите, чтобы комментировать', underReview: 'Ожидает одобрения администратора', approve: 'Одобрить', reject: 'Отклонить', deactivate: 'Деактивировать', confirmDeactivate: 'Вы уверены, что хотите деактивировать этот ресурс?', confirmReject: 'Вы уверены, что хотите отклонить и удалить этот ресурс?', adminPanel: 'Панель администратора', pendingApproval: 'Этот ресурс ожидает одобрения.' },
         login: { title: 'Вход', username: 'Имя пользователя', password: 'Пароль', btn: 'Войти', hint: 'Подсказка: user / password', error: 'Неверные данные', register: 'Нет аккаунта? Регистрация', logout: 'Выйти', logoutConfirm: 'Вы уверены, что хотите выйти?' },
         register: { title: 'Регистрация', btn: 'Зарегистрироваться', loginLink: 'Уже есть аккаунт? Войти', success: 'Регистрация успешна. Войдите.' },
-        upload: { title: 'Загрузить Ресурс', name: 'Название', desc: 'Описание', cat: 'Категория', file: 'Файл', btn: 'Загрузить', success: 'Успешно загружено', thumbnail: 'Миниатюра', reference: 'Галерея (Изображения/Видео)', mainFile: 'Основной файл', preview: 'Предпросмотр', optional: 'Необязательно', required: '*', uploading: 'Загрузка файлов...', uploadingThumbnail: 'Загрузка миниатюры...', uploadingReference: 'Загрузка файлов галереи...', uploadingFile: 'Загрузка основного файла...', creating: 'Создание ресурса...', error: 'Ошибка', fileTypes: 'Только файлы RAR, ZIP или UnityPackage', imageVideo: 'Изображение или видео для предпросмотра', imageVideoAdditional: 'Макс. 8 файлов (Изображения/Видео)', validFile: 'действительный файл', invalidFile: 'Недопустимый файл', markdownPlaceholder: 'Написать описание используя Markdown...', noContent: 'Нет содержимого', resourceName: 'Название ресурса', errorMainFile: 'Основной файл должен быть .rar, .zip или .unitypackage', errorThumbnail: 'Вы должны выбрать миниатюру', errorThumbnailUpload: 'Ошибка загрузки миниатюры', errorReferenceUpload: 'Ошибка загрузки файлов галереи', errorFileUpload: 'Ошибка загрузки файла', errorCreateResource: 'Ошибка создания ресурса', errorUnknown: 'Неизвестная ошибка', errorCaptcha: 'Пожалуйста, пройдите CAPTCHA', maxFiles: 'Макс. 8 файлов разрешено', backupLinks: 'Резервные ссылки (Необязательно)', backupLinksHint: 'Одна ссылка в строке (Google Drive, Dropbox и т.д.)' },
+        upload: { title: 'Загрузить Ресурс', name: 'Название', desc: 'Описание', cat: 'Категория', file: 'Файл', btn: 'Загрузить', success: 'Успешно загружено', thumbnail: 'Миниатюра', reference: 'Галерея (Изображения/Видео)', mainFile: 'Основной файл', preview: 'Предпросмотр', optional: 'Необязательно', required: '*', uploading: 'Загрузка файлов...', uploadingThumbnail: 'Загрузка миниатюры...', uploadingReference: 'Загрузка файлов галереи...', uploadingFile: 'Загрузка основного файла...', creating: 'Создание ресурса...', error: 'Ошибка', fileTypes: 'Только файлы RAR, ZIP или UnityPackage', imageVideo: 'Изображение или видео для предпросмотра', imageVideoAdditional: 'Макс. 8 файлов (Изображения/Видео)', validFile: 'действительный файл', invalidFile: 'Недопустимый файл', markdownPlaceholder: 'Написать описание используя Markdown...', noContent: 'Нет содержимого', resourceName: 'Название ресурса', errorMainFile: 'Основной файл должен быть .rar, .zip или .unitypackage', errorThumbnail: 'Вы должны выбрать миниатюру', errorThumbnailUpload: 'Ошибка загрузки миниатюры', errorReferenceUpload: 'Ошибка загрузки файлов галереи', errorFileUpload: 'Ошибка загрузки файла', errorCreateResource: 'Ошибка создания ресурса', errorUnknown: 'Неизвестная ошибка', errorCaptcha: 'Пожалуйста, пройдите CAPTCHA', maxFiles: 'Макс. 8 файлов разрешено', backupLinks: 'Резервные ссылки (Необязательно)', backupLinksHint: 'Одна ссылка в строке (Google Drive, Dropbox и т.д.).' },
         cats: { avatars: 'Аватары', worlds: 'Миры', assets: 'Ассеты', clothes: 'Одежда', others: 'Другое' }
     },
     jp: {
@@ -700,8 +700,8 @@ class UploadView extends AbstractView {
                             <div class="form-group">
                                 <label><strong>SDK</strong></label>
                                 <select id="avatar-sdk" class="form-control">
-                                    <option value="3.0">3.0</option>
-                                    <option value="2.0" selected>2.0 (Default)</option>
+                                    <option value="3.0" selected>3.0 (Default)</option>
+                                    <option value="2.0">2.0</option>
                                 </select>
                             </div>
                         </div>
@@ -766,15 +766,20 @@ class UploadView extends AbstractView {
                         <div id="file-info" style="margin-top: 10px; color: #666;"></div>
                     </div>
 
+                    <div class="form-group">
+                        <label><strong>${t('upload.backupLinks')}</strong></label>
+                         <textarea id="backup-links" rows="3" placeholder="https://example.com/backup1&#10;https://example.com/backup2" style="width: 100%; font-family: monospace; resize: vertical;"></textarea>
+                         <small style="color: #666;">${t('upload.backupLinksHint')}</small>
+                    </div>
+
                     <div class="form-group" style="margin: 20px 0;">
                         <label><strong>CAPTCHA *</strong></label>
                         <div id="turnstile-container"></div>
                     </div>
 
-                    <div class="form-group">
-                        <label><strong>${t('upload.backupLinks')}</strong></label>
-                         <textarea id="backup-links" rows="3" placeholder="https://example.com/backup1&#10;https://example.com/backup2" style="width: 100%; font-family: monospace; resize: vertical;"></textarea>
-                         <small style="color: #666;">${t('upload.backupLinksHint')}</small>
+                    <div id="progress-container" style="display: none; margin-bottom: 20px;">
+                        <progress id="progress-bar" value="0" max="100" style="width: 100%;"></progress>
+                        <div id="progress-text" style="text-align: center; margin-top: 5px;">0%</div>
                     </div>
 
                     <div id="upload-error" style="color: red; margin-bottom: 10px;"></div>
@@ -795,6 +800,10 @@ class UploadView extends AbstractView {
         const referencePreview = document.getElementById('reference-preview');
         const fileInfo = document.getElementById('file-info');
         const uploadError = document.getElementById('upload-error');
+        const progressContainer = document.getElementById('progress-container');
+        const progressBar = document.getElementById('progress-bar');
+        const progressText = document.getElementById('progress-text');
+
         let turnstileToken = null;
         let turnstileWidgetId = null;
 
@@ -861,7 +870,6 @@ class UploadView extends AbstractView {
         });
 
         // Reference Image Preview
-        // Reference Image Preview
         referenceInput.addEventListener('change', (e) => {
             const files = Array.from(e.target.files);
             referencePreview.innerHTML = '';
@@ -908,6 +916,107 @@ class UploadView extends AbstractView {
             }
         });
 
+        // Helper: Upload with progress
+        const uploadFileWithProgress = (url, formData, onProgress) => {
+            return new Promise((resolve, reject) => {
+                const xhr = new XMLHttpRequest();
+                xhr.open('PUT', url);
+
+                if (onProgress) {
+                    xhr.upload.onprogress = (e) => {
+                        if (e.lengthComputable) {
+                            const percentComplete = (e.loaded / e.total) * 100;
+                            onProgress(percentComplete);
+                        }
+                    };
+                }
+
+                xhr.onload = () => {
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        try {
+                            resolve(JSON.parse(xhr.responseText));
+                        } catch (e) {
+                            reject(new Error('Invalid JSON response'));
+                        }
+                    } else {
+                        reject(new Error(`Upload failed with status ${xhr.status}`));
+                    }
+                };
+
+                xhr.onerror = () => reject(new Error('Network error during upload'));
+                xhr.send(formData);
+            });
+        };
+
+        // Helper: Upload Large File (Chunked)
+        const uploadLargeFile = async (file, mediaType, onProgress) => {
+            const CHUNK_SIZE = 50 * 1024 * 1024; // 50MB
+            const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+
+            // 1. Init
+            const initRes = await fetch('/api/upload/init', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ filename: file.name, media_type: mediaType })
+            });
+
+            if (!initRes.ok) throw new Error('Failed to initialize upload');
+            const { uploadId, key } = await initRes.json();
+
+            // 2. Upload Parts
+            const parts = [];
+            let loaded = 0;
+
+            for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
+                const start = chunkIndex * CHUNK_SIZE;
+                const end = Math.min(start + CHUNK_SIZE, file.size);
+                const chunk = file.slice(start, end);
+                const partNumber = chunkIndex + 1;
+
+                const partRes = await fetch('/api/upload/part', {
+                    method: 'PUT',
+                    headers: {
+                        'X-Upload-ID': uploadId,
+                        'X-Key': key,
+                        'X-Part-Number': partNumber.toString(),
+                        'Content-Type': 'application/octet-stream' // Important
+                    },
+                    body: chunk
+                });
+
+                if (!partRes.ok) throw new Error(`Failed to upload part ${partNumber}`);
+                const partData = await partRes.json();
+                parts.push(partData);
+
+                loaded += chunk.size;
+                const percent = (loaded / file.size) * 100;
+                onProgress(percent);
+            }
+
+            // 3. Complete
+            const completeRes = await fetch('/api/upload/complete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    uploadId,
+                    key,
+                    parts,
+                    filename: file.name,
+                    media_type: mediaType
+                })
+            });
+
+            if (!completeRes.ok) throw new Error('Failed to complete upload');
+            return await completeRes.json();
+        };
+
+        // Helper: Update Progress UI
+        const updateProgress = (text, percent) => {
+            progressContainer.style.display = 'block';
+            progressBar.value = percent;
+            progressText.innerText = `${text} (${Math.round(percent)}%)`;
+        };
+
         // Form Submit
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -916,6 +1025,20 @@ class UploadView extends AbstractView {
             btn.textContent = t('upload.uploading');
             btn.disabled = true;
             uploadError.textContent = '';
+
+            // Block navigation
+            const preventNav = (e) => {
+                e.preventDefault();
+                e.returnValue = '';
+            };
+            window.addEventListener('beforeunload', preventNav);
+
+            // Visual block for navbar
+            const nav = document.querySelector('nav');
+            if (nav) {
+                nav.style.pointerEvents = 'none';
+                nav.style.opacity = '0.5';
+            }
 
             const title = document.getElementById('title').value;
             let description = descriptionField.value; // Use let to allow modification
@@ -944,6 +1067,16 @@ class UploadView extends AbstractView {
             const thumbnail = thumbnailInput.files[0];
             const referenceFiles = referenceInput.files;
 
+            const resetState = () => {
+                window.removeEventListener('beforeunload', preventNav);
+                if (nav) {
+                    nav.style.pointerEvents = 'auto';
+                    nav.style.opacity = '1';
+                }
+                btn.textContent = originalText;
+                btn.disabled = false;
+            };
+
             // Validate main file
             const validExtensions = ['.rar', '.zip', '.unitypackage'];
             const fileName = file.name.toLowerCase();
@@ -951,52 +1084,42 @@ class UploadView extends AbstractView {
 
             if (!isValid) {
                 uploadError.textContent = `${t('upload.error')}: ${t('upload.errorMainFile')}`;
-                btn.textContent = originalText;
-                btn.disabled = false;
+                resetState();
                 return;
             }
 
             if (!thumbnail) {
                 uploadError.textContent = `${t('upload.error')}: ${t('upload.errorThumbnail')}`;
-                btn.textContent = originalText;
-                btn.disabled = false;
+                resetState();
                 return;
             }
 
             if (!turnstileToken) {
                 uploadError.textContent = `${t('upload.error')}: ${t('upload.errorCaptcha')}`;
-                btn.textContent = originalText;
-                btn.disabled = false;
+                resetState();
                 return;
             }
 
             try {
-                btn.textContent = t('upload.uploadingThumbnail');
-
                 // 1. Upload Thumbnail
                 const thumbnailFormData = new FormData();
                 thumbnailFormData.append('file', thumbnail);
                 thumbnailFormData.append('media_type', thumbnail.type.startsWith('video/') ? 'video' : 'image');
 
-                const thumbnailRes = await fetch('/api/upload', {
-                    method: 'PUT',
-                    body: thumbnailFormData
+                updateProgress(t('upload.uploadingThumbnail'), 0);
+                const thumbnailData = await uploadFileWithProgress('/api/upload', thumbnailFormData, (p) => {
+                    updateProgress(t('upload.uploadingThumbnail'), p);
                 });
-
-                if (!thumbnailRes.ok) throw new Error(t('upload.errorThumbnailUpload'));
-                const thumbnailData = await thumbnailRes.json();
 
                 // 2. Upload Reference Images (Gallery)
                 const galleryUuids = [];
                 if (referenceFiles.length > 0) {
                     if (referenceFiles.length > 8) {
                         alert(t('upload.maxFiles'));
-                        btn.textContent = originalText;
-                        btn.disabled = false;
+                        resetState();
+                        progressContainer.style.display = 'none';
                         return;
                     }
-
-                    btn.textContent = t('upload.uploadingReference');
 
                     for (let i = 0; i < referenceFiles.length; i++) {
                         const file = referenceFiles[i];
@@ -1004,33 +1127,36 @@ class UploadView extends AbstractView {
                         formData.append('file', file);
                         formData.append('media_type', file.type.startsWith('video/') ? 'video' : 'image');
 
-                        const res = await fetch('/api/upload', {
-                            method: 'PUT',
-                            body: formData
+                        updateProgress(`${t('upload.uploadingReference')} (${i + 1}/${referenceFiles.length})`, 0);
+                        const data = await uploadFileWithProgress('/api/upload', formData, (p) => {
+                            updateProgress(`${t('upload.uploadingReference')} (${i + 1}/${referenceFiles.length})`, p);
                         });
-
-                        if (!res.ok) throw new Error(t('upload.errorReferenceUpload'));
-                        const data = await res.json();
                         galleryUuids.push(data.media_uuid);
                     }
                 }
 
                 // 3. Upload Main File
-                btn.textContent = t('upload.uploadingFile');
                 const fileFormData = new FormData();
                 fileFormData.append('file', file);
                 fileFormData.append('media_type', 'file');
 
-                const fileRes = await fetch('/api/upload', {
-                    method: 'PUT',
-                    body: fileFormData
-                });
+                updateProgress(t('upload.uploadingFile'), 0);
 
-                if (!fileRes.ok) throw new Error(t('upload.errorFileUpload'));
-                const fileData = await fileRes.json();
+                let fileData;
+                if (file.size > 90 * 1024 * 1024) {
+                    // Use Chunked Upload for > 90MB
+                    fileData = await uploadLargeFile(file, 'file', (p) => {
+                        updateProgress(t('upload.uploadingFile'), p);
+                    });
+                } else {
+                    // Standard Upload
+                    fileData = await uploadFileWithProgress('/api/upload', fileFormData, (p) => {
+                        updateProgress(t('upload.uploadingFile'), p);
+                    });
+                }
 
                 // 4. Create Resource
-                btn.textContent = t('upload.creating');
+                updateProgress(t('upload.creating'), 100);
                 const resourceBody = {
                     title,
                     description,
@@ -1073,22 +1199,21 @@ class UploadView extends AbstractView {
 
                 if (res.ok) {
                     const data = await res.json();
+                    window.removeEventListener('beforeunload', preventNav); // Allow navigation
+                    if (nav) {
+                        nav.style.pointerEvents = 'auto';
+                        nav.style.opacity = '1';
+                    }
                     navigateTo('/item/' + data.uuid);
                 } else {
                     const err = await res.json();
-                    uploadError.textContent = `${t('upload.error')}: ${err.error || t('upload.errorCreateResource')}`;
-                    btn.textContent = originalText;
-                    btn.disabled = false;
-                    if (window.turnstile && turnstileWidgetId) {
-                        window.turnstile.reset(turnstileWidgetId);
-                        turnstileToken = null;
-                    }
+                    throw new Error(err.error || t('upload.errorCreateResource'));
                 }
             } catch (err) {
                 console.error(err);
                 uploadError.textContent = `${t('upload.error')}: ${err.message}`;
-                btn.textContent = originalText;
-                btn.disabled = false;
+                progressContainer.style.display = 'none';
+                resetState();
                 if (window.turnstile && turnstileWidgetId) {
                     window.turnstile.reset(turnstileWidgetId);
                     turnstileToken = null;
