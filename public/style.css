@@ -285,6 +285,69 @@ hr {
     color: #e67e22;
 }
 
+/* --- Item View Styles --- */
+.download-list {
+    list-style: none;
+    padding: 0;
+}
+
+.download-list li {
+    margin-bottom: 10px;
+}
+
+.download-link {
+    display: inline-block;
+    padding: 10px 15px;
+    background: #333;
+    color: #fff;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.download-link:hover {
+    background: #555;
+    color: #fff;
+}
+
+.comment {
+    border: 2px solid #333;
+    padding: 15px;
+    margin-bottom: 15px;
+    background: #fff;
+    box-shadow: 4px 4px 0px rgba(0,0,0,0.1);
+}
+
+.comment-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+}
+
+.comment-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-right: 15px;
+    object-fit: cover;
+    border: 2px solid #333;
+}
+
+.btn-sm {
+    padding: 2px 8px;
+    font-size: 0.8rem;
+    margin-left: auto;
+}
+
+.btn-danger {
+    background: #dc3545;
+}
+.btn-danger:hover {
+    background: #c82333;
+}
+
+
 @media (max-width: 768px) {
 
     /* Layout */

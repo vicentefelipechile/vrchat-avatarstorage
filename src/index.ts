@@ -906,9 +906,6 @@ app.get('/item/:uuid', async (c) => {
 	const uuid = c.req.param('uuid');
 	if (!uuid) return c.json({ error: 'UUID is required' }, 400);
 
-	const cached = await c.env.VRCSTORAGE_KV.get(`og:${uuid}`);
-	if (cached) return c.html(cached);
-
 	try {
 		const resource = await c.env.DB.prepare('SELECT * FROM resources WHERE uuid = ?').bind(uuid).first<Resource>();
 
@@ -933,8 +930,6 @@ app.get('/item/:uuid', async (c) => {
 			html = html.replace(/<meta property="og:image" content="[^"]*">/, `<meta property="og:image" content="${imageUrl}">`);
 			html = html.replace(/<title>[^<]*<\/title>/, `<title>${title} - VRCStorage</title>`);
 
-			c.env.VRCSTORAGE_KV.put(`og:${uuid}`, html);
-
 			return c.html(html);
 		}
 	} catch (e) {
@@ -950,8 +945,11 @@ app.get('/item/:uuid', async (c) => {
 // =========================================================================================================
 
 app.get('/*', async (c) => {
-	return c.env.ASSETS.fetch(new URL('/index.html', c.req.url));
+	const asset = await c.env.ASSETS.fetch(c.req.raw);
+	if (asset.status === 404) {
+		return c.env.ASSETS.fetch(new URL('/index.html', c.req.url));
+	}
+	return asset;
 });
-
 
 export default app;

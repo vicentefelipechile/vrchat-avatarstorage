@@ -14,8 +14,12 @@
 	<meta property="og:type" content="website">
 	<meta name="theme-color" content="#2b2d31">
 	<link rel="stylesheet" href="/style.css">
+	<div id="turnstile-widget" style="display: none;"></div>
 	<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+
+	<!-- Marked for Markdown rendering (Global for now, simpler) -->
 	<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
 </head>
 
 <body>
@@ -54,7 +58,7 @@
 		<p>&copy; 2026 VRChat Avatar Storage - Grayscale Edition</p>
 	</footer>
 
-	<script src="/app.js"></script>
+	<script type="module" src="/js/app.js"></script>
 </body>
 
 </html>
