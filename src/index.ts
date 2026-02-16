@@ -18,6 +18,7 @@ import {
 	User,
 	Media,
 	ResourceLink,
+	MediaType,
 } from './types';
 import { z } from 'zod';
 import { RegisterSchema, LoginSchema, ResourceSchema, CommentSchema, UserUpdateSchema } from './validators';
@@ -421,6 +422,82 @@ app.post('/api/logout', (c) => {
 // Resource Routes
 // =========================================================================================================
 
+interface ValidFileType {
+	isValidFile: boolean;
+	mediaType: MediaType | 'unknown';
+	mediaName: string | 'unknown';
+}
+
+/**
+ * File type signatures (Magic Bytes)
+ * 
+ * Magic bytes are unique byte sequences at the beginning of files that identify their format.
+ * These signatures are defined by file format specifications and are more reliable than file extensions.
+ * 
+ * References:
+ * - Wikipedia: List of file signatures - https://en.wikipedia.org/wiki/List_of_file_signatures
+ * - Gary Kessler's File Signatures Table - https://www.garykessler.net/library/file_sigs.html
+ * - RFC specifications for various formats
+ * 
+ * Format: { signature: string, mediaType: string, name: string, customValidator?: function }
+ */
+type FileSignature = {
+	signature: string;
+	mediaType: MediaType;
+	name: string;
+	customValidator?: (buffer: ArrayBuffer) => boolean;
+};
+
+const FILE_SIGNATURES: FileSignature[] = [
+	// Images
+	{ signature: '89504E47', mediaType: 'image', name: 'PNG' },
+	{ signature: 'FFD8FF', mediaType: 'image', name: 'JPEG' },
+	{ signature: '47494638', mediaType: 'image', name: 'GIF' },
+
+	// WEBP requires additional validation (RIFF container check)
+	{
+		signature: '52494646',
+		mediaType: 'image',
+		name: 'WEBP',
+		customValidator: (buffer: ArrayBuffer) => {
+			const webpMarker = [...new Uint8Array(buffer).slice(8, 12)]
+				.map(b => String.fromCharCode(b))
+				.join('');
+			return webpMarker === 'WEBP';
+		}
+	},
+
+	// Videos
+	{ signature: '0000001866747970', mediaType: 'video', name: 'MP4' },
+	{ signature: '1A45DF', mediaType: 'video', name: 'WEBM' },
+
+	// Archives / Unity Packages
+	{ signature: '504B0304', mediaType: 'file', name: 'ZIP' },
+	{ signature: '1F8B', mediaType: 'file', name: 'GZIP' },
+	{ signature: '377ABCAF271C', mediaType: 'file', name: '7Z' },
+	{ signature: '52617221', mediaType: 'file', name: 'RAR' },
+] as const;
+
+async function isValidFileType(file: File): Promise<ValidFileType> {
+	const buffer = await file.arrayBuffer();
+	const bytes = new Uint8Array(buffer).slice(0, 8); // Read 8 bytes for longer signatures
+	const hex = [...bytes].map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
+
+	// Check each signature
+	for (const sig of FILE_SIGNATURES) {
+		if (hex.startsWith(sig.signature)) {
+			// If there's a custom validator, run it
+			if (sig.customValidator && !sig.customValidator(buffer)) {
+				continue;
+			}
+
+			return { isValidFile: true, mediaType: sig.mediaType, mediaName: sig.name };
+		}
+	}
+
+	return { isValidFile: false, mediaType: 'unknown', mediaName: 'unknown' };
+}
+
 /**
  * Endpoint: /api/resources
  * Sube un nuevo recurso.
@@ -492,6 +569,8 @@ app.post('/api/resources', async (c) => {
  * Endpoint: /api/upload
  * Sube un nuevo archivo y crea un registro en la tabla media.
  */
+const MAX_FILE_SIZE = 100 * 1024 * 1024;
+
 app.put('/api/upload', async (c) => {
 	const user = await getAuthUser(c);
 	if (!user) return c.json({ error: 'Unauthorized' }, 401);
@@ -501,34 +580,13 @@ app.put('/api/upload', async (c) => {
 	const mediaType = formData['media_type'] as string || 'file';
 	if (file instanceof File) {
 		// Validate File Size (e.g., 100MB max)
-		if (file.size > 100 * 1024 * 1024) {
+		if (file.size > MAX_FILE_SIZE) {
 			return c.json({ error: 'File too large (max 100MB)' }, 400);
 		}
 
 		// Validate Magic Bytes
-		const buffer = await file.arrayBuffer();
-		const bytes = new Uint8Array(buffer).slice(0, 4);
-		const hex = [...bytes].map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
-
-		let isValidType = false;
-		// PNG
-		if (hex.startsWith('89504E47')) isValidType = true;
-		// JPEG
-		if (hex.startsWith('FFD8FF')) isValidType = true;
-		// WEBP
-		if (hex.startsWith('52494646') && [...new Uint8Array(buffer).slice(8, 12)].map(b => String.fromCharCode(b)).join('') === 'WEBP') isValidType = true;
-		// GIF
-		if (hex.startsWith('47494638')) isValidType = true;
-		// ZIP / UnityPackage (Standard Zip)
-		if (hex.startsWith('504B0304')) isValidType = true;
-		// UnityPackage (GZIP/Tar.gz)
-		if (hex.startsWith('1F8B')) isValidType = true;
-		// 7z
-		if (hex.startsWith('377ABCAF271C')) isValidType = true;
-		// RAR
-		if (hex.startsWith('52617221')) isValidType = true;
-
-		if (!isValidType) {
+		const validation = await isValidFileType(file);
+		if (!validation.isValidFile) {
 			return c.json({ error: 'Invalid file type. Only images and Unity Packages/Zips are allowed.' }, 400);
 		}
 
@@ -897,6 +955,107 @@ app.post('/api/admin/resource/:uuid/deactivate', async (c) => {
 	}
 });
 
+/**
+ * Endpoint: /api/admin/stats/orphaned-media
+ * Muestra estadísticas de archivos huérfanos sin eliminarlos
+ */
+app.get('/api/admin/stats/orphaned-media', async (c) => {
+	const user = await getAuthUser(c);
+	if (!user) return c.json({ error: 'Unauthorized' }, 401);
+	if (!user.is_admin) return c.json({ error: 'Forbidden' }, 403);
+
+	const TWENTY_FOUR_HOURS = 24 * 60 * 60;
+	const cutoffTime = Math.floor(Date.now() / 1000) - TWENTY_FOUR_HOURS;
+
+	try {
+		// Contar archivos huérfanos
+		const orphanedMedia = await c.env.DB.prepare(`
+			SELECT m.uuid, m.r2_key, m.file_name, m.media_type, m.created_at
+			FROM media m
+			WHERE m.created_at < ?
+			AND m.uuid NOT IN (
+				SELECT thumbnail_uuid FROM resources WHERE thumbnail_uuid IS NOT NULL
+				UNION
+				SELECT reference_image_uuid FROM resources WHERE reference_image_uuid IS NOT NULL
+				UNION
+				SELECT media_uuid FROM resource_n_media
+			)
+		`).bind(cutoffTime).all<Media>();
+
+		// Estadísticas generales
+		const totalMedia = await c.env.DB.prepare('SELECT COUNT(*) as count FROM media').first<{ count: number }>();
+		const totalResources = await c.env.DB.prepare('SELECT COUNT(*) as count FROM resources').first<{ count: number }>();
+
+		return c.json({
+			orphaned_count: orphanedMedia.results.length,
+			orphaned_files: orphanedMedia.results.map(m => ({
+				uuid: m.uuid,
+				filename: m.file_name,
+				type: m.media_type,
+				age_hours: Math.floor((Date.now() / 1000 - m.created_at) / 3600)
+			})),
+			total_media: totalMedia?.count || 0,
+			total_resources: totalResources?.count || 0,
+			cutoff_hours: 24
+		});
+	} catch (e) {
+		console.error('Stats error:', e);
+		return c.json({ error: 'Failed to get stats' }, 500);
+	}
+});
+
+/**
+ * Endpoint: /api/admin/cleanup/orphaned-media
+ * Limpia archivos media que no están asociados a ningún recurso
+ * y tienen más de 24 horas de antigüedad
+ */
+app.post('/api/admin/cleanup/orphaned-media', async (c) => {
+	const user = await getAuthUser(c);
+	if (!user) return c.json({ error: 'Unauthorized' }, 401);
+	if (!user.is_admin) return c.json({ error: 'Forbidden' }, 403);
+
+	const TWENTY_FOUR_HOURS = 24 * 60 * 60; // en segundos
+	const cutoffTime = Math.floor(Date.now() / 1000) - TWENTY_FOUR_HOURS;
+
+	try {
+		// Encontrar media huérfanos (no asociados a recursos)
+		const orphanedMedia = await c.env.DB.prepare(`
+			SELECT m.uuid, m.r2_key 
+			FROM media m
+			WHERE m.created_at < ?
+			AND m.uuid NOT IN (
+				SELECT thumbnail_uuid FROM resources WHERE thumbnail_uuid IS NOT NULL
+				UNION
+				SELECT reference_image_uuid FROM resources WHERE reference_image_uuid IS NOT NULL
+				UNION
+				SELECT media_uuid FROM resource_n_media
+			)
+		`).bind(cutoffTime).all<Media>();
+
+		let deletedCount = 0;
+
+		for (const media of orphanedMedia.results) {
+			// Eliminar de R2
+			await c.env.BUCKET.delete(media.r2_key);
+
+			// Eliminar de DB
+			await c.env.DB.prepare('DELETE FROM media WHERE uuid = ?')
+				.bind(media.uuid).run();
+
+			deletedCount++;
+		}
+
+		return c.json({
+			success: true,
+			deleted: deletedCount,
+			message: `Cleaned up ${deletedCount} orphaned files`
+		});
+	} catch (e) {
+		console.error('Cleanup error:', e);
+		return c.json({ error: 'Cleanup failed' }, 500);
+	}
+});
+
 
 // =========================================================================================================
 // SEO / OG Tags Route
@@ -948,6 +1107,7 @@ app.get('/item/:uuid', async (c) => {
 // Serve Static Files (SPA Fallback)
 // =========================================================================================================
 
+
 app.get('/*', async (c) => {
 	const asset = await c.env.ASSETS.fetch(c.req.raw);
 	if (asset.status === 404) {
@@ -956,4 +1116,53 @@ app.get('/*', async (c) => {
 	return asset;
 });
 
-export default app;
+// =========================================================================================================
+// Scheduled Tasks (Cron Jobs)
+// =========================================================================================================
+
+/**
+ * Scheduled task: Daily cleanup of orphaned media files
+ * Runs every day at 3 AM UTC
+ */
+async function cleanupOrphanedMedia(env: Env) {
+	const TWENTY_FOUR_HOURS = 24 * 60 * 60;
+	const cutoffTime = Math.floor(Date.now() / 1000) - TWENTY_FOUR_HOURS;
+
+	try {
+		const orphanedMedia = await env.DB.prepare(`
+			SELECT m.uuid, m.r2_key 
+			FROM media m
+			WHERE m.created_at < ?
+			AND m.uuid NOT IN (
+				SELECT thumbnail_uuid FROM resources WHERE thumbnail_uuid IS NOT NULL
+				UNION
+				SELECT reference_image_uuid FROM resources WHERE reference_image_uuid IS NOT NULL
+				UNION
+				SELECT media_uuid FROM resource_n_media
+			)
+		`).bind(cutoffTime).all<Media>();
+
+		let deletedCount = 0;
+
+		for (const media of orphanedMedia.results) {
+			await env.BUCKET.delete(media.r2_key);
+			await env.DB.prepare('DELETE FROM media WHERE uuid = ?')
+				.bind(media.uuid).run();
+			deletedCount++;
+		}
+
+		console.log(`[CRON] Cleanup completed: ${deletedCount} orphaned files deleted`);
+		return deletedCount;
+	} catch (e) {
+		console.error('[CRON] Cleanup error:', e);
+		return 0;
+	}
+}
+
+export default {
+	fetch: app.fetch,
+	scheduled: async (event: ScheduledEvent, env: Env, ctx: ExecutionContext) => {
+		console.log('[CRON] Running scheduled cleanup task');
+		ctx.waitUntil(cleanupOrphanedMedia(env));
+	}
+};

@@ -99,14 +99,17 @@ export default class ItemView extends AbstractView {
 
         return `
             <div class="details-box">
-                <h1>${res.title}<span style="float: right; font-size: 0.6em; color: #666;">${date}</span></h1>
+                <h1>${res.title}</h1>
                 <div class="meta" style="margin-bottom: 20px;">
                     <strong>${t('item.category')}:</strong> <a href="/category/${res.category}" data-link>${category}</a> | 
+                    <strong>${t('item.uploaded')}:</strong> ${date} | 
                     <strong>${t('item.uuid')}:</strong> ${res.uuid}
                 </div>
-                
+                <hr>
+                <h3>${t('upload.reference')}</h3>
                 ${galleryHtml}
-
+                <hr>
+                <h3>${t('upload.desc')}</h3>
                 <div class="description markdown-body" style="margin: 20px 0; padding: 15px; background: #fafafa; border: 1px solid #eee;">
                     ${descriptionHtml}
                 </div>
@@ -129,7 +132,7 @@ export default class ItemView extends AbstractView {
             // Pending
             buttons = `
                 <hr>
-                <div style="background: #fff3cd; color: #856404; padding: 15px; border-radius: 5px; border: 1px solid #ffeeba; margin-top: 10px; margin-bottom: 20px;">
+                <div style="background: #fff3cd; color: #856404; padding: 15px; border: 2px solid #ffeeba; margin-top: 10px; margin-bottom: 20px;">
                     <h3>${t('item.adminPanel')}</h3>
                     <p>${t('item.pendingApproval')}</p>
                     <button class="btn" style="background-color: #28a745;" id="btn-approve-${res.uuid}">${t('item.approve')}</button>
@@ -139,7 +142,7 @@ export default class ItemView extends AbstractView {
         } else {
             // Active
             buttons = `
-                <div style="background: #d1ecf1; color: #0c5460; padding: 15px; border-radius: 5px; border: 1px solid #bee5eb; margin-top: 10px; margin-bottom: 20px;">
+                <div style="background: #d1ecf1; color: #0c5460; padding: 15px; border: 2px solid #bee5eb; margin-top: 10px; margin-bottom: 20px;">
                     <h3>${t('item.adminPanel')}</h3>
                     <button class="btn" style="background-color: #ffc107; color: black;" id="btn-deactivate-${res.uuid}">${t('item.deactivate')}</button>
                 </div>
@@ -196,36 +199,51 @@ export default class ItemView extends AbstractView {
             renderTurnstile('#turnstile-comment');
             form.addEventListener('submit', async e => {
                 e.preventDefault();
+
+                const submitBtn = form.querySelector('button[type="submit"]');
+                const originalText = submitBtn.textContent;
                 const text = document.getElementById('comment-text').value;
 
-                // Get Turnstile Token
-                const formData = new FormData(form);
-                const token = formData.get('cf-turnstile-response');
+                // Disable button and show loading state
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Enviando...';
+                submitBtn.style.opacity = '0.6';
 
-                const res = await fetch(`/api/comments/${uuid}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ text, author: 'user', token })
-                });
+                try {
+                    // Get Turnstile Token
+                    const formData = new FormData(form);
+                    const token = formData.get('cf-turnstile-response');
 
-                if (res.ok) {
-                    // Clear form
-                    document.getElementById('comment-text').value = '';
-                    if (window.turnstile) window.turnstile.reset();
+                    const res = await fetch(`/api/comments/${uuid}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ text, author: 'user', token })
+                    });
 
-                    // Refresh comments - Bypass cache to show new comment immediately
-                    const comments = await fetch(`/api/comments/${uuid}`).then(res => res.json());
-                    // Update cache
-                    DataCache.cache.set(`/api/comments/${uuid}`, { data: comments, timestamp: Date.now() });
-                    const isAdmin = window.appState && window.appState.isAdmin;
-                    commentsContainer.innerHTML = this.renderComments(comments, isAdmin);
-                } else {
-                    const data = await res.json();
-                    let msg = data.error || 'Unknown';
-                    if (data.details && Array.isArray(data.details)) {
-                        msg += ': ' + data.details.map(d => d.message).join(', ');
+                    if (res.ok) {
+                        // Clear form
+                        document.getElementById('comment-text').value = '';
+                        if (window.turnstile) window.turnstile.reset();
+
+                        // Refresh comments - Bypass cache to show new comment immediately
+                        const comments = await fetch(`/api/comments/${uuid}`).then(res => res.json());
+                        // Update cache
+                        DataCache.cache.set(`/api/comments/${uuid}`, { data: comments, timestamp: Date.now() });
+                        const isAdmin = window.appState && window.appState.isAdmin;
+                        commentsContainer.innerHTML = this.renderComments(comments, isAdmin);
+                    } else {
+                        const data = await res.json();
+                        let msg = data.error || 'Unknown';
+                        if (data.details && Array.isArray(data.details)) {
+                            msg += ': ' + data.details.map(d => d.message).join(', ');
+                        }
+                        alert('Error: ' + msg);
                     }
-                    alert('Error: ' + msg);
+                } finally {
+                    // Re-enable button and restore original text
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = originalText;
+                    submitBtn.style.opacity = '1';
                 }
             });
         }

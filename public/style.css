@@ -68,6 +68,70 @@ nav .container {
     background-color: #fff;
 }
 
+/* User Menu Dropdown */
+.user-menu {
+    position: relative;
+    display: inline-block;
+    margin-left: 20px;
+}
+
+.user-menu-btn {
+    background: #bbb;
+    border: 1px solid transparent;
+    padding: 5px 10px;
+    font-family: inherit;
+    font-weight: bold;
+    cursor: pointer;
+    color: #000;
+    border: 2px solid #000;
+}
+
+.user-menu-btn:hover {
+    border: 2px solid #333;
+    background-color: #fff;
+}
+
+.user-menu-dropdown {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 100%;
+    background-color: #ddd;
+    border: 2px solid #333;
+    min-width: 150px;
+    z-index: 1000;
+    margin-top: 5px;
+}
+
+.user-menu-dropdown.active {
+    display: block;
+}
+
+.user-menu-dropdown a {
+    display: block;
+    padding: 10px 15px;
+    text-decoration: none;
+    font-weight: bold;
+    border: none;
+    border-bottom: 1px solid #000;
+}
+
+.user-menu-dropdown a:last-child {
+    border-bottom: none;
+}
+
+.user-menu-dropdown a:hover {
+    background-color: #fff;
+    border: none;
+    border-bottom: 1px solid #000;
+}
+
+.user-menu-dropdown a:last-child:hover {
+    background-color: #fff;
+    border: none;
+    border-bottom: none;
+}
+
 /* Cards (Grid) */
 .grid {
     display: grid;
@@ -314,7 +378,7 @@ hr {
     padding: 15px;
     margin-bottom: 15px;
     background: #fff;
-    box-shadow: 4px 4px 0px rgba(0,0,0,0.1);
+    box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.1);
 }
 
 .comment-header {
@@ -343,6 +407,7 @@ hr {
 .btn-danger {
     background: #dc3545;
 }
+
 .btn-danger:hover {
     background: #c82333;
 }
@@ -388,6 +453,27 @@ hr {
         width: 100%;
         margin: 0 !important;
         /* Override potential margins */
+        text-align: center;
+    }
+
+    /* User Menu Mobile */
+    .user-menu {
+        width: 100%;
+        margin: 0 !important;
+    }
+
+    .user-menu-btn {
+        width: 100%;
+        text-align: center;
+    }
+
+    .user-menu-dropdown {
+        position: static;
+        width: 100%;
+        margin-top: 0;
+    }
+
+    .user-menu-dropdown a {
         text-align: center;
     }
 

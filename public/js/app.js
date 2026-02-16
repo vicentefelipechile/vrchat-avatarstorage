@@ -26,23 +26,28 @@ export async function updateNav() {
 
     const { isLoggedIn, isAdmin } = window.appState;
 
+    // Show/hide user menu dropdown vs login link
+    const userMenu = document.querySelector('.user-menu');
+    const loginLink = document.querySelector('.login-link');
+
+    if (userMenu && loginLink) {
+        if (isLoggedIn) {
+            userMenu.style.display = 'inline-block';
+            loginLink.style.display = 'none';
+        } else {
+            userMenu.style.display = 'none';
+            loginLink.style.display = 'inline-block';
+        }
+    }
+
     document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.getAttribute('data-i18n');
 
-        // Dynamic Login/Logout
-        if (key === 'nav.login') {
-            el.textContent = isLoggedIn ? t('nav.settings') : t('nav.login');
-            el.setAttribute('href', isLoggedIn ? '/settings' : '/login');
-        } else if (key === 'nav.upload') {
-            if (isLoggedIn) {
-                el.style.display = 'inline-block';
-                el.textContent = t('nav.upload');
-            } else {
-                el.style.display = 'none';
-            }
-        } else if (key === 'nav.admin') {
+        // Update text content for all i18n elements
+        if (key === 'nav.admin') {
+            // Admin link in dropdown - show/hide based on admin status
             if (isAdmin) {
-                el.style.display = 'inline-block';
+                el.style.display = 'block';
                 el.textContent = t('nav.admin');
             } else {
                 el.style.display = 'none';
@@ -55,6 +60,10 @@ export async function updateNav() {
     // Mobile menu logic can stay or be re-run here if it depends on dynamic content
     const navLinks = document.querySelector('.nav-links');
     if (navLinks) navLinks.classList.remove('active');
+
+    // Close user menu dropdown
+    const userMenuDropdown = document.getElementById('user-menu-dropdown');
+    if (userMenuDropdown) userMenuDropdown.classList.remove('active');
 }
 
 // Ensure nav updates on route change
@@ -69,6 +78,48 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (menuBtn && navLinks) {
         menuBtn.addEventListener('click', () => {
             navLinks.classList.toggle('active');
+        });
+    }
+
+    // User Menu Dropdown Toggle
+    const userMenuBtn = document.getElementById('user-menu-btn');
+    const userMenuDropdown = document.getElementById('user-menu-dropdown');
+    if (userMenuBtn && userMenuDropdown) {
+        userMenuBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            userMenuDropdown.classList.toggle('active');
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.user-menu')) {
+                userMenuDropdown.classList.remove('active');
+            }
+        });
+    }
+
+    // Logout Button
+    const logoutBtn = document.getElementById('logout-btn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            if (confirm(t('login.logoutConfirm'))) {
+                try {
+                    await fetch('/api/logout', { method: 'POST' });
+                    // Clear auth cache
+                    DataCache.clear('/api/auth/status');
+                    // Update app state
+                    window.appState.isLoggedIn = false;
+                    window.appState.isAdmin = false;
+                    window.appState.user = null;
+                    // Update navigation UI immediately
+                    await updateNav();
+                    // Redirect to login
+                    navigateTo('/login');
+                } catch (err) {
+                    console.error('Logout failed', err);
+                }
+            }
         });
     }
 

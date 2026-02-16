@@ -33,28 +33,12 @@ export default class SettingsView extends AbstractView {
 
                     <button type="submit" class="btn" style="width: 100%; margin-bottom: 20px;">${t('settings.save')}</button>
                 </form>
-
-                <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
-
-                <div style="text-align: center;">
-                    <button id="logout-btn" class="btn" style="background-color: #dc3545;">${t('settings.logout')}</button>
-                </div>
             </div>
         `;
     }
 
     async postRender() {
         renderTurnstile('#turnstile-settings');
-
-        // Logout Handler
-        document.getElementById('logout-btn').addEventListener('click', async () => {
-            if (confirm(t('login.logoutConfirm'))) {
-                const res = await fetch('/api/logout', { method: 'POST' });
-                if (res.ok) {
-                    window.location.href = '/';
-                }
-            }
-        });
 
         // Settings Form Handler
         const form = document.getElementById('settings-form');

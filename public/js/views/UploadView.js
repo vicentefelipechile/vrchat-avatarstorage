@@ -81,20 +81,18 @@ export default class UploadView extends AbstractView {
                         </div>
                     </div>
 
-                    <div class="upload-grid" style="margin-bottom: 20px;">
-                        <div class="form-group">
-                            <label><strong>${t('upload.thumbnail')} ${t('upload.required')}</strong></label>
-                            <input type="file" id="thumbnail" accept="image/png,image/jpg,image/jpeg" required>
-                            <small style="color: #666;">${t('upload.imageVideo')}</small>
-                            <div id="thumbnail-preview" style="margin-top: 10px;"></div>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label><strong>${t('upload.reference')} (${t('upload.optional')})</strong></label>
-                            <input type="file" id="reference-image" accept="image/png,image/jpg,image/jpeg,video/mp4,video/webm" multiple>
-                            <small style="color: #666;">${t('upload.imageVideoAdditional')}</small>
-                            <div id="reference-preview" style="margin-top: 10px;"></div>
-                        </div>
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label><strong>${t('upload.thumbnail')} ${t('upload.required')}</strong></label>
+                        <input type="file" id="thumbnail" accept="image/png,image/jpg,image/jpeg,image/webp,image/gif" required>
+                        <small style="color: #666;">${t('upload.imageVideo')}</small>
+                        <div id="thumbnail-preview" style="margin-top: 10px;"></div>
+                    </div>
+                    
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label><strong>${t('upload.reference')} (${t('upload.optional')})</strong></label>
+                        <input type="file" id="reference-image" accept="image/png,image/jpg,image/jpeg,image/webp,image/gif,video/mp4,video/webm" multiple>
+                        <small style="color: #666;">${t('upload.imageVideoAdditional')}</small>
+                        <div id="reference-preview" style="margin-top: 10px;"></div>
                     </div>
 
                     <div class="form-group">
@@ -203,39 +201,102 @@ export default class UploadView extends AbstractView {
             if (file) {
                 const isVideo = file.type.startsWith('video/');
                 const url = URL.createObjectURL(file);
-                if (isVideo) {
-                    thumbnailPreview.innerHTML = `<video src="${url}" style="max-width: 200px; max-height: 200px;" controls></video>`;
-                } else {
-                    thumbnailPreview.innerHTML = `<img src="${url}" style="max-width: 200px; max-height: 200px;">`;
-                }
+
+                const container = document.createElement('div');
+                container.className = 'preview-item';
+                container.style.cssText = 'display: inline-block; position: relative; border: 2px solid #333; padding: 10px; margin: 5px; background: #fff;';
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.innerHTML = '✕';
+                deleteBtn.className = 'preview-delete-btn';
+                deleteBtn.style.cssText = 'position: absolute; top: 5px; right: 5px; background: #dc3545; color: white; border: none; border-radius: 3px; width: 25px; height: 25px; cursor: pointer; font-weight: bold; z-index: 10;';
+                deleteBtn.onclick = (e) => {
+                    e.preventDefault();
+                    thumbnailInput.value = '';
+                    thumbnailPreview.innerHTML = '';
+                    URL.revokeObjectURL(url);
+                };
+
+                const mediaElement = document.createElement(isVideo ? 'video' : 'img');
+                mediaElement.src = url;
+                mediaElement.style.cssText = 'max-width: 200px; max-height: 200px; display: block;';
+                if (isVideo) mediaElement.controls = true;
+
+                const filename = document.createElement('div');
+                filename.textContent = file.name;
+                filename.style.cssText = 'margin-top: 5px; font-size: 12px; color: #666; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;';
+
+                container.appendChild(deleteBtn);
+                container.appendChild(mediaElement);
+                container.appendChild(filename);
+
+                thumbnailPreview.innerHTML = '';
+                thumbnailPreview.appendChild(container);
             }
         });
 
-        // Reference Image Preview
+        // Reference Image Preview with File Management
+        let selectedReferenceFiles = [];
+
+        const renderReferencePreview = () => {
+            referencePreview.innerHTML = '';
+
+            selectedReferenceFiles.forEach((file, index) => {
+                const isVideo = file.type.startsWith('video/');
+                const url = URL.createObjectURL(file);
+
+                const container = document.createElement('div');
+                container.className = 'preview-item';
+                container.style.cssText = 'display: inline-block; position: relative; border: 2px solid #333; padding: 10px; margin: 5px; background: #fff; vertical-align: top;';
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.innerHTML = '✕';
+                deleteBtn.className = 'preview-delete-btn';
+                deleteBtn.style.cssText = 'position: absolute; top: 5px; right: 5px; background: #dc3545; color: white; border: none; border-radius: 3px; width: 25px; height: 25px; cursor: pointer; font-weight: bold; z-index: 10;';
+                deleteBtn.onclick = (e) => {
+                    e.preventDefault();
+                    // Remove file from array
+                    selectedReferenceFiles.splice(index, 1);
+
+                    // Update input with remaining files using DataTransfer
+                    const dt = new DataTransfer();
+                    selectedReferenceFiles.forEach(f => dt.items.add(f));
+                    referenceInput.files = dt.files;
+
+                    // Re-render previews
+                    renderReferencePreview();
+                };
+
+                const mediaElement = document.createElement(isVideo ? 'video' : 'img');
+                mediaElement.src = url;
+                mediaElement.style.cssText = 'max-width: 200px; max-height: 200px; object-fit: cover; display: block;';
+                if (isVideo) mediaElement.controls = true;
+
+                const filename = document.createElement('div');
+                filename.textContent = file.name;
+                filename.style.cssText = 'margin-top: 5px; font-size: 12px; color: #666; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;';
+
+                container.appendChild(deleteBtn);
+                container.appendChild(mediaElement);
+                container.appendChild(filename);
+
+                referencePreview.appendChild(container);
+            });
+        };
+
         referenceInput.addEventListener('change', (e) => {
             const files = Array.from(e.target.files);
-            referencePreview.innerHTML = '';
 
             if (files.length > 8) {
                 alert(t('upload.maxFiles'));
                 referenceInput.value = '';
+                selectedReferenceFiles = [];
+                renderReferencePreview();
                 return;
             }
 
-            files.forEach(file => {
-                const isVideo = file.type.startsWith('video/');
-                const url = URL.createObjectURL(file);
-                const container = document.createElement('div');
-                container.style.display = 'inline-block';
-                container.style.margin = '5px';
-
-                if (isVideo) {
-                    container.innerHTML = `<video src="${url}" style="max-width: 100px; max-height: 100px; object-fit: cover;" controls></video>`;
-                } else {
-                    container.innerHTML = `<img src="${url}" style="max-width: 100px; max-height: 100px; object-fit: cover;">`;
-                }
-                referencePreview.appendChild(container);
-            });
+            selectedReferenceFiles = files;
+            renderReferencePreview();
         });
 
         // File Validation
@@ -309,7 +370,7 @@ export default class UploadView extends AbstractView {
 
         // Helper: Upload Large File (Chunked)
         const uploadLargeFile = async (file, mediaType, onProgress) => {
-            const CHUNK_SIZE = 50 * 1024 * 1024; // 50MB
+            const CHUNK_SIZE = 30 * 1024 * 1024; // 30MB
             const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
 
             // 1. Init
@@ -527,8 +588,8 @@ export default class UploadView extends AbstractView {
                     updateProgress(progressLabel, 0);
 
                     let fileData;
-                    if (file.size > 90 * 1024 * 1024) {
-                        // Use Chunked Upload for > 90MB
+                    if (file.size > 30 * 1024 * 1024) {
+                        // Use Chunked Upload for > 30MB
                         fileData = await uploadLargeFile(file, 'file', (p) => {
                             updateProgress(progressLabel, p);
                         });

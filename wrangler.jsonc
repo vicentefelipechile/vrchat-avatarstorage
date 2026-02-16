@@ -34,5 +34,10 @@
 			"binding": "VRCSTORAGE_KV",
 			"id": "43dedbac1ccd446aa0a6b6659f5cf459"
 		}
-	]
+	],
+	"triggers": {
+		"crons": [
+			"0 3 * * *"
+		]
+	}
 }

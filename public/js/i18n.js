@@ -1,12 +1,12 @@
 
 const translations = {
     es: {
-        nav: { home: 'Inicio', avatars: 'Avatares', worlds: 'Mundos', assets: 'Assets', clothes: 'Ropa', others: 'Otros', login: 'Login', upload: 'Subir', admin: 'Admin', settings: 'Configuración' },
+        nav: { home: 'Inicio', avatars: 'Avatares', worlds: 'Mundos', assets: 'Assets', clothes: 'Ropa', others: 'Otros', login: 'Login', upload: 'Subir', admin: 'Admin', settings: 'Configuración', menu: 'Menú' },
         settings: { title: 'Configuración de Usuario', avatar: 'Foto de Perfil', save: 'Guardar Cambios', success: 'Perfil actualizado correctamente', logout: 'Cerrar Sesión' },
         home: { welcome: 'Bienvenido a VRCStorage', browse: 'Explora recursos por categoría:', latest: 'Últimos Recursos' },
         card: { view: 'Ver Detalles' },
         category: { showing: 'Mostrando', of: 'de', resources: 'recursos', prev: 'Anterior', next: 'Siguiente' },
-        admin: { title: 'Panel de Administrador', noPending: 'No hay recursos pendientes de aprobación.', delete: 'Eliminar', deleteConfirm: '¿Estás seguro de que deseas eliminar este comentario?' },
+        admin: { title: 'Panel de Administrador', noPending: 'No hay recursos pendientes de aprobación.', delete: 'Eliminar', deleteConfirm: '¿Estás seguro de que deseas eliminar este comentario?', cleanupOrphaned: 'Limpiar Archivos No Asociados', cleanupConfirm: '¿Limpiar archivos no asociados? Esto eliminará archivos subidos hace más de 24 horas que no están asociados a ningún recurso.', cleaning: 'Limpiando...', cleanupSuccess: 'Limpieza exitosa: {count} archivos eliminados', error: 'Error', networkError: 'Error de red', orphanedFiles: 'Archivos No Asociados', totalMedia: 'Total de Archivos', totalResources: 'Total de Recursos', orphanedFilesFound: 'Archivos No Asociados Encontrados', orphanedFilesDesc: 'Se encontraron {count} archivos subidos hace más de {hours} horas que no están asociados a ningún recurso.', viewFileList: 'Ver lista de archivos', noOrphanedFiles: 'Sin Archivos No Asociados', noOrphanedFilesDesc: 'No hay archivos no asociados en este momento. El sistema está limpio.', pendingResources: 'Recursos Pendientes de Aprobación' },
         item: { notFound: 'Recurso No Encontrado', category: 'Categoría', uploaded: 'Subido', uuid: 'UUID', description: 'Descripción', downloads: 'Descargas', downloadMain: 'Descargar (R2 Main)', backup: 'Backup', loginReq: 'Login Requerido', loginMsg: 'Debes iniciar sesión para descargar recursos.', goToLogin: 'Ir al Login', comments: 'Comentarios', noComments: 'No hay comentarios aún.', postComment: 'Publicar Comentario', commentPlaceholder: 'Escribe tu comentario...', send: 'Enviar', loginToComment: 'Inicia sesión para comentar', underReview: 'Esperando aprobación del administrador', approve: 'Aprobar', reject: 'Rechazar', deactivate: 'Desactivar', confirmDeactivate: '¿Estás seguro de que deseas desactivar este recurso?', confirmReject: '¿Estás seguro de que deseas rechazar y eliminar este recurso?', adminPanel: 'Panel de Administrador', pendingApproval: 'Este recurso espera aprobación.' },
         login: { title: 'Login', username: 'Usuario', password: 'Password', btn: 'Entrar', hint: 'Pista: user / password', error: 'Credenciales inválidas', register: '¿No tienes cuenta? Regístrate', logout: 'Logout', logoutConfirm: '¿Seguro que quieres cerrar sesión?' },
         register: { title: 'Registro', btn: 'Registrarse', loginLink: '¿Ya tienes cuenta? Inicia sesión', success: 'Registro exitoso. Por favor inicia sesión.' },
@@ -14,12 +14,12 @@ const translations = {
         cats: { avatars: 'Avatares', worlds: 'Mundos', assets: 'Assets', clothes: 'Ropa', others: 'Otros' }
     },
     en: {
-        nav: { home: 'Home', avatars: 'Avatars', worlds: 'Worlds', assets: 'Assets', clothes: 'Clothes', others: 'Others', login: 'Login', upload: 'Upload', admin: 'Admin', settings: 'Settings' },
+        nav: { home: 'Home', avatars: 'Avatars', worlds: 'Worlds', assets: 'Assets', clothes: 'Clothes', others: 'Others', login: 'Login', upload: 'Upload', admin: 'Admin', settings: 'Settings', menu: 'Menu' },
         settings: { title: 'User Settings', avatar: 'Profile Picture', save: 'Save Changes', success: 'Profile updated successfully', logout: 'Logout' },
         home: { welcome: 'Welcome to VRCStorage', browse: 'Browse resources by category:', latest: 'Latest Resources' },
         card: { view: 'View Details' },
         category: { showing: 'Showing', of: 'of', resources: 'resources', prev: 'Previous', next: 'Next' },
-        admin: { title: 'Admin Panel', noPending: 'No resources pending approval.', delete: 'Delete', deleteConfirm: 'Are you sure you want to delete this comment?' },
+        admin: { title: 'Admin Panel', noPending: 'No resources pending approval.', delete: 'Delete', deleteConfirm: 'Are you sure you want to delete this comment?', cleanupOrphaned: 'Cleanup Unassociated Files', cleanupConfirm: 'Cleanup unassociated files? This will delete files uploaded more than 24 hours ago that are not associated with any resource.', cleaning: 'Cleaning...', cleanupSuccess: 'Cleanup successful: {count} files deleted', error: 'Error', networkError: 'Network error', orphanedFiles: 'Unassociated Files', totalMedia: 'Total Files', totalResources: 'Total Resources', orphanedFilesFound: 'Unassociated Files Found', orphanedFilesDesc: 'Found {count} files uploaded more than {hours} hours ago that are not associated with any resource.', viewFileList: 'View file list', noOrphanedFiles: 'No Unassociated Files', noOrphanedFilesDesc: 'There are no unassociated files at this time. The system is clean.', pendingResources: 'Pending Resources' },
         item: { notFound: 'Resource Not Found', category: 'Category', uploaded: 'Uploaded', uuid: 'UUID', description: 'Description', downloads: 'Downloads', downloadMain: 'Download (R2 Main)', backup: 'Backup', loginReq: 'Login Required', loginMsg: 'You must be logged in to download resources.', goToLogin: 'Go to Login', comments: 'Comments', noComments: 'No comments yet.', postComment: 'Post Comment', commentPlaceholder: 'Write your comment...', send: 'Send', loginToComment: 'Login to comment', underReview: 'Waiting for admin approval', approve: 'Approve', reject: 'Reject', deactivate: 'Deactivate', confirmDeactivate: 'Are you sure you want to deactivate this resource?', confirmReject: 'Are you sure you want to reject and delete this resource?', adminPanel: 'Admin Panel', pendingApproval: 'This resource is pending approval.' },
         login: { title: 'Login', username: 'Username', password: 'Password', btn: 'Login', hint: 'Hint: user / password', error: 'Invalid credentials', register: 'No account? Register', logout: 'Logout', logoutConfirm: 'Are you sure you want to log out?' },
         register: { title: 'Register', btn: 'Sign Up', loginLink: 'Already have an account? Login', success: 'Registration successful. Please login.' },
@@ -27,7 +27,7 @@ const translations = {
         cats: { avatars: 'Avatars', worlds: 'Worlds', assets: 'Assets', clothes: 'Clothes', others: 'Others' }
     },
     ru: {
-        nav: { home: 'Главная', avatars: 'Аватары', worlds: 'Миры', assets: 'Ассеты', clothes: 'Одежда', others: 'Другое', login: 'Войти', upload: 'Загрузить', admin: 'Админ', settings: 'Настройки' },
+        nav: { home: 'Главная', avatars: 'Аватары', worlds: 'Миры', assets: 'Ассеты', clothes: 'Одежда', others: 'Другое', login: 'Войти', upload: 'Загрузить', admin: 'Админ', settings: 'Настройки', menu: 'Меню' },
         settings: { title: 'Настройки профиля', avatar: 'Фото профиля', save: 'Сохранить изменения', success: 'Профиль успешно обновлен', logout: 'Выйти' },
         home: { welcome: 'Добро пожаловать в VRCStorage', browse: 'Просмотр ресурсов по категориям:', latest: 'Последние ресурсы' },
         card: { view: 'Подробнее' },
@@ -40,7 +40,7 @@ const translations = {
         cats: { avatars: 'Аватары', worlds: 'Миры', assets: 'Ассеты', clothes: 'Одежда', others: 'Другое' }
     },
     jp: {
-        nav: { home: 'ホーム', avatars: 'アバター', worlds: 'ワールド', assets: 'アセット', clothes: '服', others: 'その他', login: 'ログイン', upload: 'アップロード', admin: '管理', settings: '設定' },
+        nav: { home: 'ホーム', avatars: 'アバター', worlds: 'ワールド', assets: 'アセット', clothes: '服', others: 'その他', login: 'ログイン', upload: 'アップロード', admin: '管理', settings: '設定', menu: 'メニュー' },
         settings: { title: 'プロフィール設定', avatar: 'プロフィール画像', save: '変更を保存', success: 'プロフィールが正常に更新されました', logout: 'ログアウト' },
         home: { welcome: 'VRCStorageへようこそ', browse: 'カテゴリー別リソース:', latest: '最新のリソース' },
         card: { view: '詳細を見る' },
@@ -53,7 +53,7 @@ const translations = {
         cats: { avatars: 'アバター', worlds: 'ワールド', assets: 'アセット', clothes: '服', others: 'その他' }
     },
     cn: {
-        nav: { home: '主页', avatars: '模型', worlds: '世界', assets: '资源', clothes: '服装', others: '其他', login: '登录', upload: '上传', admin: '管理', settings: '设置' },
+        nav: { home: '主页', avatars: '模型', worlds: '世界', assets: '资源', clothes: '服装', others: '其他', login: '登录', upload: '上传', admin: '管理', settings: '设置', menu: '菜单' },
         settings: { title: '个人资料设置', avatar: '头像', save: '保存更改', success: '个人资料已成功更新', logout: '退出登录' },
         home: { welcome: '欢迎来到 VRCStorage', browse: '按类别浏览资源：', latest: '最新资源' },
         card: { view: '查看详情' },
@@ -66,7 +66,7 @@ const translations = {
         cats: { avatars: '模型', worlds: '世界', assets: '资源', clothes: '服装', others: '其他' }
     },
     fr: {
-        nav: { home: 'Accueil', avatars: 'Avatars', worlds: 'Mondes', assets: 'Actifs', clothes: 'Vêtements', others: 'Autres', login: 'Connexion', upload: 'Upload', admin: 'Admin', settings: 'Paramètres' },
+        nav: { home: 'Accueil', avatars: 'Avatars', worlds: 'Mondes', assets: 'Actifs', clothes: 'Vêtements', others: 'Autres', login: 'Connexion', upload: 'Upload', admin: 'Admin', settings: 'Paramètres', menu: 'Menu' },
         settings: { title: 'Paramètres du profil', avatar: 'Photo de profil', save: 'Enregistrer les modifications', success: 'Profil mis à jour avec succès', logout: 'Déconnexion' },
         home: { welcome: 'Bienvenue sur VRCStorage', browse: 'Parcourir les ressources par catégorie :', latest: 'Dernières ressources' },
         card: { view: 'Voir les détails' },
