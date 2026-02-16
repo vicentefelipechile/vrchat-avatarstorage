@@ -131,9 +131,6 @@ CREATE INDEX IF NOT EXISTS idx_comments_resource ON comments(resource_uuid);
 CREATE INDEX IF NOT EXISTS idx_comments_author ON comments(author_uuid);
 CREATE INDEX IF NOT EXISTS idx_comments_created_at ON comments(created_at DESC);
 
--- ============================================================================
--- FIN DEL SCHEMA
--- ============================================================================
 -- ----------------------------------------------------------------------------
 -- SECCIÓN 7: RATE LIMITING
 -- ----------------------------------------------------------------------------
@@ -148,9 +145,9 @@ CREATE TABLE IF NOT EXISTS rate_limits (
 CREATE INDEX IF NOT EXISTS idx_rate_limits_timestamp ON rate_limits(timestamp);
 
 
--- ============================================================================
+-- ----------------------------------------------------------------------------
 -- SCHEMA EDIT 2026-02-15 12:01
--- ============================================================================
+-- ----------------------------------------------------------------------------
 
 -- Este índice agrupa primero los activos y ya los tiene ordenados por fecha.
 -- D1 encontrará las 6 filas exactas instantáneamente sin escanear nada más.
