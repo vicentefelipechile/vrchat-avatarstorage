@@ -108,14 +108,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    // Unregister Service Worker if exists (Cleanup)
+    // Register Service Worker
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(registrations => {
-            for (let registration of registrations) {
-                registration.unregister();
-                console.log('Service Worker unregistered');
-            }
-        });
+        navigator.serviceWorker.register('/sw.js')
+            .then(registration => {
+                console.log('Service Worker registered with scope:', registration.scope);
+            })
+            .catch(error => {
+                console.error('Service Worker registration failed:', error);
+            });
     }
 
     // Initial Nav Update & Router Call

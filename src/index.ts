@@ -696,6 +696,10 @@ app.get('/api/download/:key', async (c) => {
 	headers.set('etag', object.httpEtag);
 	headers.set('Content-Disposition', `${disposition}; filename="${filename}"; filename*=UTF-8''${encodeURIComponent(filename)}`);
 
+	if (isMedia) {
+		headers.set('Cache-Control', 'public, max-age=31536000, immutable');
+	}
+
 	return new Response(object.body, {
 		headers,
 	});

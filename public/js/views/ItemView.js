@@ -21,26 +21,20 @@ export default class ItemView extends AbstractView {
 
         let linksHtml = '';
         if (user) {
-            linksHtml = `<h3>${t('item.downloads')}</h3><ul class="download-list">`;
-            res.links.forEach(link => {
-                let url = link.link_url;
-                if (link.link_type === 'download' && !url.startsWith('http')) {
-                    // It's an internal R2 link
-                    url = link.link_url;
-                }
-                const isBackup = link.link_title.toLowerCase().includes('backup');
-                const label = isBackup ? `${t('item.backup')}: ${link.link_url}` : link.link_title;
-                linksHtml += `<li><a href="${url}" target="_blank" class="download-link">${label}</a></li>`;
-            });
-            linksHtml += '</ul>';
+            linksHtml = `
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <a href="${res.downloadUrl}" target="_blank" class="btn">${t('item.downloadMain')}</a>
+                    ${res.backupUrls.map((url, i) => `
+                        <a href="${url}" target="_blank" class="btn" style="background: #666;">${t('item.backup')} ${i + 1}</a>
+                    `).join('')}
+                </div>`;
         } else {
             linksHtml = `
-                <div class="alert alert-warning">
-                    <strong>${t('item.loginReq')}</strong><br>
-                    ${t('item.loginMsg')}<br>
-                    <a href="/login" data-link class="btn" style="margin-top: 10px;">${t('item.goToLogin')}</a>
-                </div>
-            `;
+                <div style="background: #eee; padding: 15px; border: 1px solid #999;">
+                    <p><strong>${t('item.loginReq')}</strong></p>
+                    <p>${t('item.loginMsg')}</p>
+                    <a href="/login" data-link class="btn">${t('item.goToLogin')}</a>
+                </div>`;
         }
 
         // --- Gallery ---
@@ -59,7 +53,7 @@ export default class ItemView extends AbstractView {
                             </video>
                         </div>
                     `;
-                } else {
+                } else if (media.media_type === 'image') {
                     galleryHtml += `
                         <div class="gallery-item">
                             <a href="${url}" target="_blank">
@@ -105,7 +99,6 @@ export default class ItemView extends AbstractView {
 
         return `
             <div class="details-box">
-                ${adminActions}
                 <h1>${res.title}<span style="float: right; font-size: 0.6em; color: #666;">${date}</span></h1>
                 <div class="meta" style="margin-bottom: 20px;">
                     <strong>${t('item.category')}:</strong> <a href="/category/${res.category}" data-link>${category}</a> | 
@@ -118,8 +111,11 @@ export default class ItemView extends AbstractView {
                     ${descriptionHtml}
                 </div>
 
+                <hr>
+                <h3>${t('item.downloads')}</h3>
                 ${linksHtml}
-
+                ${adminActions}
+                <hr>
                 ${commentsHtml}
             </div>
         `;
@@ -132,6 +128,7 @@ export default class ItemView extends AbstractView {
         if (!res.is_active || res.is_active === 0) {
             // Pending
             buttons = `
+                <hr>
                 <div style="background: #fff3cd; color: #856404; padding: 15px; border-radius: 5px; border: 1px solid #ffeeba; margin-top: 10px; margin-bottom: 20px;">
                     <h3>${t('item.adminPanel')}</h3>
                     <p>${t('item.pendingApproval')}</p>
@@ -155,15 +152,16 @@ export default class ItemView extends AbstractView {
         if (!comments || comments.length === 0) return `<p>${t('item.noComments')}</p>`;
 
         return comments.map(c => `
-            <div class="comment" id="comment-${c.uuid}">
-                <div class="comment-header">
-                    <img src="${c.author_avatar || 'https://placehold.co/40'}" alt="${c.author}" class="comment-avatar">
-                    <strong>${c.author}</strong>
-                    <span style="color: #666; font-size: 0.8em; margin-left: 10px;">${new Date(c.timestamp).toLocaleString()}</span>
-                    ${isAdmin ? `<button class="btn-sm btn-danger" style="float: right;" onclick="deleteComment('${c.uuid}')">${t('admin.delete')}</button>` : ''}
+            <div id="comment-${c.uuid}" style="border: 2px solid #000; padding: 10px; margin-bottom: 15px; background: #fff; box-shadow: 5px 5px 0px #888; display: flex; gap: 10px;">
+                <div style="flex-shrink: 0;">
+                    <img src="${c.author_avatar}" alt="${c.author}" style="width: 50px; height: 50px; object-fit: cover; border: 2px solid #000;">
                 </div>
-                <div class="comment-body">
-                    ${c.text}
+                <div style="flex-grow: 1;">
+                    <div style="font-weight: bold; margin-bottom: 5px; display: flex; justify-content: space-between; align-items: center;">
+                        <span>${c.author} <span style="font-weight: normal; font-size: 0.8em; color: #666;">(${new Date(c.timestamp).toLocaleString()})</span></span>
+                        ${isAdmin ? `<button onclick="deleteComment('${c.uuid}')" class="btn" style="padding: 2px 5px; font-size: 0.8em; background: #ff4444; color: white;">${t('admin.delete')}</button>` : ''}
+                    </div>
+                    <div style="white-space: pre-wrap;">${c.text}</div>
                 </div>
             </div>
         `).join('');
