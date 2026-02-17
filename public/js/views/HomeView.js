@@ -7,7 +7,7 @@ export default class HomeView extends AbstractView {
     async getHtml() {
         const apiCategories = ['avatars', 'worlds', 'assets', 'clothes', 'others'];
         // Use default non-persistent cache for latest items as they change
-        const latest = await DataCache.fetch('/api/latest', 60000);
+        const latest = await DataCache.fetch('/api/resources/latest', 60000);
 
         const categoriesHtml = apiCategories.map(cat =>
             `<a href="/category/${cat}" data-link class="btn mr-10 mb-10">${t('cats.' + cat)}</a>`

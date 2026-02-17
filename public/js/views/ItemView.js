@@ -8,10 +8,11 @@ export default class ItemView extends AbstractView {
     async getHtml() {
         const uuid = this.params.id;
         // Fetch item details immediately
-        const res = await DataCache.fetch(`/api/item/${uuid}`, { ttl: 300000, persistent: true }); // Persistent cache for immutable items
+        const res = await DataCache.fetch(`/api/resources/${uuid}`, { ttl: 300000, persistent: true }); // Persistent cache for immutable items
 
         if (!res) return `<h1>${t('item.notFound')}</h1>`;
 
+        // Auth is already loaded from localStorage, no need to wait
         const user = window.appState.user;
         const isAdmin = window.appState.isAdmin;
 
@@ -21,13 +22,38 @@ export default class ItemView extends AbstractView {
 
         let linksHtml = '';
         if (user) {
-            linksHtml = `
-                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                    <a href="${res.downloadUrl}" target="_blank" class="btn">${t('item.downloadMain')}</a>
-                    ${res.backupUrls.map((url, i) => `
-                        <a href="${url}" target="_blank" class="btn" style="background: #666;">${t('item.backup')} ${i + 1}</a>
-                    `).join('')}
-                </div>`;
+            // Get download links from the full links array
+            const downloadLinks = res.links ? res.links.filter(l => l.link_type === 'download') : [];
+
+            if (downloadLinks.length > 0) {
+                linksHtml = `<div style="display: flex; gap: 10px; flex-wrap: wrap;">`;
+
+                downloadLinks.forEach((link, index) => {
+                    // If link has a title (filename), use it - these are official downloads
+                    // Links without title are external backups (Google Drive, etc.)
+                    let linkText;
+                    if (link.link_title) {
+                        linkText = link.link_title;
+                    } else {
+                        const backupNum = downloadLinks.slice(0, index).filter(l => !l.link_title).length + 1;
+                        linkText = `${t('item.backup')} ${backupNum}`;
+                    }
+
+                    const buttonStyle = (index === 0 || link.link_title) ? (index === 0 ? '' : ' style="background: #555;"') : ' style="background: #666;"';
+                    linksHtml += `<a href="${link.link_url}" target="_blank" class="btn"${buttonStyle}>${linkText}</a>`;
+                });
+
+                linksHtml += `</div>`;
+            } else {
+                // Fallback to old structure if links array is not available
+                linksHtml = `
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <a href="${res.downloadUrl}" target="_blank" class="btn">${t('item.downloadMain')}</a>
+                        ${res.backupUrls.map((url, i) => `
+                            <a href="${url}" target="_blank" class="btn" style="background: #666;">${t('item.backup')} ${i + 1}</a>
+                        `).join('')}
+                    </div>`;
+            }
         } else {
             linksHtml = `
                 <div style="background: #eee; padding: 15px; border: 1px solid #999;">
@@ -39,30 +65,50 @@ export default class ItemView extends AbstractView {
 
         // --- Gallery ---
         let galleryHtml = '';
-        if (res.mediaFiles && res.mediaFiles.length > 0) {
+        const hasMedia = res.mediaFiles && res.mediaFiles.length > 0;
+        const hasThumbnail = res.thumbnail_key;
+
+        if (hasMedia || hasThumbnail) {
             galleryHtml = '<div class="gallery-grid">';
-            res.mediaFiles.forEach(media => {
-                const url = `/api/download/${media.r2_key}`;
-                // If it's a video
-                if (media.media_type === 'video') {
-                    galleryHtml += `
-                        <div class="gallery-item">
-                            <video controls style="width: 100%; height: 100%; object-fit: cover;">
-                                <source src="${url}" type="video/mp4">
-                                Your browser does not support the video tag.
-                            </video>
-                        </div>
-                    `;
-                } else if (media.media_type === 'image') {
-                    galleryHtml += `
-                        <div class="gallery-item">
-                            <a href="${url}" target="_blank">
-                                <img src="${url}" alt="Gallery Image" loading="lazy">
-                            </a>
-                        </div>
-                    `;
-                }
-            });
+
+            // Add thumbnail as first item if it exists
+            if (hasThumbnail) {
+                const thumbnailUrl = `/api/download/${res.thumbnail_key}`;
+                galleryHtml += `
+                    <div class="gallery-item">
+                        <a href="${thumbnailUrl}" target="_blank">
+                            <img src="${thumbnailUrl}" alt="Thumbnail" loading="lazy">
+                        </a>
+                    </div>
+                `;
+            }
+
+            // Add other media files
+            if (hasMedia) {
+                res.mediaFiles.forEach(media => {
+                    const url = `/api/download/${media.r2_key}`;
+                    // If it's a video
+                    if (media.media_type === 'video') {
+                        galleryHtml += `
+                            <div class="gallery-item">
+                                <video controls style="width: 100%; height: 100%; object-fit: cover;">
+                                    <source src="${url}" type="video/mp4">
+                                    Your browser does not support the video tag.
+                                </video>
+                            </div>
+                        `;
+                    } else if (media.media_type === 'image') {
+                        galleryHtml += `
+                            <div class="gallery-item">
+                                <a href="${url}" target="_blank">
+                                    <img src="${url}" alt="Gallery Image" loading="lazy">
+                                </a>
+                            </div>
+                        `;
+                    }
+                });
+            }
+
             galleryHtml += '</div>';
         }
 
@@ -74,7 +120,7 @@ export default class ItemView extends AbstractView {
             <div id="comments-section" style="margin-top: 40px;">
                 <h2>${t('item.comments')}</h2>
                 <div id="comments-container">
-                    <p>Loading comments...</p>
+                    <p>${t('common.loadingComments')}</p>
                 </div>
                 
                 ${user ? `
@@ -186,7 +232,7 @@ export default class ItemView extends AbstractView {
 
         // Fetch and render comments asynchronously
         try {
-            const comments = await DataCache.fetch(`/api/comments/${uuid}`, 300000);
+            const comments = await DataCache.fetch(`/api/resources/${uuid}/comments`, 300000);
             const isAdmin = window.appState && window.appState.isAdmin;
             commentsContainer.innerHTML = this.renderComments(comments, isAdmin);
         } catch (e) {
@@ -214,7 +260,7 @@ export default class ItemView extends AbstractView {
                     const formData = new FormData(form);
                     const token = formData.get('cf-turnstile-response');
 
-                    const res = await fetch(`/api/comments/${uuid}`, {
+                    const res = await fetch(`/api/resources/${uuid}/comments`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ text, author: 'user', token })
@@ -226,9 +272,9 @@ export default class ItemView extends AbstractView {
                         if (window.turnstile) window.turnstile.reset();
 
                         // Refresh comments - Bypass cache to show new comment immediately
-                        const comments = await fetch(`/api/comments/${uuid}`).then(res => res.json());
+                        const comments = await fetch(`/api/resources/${uuid}/comments`).then(res => res.json());
                         // Update cache
-                        DataCache.cache.set(`/api/comments/${uuid}`, { data: comments, timestamp: Date.now() });
+                        DataCache.cache.set(`/api/resources/${uuid}/comments`, { data: comments, timestamp: Date.now() });
                         const isAdmin = window.appState && window.appState.isAdmin;
                         commentsContainer.innerHTML = this.renderComments(comments, isAdmin);
                     } else {

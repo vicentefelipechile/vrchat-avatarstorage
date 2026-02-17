@@ -27,7 +27,7 @@ export async function approveResource(uuid) {
     try {
         const res = await fetch(`/api/admin/resource/${uuid}/approve`, { method: 'POST' });
         if (res.ok) {
-            DataCache.clear(`/api/item/${uuid}`); // Clear persistent cache
+            DataCache.clear(`/api/resources/${uuid}`); // Clear persistent cache
             location.reload();
         } else {
             alert('Error approving resource');
@@ -43,7 +43,7 @@ export async function rejectResource(uuid) {
     try {
         const res = await fetch(`/api/admin/resource/${uuid}/reject`, { method: 'POST' });
         if (res.ok) {
-            DataCache.clear(`/api/item/${uuid}`); // Clear persistent cache
+            DataCache.clear(`/api/resources/${uuid}`); // Clear persistent cache
             window.location.href = '/';
         } else {
             alert('Error rejecting resource');
@@ -59,7 +59,7 @@ export async function deactivateResource(uuid) {
     try {
         const res = await fetch(`/api/admin/resource/${uuid}/deactivate`, { method: 'POST' });
         if (res.ok) {
-            DataCache.clear(`/api/item/${uuid}`); // Clear persistent cache
+            DataCache.clear(`/api/resources/${uuid}`); // Clear persistent cache
             location.reload();
         } else {
             alert('Error deactivating resource');

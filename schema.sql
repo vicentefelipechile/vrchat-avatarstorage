@@ -1,5 +1,5 @@
 -- ============================================================================
--- VRCHAT AVATAR STORAGE - DATABASE SCHEMA
+-- VRCSTORAGE - DATABASE SCHEMA
 -- ============================================================================
 -- Este archivo define la estructura completa de la base de datos
 -- Organizado por secciones para facilitar el mantenimiento

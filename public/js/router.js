@@ -6,6 +6,7 @@ import RegisterView from './views/RegisterView.js';
 import UploadView from './views/UploadView.js';
 import SettingsView from './views/SettingsView.js';
 import AdminView from './views/AdminView.js';
+import WikiView from './views/WikiView.js';
 import { pathToRegex, getParams } from './utils.js';
 
 export const router = async () => {
@@ -17,7 +18,8 @@ export const router = async () => {
         { path: '/settings', view: SettingsView },
         { path: '/register', view: RegisterView },
         { path: '/upload', view: UploadView },
-        { path: '/admin', view: AdminView }
+        { path: '/admin', view: AdminView },
+        { path: '/wiki', view: WikiView }
     ];
 
     const potentialMatches = routes.map(route => {

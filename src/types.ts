@@ -1,5 +1,5 @@
 // ============================================================================
-// VRCHAT AVATAR STORAGE - DATABASE TYPES
+// VRCSTORAGE - DATABASE TYPES
 // ============================================================================
 // Este archivo define las interfaces TypeScript que reflejan la estructura
 // de la base de datos definida en schema.sql

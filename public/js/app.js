@@ -2,28 +2,30 @@ import { router, navigateTo } from './router.js';
 import { setLanguage, getCurrentLang, t } from './i18n.js';
 import { DataCache } from './cache.js';
 
-// Global State
+// Global State - Load from localStorage immediately
+const cachedAuth = localStorage.getItem('auth_state');
+let initialAuth = { isLoggedIn: false, isAdmin: false, user: null };
+
+if (cachedAuth) {
+    try {
+        initialAuth = JSON.parse(cachedAuth);
+    } catch (e) {
+        console.error('Failed to parse cached auth', e);
+    }
+}
+
 window.appState = {
-    isLoggedIn: false,
-    isAdmin: false,
-    user: null
+    isLoggedIn: initialAuth.isLoggedIn,
+    isAdmin: initialAuth.isAdmin,
+    user: initialAuth.user
 };
 
 // Make navigation global for inline onclicks if needed (though we try to avoid them)
 window.navigateTo = navigateTo;
 window.setLanguage = setLanguage;
 
-export async function updateNav() {
-    // Check auth status
-    try {
-        const data = await DataCache.fetch('/api/auth/status', 60000);
-        window.appState.isLoggedIn = data.loggedIn;
-        window.appState.isAdmin = data.is_admin;
-        window.appState.user = data;
-    } catch (e) {
-        console.error('Auth check failed', e);
-    }
-
+// Separate function to update nav DOM
+function updateNavDOM() {
     const { isLoggedIn, isAdmin } = window.appState;
 
     // Show/hide user menu dropdown vs login link
@@ -66,8 +68,52 @@ export async function updateNav() {
     if (userMenuDropdown) userMenuDropdown.classList.remove('active');
 }
 
-// Ensure nav updates on route change
-window.addEventListener('route-changed', updateNav);
+export async function updateNav() {
+    // Store previous state to detect changes
+    const previousState = {
+        isLoggedIn: window.appState.isLoggedIn,
+        isAdmin: window.appState.isAdmin,
+        username: window.appState.user?.username
+    };
+
+    // Check auth status
+    try {
+        const data = await DataCache.fetch('/api/auth/status', 60000);
+        window.appState.isLoggedIn = data.loggedIn;
+        window.appState.isAdmin = data.is_admin;
+        window.appState.user = data;
+
+        // Save to localStorage for instant access on next page load
+        localStorage.setItem('auth_state', JSON.stringify({
+            isLoggedIn: data.loggedIn,
+            isAdmin: data.is_admin,
+            user: data
+        }));
+    } catch (e) {
+        console.error('Auth check failed', e);
+        // Clear cached auth on error
+        localStorage.removeItem('auth_state');
+        window.appState.isLoggedIn = false;
+        window.appState.isAdmin = false;
+        window.appState.user = null;
+    }
+
+    // Only update DOM if state actually changed
+    const stateChanged =
+        previousState.isLoggedIn !== window.appState.isLoggedIn ||
+        previousState.isAdmin !== window.appState.isAdmin ||
+        previousState.username !== window.appState.user?.username;
+
+    if (stateChanged) {
+        updateNavDOM();
+    }
+}
+
+// Update nav DOM on route change (without fetching auth again)
+window.addEventListener('route-changed', () => {
+    // Just update the DOM with current state, don't fetch
+    updateNavDOM();
+});
 
 window.addEventListener('popstate', router);
 
@@ -108,6 +154,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     await fetch('/api/logout', { method: 'POST' });
                     // Clear auth cache
                     DataCache.clear('/api/auth/status');
+                    localStorage.removeItem('auth_state');
                     // Update app state
                     window.appState.isLoggedIn = false;
                     window.appState.isAdmin = false;
@@ -152,8 +199,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (href) {
                 const uuid = href.split('/item/')[1];
                 if (uuid) {
-                    DataCache.prefetch(`/api/item/${uuid}`, { ttl: 300000, persistent: true });
-                    DataCache.prefetch(`/api/comments/${uuid}`, 300000);
+                    DataCache.prefetch(`/api/resources/${uuid}`, { ttl: 300000, persistent: true });
+                    DataCache.prefetch(`/api/resources/${uuid}/comments`, 300000);
                 }
             }
         }
@@ -170,7 +217,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
     }
 
-    // Initial Nav Update & Router Call
-    await updateNav();
+    // Update nav DOM immediately with cached state
+    updateNavDOM();
+
+    // Load page immediately, don't wait for auth
     router();
+
+    // Load auth status in background (non-blocking) - only updates DOM if state changes
+    updateNav().catch(err => {
+        console.error('Failed to update nav:', err);
+    });
 });
