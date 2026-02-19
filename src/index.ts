@@ -10,18 +10,9 @@
 // =========================================================================================================
 
 import { Hono } from 'hono';
-import { hashPassword, verifyPassword, createSession, getAuthUser, deleteSession } from './auth';
-import {
-	Resource,
-	ResourceCategory,
-	RESOURCE_CATEGORIES,
-	User,
-	Media,
-	ResourceLink,
-	MediaType,
-} from './types';
+import { getAuthUser } from './auth';
+import { Media } from './types';
 import { z } from 'zod';
-import { RegisterSchema, LoginSchema, ResourceSchema, CommentSchema, UserUpdateSchema } from './validators';
 import { securityMiddleware } from './middleware/security';
 import { rateLimit } from './middleware/rate-limit';
 import resourceRoutes from './routes/resources';
@@ -86,40 +77,13 @@ app.use('/download/*', async (c, next) => {
 // Mount Routes
 // =========================================================================================================
 
-// Resource routes: /latest, /category/:category, /:uuid, POST /
 app.route('/api/resources', resourceRoutes);
-
-// User routes: /register, /login, /user, /auth/status, /logout
 app.route('/api', userRoutes);
-
-// Admin routes: /pending, /resource/:uuid/approve, /resource/:uuid/reject, etc.
 app.route('/api/admin', adminRoutes);
-
-// Comment routes: /:uuid/comments (GET, POST)
 app.route('/api/resources', commentRoutes);
-
-// Comment deletion route: /:commentId (DELETE) - mounted separately
-app.delete('/api/comments/:commentId', async (c) => {
-	const authUser = await getAuthUser(c);
-	if (!authUser) return c.json({ error: 'Unauthorized' }, 401);
-
-	const commentId = c.req.param('commentId');
-	try {
-		await c.env.DB.prepare('DELETE FROM comments WHERE uuid = ?').bind(commentId).run();
-		return c.json({ success: true });
-	} catch (e) {
-		console.error('Comment error:', e);
-		return c.json({ error: 'Failed to delete comment' }, 500);
-	}
-});
-
-// Upload routes: /, /init, /part, /complete
+app.route('/api/comments', commentRoutes);
 app.route('/api/upload', uploadRoutes);
-
-// Download routes: /:key
 app.route('/api/download', downloadRoutes);
-
-// Utility routes: /config
 app.route('/api', utilRoutes);
 
 // SEO route: /item/:uuid (served from resources module, needs to be mounted at root)

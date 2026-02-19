@@ -83,14 +83,14 @@ export default class UploadView extends AbstractView {
 
                     <div class="form-group" style="margin-bottom: 20px;">
                         <label><strong>${t('upload.thumbnail')} ${t('upload.required')}</strong></label>
-                        <input type="file" id="thumbnail" accept="image/png,image/jpg,image/jpeg,image/webp,image/gif" required>
+                        <input type="file" id="thumbnail" accept="image/png,image/jpg,image/jpeg,image/webp,image/gif,image/avif" required>
                         <small style="color: #666;">${t('upload.imageVideo')}</small>
                         <div id="thumbnail-preview" style="margin-top: 10px;"></div>
                     </div>
                     
                     <div class="form-group" style="margin-bottom: 20px;">
                         <label><strong>${t('upload.reference')} (${t('upload.optional')})</strong></label>
-                        <input type="file" id="reference-image" accept="image/png,image/jpg,image/jpeg,image/webp,image/gif,video/mp4,video/webm" multiple>
+                        <input type="file" id="reference-image" accept="image/png,image/jpg,image/jpeg,image/webp,image/gif,image/avif,video/mp4,video/webm" multiple>
                         <small style="color: #666;">${t('upload.imageVideoAdditional')}</small>
                         <div id="reference-preview" style="margin-top: 10px;"></div>
                     </div>
@@ -195,11 +195,70 @@ export default class UploadView extends AbstractView {
         // Trigger initial preview
         descriptionField.dispatchEvent(new Event('input'));
 
-        // Thumbnail Preview
-        thumbnailInput.addEventListener('change', (e) => {
+        // Size limits (must match backend)
+        const SIZE_LIMITS = {
+            image: 20 * 1024 * 1024,    // 20MB
+            video: 100 * 1024 * 1024,   // 100MB
+            file: 1500 * 1024 * 1024     // 1500MB
+        };
+        const MAX_IMAGE_DIMENSION = 4096; // 4096x4096 pixels
+
+        // Helper: Validate image dimensions
+        const validateImageDimensions = (file) => {
+            return new Promise((resolve) => {
+                const img = new Image();
+                const url = URL.createObjectURL(file);
+
+                img.onload = () => {
+                    URL.revokeObjectURL(url);
+                    if (img.width > MAX_IMAGE_DIMENSION || img.height > MAX_IMAGE_DIMENSION) {
+                        resolve({
+                            valid: false,
+                            error: `Image dimensions too large. Maximum: ${MAX_IMAGE_DIMENSION}x${MAX_IMAGE_DIMENSION} pixels, got ${img.width}x${img.height} pixels`
+                        });
+                    } else {
+                        resolve({ valid: true, width: img.width, height: img.height });
+                    }
+                };
+
+                img.onerror = () => {
+                    URL.revokeObjectURL(url);
+                    resolve({ valid: false, error: 'Could not load image for validation' });
+                };
+
+                img.src = url;
+            });
+        };
+
+        // Thumbnail Preview with Validation
+        thumbnailInput.addEventListener('change', async (e) => {
             const file = e.target.files[0];
             if (file) {
                 const isVideo = file.type.startsWith('video/');
+                const isImage = file.type.startsWith('image/');
+
+                // Validate file size
+                const maxSize = isVideo ? SIZE_LIMITS.video : SIZE_LIMITS.image;
+                if (file.size > maxSize) {
+                    const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+                    const maxMB = (maxSize / (1024 * 1024)).toFixed(0);
+                    alert(`File too large. Maximum size for ${isVideo ? 'videos' : 'images'}: ${maxMB}MB, got ${sizeMB}MB`);
+                    thumbnailInput.value = '';
+                    thumbnailPreview.innerHTML = '';
+                    return;
+                }
+
+                // Validate image dimensions
+                if (isImage) {
+                    const dimensionCheck = await validateImageDimensions(file);
+                    if (!dimensionCheck.valid) {
+                        alert(dimensionCheck.error);
+                        thumbnailInput.value = '';
+                        thumbnailPreview.innerHTML = '';
+                        return;
+                    }
+                }
+
                 const url = URL.createObjectURL(file);
 
                 const container = document.createElement('div');
@@ -284,7 +343,7 @@ export default class UploadView extends AbstractView {
             });
         };
 
-        referenceInput.addEventListener('change', (e) => {
+        referenceInput.addEventListener('change', async (e) => {
             const files = Array.from(e.target.files);
 
             if (files.length > 8) {
@@ -293,6 +352,36 @@ export default class UploadView extends AbstractView {
                 selectedReferenceFiles = [];
                 renderReferencePreview();
                 return;
+            }
+
+            // Validate each file
+            for (const file of files) {
+                const isVideo = file.type.startsWith('video/');
+                const isImage = file.type.startsWith('image/');
+                const maxSize = isVideo ? SIZE_LIMITS.video : SIZE_LIMITS.image;
+
+                // Check file size
+                if (file.size > maxSize) {
+                    const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+                    const maxMB = (maxSize / (1024 * 1024)).toFixed(0);
+                    alert(`File "${file.name}" is too large. Maximum size for ${isVideo ? 'videos' : 'images'}: ${maxMB}MB, got ${sizeMB}MB`);
+                    referenceInput.value = '';
+                    selectedReferenceFiles = [];
+                    renderReferencePreview();
+                    return;
+                }
+
+                // Check image dimensions
+                if (isImage) {
+                    const dimensionCheck = await validateImageDimensions(file);
+                    if (!dimensionCheck.valid) {
+                        alert(`Image "${file.name}": ${dimensionCheck.error}`);
+                        referenceInput.value = '';
+                        selectedReferenceFiles = [];
+                        renderReferencePreview();
+                        return;
+                    }
+                }
             }
 
             selectedReferenceFiles = files;
@@ -313,25 +402,41 @@ export default class UploadView extends AbstractView {
             }
 
             const validExtensions = ['.rar', '.zip', '.unitypackage'];
+            const MAX_FILE_SIZE = SIZE_LIMITS.file;
             let allValid = true;
 
             files.forEach(file => {
                 const fileName = file.name.toLowerCase();
                 const isValid = validExtensions.some(ext => fileName.endsWith(ext));
+                const sizeValid = file.size <= MAX_FILE_SIZE;
 
                 if (!isValid) allValid = false;
+                if (!sizeValid) allValid = false;
 
                 const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
-                const color = isValid ? 'green' : 'red';
-                const symbol = isValid ? '✓' : '✗';
+                const maxMB = (MAX_FILE_SIZE / (1024 * 1024)).toFixed(0);
+
+                let color = 'green';
+                let symbol = '✓';
+                let message = `${file.name} (${sizeMB} MB)`;
+
+                if (!isValid) {
+                    color = 'red';
+                    symbol = '✗';
+                    message += ' - Invalid file type';
+                } else if (!sizeValid) {
+                    color = 'red';
+                    symbol = '✗';
+                    message += ` - Too large (max ${maxMB}MB)`;
+                }
 
                 const div = document.createElement('div');
-                div.innerHTML = `<span style="color: ${color};">${symbol} ${file.name} (${sizeMB} MB)</span>`;
+                div.innerHTML = `<span style="color: ${color};">${symbol} ${message}</span>`;
                 fileInfo.appendChild(div);
             });
 
             if (!allValid) {
-                uploadError.textContent = `${t('upload.error')}: ${t('upload.errorMainFile')}`;
+                uploadError.textContent = `${t('upload.error')}: Invalid files detected. Check the list above.`;
                 fileInput.value = '';
             }
         });

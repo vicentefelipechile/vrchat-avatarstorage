@@ -6,7 +6,8 @@
 
 import { Hono } from 'hono';
 import { getAuthUser } from '../auth';
-import { isValidFileType, MAX_FILE_SIZE } from '../helpers/file-validation';
+import { isValidFileType, validateFileSize } from '../helpers/file-validation';
+import { validateImageDimensions } from '../helpers/image-validator';
 
 const uploads = new Hono<{ Bindings: Env }>();
 
@@ -20,17 +21,34 @@ uploads.put('/', async (c) => {
 
     const formData = await c.req.parseBody();
     const file = formData['file'];
-    const mediaType = formData['media_type'] as string || 'file';
     if (file instanceof File) {
-        // Validate File Size (e.g., 100MB max)
-        if (file.size > MAX_FILE_SIZE) {
-            return c.json({ error: 'File too large (max 100MB)' }, 400);
+        // Step 1: Validate Magic Bytes (file type)
+        const validation = await isValidFileType(file);
+        if (!validation.isValidFile || validation.mediaType === 'unknown') {
+            return c.json({
+                error: 'Invalid file type. Only images (PNG, JPEG, GIF, WEBP, AVIF), videos (MP4, WEBM), and archives (ZIP, RAR, 7Z, GZIP) are allowed.'
+            }, 400);
         }
 
-        // Validate Magic Bytes
-        const validation = await isValidFileType(file);
-        if (!validation.isValidFile) {
-            return c.json({ error: 'Invalid file type. Only images and Unity Packages/Zips are allowed.' }, 400);
+        // Step 2: Validate File Size based on detected media type
+        const sizeValidation = validateFileSize(file.size, validation.mediaType);
+        if (!sizeValidation.isValid) {
+            return c.json({ error: sizeValidation.error }, 400);
+        }
+
+        // Step 3: Additional validation for images (dimensions)
+        if (validation.mediaType === 'image') {
+            const imageValidation = await validateImageDimensions(file);
+            if (!imageValidation.isValid) {
+                return c.json({
+                    error: imageValidation.error,
+                    details: {
+                        width: imageValidation.width,
+                        height: imageValidation.height,
+                        fileSize: imageValidation.fileSize
+                    }
+                }, 400);
+            }
         }
 
         const filename = file.name;
@@ -44,12 +62,12 @@ uploads.put('/', async (c) => {
             // Create media record
             await c.env.DB.prepare(
                 'INSERT INTO media (uuid, r2_key, media_type, file_name) VALUES (?, ?, ?, ?)'
-            ).bind(mediaUuid, r2Key, mediaType, filename).run();
+            ).bind(mediaUuid, r2Key, validation.mediaType, filename).run();
 
             return c.json({
                 media_uuid: mediaUuid,
                 r2_key: r2Key,
-                media_type: mediaType,
+                media_type: validation.mediaType,
                 file_name: filename
             });
         } catch (e) {

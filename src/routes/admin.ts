@@ -46,7 +46,17 @@ admin.post('/resource/:uuid/approve', async (c) => {
 
     const uuid = c.req.param('uuid');
     try {
+        // Get resource category before updating
+        const resource = await c.env.DB.prepare('SELECT category FROM resources WHERE uuid = ?').bind(uuid).first<Resource>();
+        if (!resource) return c.json({ error: 'Resource not found' }, 404);
+
+        // Approve the resource
         await c.env.DB.prepare('UPDATE resources SET is_active = 1 WHERE uuid = ?').bind(uuid).run();
+
+        // Invalidate KV Caches to refresh the lists immediately
+        c.env.VRCSTORAGE_KV.delete('resource:latest');
+        c.env.VRCSTORAGE_KV.delete(`resource:category:${resource.category}`);
+
         return c.json({ success: true });
     } catch (e) {
         console.error('Admin approve error:', e);
@@ -99,7 +109,17 @@ admin.post('/resource/:uuid/deactivate', async (c) => {
 
     const uuid = c.req.param('uuid');
     try {
+        // Get resource category before updating
+        const resource = await c.env.DB.prepare('SELECT category FROM resources WHERE uuid = ?').bind(uuid).first<Resource>();
+        if (!resource) return c.json({ error: 'Resource not found' }, 404);
+
+        // Deactivate the resource
         await c.env.DB.prepare('UPDATE resources SET is_active = 0 WHERE uuid = ?').bind(uuid).run();
+
+        // Invalidate KV Caches to refresh the lists immediately
+        await c.env.VRCSTORAGE_KV.delete('resource:latest');
+        await c.env.VRCSTORAGE_KV.delete(`resource:category:${resource.category}`);
+
         return c.json({ success: true });
     } catch (e) {
         console.error('Admin deactivate error:', e);

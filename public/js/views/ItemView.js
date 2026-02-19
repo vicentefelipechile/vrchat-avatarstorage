@@ -39,7 +39,7 @@ export default class ItemView extends AbstractView {
                         linkText = `${t('item.backup')} ${backupNum}`;
                     }
 
-                    const buttonStyle = (index === 0 || link.link_title) ? (index === 0 ? '' : ' style="background: #555;"') : ' style="background: #666;"';
+                    const buttonStyle = link.link_title ? '' : ' style="background: #555;"';
                     linksHtml += `<a href="${link.link_url}" target="_blank" class="btn"${buttonStyle}>${linkText}</a>`;
                 });
 
@@ -131,7 +131,7 @@ export default class ItemView extends AbstractView {
                     <div id="turnstile-comment" class="mb-10"></div>
                     <button type="submit" class="btn">${t('item.send')}</button>
                 </form>
-                ` : `<p><a href="/login" data-link>${t('item.loginToComment')}</a></p>`}
+                ` : `<hr><h3>${t('item.loginToComment')}</h3>`}
             </div>
         `;
 
@@ -293,10 +293,6 @@ export default class ItemView extends AbstractView {
                 }
             });
         }
-
-        // Expose deleteComment globally just for the onclick handler in HTML string (or better, bind it properly)
-        // Since we are using innerHTML for comments, binding events is tricky without re-selecting.
-        // A cleaner way is to use event delegation on commentsContainer.
         window.deleteComment = deleteComment;
     }
 }

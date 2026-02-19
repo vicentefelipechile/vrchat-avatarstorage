@@ -5,10 +5,12 @@ export const DataCache = {
         const now = Date.now();
         let ttl = 60000;
         let persistent = false;
+        let type = 'json';
 
         if (typeof options === 'object') {
             ttl = options.ttl || 60000;
             persistent = options.persistent;
+            type = options.type || 'json';
         } else {
             ttl = options;
         }
@@ -46,7 +48,13 @@ export const DataCache = {
             try {
                 const res = await fetch(url);
                 if (!res.ok) throw new Error(`Fetch error: ${res.status}`);
-                const data = await res.json();
+
+                let data;
+                if (type === 'text') {
+                    data = await res.text();
+                } else {
+                    data = await res.json();
+                }
 
                 const cacheEntry = { data, timestamp: Date.now() };
                 this.cache.set(url, cacheEntry);
@@ -86,10 +94,12 @@ export const DataCache = {
     prefetch(url, options = 60000) {
         let ttl = 60000;
         let persistent = false;
+        let type = 'json'; // default
 
         if (typeof options === 'object') {
             ttl = options.ttl || 60000;
             persistent = options.persistent;
+            type = options.type || 'json';
         } else {
             ttl = options;
         }

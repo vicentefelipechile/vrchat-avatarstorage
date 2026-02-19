@@ -26,7 +26,7 @@ export default class SettingsView extends AbstractView {
                     
                     <div class="form-group">
                         <label for="avatar">${t('settings.avatar')}</label>
-                        <input type="file" id="avatar" accept="image/png,image/jpg,image/jpeg,image/gif">
+                        <input type="file" id="avatar" accept="image/png,image/jpg,image/jpeg,image/gif,image/webp,image/avif">
                         <small style="color: #666; display: block; margin-top: 5px;">Optional. Max 5MB.</small>
                     </div>
 

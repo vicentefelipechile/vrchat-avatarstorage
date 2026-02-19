@@ -11,6 +11,8 @@ export interface ValidFileType {
     isValidFile: boolean;
     mediaType: MediaType | 'unknown';
     mediaName: string | 'unknown';
+    maxAllowedSize?: number;
+    sizeError?: string;
 }
 
 /**
@@ -52,6 +54,18 @@ export const FILE_SIGNATURES: FileSignature[] = [
         }
     },
 
+    // AVIF (offset check required)
+    {
+        signature: '0000001866747970',
+        mediaType: 'image',
+        name: 'AVIF',
+        customValidator: (buffer: ArrayBuffer) => {
+            const arr = new Uint8Array(buffer);
+            const brand = [...arr.slice(8, 12)].map(b => String.fromCharCode(b)).join('');
+            return brand === 'avif';
+        }
+    },
+
     // Videos
     { signature: '0000001866747970', mediaType: 'video', name: 'MP4' },
     { signature: '1A45DF', mediaType: 'video', name: 'WEBM' },
@@ -65,7 +79,7 @@ export const FILE_SIGNATURES: FileSignature[] = [
 
 export async function isValidFileType(file: File): Promise<ValidFileType> {
     const buffer = await file.arrayBuffer();
-    const bytes = new Uint8Array(buffer).slice(0, 8); // Read 8 bytes for longer signatures
+    const bytes = new Uint8Array(buffer).slice(0, 12); // Read 12 bytes to check for AVIF signature
     const hex = [...bytes].map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
 
     // Check each signature
@@ -76,11 +90,58 @@ export async function isValidFileType(file: File): Promise<ValidFileType> {
                 continue;
             }
 
-            return { isValidFile: true, mediaType: sig.mediaType, mediaName: sig.name };
+            // Get max allowed size for this media type
+            const maxAllowedSize = SIZE_LIMITS[sig.mediaType];
+
+            return {
+                isValidFile: true,
+                mediaType: sig.mediaType,
+                mediaName: sig.name,
+                maxAllowedSize
+            };
         }
     }
 
     return { isValidFile: false, mediaType: 'unknown', mediaName: 'unknown' };
 }
 
-export const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
+/**
+ * Validate file size against the limits for its media type.
+ * Returns validation result with detailed error messages.
+ */
+export function validateFileSize(size: number, mediaType: MediaType): {
+    isValid: boolean;
+    maxSize: number;
+    error?: string;
+} {
+    const maxSize = SIZE_LIMITS[mediaType];
+
+    if (size > maxSize) {
+        const sizeMB = (size / (1024 * 1024)).toFixed(2);
+        const maxMB = (maxSize / (1024 * 1024)).toFixed(0);
+        return {
+            isValid: false,
+            maxSize,
+            error: `File too large for ${mediaType} type. Maximum: ${maxMB}MB, got ${sizeMB}MB`
+        };
+    }
+
+    return { isValid: true, maxSize };
+}
+
+/**
+ * Get human-readable size limits description.
+ */
+export function getSizeLimitsDescription(): string {
+    return `Size limits: Images ${SIZE_LIMITS.image / (1024 * 1024)}MB, Videos ${SIZE_LIMITS.video / (1024 * 1024)}MB, Files ${SIZE_LIMITS.file / (1024 * 1024)}MB`;
+}
+
+// Size limits per media type (in bytes)
+export const SIZE_LIMITS = {
+    image: 20 * 1024 * 1024,    // 20MB for images
+    video: 100 * 1024 * 1024,   // 100MB for videos
+    file: 1500 * 1024 * 1024     // 1500MB for archives/packages
+} as const;
+
+// Legacy constant for backwards compatibility
+export const MAX_FILE_SIZE = SIZE_LIMITS.file;

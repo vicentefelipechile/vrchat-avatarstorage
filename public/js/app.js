@@ -81,13 +81,13 @@ export async function updateNav() {
         const data = await DataCache.fetch('/api/auth/status', 60000);
         window.appState.isLoggedIn = data.loggedIn;
         window.appState.isAdmin = data.is_admin;
-        window.appState.user = data;
+        window.appState.user = data.loggedIn ? data : null;
 
         // Save to localStorage for instant access on next page load
         localStorage.setItem('auth_state', JSON.stringify({
             isLoggedIn: data.loggedIn,
             isAdmin: data.is_admin,
-            user: data
+            user: data.loggedIn ? data : null
         }));
     } catch (e) {
         console.error('Auth check failed', e);
