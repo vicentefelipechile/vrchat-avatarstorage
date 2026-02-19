@@ -488,3 +488,231 @@ hr {
         grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     }
 }
+
+/* Wiki Layout */
+.wiki-container {
+    display: flex;
+    gap: 30px;
+    min-height: 500px;
+}
+
+.wiki-sidebar {
+    width: 250px;
+    flex-shrink: 0;
+    background: #e0e0e0;
+    border: 2px solid #333;
+    padding: 0;
+    height: fit-content;
+}
+
+.wiki-sidebar ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.wiki-sidebar li {
+    border-bottom: 1px solid #333;
+}
+
+.wiki-sidebar li:last-child {
+    border-bottom: none;
+}
+
+.wiki-sidebar a {
+    display: block;
+    padding: 15px;
+    text-decoration: none;
+    color: #333;
+    font-weight: bold;
+    transition: background 0.2s;
+    cursor: pointer;
+}
+
+.wiki-sidebar a:hover,
+.wiki-sidebar a.active {
+    background: #333;
+    color: #fff;
+    text-decoration: none;
+}
+
+.wiki-content {
+    flex: 1;
+    background: #fff;
+    padding: 30px;
+    border: 2px solid #333;
+    min-width: 0;
+}
+
+/* Wiki Content Markdown Styling */
+.wiki-content h1 {
+    margin-top: 0;
+    border-bottom: 2px solid #333;
+    padding-bottom: 10px;
+}
+
+.wiki-content h2 {
+    margin-top: 30px;
+    color: #444;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 5px;
+}
+
+.wiki-content img {
+    max-width: 100%;
+    border: 2px solid #333;
+    margin: 10px 0;
+}
+
+.wiki-content blockquote {
+    margin: 20px 0;
+    padding: 15px;
+    background: #f9f9f9;
+    border-left: 5px solid #333;
+}
+
+.wiki-content pre {
+    background: #f4f4f4;
+    padding: 15px;
+    border: 1px solid #ddd;
+    overflow-x: auto;
+}
+
+.wiki-content ul,
+.wiki-content ol {
+    padding-left: 20px;
+}
+
+.wiki-content li {
+    margin-bottom: 5px;
+}
+
+/* Wiki Mobile */
+@media (max-width: 768px) {
+    .wiki-container {
+        flex-direction: column;
+    }
+
+    .wiki-sidebar {
+        width: 100%;
+    }
+}
+
+/* Badges */
+.badge {
+    display: inline-block;
+    background-color: #48bb78;
+    color: white;
+    padding: 6px 12px;
+    /* Increased padding */
+    font-size: 0.9em;
+    /* Increased font size */
+    font-weight: bold;
+    margin-right: 10px;
+    border: 2px solid #333;
+    /* Retro border */
+    box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.2);
+    /* Retro shadow */
+}
+
+.badge-blue {
+    background-color: #4a90e2;
+}
+
+/* GitHub Styles Alerts */
+.markdown-alert {
+    padding: 16px;
+    margin-bottom: 20px;
+    border: 2px solid #333;
+    border-left-width: 8px;
+    background-color: #f6f8fa;
+    color: #24292f;
+    position: relative;
+    border-radius: 0;
+    /* SQUARE CORNERS ONLY */
+    box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.1);
+    /* Retro shadow matching comments */
+}
+
+.markdown-alert> :last-child {
+    margin-bottom: 0;
+}
+
+.markdown-alert-title {
+    font-weight: 600;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Note */
+.wiki-content .markdown-alert-note {
+    border-left-color: #0969da !important;
+    background-color: #ddf4ff;
+}
+
+.markdown-alert-note .markdown-alert-title {
+    color: #0969da;
+}
+
+.markdown-alert-note .markdown-alert-title::before {
+    content: "ℹ️";
+    /* Fallback icon */
+}
+
+/* Tip */
+.wiki-content .markdown-alert-tip {
+    border-left-color: #1a7f37 !important;
+    background-color: #dafbe1;
+}
+
+.markdown-alert-tip .markdown-alert-title {
+    color: #1a7f37;
+}
+
+.markdown-alert-tip .markdown-alert-title::before {
+    content: "💡";
+}
+
+/* Important */
+.wiki-content .markdown-alert-important {
+    border-left-color: #8250df !important;
+    background-color: #f6f1ff;
+}
+
+.markdown-alert-important .markdown-alert-title {
+    color: #8250df;
+}
+
+.markdown-alert-important .markdown-alert-title::before {
+    content: "💜";
+}
+
+/* Warning */
+.wiki-content .markdown-alert-warning {
+    border-left-color: #9a6700 !important;
+    background-color: #fff8c5;
+}
+
+.markdown-alert-warning .markdown-alert-title {
+    color: #9a6700;
+}
+
+.markdown-alert-warning .markdown-alert-title::before {
+    content: "⚠️";
+}
+
+/* Caution */
+.wiki-content .markdown-alert-caution {
+    border-left-color: #cf222e !important;
+    background-color: #ffebe9;
+}
+
+.markdown-alert-caution .markdown-alert-title {
+    color: #cf222e;
+}
+
+.markdown-alert-caution .markdown-alert-title::before {
+    content: "🛑";
+}

@@ -1,186 +1,167 @@
 import AbstractView from './AbstractView.js';
-import { t } from '../i18n.js';
+import { t, getCurrentLang } from '../i18n.js';
+import { DataCache } from '../cache.js';
 
 export default class WikiView extends AbstractView {
+    constructor(params) {
+        super(params);
+        this.setTitle(t('wiki.title'));
+
+        // Check for topic in URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const topicParam = urlParams.get('topic');
+
+        this.topics = [
+            { id: 'home', label: 'nav.home' },
+            { id: 'poiyomi', label: 'wiki.poiyomi.title' },
+            { id: 'vrcfury', label: 'wiki.vrcfury.title' },
+            { id: 'setup', label: 'wiki.setup.title' },
+            { id: 'faq', label: 'wiki.faq.title' }
+        ];
+
+        // Validate topic param
+        const isValidTopic = this.topics.some(t => t.id === topicParam);
+        this.currentTopic = isValidTopic ? topicParam : 'home';
+    }
+
     async getHtml() {
+        // Generate sidebar items
+        const sidebarItems = this.topics.map(topic => {
+            const label = t(topic.label);
+            return `<li><a href="#" data-topic="${topic.id}" class="${this.currentTopic === topic.id ? 'active' : ''}">${label}</a></li>`;
+        }).join('');
+
         return `
-            <div class="details-box">
-                <h1>${t('wiki.title')}</h1>
-                <p style="font-size: 1.1em; margin-bottom: 30px;">${t('wiki.subtitle')}</p>
-
-                <!-- Poiyomi Section -->
-                <div style="background: #f0f8ff; border-left: 4px solid #4a90e2; padding: 20px; margin-bottom: 30px;">
-                    <h2 style="color: #4a90e2; margin-top: 0;">
-                        <span style="background: #4a90e2; color: white; padding: 3px 8px; border-radius: 3px; font-size: 0.7em; margin-right: 10px;">DEPENDENCIA</span>
-                        ${t('wiki.poiyomi.title')}
-                    </h2>
-                    
-                    <h3>${t('wiki.whatIs')}</h3>
-                    <p>${t('wiki.poiyomi.description')}</p>
-
-                    <h3>${t('wiki.whatFor')}</h3>
-                    <ul>
-                        <li>${t('wiki.poiyomi.feature1')}</li>
-                        <li>${t('wiki.poiyomi.feature2')}</li>
-                        <li>${t('wiki.poiyomi.feature3')}</li>
-                        <li>${t('wiki.poiyomi.feature4')}</li>
-                        <li>${t('wiki.poiyomi.feature5')}</li>
-                    </ul>
-
-                    <div style="background: #fff3cd; border: 2px solid #ffc107; padding: 15px; margin: 20px 0;">
-                        <strong style="color: #856404;">⚠️ ${t('wiki.important')}</strong>
-                        <p style="margin: 10px 0 0 0; color: #856404;">${t('wiki.poiyomi.warning')}</p>
+            <div class="wiki-container">
+                <nav class="wiki-sidebar">
+                    <ul>${sidebarItems}</ul>
+                </nav>
+                <div class="wiki-content" id="wiki-content">
+                    <div style="text-align: center; padding: 50px;">
+                        <p>${t('common.loading')}</p>
                     </div>
-
-                    <h3>${t('wiki.whereGet')}</h3>
-                    <ul>
-                        <li><strong>${t('wiki.poiyomi.free')}:</strong> <a href="https://github.com/poiyomi/PoiyomiToonShader" target="_blank" rel="noopener">GitHub - Poiyomi Toon Shader</a></li>
-                        <li><strong>${t('wiki.poiyomi.pro')}:</strong> <a href="https://www.patreon.com/poiyomi" target="_blank" rel="noopener">Patreon - Poiyomi</a></li>
-                    </ul>
-
-                    <h3>${t('wiki.howInstall')}</h3>
-                    <ol>
-                        <li>${t('wiki.poiyomi.step1')}</li>
-                        <li>${t('wiki.poiyomi.step2')}</li>
-                        <li>${t('wiki.poiyomi.step3')}</li>
-                    </ol>
-                </div>
-
-                <!-- VRCFury Section -->
-                <div style="background: #f0fff4; border-left: 4px solid #48bb78; padding: 20px; margin-bottom: 30px;">
-                    <h2 style="color: #48bb78; margin-top: 0;">
-                        <span style="background: #48bb78; color: white; padding: 3px 8px; border-radius: 3px; font-size: 0.7em; margin-right: 10px;">OPCIONAL</span>
-                        ${t('wiki.vrcfury.title')}
-                    </h2>
-                    
-                    <h3>${t('wiki.whatIs')}</h3>
-                    <p>${t('wiki.vrcfury.description')}</p>
-
-                    <h3>${t('wiki.whatFor')}</h3>
-                    <ul>
-                        <li>${t('wiki.vrcfury.feature1')}</li>
-                        <li>${t('wiki.vrcfury.feature2')}</li>
-                        <li>${t('wiki.vrcfury.feature3')}</li>
-                        <li>${t('wiki.vrcfury.feature4')}</li>
-                        <li>${t('wiki.vrcfury.feature5')}</li>
-                    </ul>
-
-                    <div style="background: #d1ecf1; border: 2px solid #17a2b8; padding: 15px; margin: 20px 0;">
-                        <strong style="color: #0c5460;">ℹ️ ${t('wiki.note')}</strong>
-                        <p style="margin: 10px 0 0 0; color: #0c5460;">${t('wiki.vrcfury.note')}</p>
-                    </div>
-
-                    <h3>${t('wiki.whereGet')}</h3>
-                    <ul>
-                        <li><a href="https://vrcfury.com/" target="_blank" rel="noopener">VRCFury Official Website</a></li>
-                        <li><a href="https://gitlab.com/VRCFury/VRCFury" target="_blank" rel="noopener">GitLab - VRCFury</a></li>
-                    </ul>
-
-                    <h3>${t('wiki.howInstall')}</h3>
-                    <ol>
-                        <li>${t('wiki.vrcfury.step1')}</li>
-                        <li>${t('wiki.vrcfury.step2')}</li>
-                        <li>${t('wiki.vrcfury.step3')}</li>
-                    </ol>
-                </div>
-
-                <!-- Setup Guide Section (Collapsible) -->
-                <div style="background: #fff9e6; border-left: 4px solid #ff9800; padding: 20px; margin-bottom: 30px;">
-                    <h2 style="color: #ff9800; margin-top: 0; cursor: pointer; user-select: none;" id="setup-toggle">
-                        <span style="background: #ff9800; color: white; padding: 3px 8px; border-radius: 3px; font-size: 0.7em; margin-right: 10px;">GUÍA</span>
-                        ${t('wiki.setup.title')}
-                        <span id="setup-arrow" style="float: right; transition: transform 0.3s;">▼</span>
-                    </h2>
-                    
-                    <div id="setup-content" style="display: none; margin-top: 20px;">
-                        <p style="font-size: 1.1em; margin-bottom: 20px;"><strong>${t('wiki.setup.subtitle')}</strong></p>
-                        
-                        <!-- Step 1 -->
-                        <div style="background: #f5f5f5; padding: 15px; margin-bottom: 15px; border: 3px solid #000;">
-                            <h3 style="margin-top: 0;">${t('wiki.setup.step1Title')}</h3>
-                            <p>${t('wiki.setup.step1Content')}</p>
-                        </div>
-                        
-                        <!-- Step 2 -->
-                        <div style="background: #f5f5f5; padding: 15px; margin-bottom: 15px; border: 3px solid #000;">
-                            <h3 style="margin-top: 0;">${t('wiki.setup.step2Title')}</h3>
-                            <p>${t('wiki.setup.step2Content')}</p>
-                        </div>
-                        
-                        <!-- Step 3 -->
-                        <div style="background: #f5f5f5; padding: 15px; margin-bottom: 15px; border: 3px solid #000;">
-                            <h3 style="margin-top: 0;">${t('wiki.setup.step3Title')}</h3>
-                            <p>${t('wiki.setup.step3Content')}</p>
-                        </div>
-                        
-                        <!-- Step 4 -->
-                        <div style="background: #f5f5f5; padding: 15px; margin-bottom: 15px; border: 3px solid #000;">
-                            <h3 style="margin-top: 0;">${t('wiki.setup.step4Title')}</h3>
-                            <p>${t('wiki.setup.step4Content')}</p>
-                        </div>
-                        
-                        <!-- Step 5 -->
-                        <div style="background: #f5f5f5; padding: 15px; margin-bottom: 15px; border: 3px solid #000;">
-                            <h3 style="margin-top: 0;">${t('wiki.setup.step5Title')}</h3>
-                            <p>${t('wiki.setup.step5Content')}</p>
-                        </div>
-                        
-                        <!-- Step 6 -->
-                        <div style="background: #f5f5f5; padding: 15px; margin-bottom: 15px; border: 3px solid #000;">
-                            <h3 style="margin-top: 0;">${t('wiki.setup.step6Title')}</h3>
-                            <p>${t('wiki.setup.step6Content')}</p>
-                        </div>
-                        
-                        <!-- Step 7 -->
-                        <div style="background: #f5f5f5; padding: 15px; margin-bottom: 15px; border: 3px solid #000;">
-                            <h3 style="margin-top: 0;">${t('wiki.setup.step7Title')}</h3>
-                            <p>${t('wiki.setup.step7Content')}</p>
-                        </div>
-                        
-                        <!-- Tip -->
-                        <div style="background: #e8f4f8; padding: 15px; margin-top: 20px; border: 3px solid #000;">
-                            <strong style="font-size: 1.1em;">${t('wiki.setup.tip')}</strong>
-                            <p style="margin: 10px 0 0 0;">${t('wiki.setup.tipContent')}</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- FAQ Section -->
-                <div style="background: #fff; border: 2px solid #ddd; padding: 20px; margin-bottom: 30px;">
-                    <h2>${t('wiki.faq.title')}</h2>
-                    
-                    <h3>${t('wiki.faq.q1')}</h3>
-                    <p>${t('wiki.faq.a1')}</p>
-
-                    <h3>${t('wiki.faq.q2')}</h3>
-                    <p>${t('wiki.faq.a2')}</p>
-
-                    <h3>${t('wiki.faq.q3')}</h3>
-                    <p>${t('wiki.faq.a3')}</p>
-
-                    <h3>${t('wiki.faq.q4')}</h3>
-                    <p>${t('wiki.faq.a4')}</p>
-                </div>
-
-                <div style="text-align: center; padding: 20px; background: #f8f9fa; border-radius: 5px;">
-                    <p style="margin: 0; color: #666;">${t('wiki.footer')}</p>
                 </div>
             </div>
         `;
     }
 
-    postRender() {
-        // Setup collapsible toggle
-        const setupToggle = document.getElementById('setup-toggle');
-        const setupContent = document.getElementById('setup-content');
-        const setupArrow = document.getElementById('setup-arrow');
+    async postRender() {
+        this.contentContainer = document.getElementById('wiki-content');
+        this.sidebarLinks = document.querySelectorAll('.wiki-sidebar a');
 
-        if (setupToggle && setupContent && setupArrow) {
-            setupToggle.addEventListener('click', () => {
-                const isHidden = setupContent.style.display === 'none';
-                setupContent.style.display = isHidden ? 'block' : 'none';
-                setupArrow.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
+        // Add event listeners
+        this.sidebarLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const topic = e.target.getAttribute('data-topic');
+                this.loadTopic(topic);
             });
+
+            // Prefetch on hover
+            link.addEventListener('mouseenter', () => {
+                const topic = link.getAttribute('data-topic');
+                const lang = getCurrentLang();
+                DataCache.prefetch(`/wiki/${lang}/${topic}.md`, { type: 'text', ttl: 300000 }); // 5 min cache
+            });
+        });
+
+        // Handle browser back/forward
+        window.onpopstate = (event) => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const topic = urlParams.get('topic') || 'home';
+            this.loadTopic(topic, false); // false = don't push state
+        };
+
+        // Load initial topic
+        this.loadTopic(this.currentTopic, false); // Initial load doesn't need pushState
+    }
+
+    async loadTopic(topicId, updateUrl = true) {
+        // Update state
+        this.currentTopic = topicId;
+
+        // Update URL
+        if (updateUrl) {
+            const newUrl = topicId === 'home' ? '/wiki' : `/wiki?topic=${topicId}`;
+            history.pushState(null, '', newUrl);
+        }
+
+        // Update sidebar active state
+        this.sidebarLinks.forEach(link => {
+            if (link.getAttribute('data-topic') === topicId) {
+                link.classList.add('active');
+            } else {
+                link.classList.remove('active');
+            }
+        });
+
+        const lang = getCurrentLang();
+        const url = `/wiki/${lang}/${topicId}.md`;
+
+        // Fetch markdown with cache
+        try {
+            const text = await DataCache.fetch(url, { type: 'text', ttl: 300000 });
+            this.renderMarkdown(text);
+        } catch (error) {
+            // Fallback to English if file not found
+            if (lang !== 'en') {
+                console.warn(`Wiki page not found for ${lang}, trying 'en'`);
+                try {
+                    const textEn = await DataCache.fetch(`/wiki/en/${topicId}.md`, { type: 'text', ttl: 300000 });
+                    this.renderMarkdown(textEn);
+                    return;
+                } catch (e) {
+                    console.error('Fallback failed', e);
+                }
+            }
+
+            console.error('Error loading wiki content:', error);
+            this.contentContainer.innerHTML = `
+                <div style="padding: 20px; text-align: center; color: #cc0000;">
+                    <h3>${t('common.error') || 'Error'}</h3>
+                    <p>Could not load content for topic: ${topicId}</p>
+                    <p>Refer to the console for more details.</p>
+                </div>`;
+        }
+    }
+
+    renderMarkdown(text) {
+        if (window.marked) {
+            // Configure marked if needed (e.g. for security or options)
+            // marked.use({ breaks: true, gfm: true });
+            this.contentContainer.innerHTML = window.marked.parse(text);
+
+            // Post-process for GitHub-style alerts
+            // Syntax: > [!NOTE] ...
+            const blockquotes = this.contentContainer.querySelectorAll('blockquote');
+            blockquotes.forEach(bq => {
+                const firstP = bq.querySelector('p');
+                if (!firstP) return;
+
+                const html = firstP.innerHTML;
+                const match = html.match(/^\s*\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]/i);
+
+                if (match) {
+                    const type = match[1].toLowerCase();
+                    bq.classList.add('markdown-alert', `markdown-alert-${type}`);
+
+                    // Remove the marker from the text
+                    firstP.innerHTML = html.replace(match[0], '').trim();
+
+                    // Add title element with icon (optional, can be done in CSS too, but explicit element is nicer)
+                    const titleDiv = document.createElement('p');
+                    titleDiv.className = 'markdown-alert-title';
+                    // We can map type to a specific icon or localized text if needed
+                    // For now, let's just capitalize the type
+                    titleDiv.textContent = type.charAt(0).toUpperCase() + type.slice(1);
+
+                    bq.insertBefore(titleDiv, firstP);
+                }
+            });
+
+        } else {
+            console.error('Marked library not found');
+            this.contentContainer.innerHTML = `<pre>${text}</pre>`;
         }
     }
 }
