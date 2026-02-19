@@ -11,13 +11,13 @@
 - **Симулированная Глубина:** Создает иллюзию туннеля или детального интерьера.
 - **Оптимизировано:** Использует шейдеры, чтобы избежать тяжелой лишней геометрии.
 - **Интеграция с SPS:** Разработано для работы совместно с проникновениями SPS [3].
-- **Легкая Установка:** Совместимо с **VRCFury** для настройки "drag-and-drop" [2].
+- **Легкая Установка:** Совместимо с **VRCFury** для настройки "drag-and-drop".
 
 ## Предварительные Требования
 - **Unity:** Рекомендуемая версия для VRChat (на данный момент 2022.3.22f1 или похожая) [1].
 - **VRChat SDK 3.0:** (Avatars) Загружено через VCC [1].
-- **VRCFury:** Необходимо для автоматической установки [2].
-- **Poiyomi Toon Shader:** (Опционально, но рекомендуется) Версия 8.1 или выше для совместимости материалов [3].
+- **VRCFury:** Необходимо для автоматической установки.
+- **Poiyomi Toon Shader:** (Опционально, но рекомендуется) Версия 8.1 или выше для совместимости материалов [2].
 
 ## Руководство по Установке
 
@@ -51,6 +51,4 @@
 
 [1] Liindy. (н.д.). *Inside View (VRCFury)*. Jinxxy. https://jinxxy.com/Liindy/InsideView
 
-[2] VRModels. (н.д.). *Liindy – Inside View*. VRModels Store. https://vrmodels.store/avatars/7010-liindy-inside-view.html
-
-[3] Liindy. (н.д.). *Inside View*. Gumroad. https://liindy.gumroad.com/l/InsideView
+[2] Liindy. (н.д.). *Inside View*. Gumroad. https://liindy.gumroad.com/l/InsideView

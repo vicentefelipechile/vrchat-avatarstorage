@@ -11,13 +11,13 @@ A diferencia de simplemente borrar la parte trasera de las caras de la malla (ba
 - **Profundidad Simulada:** Crea la ilusión de un túnel o interior detallado.
 - **Optimizado:** Utiliza shaders para evitar geometría extra pesada.
 - **Integración con SPS:** Diseñado para funcionar en conjunto con las penetraciones de SPS [3].
-- **Fácil Instalación:** Compatible con **VRCFury** para una configuración "drag-and-drop" [2].
+- **Fácil Instalación:** Compatible con **VRCFury** para una configuración "drag-and-drop".
 
 ## Requisitos Previos
 - **Unity:** Versión recomendada para VRChat (actualmente 2022.3.22f1 o similar) [1].
 - **VRChat SDK 3.0:** (Avatars) Descargado vía VCC [1].
-- **VRCFury:** Necesario para la instalación automática [2].
-- **Poiyomi Toon Shader:** (Opcional pero recomendado) Versión 8.1 o superior para compatibilidad de materiales [3].
+- **VRCFury:** Necesario para la instalación automática.
+- **Poiyomi Toon Shader:** (Opcional pero recomendado) Versión 8.1 o superior para compatibilidad de materiales [2].
 
 ## Guía de Instalación
 
@@ -51,6 +51,4 @@ El asset funciona mediante una animación de profundidad (Depth Animation).
 
 [1] Liindy. (s.f.). *Inside View (VRCFury)*. Jinxxy. https://jinxxy.com/Liindy/InsideView
 
-[2] VRModels. (s.f.). *Liindy – Inside View*. VRModels Store. https://vrmodels.store/avatars/7010-liindy-inside-view.html
-
-[3] Liindy. (s.f.). *Inside View*. Gumroad. https://liindy.gumroad.com/l/InsideView
+[2] Liindy. (s.f.). *Inside View*. Gumroad. https://liindy.gumroad.com/l/InsideView

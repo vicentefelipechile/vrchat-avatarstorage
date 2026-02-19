@@ -11,13 +11,13 @@
 - **模拟深度:** 创造隧道或详细内部的错觉。
 - **优化:** 使用着色器避免沉重的额外几何形状。
 - **SPS 集成:** 旨在与 SPS 插入协同工作 [3]。
-- **易于安装:** 兼容 **VRCFury**，可进行“拖放”设置 [2]。
+- **易于安装:** 兼容 **VRCFury**，可进行“拖放”设置。
 
 ## 先决条件
-- **Unity:** VRChat 推荐的版本（目前是 2022.3.22f1 或类似版本）[1]。
+- **Unity:** VRChat 推荐的版本（目前是 2022.3.22f1 或类似版本） [1]。
 - **VRChat SDK 3.0:** (Avatars) 通过 VCC 下载 [1]。
-- **VRCFury:** 自动安装所必需 [2]。
-- **Poiyomi Toon Shader:** (可选但推荐) 版本 8.1 或更高以获得材质兼容性 [3].
+- **VRCFury:** 自动安装所必需。
+- **Poiyomi Toon Shader:** (可选但推荐) 版本 8.1 或更高以获得材质兼容性 [2].
 
 ## 安装指南
 
@@ -51,6 +51,4 @@
 
 [1] Liindy. (n.d.). *Inside View (VRCFury)*. Jinxxy. https://jinxxy.com/Liindy/InsideView
 
-[2] VRModels. (n.d.). *Liindy – Inside View*. VRModels Store. https://vrmodels.store/avatars/7010-liindy-inside-view.html
-
-[3] Liindy. (n.d.). *Inside View*. Gumroad. https://liindy.gumroad.com/l/InsideView
+[2] Liindy. (n.d.). *Inside View*. Gumroad. https://liindy.gumroad.com/l/InsideView

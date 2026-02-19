@@ -11,13 +11,13 @@ Contrairement à la simple suppression des faces arrière du maillage (backface 
 - **Profondeur Simulée :** Crée l'illusion d'un tunnel ou d'un intérieur détaillé.
 - **Optimisé :** Utilise des shaders pour éviter une géométrie supplémentaire lourde.
 - **Intégration SPS :** Conçu pour fonctionner conjointement avec les pénétrations SPS [3].
-- **Installation Facile :** Compatible avec **VRCFury** pour une configuration "glisser-déposer" [2].
+- **Installation Facile :** Compatible avec **VRCFury** pour une configuration "glisser-déposer".
 
 ## Prérequis
 - **Unity :** Version recommandée pour VRChat (actuellement 2022.3.22f1 ou similaire) [1].
 - **VRChat SDK 3.0 :** (Avatars) Téléchargé via VCC [1].
-- **VRCFury :** Nécessaire pour l'installation automatique [2].
-- **Poiyomi Toon Shader :** (Optionnel mais recommandé) Version 8.1 ou supérieure pour la compatibilité des matériaux [3].
+- **VRCFury :** Nécessaire pour l'installation automatique.
+- **Poiyomi Toon Shader :** (Optionnel mais recommandé) Version 8.1 ou supérieure pour la compatibilité des matériaux [2].
 
 ## Guide d'Installation
 
@@ -51,6 +51,4 @@ L'asset fonctionne via une animation de profondeur (Depth Animation).
 
 [1] Liindy. (n.d.). *Inside View (VRCFury)*. Jinxxy. https://jinxxy.com/Liindy/InsideView
 
-[2] VRModels. (n.d.). *Liindy – Inside View*. VRModels Store. https://vrmodels.store/avatars/7010-liindy-inside-view.html
-
-[3] Liindy. (n.d.). *Inside View*. Gumroad. https://liindy.gumroad.com/l/InsideView
+[2] Liindy. (n.d.). *Inside View*. Gumroad. https://liindy.gumroad.com/l/InsideView

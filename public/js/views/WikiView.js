@@ -43,13 +43,13 @@ export default class WikiView extends AbstractView {
                 id: 'erp',
                 title: 'wiki.categories.erp',
                 topics: [
-                    { id: 'sps', label: 'wiki.sps.title' },
-                    { id: 'dps', label: 'wiki.dps.title' },
-                    { id: 'inside-view', label: 'wiki.insideView.title' },
-                    { id: 'pcs', label: 'wiki.pcs.title' },
                     { id: 'nsfw-essentials', label: 'wiki.nsfwEssentials.title' },
                     { id: 'gogoloco-nsfw', label: 'wiki.gogolocoNsfw.title' },
-                    { id: 'haptics', label: 'wiki.haptics.title' }
+                    { id: 'sps', label: 'wiki.sps.title' },
+                    { id: 'inside-view', label: 'wiki.insideView.title' },
+                    { id: 'pcs', label: 'wiki.pcs.title' },
+                    { id: 'haptics', label: 'wiki.haptics.title' },
+                    { id: 'dps', label: 'wiki.dps.title' },
                 ]
             }
         ];

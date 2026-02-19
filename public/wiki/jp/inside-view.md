@@ -11,13 +11,13 @@
 - **擬似深度:** トンネルや詳細な内部の錯覚を作り出します。
 - **最適化:** シェーダーを使用して、重い余分なジオメトリを回避します。
 - **SPS統合:** SPSの挿入と連携して動作するように設計されています[3]。
-- **簡単なインストール:** **VRCFury**と互換性があり、「ドラッグ＆ドロップ」で設定できます[2]。
+- **簡単なインストール:** **VRCFury**と互換性があり、「ドラッグ＆ドロップ」で設定できます。
 
 ## 前提条件
 - **Unity:** VRChatに推奨されるバージョン（現在は2022.3.22f1など）[1]。
 - **VRChat SDK 3.0:** (Avatars) VCC経由でダウンロード[1]。
-- **VRCFury:** 自動インストールに必要です[2]。
-- **Poiyomi Toon Shader:** (オプションですが推奨) マテリアルの互換性のためにバージョン8.1以上[3]。
+- **VRCFury:** 自動インストールに必要です。
+- **Poiyomi Toon Shader:** (オプションですが推奨) マテリアルの互換性のためにバージョン8.1以上[2]。
 
 ## インストールガイド
 
@@ -51,6 +51,4 @@ JinxxyまたはGumroadからパッケージ（無料または有料）を入手�
 
 [1] Liindy. (n.d.). *Inside View (VRCFury)*. Jinxxy. https://jinxxy.com/Liindy/InsideView
 
-[2] VRModels. (n.d.). *Liindy – Inside View*. VRModels Store. https://vrmodels.store/avatars/7010-liindy-inside-view.html
-
-[3] Liindy. (n.d.). *Inside View*. Gumroad. https://liindy.gumroad.com/l/InsideView
+[2] Liindy. (n.d.). *Inside View*. Gumroad. https://liindy.gumroad.com/l/InsideView

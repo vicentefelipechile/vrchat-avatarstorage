@@ -11,13 +11,13 @@ Unlike simply deleting the back faces of the mesh (backface culling), Inside Vie
 - **Simulated Depth:** Creates the illusion of a tunnel or detailed interior.
 - **Optimized:** Uses shaders to avoid heavy extra geometry.
 - **SPS Integration:** Designed to work in conjunction with SPS penetrations [3].
-- **Easy Installation:** Compatible with **VRCFury** for a "drag-and-drop" setup [2].
+- **Easy Installation:** Compatible with **VRCFury** for a "drag-and-drop" setup.
 
 ## Prerequisites
 - **Unity:** Version recommended for VRChat (currently 2022.3.22f1 or similar) [1].
 - **VRChat SDK 3.0:** (Avatars) Downloaded via VCC [1].
-- **VRCFury:** Necessary for automatic installation [2].
-- **Poiyomi Toon Shader:** (Optional but recommended) Version 8.1 or higher for material compatibility [3].
+- **VRCFury:** Necessary for automatic installation.
+- **Poiyomi Toon Shader:** (Optional but recommended) Version 8.1 or higher for material compatibility [2].
 
 ## Installation Guide
 
@@ -51,6 +51,4 @@ The asset works via a Depth Animation.
 
 [1] Liindy. (n.d.). *Inside View (VRCFury)*. Jinxxy. https://jinxxy.com/Liindy/InsideView
 
-[2] VRModels. (n.d.). *Liindy – Inside View*. VRModels Store. https://vrmodels.store/avatars/7010-liindy-inside-view.html
-
-[3] Liindy. (n.d.). *Inside View*. Gumroad. https://liindy.gumroad.com/l/InsideView
+[2] Liindy. (n.d.). *Inside View*. Gumroad. https://liindy.gumroad.com/l/InsideView

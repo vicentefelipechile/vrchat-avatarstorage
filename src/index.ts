@@ -94,6 +94,38 @@ app.route('/api/upload', uploadRoutes);
 app.route('/api/download', downloadRoutes);
 app.route('/api', utilRoutes);
 
+// =========================================================================================================
+// SEO routes
+// =========================================================================================================
+
+app.get('/wiki', async (c) => {
+	try {
+		// Fetch original index.html
+		const indexResponse = await c.env.ASSETS.fetch(new URL('/index.html', c.req.url));
+		let html = await indexResponse.text();
+
+		// Replace Meta Tags
+		const title = 'VRCStorage - Wiki';
+		const imageUrl = `${new URL(c.req.url).origin}/wiki.png`;
+		const url = `${new URL(c.req.url).origin}/wiki`;
+
+		// Simple replacements
+		html = html.replace(/<meta property="og:title" content="[^"]*">/, `<meta property="og:title" content="${title}">`);
+		html = html.replace(/<meta property="og:url" content="[^"]*">/, `<meta property="og:url" content="${url}">`);
+		html = html.replace(/<meta property="og:image" content="[^"]*">/, `<meta property="og:image" content="${imageUrl}">`);
+		html = html.replace(/<title>[^<]*<\/title>/, `<title>${title}</title>`);
+
+		// Twitter Card specific (optional but good for Discord/Twitter)
+		html = html.replace(/<meta name="twitter:card" content="[^"]*">/, '<meta name="twitter:card" content="summary_large_image">');
+		html = html.replace(/<meta name="twitter:image" content="[^"]*">/, `<meta name="twitter:image" content="${imageUrl}">`);
+
+		return c.html(html);
+	} catch (e) {
+		console.error('Error injecting Wiki OG tags:', e);
+		return c.env.ASSETS.fetch(new URL('/index.html', c.req.url));
+	}
+});
+
 // SEO route: /item/:uuid (served from resources module, needs to be mounted at root)
 app.get('/item/:uuid', async (c) => {
 	const uuid = c.req.param('uuid');
