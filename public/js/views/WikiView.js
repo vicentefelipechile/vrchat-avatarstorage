@@ -16,7 +16,9 @@ export default class WikiView extends AbstractView {
             { id: 'poiyomi', label: 'wiki.poiyomi.title' },
             { id: 'vrcfury', label: 'wiki.vrcfury.title' },
             { id: 'setup', label: 'wiki.setup.title' },
-            { id: 'faq', label: 'wiki.faq.title' }
+            { id: 'faq', label: 'wiki.faq.title' },
+            { id: 'gogoloco-nsfw', label: 'wiki.gogoloco-nsfw.title' },
+            { id: 'gogoloco', label: 'wiki.gogoloco.title' }
         ];
 
         // Validate topic param
