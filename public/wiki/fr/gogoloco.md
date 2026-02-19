@@ -98,4 +98,4 @@ Si vous préférez ne pas utiliser VRCFury ou avez besoin d'un contrôle total, 
 
 [3] VRCFury. (s.d.). *VRCFury Documentation*. https://vrcfury.com
 
-[4] VRLabs. (s.d.). *Avatar 3.0 Manager*. GitHub. https://github.com/VRLabs/Avatar-3.0-Manager
+[4] VRLabs. (s.d.). *Avatar 3.0 Manager*. GitHub. https://github.com/VRLabs/Avatars-3.0-Manager

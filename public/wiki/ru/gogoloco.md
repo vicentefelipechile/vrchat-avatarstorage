@@ -98,4 +98,4 @@ Gogo Loco — это продвинутая система передвижен�
 
 [3] VRCFury. (n.d.). *VRCFury Documentation*. https://vrcfury.com
 
-[4] VRLabs. (n.d.). *Avatar 3.0 Manager*. GitHub. https://github.com/VRLabs/Avatar-3.0-Manager
+[4] VRLabs. (n.d.). *Avatar 3.0 Manager*. GitHub. https://github.com/VRLabs/Avatars-3.0-Manager

@@ -4,6 +4,11 @@ import { renderTurnstile } from '../utils.js';
 
 export default class LoginView extends AbstractView {
     async getHtml() {
+        if (window.appState.isLoggedIn) {
+            window.navigateTo('/settings');
+            return '';
+        }
+
         return `
             <div class="login-box">
                 <h1>${t('login.title')}</h1>

@@ -98,4 +98,4 @@ Gogo Loco 是由 **franada** [1] 创建的 VRChat 虚拟形象高级运动系统
 
 [3] VRCFury. (n.d.). *VRCFury Documentation*. https://vrcfury.com
 
-[4] VRLabs. (n.d.). *Avatar 3.0 Manager*. GitHub. https://github.com/VRLabs/Avatar-3.0-Manager
+[4] VRLabs. (n.d.). *Avatar 3.0 Manager*. GitHub. https://github.com/VRLabs/Avatars-3.0-Manager

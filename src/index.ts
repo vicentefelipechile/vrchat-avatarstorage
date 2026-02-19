@@ -22,6 +22,7 @@ import commentRoutes from './routes/comments';
 import uploadRoutes from './routes/uploads';
 import downloadRoutes from './routes/downloads';
 import utilRoutes from './routes/utils';
+import wikiRoutes from './routes/wiki';
 
 // =========================================================================================================
 // Variables
@@ -44,6 +45,12 @@ app.use('/api/comments/*', async (c, next) => {
 		return rateLimit({ limit: 10, windowSeconds: 60 * 5, keyPrefix: 'comments_post' })(c, next);
 	}
 	return rateLimit({ limit: 50, windowSeconds: 60 * 5, keyPrefix: 'comments_get' })(c, next);
+});
+app.use('/api/wiki/comments', async (c, next) => {
+	if (c.req.method === 'POST') {
+		return rateLimit({ limit: 5, windowSeconds: 60 * 5, keyPrefix: 'wiki_comments_post' })(c, next);
+	}
+	return rateLimit({ limit: 100, windowSeconds: 60 * 1, keyPrefix: 'wiki_comments_get' })(c, next);
 });
 
 // Global Rate Limit
@@ -82,6 +89,7 @@ app.route('/api', userRoutes);
 app.route('/api/admin', adminRoutes);
 app.route('/api/resources', commentRoutes);
 app.route('/api/comments', commentRoutes);
+app.route('/api/wiki', wikiRoutes);
 app.route('/api/upload', uploadRoutes);
 app.route('/api/download', downloadRoutes);
 app.route('/api', utilRoutes);

@@ -152,3 +152,17 @@ CREATE INDEX IF NOT EXISTS idx_rate_limits_timestamp ON rate_limits(timestamp);
 -- Este índice agrupa primero los activos y ya los tiene ordenados por fecha.
 -- D1 encontrará las 6 filas exactas instantáneamente sin escanear nada más.
 CREATE INDEX IF NOT EXISTS idx_resources_feed ON resources(is_active, created_at DESC);
+
+-- ----------------------------------------------------------------------------
+-- SECCIÓN 8: WIKI COMMENTS (GLOBAL)
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS wiki_comments (
+    uuid TEXT PRIMARY KEY,
+    author_uuid TEXT NOT NULL,
+    text TEXT NOT NULL,
+    created_at INTEGER DEFAULT (unixepoch()),
+    FOREIGN KEY(author_uuid) REFERENCES users(uuid) ON DELETE CASCADE
+);
+
+-- Index for global feed
+CREATE INDEX IF NOT EXISTS idx_wiki_comments_created_at ON wiki_comments(created_at DESC);
