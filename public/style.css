@@ -619,6 +619,22 @@ hr {
     background-color: #4a90e2;
 }
 
+.badge-red {
+    background-color: #dc3545;
+}
+
+.badge-yellow {
+    background-color: #ffc107;
+}
+
+.badge-pink {
+    background-color: #ff69b4;
+}
+
+.badge-purple {
+    background-color: #9932cc;
+}
+
 /* GitHub Styles Alerts */
 .markdown-alert {
     padding: 16px;

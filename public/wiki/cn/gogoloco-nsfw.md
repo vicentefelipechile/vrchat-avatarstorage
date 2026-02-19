@@ -1,6 +1,6 @@
 # NSFW Locomotion
 
-<span class="badge">ERP</span> <span class="badge">NSFW</span>
+<span class="badge badge-purple">ERP</span> <span class="badge badge-red">NSFW</span>
 
 ## 这是什么？
 **NSFW Locomotion** 是 **GoGo Loco** 系统（最初由 franada 创建）的定制和显式版本。它专为“成人主题”或 ERP 头像设计，扩展了运动功能，包括暗示性或显式的姿势和动画。

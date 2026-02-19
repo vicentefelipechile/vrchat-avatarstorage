@@ -17,8 +17,12 @@ export default class WikiView extends AbstractView {
             { id: 'vrcfury', label: 'wiki.vrcfury.title' },
             { id: 'setup', label: 'wiki.setup.title' },
             { id: 'faq', label: 'wiki.faq.title' },
-            { id: 'gogoloco-nsfw', label: 'wiki.gogoloco-nsfw.title' },
-            { id: 'gogoloco', label: 'wiki.gogoloco.title' }
+            { id: 'gogoloco', label: 'wiki.gogoloco.title' },
+            { id: 'gogoloco-nsfw', label: 'wiki.gogolocoNsfw.title' },
+            { id: 'sps', label: 'wiki.sps.title' },
+            { id: 'dps', label: 'wiki.dps.title' },
+            { id: 'nsfw-essentials', label: 'wiki.nsfwEssentials.title' },
+            { id: 'haptics', label: 'wiki.haptics.title' }
         ];
 
         // Validate topic param

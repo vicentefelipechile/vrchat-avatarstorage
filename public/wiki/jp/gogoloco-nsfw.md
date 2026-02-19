@@ -1,6 +1,6 @@
 # NSFW Locomotion
 
-<span class="badge">ERP</span> <span class="badge">NSFW</span>
+<span class="badge badge-purple">ERP</span> <span class="badge badge-red">NSFW</span>
 
 ## これは何ですか？
 **NSFW Locomotion**は、**GoGo Loco**システム（元々はfranadaによって作成されました）のカスタマイズされた明示的なバージョンです。「アダルトテーマ」やERPアバター向けに特別に設計されており、ロコモーション機能を拡張して、暗示的または露骨なポーズやアニメーションを含んでいます。

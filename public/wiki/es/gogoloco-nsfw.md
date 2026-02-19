@@ -1,6 +1,6 @@
 # NSFW Locomotion
 
-<span class="badge">ERP</span> <span class="badge">NSFW</span>
+<span class="badge badge-purple">ERP</span> <span class="badge badge-red">NSFW</span>
 
 ## ¿Qué es?
 **NSFW Locomotion** es una versión personalizada y explícita del sistema **GoGo Loco** (creado originalmente por franada). Está diseñado específicamente para avatares "adult-themed" o de ERP, ampliando las funcionalidades de locomoción para incluir poses y animaciones sugerentes o explícitas.
