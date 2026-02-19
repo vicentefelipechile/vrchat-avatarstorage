@@ -23,9 +23,13 @@ const translations = {
             gogolocoNsfw: { title: 'NSFW Locomotion' },
             sps: { title: 'SPS (Super Plug Shader)' },
             dps: { title: 'DPS (Dynamic Penetration System)' },
+            insideView: { title: 'Inside View' },
+            pcs: { title: 'PCS (Penetration Contact System)' },
+            parameter: { title: 'Parámetros del Avatar' },
             nsfwEssentials: { title: 'Guía Esencial NSFW' },
             haptics: { title: 'Guía de Hápticos' },
-            comments: { title: 'Comentarios' }
+            comments: { title: 'Comentarios' },
+            categories: { vrchat: 'VRChat', dependencies: 'Dependencias', erp: 'ERP', informative: 'Informativo' }
         }
     },
     en: {
@@ -51,9 +55,12 @@ const translations = {
             gogolocoNsfw: { title: 'NSFW Locomotion' },
             sps: { title: 'SPS (Super Plug Shader)' },
             dps: { title: 'DPS (Dynamic Penetration System)' },
+            insideView: { title: 'Inside View' },
+            parameter: { title: 'Avatar Parameters' },
             nsfwEssentials: { title: 'NSFW Essentials' },
             haptics: { title: 'Haptics Guide' },
-            comments: { title: 'Wiki Comments' }
+            comments: { title: 'Wiki Comments' },
+            categories: { vrchat: 'VRChat', dependencies: 'Dependencies', erp: 'ERP', informative: 'Informative' }
         }
     },
     ru: {
@@ -79,9 +86,12 @@ const translations = {
             gogolocoNsfw: { title: 'NSFW Locomotion' },
             sps: { title: 'SPS (Super Plug Shader)' },
             dps: { title: 'DPS (Dynamic Penetration System)' },
+            insideView: { title: 'Inside View' },
+            parameter: { title: 'Параметры аватара' },
             nsfwEssentials: { title: 'Основы NSFW' },
             haptics: { title: 'Руководство по Хаптике' },
-            comments: { title: 'Комментарии Вики' }
+            comments: { title: 'Комментарии Вики' },
+            categories: { vrchat: 'VRChat', dependencies: 'Зависимости', erp: 'ERP', informative: 'Информационный' }
         }
     },
     jp: {
@@ -107,9 +117,12 @@ const translations = {
             gogolocoNsfw: { title: 'NSFW Locomotion' },
             sps: { title: 'SPS (Super Plug Shader)' },
             dps: { title: 'DPS (Dynamic Penetration System)' },
+            insideView: { title: 'Inside View' },
+            parameter: { title: 'アバターパラメータ' },
             nsfwEssentials: { title: 'NSFW エッセンシャル' },
             haptics: { title: 'ハプティクスガイド' },
-            comments: { title: 'Wikiコメント' }
+            comments: { title: 'Wikiコメント' },
+            categories: { vrchat: 'VRChat', dependencies: '依存関係', erp: 'ERP', informative: '情報' }
         }
     },
     cn: {
@@ -135,9 +148,12 @@ const translations = {
             gogolocoNsfw: { title: 'NSFW Locomotion' },
             sps: { title: 'SPS (Super Plug Shader)' },
             dps: { title: 'DPS (Dynamic Penetration System)' },
+            insideView: { title: 'Inside View' },
+            parameter: { title: '虚拟形象参数' },
             nsfwEssentials: { title: 'NSFW 基础指南' },
             haptics: { title: '触觉指南' },
-            comments: { title: 'Wiki 评论' }
+            comments: { title: 'Wiki 评论' },
+            categories: { vrchat: 'VRChat', dependencies: '依赖项', erp: 'ERP', informative: '信息' }
         }
     },
     fr: {
@@ -163,9 +179,12 @@ const translations = {
             gogolocoNsfw: { title: 'NSFW Locomotion' },
             sps: { title: 'SPS (Super Plug Shader)' },
             dps: { title: 'DPS (Dynamic Penetration System)' },
+            insideView: { title: 'Inside View' },
+            parameter: { title: 'Paramètres d\'Avatar' },
             nsfwEssentials: { title: 'Les Essentiels NSFW' },
             haptics: { title: 'Guide Haptique' },
-            comments: { title: 'Commentaires Wiki' }
+            comments: { title: 'Commentaires Wiki' },
+            categories: { vrchat: 'VRChat', dependencies: 'Dépendances', erp: 'ERP', informative: 'Informatif' }
         }
     }
 };

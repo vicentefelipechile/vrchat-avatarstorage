@@ -12,37 +12,78 @@ export default class WikiView extends AbstractView {
         const urlParams = new URLSearchParams(window.location.search);
         const topicParam = urlParams.get('topic');
 
-        this.topics = [
-            { id: 'home', label: 'nav.home' },
-            { id: 'poiyomi', label: 'wiki.poiyomi.title' },
-            { id: 'vrcfury', label: 'wiki.vrcfury.title' },
-            { id: 'setup', label: 'wiki.setup.title' },
-            { id: 'faq', label: 'wiki.faq.title' },
-            { id: 'gogoloco', label: 'wiki.gogoloco.title' },
-            { id: 'gogoloco-nsfw', label: 'wiki.gogolocoNsfw.title' },
-            { id: 'sps', label: 'wiki.sps.title' },
-            { id: 'dps', label: 'wiki.dps.title' },
-            { id: 'nsfw-essentials', label: 'wiki.nsfwEssentials.title' },
-            { id: 'haptics', label: 'wiki.haptics.title' },
-            { id: 'comments', label: 'wiki.comments.title' }
+        this.categories = [
+            {
+                id: 'informative',
+                title: 'wiki.categories.informative',
+                topics: [
+                    { id: 'home', label: 'nav.home' },
+                    { id: 'faq', label: 'wiki.faq.title' },
+                    { id: 'comments', label: 'wiki.comments.title' }
+                ]
+            },
+            {
+                id: 'vrchat',
+                title: 'wiki.categories.vrchat',
+                topics: [
+                    { id: 'parameter', label: 'wiki.parameter.title' },
+                    { id: 'setup', label: 'wiki.setup.title' }
+                ]
+            },
+            {
+                id: 'dependencies',
+                title: 'wiki.categories.dependencies',
+                topics: [
+                    { id: 'poiyomi', label: 'wiki.poiyomi.title' },
+                    { id: 'vrcfury', label: 'wiki.vrcfury.title' },
+                    { id: 'gogoloco', label: 'wiki.gogoloco.title' }
+                ]
+            },
+            {
+                id: 'erp',
+                title: 'wiki.categories.erp',
+                topics: [
+                    { id: 'sps', label: 'wiki.sps.title' },
+                    { id: 'dps', label: 'wiki.dps.title' },
+                    { id: 'inside-view', label: 'wiki.insideView.title' },
+                    { id: 'pcs', label: 'wiki.pcs.title' },
+                    { id: 'nsfw-essentials', label: 'wiki.nsfwEssentials.title' },
+                    { id: 'gogoloco-nsfw', label: 'wiki.gogolocoNsfw.title' },
+                    { id: 'haptics', label: 'wiki.haptics.title' }
+                ]
+            }
         ];
 
+        // Flatten for easy validation
+        this.flatTopics = this.categories.flatMap(cat => cat.topics);
+
         // Validate topic param
-        const isValidTopic = this.topics.some(t => t.id === topicParam);
+        const isValidTopic = this.flatTopics.some(t => t.id === topicParam);
         this.currentTopic = isValidTopic ? topicParam : 'home';
     }
 
     async getHtml() {
-        // Generate sidebar items
-        const sidebarItems = this.topics.map(topic => {
-            const label = t(topic.label);
-            return `<li><a href="#" data-topic="${topic.id}" class="${this.currentTopic === topic.id ? 'active' : ''}">${label}</a></li>`;
+        // Generate sidebar items with categories
+        const sidebarContent = this.categories.map(cat => {
+            const catTitle = t(cat.title);
+            const links = cat.topics.map(topic => {
+                const label = t(topic.label);
+                const activeClass = this.currentTopic === topic.id ? 'active' : '';
+                return `<li><a href="#" data-topic="${topic.id}" class="${activeClass}">${label}</a></li>`;
+            }).join('');
+
+            return `
+                <div class="wiki-sidebar-category">
+                    <h3>${catTitle}</h3>
+                    <ul>${links}</ul>
+                </div>
+            `;
         }).join('');
 
         return `
             <div class="wiki-container">
                 <nav class="wiki-sidebar">
-                    <ul>${sidebarItems}</ul>
+                    ${sidebarContent}
                 </nav>
                 <div class="wiki-content" id="wiki-content">
                     <div style="text-align: center; padding: 50px;">
@@ -196,9 +237,9 @@ export default class WikiView extends AbstractView {
                 <p>${t('common.loading')}</p>
             </div>
             ${user ? `
-            <form id="wiki-comment-form" style="margin-top: 20px;">
+            <form id="wiki-comment-form" class="wiki-comment-form">
                 <div class="form-group">
-                    <textarea id="comment-text" rows="3" placeholder="${t('item.commentPlaceholder')}" required style="width: 100%; font-family: inherit; padding: 10px;"></textarea>
+                    <textarea id="comment-text" rows="3" placeholder="${t('item.commentPlaceholder')}" required class="comment-textarea"></textarea>
                 </div>
                 <div id="turnstile-wiki-comment" class="mb-10"></div>
                 <button type="submit" class="btn">${t('item.send')}</button>
@@ -324,16 +365,16 @@ export default class WikiView extends AbstractView {
             }
 
             return `
-            <div id="comment-${c.uuid}" style="border: 2px solid #000; padding: 10px; margin-bottom: 15px; background: #fff; box-shadow: 5px 5px 0px #888; display: flex; gap: 10px;">
-                <div style="flex-shrink: 0;">
-                    <img src="${c.author_avatar || '/assets/default_avatar.png'}" alt="${c.author}" style="width: 50px; height: 50px; object-fit: cover; border: 2px solid #000;">
+            <div id="comment-${c.uuid}" class="wiki-comment">
+                <div class="wiki-comment-avatar-container">
+                    <img src="${c.author_avatar || '/assets/default_avatar.png'}" alt="${c.author}" class="wiki-comment-avatar">
                 </div>
-                <div style="flex-grow: 1;">
-                    <div style="font-weight: bold; margin-bottom: 5px; display: flex; justify-content: space-between; align-items: center;">
-                        <span>${c.author} <span style="font-weight: normal; font-size: 0.8em; color: #666;">(${new Date(c.timestamp).toLocaleString()})</span></span>
-                        ${(isAdmin || (window.appState.user && window.appState.user.username === c.author)) ? `<button class="btn delete-comment-btn" data-uuid="${c.uuid}" style="padding: 2px 5px; font-size: 0.8em; background: #ff4444; color: white;">${t('admin.delete')}</button>` : ''}
+                <div class="wiki-comment-content">
+                    <div class="wiki-comment-header">
+                        <span>${c.author} <span class="wiki-comment-date">(${new Date(c.timestamp).toLocaleString()})</span></span>
+                        ${(isAdmin || (window.appState.user && window.appState.user.username === c.author)) ? `<button class="btn delete-comment-btn btn-danger-sm" data-uuid="${c.uuid}">${t('admin.delete')}</button>` : ''}
                     </div>
-                    <div class="markdown-body" style="font-size: 0.95em;">${content}</div>
+                    <div class="markdown-body wiki-comment-body">${content}</div>
                 </div>
             </div>
             `;

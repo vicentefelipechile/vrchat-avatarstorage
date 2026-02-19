@@ -14,6 +14,15 @@
 	<meta property="og:type" content="website">
 	<meta name="theme-color" content="#2b2d31">
 	<link rel="stylesheet" href="/style.css">
+	<script>
+		(function () {
+			const storedTheme = localStorage.getItem('theme');
+			const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+			if (storedTheme === 'dark' || (!storedTheme && systemPrefersDark)) {
+				document.documentElement.setAttribute('data-theme', 'dark');
+			}
+		})();
+	</script>
 	<div id="turnstile-widget" style="display: none;"></div>
 	<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 
@@ -28,7 +37,7 @@
 			<div class="logo"><strong>VRCStorage</strong></div>
 			<button class="menu-toggle" id="mobile-menu-btn">☰</button>
 			<div class="nav-links">
-				<select id="lang-selector" style="margin-right: 15px; padding: 5px;">
+				<select id="lang-selector" style="margin-right: 5px; padding: 5px;">
 					<option value="es">Español</option>
 					<option value="en">English</option>
 					<option value="ru">Русский</option>
@@ -36,6 +45,8 @@
 					<option value="cn">中文</option>
 					<option value="fr">Français</option>
 				</select>
+				<button id="theme-toggle" class="btn" style="margin-right: 15px; padding: 5px 10px;"
+					aria-label="Toggle Dark Mode">☀️</button>
 				<a href="/" data-link data-i18n="nav.home">Home</a>
 				<a href="/category/avatars" data-link data-i18n="nav.avatars">Avatares</a>
 				<!-- <a href="/category/worlds" data-link data-i18n="nav.worlds">Mundos</a> -->

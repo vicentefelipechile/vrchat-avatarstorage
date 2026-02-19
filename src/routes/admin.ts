@@ -152,6 +152,9 @@ admin.get('/stats/orphaned-media', async (c) => {
 				UNION
 				SELECT media_uuid FROM resource_n_media
 			)
+			AND NOT EXISTS (
+				SELECT 1 FROM users WHERE INSTR(users.avatar_url, m.r2_key) > 0
+			)
 		`).bind(cutoffTime).all<Media>();
 
         // Estadísticas generales
@@ -201,6 +204,9 @@ admin.post('/cleanup/orphaned-media', async (c) => {
 				SELECT reference_image_uuid FROM resources WHERE reference_image_uuid IS NOT NULL
 				UNION
 				SELECT media_uuid FROM resource_n_media
+			)
+			AND NOT EXISTS (
+				SELECT 1 FROM users WHERE INSTR(users.avatar_url, m.r2_key) > 0
 			)
 		`).bind(cutoffTime).all<Media>();
 

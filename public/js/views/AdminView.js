@@ -13,39 +13,33 @@ export default class AdminView extends AbstractView {
             <h1>${t('admin.title')}</h1>
             
             <!-- Statistics Dashboard -->
-            <div id="admin-stats" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px;">
-                <div style="background: #f5f5f5; padding: 20px; border-radius: 8px; text-align: center;">
-                    <div style="font-size: 2em; font-weight: bold; color: #999;">
-                        ...
-                    </div>
-                    <div style="color: #666; margin-top: 5px;">${t('common.loading')}</div>
+            <div id="admin-stats" class="admin-grid">
+                <div class="stat-card">
+                    <div class="stat-value skeleton-text">...</div>
+                    <div class="stat-label">${t('common.loading')}</div>
                 </div>
-                <div style="background: #f5f5f5; padding: 20px; border-radius: 8px; text-align: center;">
-                    <div style="font-size: 2em; font-weight: bold; color: #999;">
-                        ...
-                    </div>
-                    <div style="color: #666; margin-top: 5px;">${t('common.loading')}</div>
+                <div class="stat-card">
+                    <div class="stat-value skeleton-text">...</div>
+                    <div class="stat-label">${t('common.loading')}</div>
                 </div>
-                <div style="background: #f5f5f5; padding: 20px; border-radius: 8px; text-align: center;">
-                    <div style="font-size: 2em; font-weight: bold; color: #999;">
-                        ...
-                    </div>
-                    <div style="color: #666; margin-top: 5px;">${t('common.loading')}</div>
+                <div class="stat-card">
+                    <div class="stat-value skeleton-text">...</div>
+                    <div class="stat-label">${t('common.loading')}</div>
                 </div>
             </div>
 
             <!-- Cleanup Section -->
             <div id="cleanup-section">
-                <div style="background: #f5f5f5; padding: 20px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
-                    <p style="color: #666; margin: 0;">${t('common.loadingCleanup')}</p>
+                <div class="cleanup-card loading">
+                    <p>${t('common.loadingCleanup')}</p>
                 </div>
             </div>
 
             <!-- Pending Resources -->
             <h2 style="margin-top: 30px;">${t('admin.pendingResources')}</h2>
             <div id="pending-resources">
-                <div style="text-align: center; padding: 40px;">
-                    <p style="color: #666; margin: 0;">${t('common.loadingPending')}</p>
+                <div class="pending-loading">
+                    <p>${t('common.loadingPending')}</p>
                 </div>
             </div>
         `;
@@ -62,23 +56,23 @@ export default class AdminView extends AbstractView {
         const statsContainer = document.getElementById('admin-stats');
         if (statsContainer) {
             statsContainer.innerHTML = `
-                <div style="background: #f5f5f5; padding: 20px; border-radius: 8px; text-align: center;">
-                    <div style="font-size: 2em; font-weight: bold; color: ${stats.orphaned_count > 0 ? '#ff9800' : '#4caf50'};">
+                <div class="stat-card">
+                    <div class="stat-value" style="color: ${stats.orphaned_count > 0 ? '#ff9800' : '#4caf50'};">
                         ${stats.orphaned_count}
                     </div>
-                    <div style="color: #666; margin-top: 5px;">${t('admin.orphanedFiles')}</div>
+                    <div class="stat-label">${t('admin.orphanedFiles')}</div>
                 </div>
-                <div style="background: #f5f5f5; padding: 20px; border-radius: 8px; text-align: center;">
-                    <div style="font-size: 2em; font-weight: bold; color: #333;">
+                <div class="stat-card">
+                    <div class="stat-value">
                         ${stats.total_media}
                     </div>
-                    <div style="color: #666; margin-top: 5px;">${t('admin.totalMedia')}</div>
+                    <div class="stat-label">${t('admin.totalMedia')}</div>
                 </div>
-                <div style="background: #f5f5f5; padding: 20px; border-radius: 8px; text-align: center;">
-                    <div style="font-size: 2em; font-weight: bold; color: #333;">
+                <div class="stat-card">
+                    <div class="stat-value">
                         ${stats.total_resources}
                     </div>
-                    <div style="color: #666; margin-top: 5px;">${t('admin.totalResources')}</div>
+                    <div class="stat-label">${t('admin.totalResources')}</div>
                 </div>
             `;
         }
@@ -87,30 +81,30 @@ export default class AdminView extends AbstractView {
         const cleanupSection = document.getElementById('cleanup-section');
         if (cleanupSection) {
             cleanupSection.innerHTML = stats.orphaned_count > 0 ? `
-                <div style="background: #fff3cd; border: 1px solid #ffc107; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-                    <h3 style="margin-top: 0; color: #856404;">⚠️ ${t('admin.orphanedFilesFound')}</h3>
-                    <p style="color: #856404; margin-bottom: 15px;">
+                <div class="cleanup-card warning">
+                    <h3 class="cleanup-title">⚠️ ${t('admin.orphanedFilesFound')}</h3>
+                    <p class="cleanup-desc">
                         ${t('admin.orphanedFilesDesc').replace('{count}', stats.orphaned_count).replace('{hours}', stats.cutoff_hours)}
                     </p>
-                    <details style="margin-bottom: 15px;">
-                        <summary style="cursor: pointer; font-weight: bold; color: #856404;">${t('admin.viewFileList')}</summary>
-                        <ul style="margin-top: 10px; max-height: 200px; overflow-y: auto; background: white; padding: 15px; border-radius: 4px;">
+                    <details class="cleanup-details">
+                        <summary>${t('admin.viewFileList')}</summary>
+                        <ul class="file-list">
                             ${stats.orphaned_files.map(f => `
-                                <li style="margin: 5px 0; font-family: monospace; font-size: 0.9em;">
+                                <li>
                                     <strong>${f.filename}</strong> 
-                                    <span style="color: #666;">(${f.type}, ${f.age_hours}h)</span>
+                                    <span>(${f.type}, ${f.age_hours}h)</span>
                                 </li>
                             `).join('')}
                         </ul>
                     </details>
-                    <button id="cleanup-orphaned" class="btn" style="background: #dc3545; color: white;">
+                    <button id="cleanup-orphaned" class="btn btn-danger">
                         🗑️ ${t('admin.cleanupOrphaned')}
                     </button>
                 </div>
             ` : `
-                <div style="background: #d4edda; border: 1px solid #c3e6cb; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-                    <h3 style="margin-top: 0; color: #155724;">✅ ${t('admin.noOrphanedFiles')}</h3>
-                    <p style="color: #155724; margin: 0;">${t('admin.noOrphanedFilesDesc')}</p>
+                <div class="cleanup-card success">
+                    <h3 class="cleanup-title">✅ ${t('admin.noOrphanedFiles')}</h3>
+                    <p class="cleanup-desc">${t('admin.noOrphanedFilesDesc')}</p>
                 </div>
             `;
         }
@@ -122,15 +116,15 @@ export default class AdminView extends AbstractView {
                 pendingContainer.innerHTML = `<p>${t('admin.noPending')}</p>`;
             } else {
                 const cardsHtml = pending.map(res => `
-                    <div class="card">
-                        ${res.thumbnail_key ? `<div class="card-image"><img src="/api/download/${res.thumbnail_key}" alt="${res.title}" loading="lazy"></div>` : ''}
+                < div class="card" >
+                    ${res.thumbnail_key ? `<div class="card-image"><img src="/api/download/${res.thumbnail_key}" alt="${res.title}" loading="lazy"></div>` : ''}
                         <h3>${res.title}</h3>
                         <div class="meta">${t('cats.' + res.category) || res.category} | ${new Date(res.timestamp).toLocaleDateString()}</div>
                         <p>${stripMarkdown(res.description).substring(0, 100)}...</p>
                         <a href="/item/${res.uuid}" data-link class="btn">${t('card.view')}</a>
-                    </div>
+                    </div >
                 `).join('');
-                pendingContainer.innerHTML = `<div class="grid">${cardsHtml}</div>`;
+                pendingContainer.innerHTML = `< div class="grid" > ${cardsHtml}</div > `;
             }
         }
 

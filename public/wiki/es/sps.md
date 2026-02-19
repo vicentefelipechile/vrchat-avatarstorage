@@ -3,7 +3,7 @@
 <span class="badge badge-purple">ERP</span> <span class="badge badge-red">NSFW</span>
 
 ## ¿Qué es?
-**SPS** (Super Plug Shader), a veces referido coloquialmente como "SSP", es un sistema de deformación de malla gratuito y moderno para VRChat diseñado por el equipo de **VRCFury**. Permite que las partes del avatar se deformen de manera realista al interactuar con otros avatares u objetos, reemplazando a sistemas antiguos y de pago como **DPS** (Dynamic Penetration System) y **TPS** [1].
+**SPS** (Super Plug Shader), a veces referido de mala manera como "SSP" ya que hay alguien que le molesta que se llame así y dedica a tirarle basura al que se equivoque, es un sistema de deformación de malla gratuito y moderno para VRChat diseñado por el equipo de **VRCFury**. Permite que las partes del avatar se deformen de manera realista al interactuar con otros avatares u objetos, reemplazando a sistemas antiguos y de pago como **DPS** (Dynamic Penetration System) y **TPS** [1].
 
 ## ¿Para qué sirve?
 - **Deformación realista:** Simula penetración y contacto físico deformando la malla del avatar.

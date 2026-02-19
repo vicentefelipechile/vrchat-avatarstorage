@@ -56,7 +56,7 @@ export default class ItemView extends AbstractView {
             }
         } else {
             linksHtml = `
-                <div style="background: #eee; padding: 15px; border: 1px solid #999;">
+                <div class="login-req-box">
                     <p><strong>${t('item.loginReq')}</strong></p>
                     <p>${t('item.loginMsg')}</p>
                     <a href="/login" data-link class="btn">${t('item.goToLogin')}</a>
@@ -156,7 +156,7 @@ export default class ItemView extends AbstractView {
                 ${galleryHtml}
                 <hr>
                 <h3>${t('upload.desc')}</h3>
-                <div class="description markdown-body" style="margin: 20px 0; padding: 15px; background: #fafafa; border: 1px solid #eee;">
+                <div class="description-box markdown-body">
                     ${descriptionHtml}
                 </div>
 
@@ -201,13 +201,13 @@ export default class ItemView extends AbstractView {
         if (!comments || comments.length === 0) return `<p>${t('item.noComments')}</p>`;
 
         return comments.map(c => `
-            <div id="comment-${c.uuid}" style="border: 2px solid #000; padding: 10px; margin-bottom: 15px; background: #fff; box-shadow: 5px 5px 0px #888; display: flex; gap: 10px;">
+            <div id="comment-${c.uuid}" class="comment" style="display: flex; gap: 10px;">
                 <div style="flex-shrink: 0;">
-                    <img src="${c.author_avatar}" alt="${c.author}" style="width: 50px; height: 50px; object-fit: cover; border: 2px solid #000;">
+                    <img src="${c.author_avatar}" alt="${c.author}" class="comment-avatar">
                 </div>
                 <div style="flex-grow: 1;">
                     <div style="font-weight: bold; margin-bottom: 5px; display: flex; justify-content: space-between; align-items: center;">
-                        <span>${c.author} <span style="font-weight: normal; font-size: 0.8em; color: #666;">(${new Date(c.timestamp).toLocaleString()})</span></span>
+                        <span>${c.author} <span style="font-weight: normal; font-size: 0.8em; color: var(--text-muted);">(${new Date(c.timestamp).toLocaleString()})</span></span>
                         ${isAdmin ? `<button onclick="deleteComment('${c.uuid}')" class="btn" style="padding: 2px 5px; font-size: 0.8em; background: #ff4444; color: white;">${t('admin.delete')}</button>` : ''}
                     </div>
                     <div style="white-space: pre-wrap;">${c.text}</div>

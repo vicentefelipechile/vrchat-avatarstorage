@@ -177,6 +177,38 @@ document.addEventListener('DOMContentLoaded', async () => {
         langSelector.addEventListener('change', (e) => setLanguage(e.target.value));
     }
 
+    // --- Theme Toggle Logic ---
+    const themeToggle = document.getElementById('theme-toggle');
+
+    // Function to apply theme
+    function applyTheme(theme) {
+        if (theme === 'dark') {
+            document.documentElement.setAttribute('data-theme', 'dark');
+            if (themeToggle) themeToggle.textContent = '🌙';
+        } else {
+            document.documentElement.removeAttribute('data-theme');
+            if (themeToggle) themeToggle.textContent = '☀️';
+        }
+    }
+
+    // Initial Load - Sync button icon
+    const currentTheme = document.documentElement.getAttribute('data-theme');
+    if (themeToggle) {
+        themeToggle.textContent = currentTheme === 'dark' ? '☀️' : '🌙';
+    }
+
+    // Event Listener
+    if (themeToggle) {
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+            applyTheme(newTheme);
+            localStorage.setItem('theme', newTheme);
+        });
+    }
+    // --------------------------
+
     document.body.addEventListener('click', e => {
         if (e.target.matches('[data-link]')) {
             e.preventDefault();

@@ -1,4 +1,60 @@
 /* Reset & Base */
+:root {
+    /* Light Theme (Default) */
+    --bg-body: #f0f0f0;
+    --bg-nav: #ddd;
+    --bg-card: #fff;
+    --bg-input: #fff;
+    --bg-hover: #eee;
+    --bg-dropdown: #ddd;
+    --bg-sidebar: #e0e0e0;
+    --bg-code: #f4f4f4;
+    --bg-quote: #f9f9f9;
+
+    --text-main: #333;
+    --text-muted: #666;
+    --text-inverse: #fff;
+    --text-link: #000;
+
+    --border-color: #333;
+    --border-light: #eee;
+
+    --btn-bg: #333;
+    --btn-text: #fff;
+    --btn-hover: #555;
+
+    --shadow-color: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="dark"] {
+    /* Dark Theme Overrides */
+    --bg-body: #121212;
+    --bg-nav: #1e1e1e;
+    --bg-card: #242424;
+    --bg-input: #2d2d2d;
+    --bg-hover: #333;
+    --bg-dropdown: #2d2d2d;
+    --bg-sidebar: #1e1e1e;
+    --bg-code: #2d2d2d;
+    --bg-quote: #242424;
+
+    --text-main: #e0e0e0;
+    --text-muted: #aaa;
+    --text-inverse: #121212;
+    --text-link: #4a90e2;
+    /* Lighter blue for dark mode */
+
+    --border-color: #bbb;
+    --border-light: #444;
+
+    --btn-bg: #eeeeee88;
+    /* Invert button in dark mode? Or keep dark with light text? Let's keep consistent but visible */
+    --btn-text: #121212;
+    --btn-hover: #ccc;
+
+    --shadow-color: rgba(0, 0, 0, 0.5);
+}
+
 * {
     box-sizing: border-box;
 }
@@ -6,20 +62,20 @@
 body {
     margin: 0;
     font-family: monospace;
-    background-color: #f0f0f0;
-    color: #333;
+    background-color: var(--bg-body);
+    color: var(--text-main);
     display: flex;
     flex-direction: column;
     min-height: 100vh;
 }
 
 a {
-    color: #000;
+    color: var(--text-link);
     text-decoration: underline;
 }
 
 a:hover {
-    background-color: #eee;
+    background-color: var(--bg-hover);
 }
 
 /* Layout */
@@ -36,8 +92,8 @@ main {
 
 /* Navbar */
 nav {
-    background-color: #ddd;
-    border-bottom: 2px solid #333;
+    background-color: var(--bg-nav);
+    border-bottom: 2px solid var(--border-color);
     padding: 10px 0;
     margin-bottom: 20px;
 }
@@ -64,8 +120,8 @@ nav .container {
 }
 
 .nav-links a:hover {
-    border: 1px solid #333;
-    background-color: #fff;
+    border: 1px solid var(--border-color);
+    background-color: var(--bg-card);
 }
 
 /* User Menu Dropdown */
@@ -77,18 +133,28 @@ nav .container {
 
 .user-menu-btn {
     background: #bbb;
+    /* Keep this one or user var? Let's use a specific var or just standard nav logic. Keeping for now but maybe verify */
     border: 1px solid transparent;
     padding: 5px 10px;
     font-family: inherit;
     font-weight: bold;
     cursor: pointer;
     color: #000;
-    border: 2px solid #000;
+    /* Force black on this button for now as background is #bbb */
+    border: 2px solid var(--text-link);
+    /* Use text-link color which is black/white appropriate? No, link is blue in dark mode. let's use text-main inverse or similar */
+}
+
+/* Redefining user-menu-btn clearer for dark mode */
+.user-menu-btn {
+    background: var(--bg-hover);
+    color: var(--text-main);
+    border: 2px solid var(--border-color);
 }
 
 .user-menu-btn:hover {
-    border: 2px solid #333;
-    background-color: #fff;
+    border: 2px solid var(--text-main);
+    background-color: var(--bg-card);
 }
 
 .user-menu-dropdown {
@@ -96,8 +162,8 @@ nav .container {
     position: absolute;
     right: 0;
     top: 100%;
-    background-color: #ddd;
-    border: 2px solid #333;
+    background-color: var(--bg-dropdown);
+    border: 2px solid var(--border-color);
     min-width: 150px;
     z-index: 1000;
     margin-top: 5px;
@@ -113,7 +179,8 @@ nav .container {
     text-decoration: none;
     font-weight: bold;
     border: none;
-    border-bottom: 1px solid #000;
+    color: var(--text-main);
+    border-bottom: 1px solid var(--border-color);
 }
 
 .user-menu-dropdown a:last-child {
@@ -121,13 +188,13 @@ nav .container {
 }
 
 .user-menu-dropdown a:hover {
-    background-color: #fff;
+    background-color: var(--bg-card);
     border: none;
-    border-bottom: 1px solid #000;
+    border-bottom: 1px solid var(--border-color);
 }
 
 .user-menu-dropdown a:last-child:hover {
-    background-color: #fff;
+    background-color: var(--bg-card);
     border: none;
     border-bottom: none;
 }
@@ -140,8 +207,8 @@ nav .container {
 }
 
 .card {
-    background: #fff;
-    border: 2px solid #333;
+    background: var(--bg-card);
+    border: 2px solid var(--border-color);
     padding: 15px;
     display: flex;
     flex-direction: column;
@@ -151,10 +218,10 @@ nav .container {
 .card-image {
     width: 100%;
     height: 150px;
-    background-color: #eee;
+    background-color: var(--bg-hover);
     margin-bottom: 15px;
     overflow: hidden;
-    border: 2px solid #333;
+    border: 2px solid var(--border-color);
 }
 
 .card-image img {
@@ -169,14 +236,14 @@ nav .container {
 
 .card .meta {
     font-size: 0.8rem;
-    color: #666;
+    color: var(--text-muted);
     margin-bottom: 10px;
 }
 
 .btn {
     display: inline-block;
-    background: #333;
-    color: #fff;
+    background: var(--btn-bg);
+    color: var(--btn-text);
     padding: 8px 15px;
     text-decoration: none;
     text-align: center;
@@ -187,7 +254,7 @@ nav .container {
 }
 
 .btn:hover {
-    background: #555;
+    background: var(--btn-hover);
 }
 
 /* Forms */
@@ -206,8 +273,10 @@ select,
 textarea {
     width: 100%;
     padding: 8px;
-    border: 2px solid #333;
+    border: 2px solid var(--border-color);
     font-family: inherit;
+    background-color: var(--bg-input);
+    color: var(--text-main);
 }
 
 /* Pagination */
@@ -223,8 +292,8 @@ footer {
     text-align: center;
     margin-top: 40px;
     padding: 20px;
-    border-top: 2px solid #333;
-    color: #666;
+    border-top: 2px solid var(--border-color);
+    color: var(--text-muted);
 }
 
 /* Utilities */
@@ -258,20 +327,20 @@ footer {
 .login-box {
     max-width: 400px;
     margin: 0 auto;
-    background: #fff;
+    background: var(--bg-card);
     padding: 20px;
-    border: 2px solid #333;
+    border: 2px solid var(--border-color);
 }
 
 .details-box {
-    background: #fff;
+    background: var(--bg-card);
     padding: 20px;
-    border: 2px solid #333;
+    border: 2px solid var(--border-color);
 }
 
 hr {
     border: 0;
-    border-top: 2px solid #333;
+    border-top: 2px solid var(--border-color);
     margin: 20px 0;
 }
 
@@ -284,8 +353,9 @@ hr {
 }
 
 .gallery-item {
-    border: 2px solid #333;
+    border: 2px solid var(--border-color);
     background: #000;
+    /* Usually keep compiled black for images/videos background ?? */
     position: relative;
     aspect-ratio: 16/9;
     /* Force consistent aspect ratio */
@@ -338,15 +408,29 @@ hr {
 
 /* Preview Container */
 .preview-container {
-    border: 1px solid #ccc;
+    border: 1px solid var(--border-light);
     padding: 15px;
     min-height: 300px;
-    background: #f9f9f9;
+    background: var(--bg-hover);
 }
 
 .under-revision {
     font-size: 0.5em;
     color: #e67e22;
+}
+
+/* Description Box */
+.description-box {
+    margin: 20px 0;
+    padding: 15px;
+    background: var(--bg-quote);
+    border: 1px solid var(--border-light);
+}
+
+.login-req-box {
+    background: var(--bg-hover);
+    padding: 15px;
+    border: 1px solid var(--border-color);
 }
 
 /* --- Item View Styles --- */
@@ -362,30 +446,30 @@ hr {
 .download-link {
     display: inline-block;
     padding: 10px 15px;
-    background: #333;
-    color: #fff;
+    background: var(--btn-bg);
+    color: var(--btn-text);
     text-decoration: none;
     font-weight: bold;
 }
 
 .download-link:hover {
-    background: #555;
-    color: #fff;
+    background: var(--btn-hover);
+    color: var(--btn-text);
 }
 
 .comment {
-    border: 2px solid #333;
+    border: 2px solid var(--border-color);
     padding: 15px;
     margin-bottom: 15px;
-    background: #fff;
-    box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.1);
+    background: var(--bg-card);
+    box-shadow: 4px 4px 0px var(--shadow-color);
 }
 
 .comment-header {
     display: flex;
     align-items: center;
     margin-bottom: 10px;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid var(--border-light);
     padding-bottom: 10px;
 }
 
@@ -395,7 +479,7 @@ hr {
     border-radius: 50%;
     margin-right: 15px;
     object-fit: cover;
-    border: 2px solid #333;
+    border: 2px solid var(--border-color);
 }
 
 .btn-sm {
@@ -499,8 +583,9 @@ hr {
 .wiki-sidebar {
     width: 250px;
     flex-shrink: 0;
-    background: #e0e0e0;
-    border: 2px solid #333;
+    /* Removed background and border from main container to let categories breathe */
+    background: transparent;
+    border: none;
     padding: 0;
     height: fit-content;
 }
@@ -512,69 +597,111 @@ hr {
 }
 
 .wiki-sidebar li {
-    border-bottom: 1px solid #333;
+    /* No borders between items, just spacing/hover */
+    border-bottom: none;
+    margin-bottom: 2px;
+    position: relative;
+}
+
+.wiki-sidebar li::after {
+    content: '';
+    display: block;
+    width: 90%;
+    height: 1px;
+    /* Slightly thicker for visibility as requested 'linea negra' */
+    background-color: var(--border-color);
+    margin: 0 auto;
+}
+
+.wiki-sidebar li:last-child::after {
+    display: none;
+    /* Hide on last item of the list/category */
 }
 
 .wiki-sidebar li:last-child {
-    border-bottom: none;
+    margin-bottom: 0;
 }
 
 .wiki-sidebar a {
     display: block;
-    padding: 15px;
+    padding: 8px 15px;
     text-decoration: none;
-    color: #333;
-    font-weight: bold;
-    transition: background 0.2s;
+    color: var(--text-main);
+    /* font-weight: bold; */
+    /* Cleaner look without bold everywhere */
+    transition: all 0.2s;
     cursor: pointer;
+    border-left: 4px solid transparent;
 }
 
 .wiki-sidebar a:hover,
 .wiki-sidebar a.active {
-    background: #333;
-    color: #fff;
+    background: var(--bg-hover);
+    color: var(--text-main);
+    border-left: 4px solid var(--text-main);
+    /* Retro accent */
     text-decoration: none;
 }
 
+.wiki-sidebar-category {
+    margin-bottom: 25px;
+    /* Separation between categories */
+}
+
+.wiki-sidebar-category h3 {
+    padding: 8px 12px;
+    margin: 0 0 10px 0;
+    font-size: 0.9rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    /* Inverted Retro Look */
+    color: var(--bg-card);
+    background-color: var(--text-main);
+    border: none;
+}
+
+/* Remove old first-child rule as we have spacing now */
+
 .wiki-content {
     flex: 1;
-    background: #fff;
+    background: var(--bg-card);
     padding: 30px;
-    border: 2px solid #333;
+    border: 2px solid var(--border-color);
     min-width: 0;
 }
 
 /* Wiki Content Markdown Styling */
 .wiki-content h1 {
     margin-top: 0;
-    border-bottom: 2px solid #333;
+    border-bottom: 2px solid var(--border-color);
     padding-bottom: 10px;
 }
 
 .wiki-content h2 {
     margin-top: 30px;
-    color: #444;
-    border-bottom: 1px solid #eee;
+    color: var(--text-main);
+    border-bottom: 1px solid var(--border-light);
     padding-bottom: 5px;
 }
 
 .wiki-content img {
     max-width: 100%;
-    border: 2px solid #333;
+    border: 2px solid var(--border-color);
     margin: 10px 0;
 }
 
 .wiki-content blockquote {
     margin: 20px 0;
     padding: 15px;
-    background: #f9f9f9;
-    border-left: 5px solid #333;
+    background: var(--bg-quote);
+    border-left: 5px solid var(--border-color);
 }
 
 .wiki-content pre {
-    background: #f4f4f4;
+    background: var(--bg-code);
     padding: 15px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--border-light);
     overflow-x: auto;
 }
 
@@ -609,9 +736,9 @@ hr {
     /* Increased font size */
     font-weight: bold;
     margin-right: 10px;
-    border: 2px solid #333;
+    border: 2px solid var(--border-color);
     /* Retro border */
-    box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.2);
+    box-shadow: 2px 2px 0px var(--shadow-color);
     /* Retro shadow */
 }
 
@@ -639,15 +766,14 @@ hr {
 .markdown-alert {
     padding: 16px;
     margin-bottom: 20px;
-    border: 2px solid #333;
+    border: none;
     border-left-width: 8px;
-    background-color: #f6f8fa;
-    color: #24292f;
+    border-left-style: solid;
+    background-color: var(--bg-card);
+    color: var(--text-main);
     position: relative;
     border-radius: 0;
-    /* SQUARE CORNERS ONLY */
-    box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.1);
-    /* Retro shadow matching comments */
+    box-shadow: 6px 6px 0px var(--shadow-color);
 }
 
 .markdown-alert> :last-child {
@@ -665,70 +791,303 @@ hr {
 /* Note */
 .wiki-content .markdown-alert-note {
     border-left-color: #0969da !important;
-    background-color: #ddf4ff;
+    background-color: var(--alert-note-bg, #ddf4ff);
+    color: var(--alert-note-text, #0969da);
 }
 
 .markdown-alert-note .markdown-alert-title {
-    color: #0969da;
+    color: var(--alert-note-text, #0969da);
 }
 
 .markdown-alert-note .markdown-alert-title::before {
     content: "ℹ️";
-    /* Fallback icon */
 }
+
+[data-theme="dark"] .wiki-content .markdown-alert-note {
+    --alert-note-bg: #1a2a3a;
+    --alert-note-text: #58a6ff;
+}
+
 
 /* Tip */
 .wiki-content .markdown-alert-tip {
     border-left-color: #1a7f37 !important;
-    background-color: #dafbe1;
+    background-color: var(--alert-tip-bg, #dafbe1);
+    color: var(--alert-tip-text, #1a7f37);
 }
 
 .markdown-alert-tip .markdown-alert-title {
-    color: #1a7f37;
+    color: var(--alert-tip-text, #1a7f37);
 }
 
 .markdown-alert-tip .markdown-alert-title::before {
     content: "💡";
 }
 
+[data-theme="dark"] .wiki-content .markdown-alert-tip {
+    --alert-tip-bg: #1a3a2a;
+    --alert-tip-text: #3fb950;
+}
+
 /* Important */
 .wiki-content .markdown-alert-important {
     border-left-color: #8250df !important;
-    background-color: #f6f1ff;
+    background-color: var(--alert-important-bg, #f6f1ff);
+    color: var(--alert-important-text, #8250df);
 }
 
 .markdown-alert-important .markdown-alert-title {
-    color: #8250df;
+    color: var(--alert-important-text, #8250df);
 }
 
 .markdown-alert-important .markdown-alert-title::before {
     content: "💜";
 }
 
+[data-theme="dark"] .wiki-content .markdown-alert-important {
+    --alert-important-bg: #2a1a3a;
+    --alert-important-text: #bc8cff;
+}
+
 /* Warning */
 .wiki-content .markdown-alert-warning {
     border-left-color: #9a6700 !important;
-    background-color: #fff8c5;
+    background-color: var(--alert-warning-bg, #fff8c5);
+    color: var(--alert-warning-text, #9a6700);
 }
 
 .markdown-alert-warning .markdown-alert-title {
-    color: #9a6700;
+    color: var(--alert-warning-text, #9a6700);
 }
 
 .markdown-alert-warning .markdown-alert-title::before {
     content: "⚠️";
 }
 
+[data-theme="dark"] .wiki-content .markdown-alert-warning {
+    --alert-warning-bg: #3a2a1a;
+    --alert-warning-text: #d29922;
+}
+
 /* Caution */
 .wiki-content .markdown-alert-caution {
     border-left-color: #cf222e !important;
-    background-color: #ffebe9;
+    background-color: var(--alert-caution-bg, #ffebe9);
+    color: var(--alert-caution-text, #cf222e);
 }
 
 .markdown-alert-caution .markdown-alert-title {
-    color: #cf222e;
+    color: var(--alert-caution-text, #cf222e);
 }
 
 .markdown-alert-caution .markdown-alert-title::before {
     content: "🛑";
+}
+
+[data-theme="dark"] .wiki-content .markdown-alert-caution {
+    --alert-caution-bg: #3a1a1a;
+    --alert-caution-text: #ff7b72;
+}
+
+
+/* --- Admin View Styles --- */
+.admin-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.stat-card {
+    background: var(--bg-card);
+    padding: 20px;
+    text-align: center;
+    border: 1px solid var(--border-color);
+}
+
+.stat-value {
+    font-size: 2em;
+    font-weight: bold;
+    color: var(--text-main);
+}
+
+.stat-label {
+    color: var(--text-muted);
+    margin-top: 5px;
+}
+
+/* Cleanup Cards */
+.cleanup-card {
+    padding: 20px;
+    margin-bottom: 20px;
+    border: 1px solid transparent;
+}
+
+.cleanup-card.loading {
+    background: var(--bg-card);
+    text-align: center;
+    border-color: var(--border-color);
+}
+
+.cleanup-card.warning {
+    background: var(--alert-warning-bg, #fff3cd);
+    border-color: #ffc107;
+    color: var(--alert-warning-text, #856404);
+}
+
+.cleanup-card.success {
+    background: var(--alert-tip-bg, #d4edda);
+    border-color: #c3e6cb;
+    color: var(--alert-tip-text, #155724);
+}
+
+[data-theme="dark"] .cleanup-card.warning {
+    --alert-warning-bg: #3a2a1a;
+    --alert-warning-text: #d29922;
+    border-color: #9a6700;
+}
+
+[data-theme="dark"] .cleanup-card.success {
+    --alert-tip-bg: #1a3a2a;
+    --alert-tip-text: #3fb950;
+    border-color: #1a7f37;
+}
+
+.cleanup-title {
+    margin-top: 0;
+    color: inherit;
+}
+
+.cleanup-desc {
+    color: inherit;
+    margin-bottom: 15px;
+}
+
+.cleanup-details summary {
+    cursor: pointer;
+    font-weight: bold;
+    color: inherit;
+    margin-bottom: 24px;
+}
+
+.file-list {
+    margin-top: 10px;
+    max-height: 200px;
+    overflow-y: auto;
+    background: var(--bg-body);
+    padding: 15px;
+    border: 1px solid var(--border-color);
+}
+
+.file-list li {
+    margin: 5px 0;
+    font-family: monospace;
+    font-size: 0.9em;
+    color: var(--text-main);
+}
+
+.file-list li span {
+    color: var(--text-muted);
+}
+
+.pending-loading {
+    text-align: center;
+    padding: 40px;
+    color: var(--text-muted);
+}
+
+.btn-danger {
+    background-color: #dc3545;
+    color: white;
+}
+
+/* Wiki Comments */
+.wiki-comment-form {
+    margin-top: 20px;
+}
+
+.comment-textarea {
+    width: 100%;
+    font-family: inherit;
+    padding: 10px;
+    background: var(--bg-card);
+    color: var(--text-main);
+    border: 1px solid var(--border-color);
+}
+
+.wiki-comment {
+    border: 2px solid var(--border-color);
+    padding: 10px;
+    margin-bottom: 15px;
+    background: var(--bg-card);
+    box-shadow: 5px 5px 0px var(--shadow-color);
+    display: flex;
+    gap: 10px;
+}
+
+.wiki-comment-avatar-container {
+    flex-shrink: 0;
+}
+
+.wiki-comment-avatar {
+    width: 50px;
+    height: 50px;
+    object-fit: cover;
+    border: 2px solid var(--border-color);
+}
+
+.wiki-comment-content {
+    flex-grow: 1;
+}
+
+.wiki-comment-header {
+    font-weight: bold;
+    margin-bottom: 5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.wiki-comment-date {
+    font-weight: normal;
+    font-size: 0.8em;
+    color: var(--text-muted);
+}
+
+.btn-danger-sm {
+    padding: 2px 5px;
+    font-size: 0.8em;
+    background: #ff4444;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+.wiki-comment-body {
+    font-size: 0.95em;
+    color: var(--text-main);
+}
+
+/* Wiki Tables */
+.wiki-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    font-size: 0.9em;
+}
+
+.wiki-content th,
+.wiki-content td {
+    border: 2px solid var(--border-color);
+    padding: 10px;
+    text-align: left;
+}
+
+.wiki-content th {
+    background-color: var(--bg-hover);
+    font-weight: bold;
+}
+
+.wiki-content tr:nth-child(even) {
+    background-color: var(--bg-code);
 }
