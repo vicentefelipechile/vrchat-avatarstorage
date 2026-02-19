@@ -17,7 +17,7 @@ Gogo Loco est un système de locomotion avancé pour les avatars VRChat créé p
 > Bien qu'il puisse être installé manuellement, il est fortement recommandé d'utiliser **VRCFury** pour faciliter l'installation et éviter les conflits avec d'autres menus.
 
 ## Où l'obtenir ?
-- [GitHub - Gogo Loco (Gratuit)](https://github.com/franada/gogo-loco)
+- [GitHub - Gogo Loco (Gratuit)](https://github.com/Franada/goloco)
 - [Gumroad - Gogo Loco (Soutenir le créateur)](https://franadavrc.gumroad.com/l/gogoloco)
 
 ## Peut-on l'ajouter à des modèles qui ne l'ont pas ?
@@ -92,7 +92,7 @@ Si vous préférez ne pas utiliser VRCFury ou avez besoin d'un contrôle total, 
 
 ## Références
 
-[1] Franada. (s.d.). *Gogo Loco*. GitHub. https://github.com/franada/gogo-loco
+[1] Franada. (s.d.). *Gogo Loco*. GitHub. https://github.com/Franada/goloco
 
 [2] Franada. (s.d.). *Gogo Loco*. Gumroad. https://franadavrc.gumroad.com/l/gogoloco
 

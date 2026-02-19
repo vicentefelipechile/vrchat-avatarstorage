@@ -18,7 +18,7 @@ VRCFury是一个免费的Unity插件，大大简化了VRChat模型的配置。�
 
 ## 在哪里获取？
 - [VRCFury Official Website](https://vrcfury.com/)
-- [GitLab - VRCFury](https://gitlab.com/VRCFury/VRCFury)
+- [GitLab - VRCFury](https://github.com/VRCFury/VRCFury)
 
 ## 如何安装？
 1. 从官方网站或GitLab下载VRCFury

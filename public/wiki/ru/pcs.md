@@ -73,10 +73,10 @@
 
 ## Ссылки
 
-[1] Dismay. (н.д.). *Penetration Contact System*. Gumroad. https://dismay.gumroad.com/l/PCS
+[1] Dismay. (н.д.). *Penetration Contact System*. Gumroad. https://dismay.booth.pm/items/5001027
 
 [2] VRCFury. (н.д.). *VRCFury Documentation*. https://vrcfury.com
 
-[3] OscGoesBrrr. (н.д.). *OscGoesBrrr*. https://oscgoesbrrr.com
+[3] OscGoesBrrr. (н.д.). *OscGoesBrrr*. https://osc.toys
 
-[4] Intiface. (н.д.). *Intiface Central*. https://intiface.com/central
+[4] Intiface. (н.д.). *Intiface Central*. https://intiface.com/desktop/

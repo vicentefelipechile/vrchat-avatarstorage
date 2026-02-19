@@ -83,4 +83,4 @@ SPS 完全通过 Unity 中的 VRCFury 工具进行管理。你不需要导入奇
 
 [3] VRCD. (n.d.). *SPS Tutorial*. VRCD. https://vrcd.org.cn
 
-[4] VRCFury. (n.d.). *SPS Troubleshooting*. VRCFury Documentation. https://vrcfury.com/sps/troubleshooting
+[4] VRCFury. (n.d.). *SPS Troubleshooting*. VRCFury Documentation. https://vrcfury.com/sps

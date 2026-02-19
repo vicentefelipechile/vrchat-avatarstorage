@@ -27,7 +27,7 @@ VRChat imposes a strict limit of **256 bits** of synced data per avatar [2].
 ## Advanced Uses
 Besides controlling clothes from the menu, parameters can be controlled by:
 - **PhysBones:** To detect if someone touches your ear or hair [3].
-- **Contacts:** To detect collisions (like in [SPS](./sps.md) or [PCS](./pcs.md) systems).
+- **Contacts:** To detect collisions (like in [SPS](/wiki?topic=sps) or [PCS](/wiki?topic=pcs) systems).
 - **OSC:** To receive data from external programs (like heart rate monitors, facial tracking, or Spotify) [3].
 
 ## How to Create Them
@@ -108,12 +108,12 @@ This way you control multiple options spending only 8 bits of your total budget!
 
 ## References
 
-[1] VRChat. (n.d.). *Expression Parameters*. VRChat Documentation. https://docs.vrchat.com/docs/expression-parameters
+[1] VRChat. (n.d.). *Expression Parameters*. VRChat Documentation. https://creators.vrchat.com/avatars/animator-parameters/#expression-parameters-asset
 
-[2] VRChat. (n.d.). *Avatar Parameter Driver*. VRChat Documentation. https://docs.vrchat.com/docs/avatar-parameter-driver
+[2] VRChat. (n.d.). *Avatar Parameter Driver*. VRChat Documentation. https://creators.vrchat.com/avatars/state-behaviors/#avatar-parameter-driver
 
-[3] VRChat. (n.d.). *OSC Overview*. VRChat Documentation. https://docs.vrchat.com/docs/osc-overview
+[3] VRChat. (n.d.). *OSC Overview*. VRChat Documentation. https://creators.vrchat.com/avatars/osc/
 
-[4] Franada. (n.d.). *GoGo Loco Documentation*. https://www.3d.franada.com/gogoloco
+[4] Franada. (n.d.). *GoGo Loco Documentation*. https://github.com/Franada/goloco
 
-[5] VRCFury. (n.d.). *SPS - Super Plug Shader*. VRCFury Documentation. https://vrcfury.com/components/sps
+[5] VRCFury. (n.d.). *SPS - Super Plug Shader*. VRCFury Documentation. https://vrcfury.com/sps

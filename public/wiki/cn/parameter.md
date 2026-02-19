@@ -27,7 +27,7 @@ VRChat 对每个虚拟形象施加了 **256 bits** 同步数据的严格限制 [
 ## 高级用途
 除了从菜单控制衣服外，参数还可以通过以下方式控制：
 - **PhysBones:** 检测是否有人触摸你的耳朵或头发 [3]。
-- **Contacts:** 检测碰撞（如在 [SPS](./sps.md) 或 [PCS](./pcs.md) 系统中）。
+- **Contacts:** 检测碰撞（如在 [SPS](/wiki?topic=sps) 或 [PCS](/wiki?topic=pcs) 系统中）。
 - **OSC:** 接收来自外部程序的数据（如心率监测器、面部追踪或 Spotify）[3]。
 
 ## 如何创建
@@ -108,12 +108,12 @@ VRChat 施加此限制主要是为了 **网络优化** [1]。每个同步参数�
 
 ## 参考资料
 
-[1] VRChat. (n.d.). *Expression Parameters*. VRChat Documentation. https://docs.vrchat.com/docs/expression-parameters
+[1] VRChat. (n.d.). *Expression Parameters*. VRChat Documentation. https://creators.vrchat.com/avatars/animator-parameters/#expression-parameters-asset
 
-[2] VRChat. (n.d.). *Avatar Parameter Driver*. VRChat Documentation. https://docs.vrchat.com/docs/avatar-parameter-driver
+[2] VRChat. (n.d.). *Avatar Parameter Driver*. VRChat Documentation. https://creators.vrchat.com/avatars/state-behaviors/#avatar-parameter-driver
 
-[3] VRChat. (n.d.). *OSC Overview*. VRChat Documentation. https://docs.vrchat.com/docs/osc-overview
+[3] VRChat. (n.d.). *OSC Overview*. VRChat Documentation. https://creators.vrchat.com/avatars/osc/
 
-[4] Franada. (n.d.). *GoGo Loco Documentation*. https://www.3d.franada.com/gogoloco
+[4] Franada. (n.d.). *GoGo Loco Documentation*. https://github.com/Franada/goloco
 
-[5] VRCFury. (n.d.). *SPS - Super Plug Shader*. VRCFury Documentation. https://vrcfury.com/components/sps
+[5] VRCFury. (n.d.). *SPS - Super Plug Shader*. VRCFury Documentation. https://vrcfury.com/sps

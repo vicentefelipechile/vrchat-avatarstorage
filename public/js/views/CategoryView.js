@@ -23,13 +23,17 @@ export default class CategoryView extends AbstractView {
     }
 
     async postRender() {
-        // Fetch data
-        const data = await DataCache.fetch(`/api/resources/category/${this.categoryKey}`, 300000);
+        // Parse page from query params or default to 1
+        const urlParams = new URLSearchParams(window.location.search);
+        const page = parseInt(urlParams.get('page')) || 1;
+
+        // Fetch data with pagination
+        const data = await DataCache.fetch(`/api/resources/category/${this.categoryKey}?page=${page}`, 300000);
 
         // Update the resources container
         const container = document.getElementById('category-resources');
         if (container) {
-            if (data.resources.length === 0) {
+            if (!data.resources || data.resources.length === 0) {
                 container.innerHTML = `<p>${t('common.noResourcesFound')}</p>`;
             } else {
                 const cardsHtml = data.resources.map(res => `
@@ -41,7 +45,32 @@ export default class CategoryView extends AbstractView {
                         <a href="/item/${res.uuid}" data-link class="btn">${t('card.view')}</a>
                     </div>
                 `).join('');
-                container.innerHTML = `<div class="grid">${cardsHtml}</div>`;
+
+                // Pagination Controls
+                let paginationHtml = '';
+                if (data.pagination) {
+                    const { page, hasPrevPage, hasNextPage } = data.pagination;
+
+                    if (hasPrevPage || hasNextPage) {
+                        paginationHtml = `
+                            <div class="pagination" style="display: flex; justify-content: center; align-items: center; gap: 20px; margin-top: 30px;">
+                                <a href="/category/${this.categoryKey}?page=${page - 1}"
+                                   class="btn ${!hasPrevPage ? 'disabled' : ''}"
+                                   ${!hasPrevPage ? 'style="pointer-events: none; opacity: 0.5;"' : 'data-link'}>
+                                   &laquo; ${t('pagination.prev') || 'Previous'}
+                                </a>
+
+                                <a href="/category/${this.categoryKey}?page=${page + 1}"
+                                   class="btn ${!hasNextPage ? 'disabled' : ''}"
+                                   ${!hasNextPage ? 'style="pointer-events: none; opacity: 0.5;"' : 'data-link'}>
+                                   ${t('pagination.next') || 'Next'} &raquo;
+                                </a>
+                            </div>
+                        `;
+                    }
+                }
+
+                container.innerHTML = `<div class="grid">${cardsHtml}</div>${paginationHtml}`;
             }
         }
     }

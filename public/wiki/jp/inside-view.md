@@ -5,7 +5,7 @@
 ## これはなに？
 **Inside View**は、**Liindy** [1]によって作成されたVRChatアバター用のアセットで、擬似的な視覚的深度を追加することで、メッシュの内部（SPSの穴など）を見ることができるようにします。
 
-単にメッシュの背面を削除する（バックフェイスカリング）のとは異なり、Inside Viewは「Screen Shader」を使用して穴の内部に深度テクスチャを投影し、複雑な内部ジオメトリをモデリングすることなく、リアルな内部の錯覚を作り出します。[SPS](./sps.md)などのシステムと一緒によく使用され、ERP中の視覚化を向上させます。
+単にメッシュの背面を削除する（バックフェイスカリング）のとは異なり、Inside Viewは「Screen Shader」を使用して穴の内部に深度テクスチャを投影し、複雑な内部ジオメトリをモデリングすることなく、リアルな内部の錯覚を作り出します。[SPS](/wiki?topic=sps)などのシステムと一緒によく使用され、ERP中の視覚化を向上させます。
 
 ## 主な特徴
 - **擬似深度:** トンネルや詳細な内部の錯覚を作り出します。
@@ -51,4 +51,4 @@ JinxxyまたはGumroadからパッケージ（無料または有料）を入手�
 
 [1] Liindy. (n.d.). *Inside View (VRCFury)*. Jinxxy. https://jinxxy.com/Liindy/InsideView
 
-[2] Liindy. (n.d.). *Inside View*. Gumroad. https://liindy.gumroad.com/l/InsideView
+[2] Liindy. (n.d.). *Inside View*. Gumroad. https://jinxxy.com/Liindy/InsideView

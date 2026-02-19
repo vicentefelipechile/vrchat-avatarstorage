@@ -62,34 +62,51 @@ resources.get('/latest', async (c) => {
  */
 resources.get('/category/:category', async (c) => {
     const category = c.req.param('category');
+    const page = parseInt(c.req.query('page') || '1');
+    const limit = 12;
+    const offset = (page - 1) * limit;
+
     if (!category) return c.json({ error: 'Missing category' }, 400);
 
     if (!RESOURCE_CATEGORIES.includes(category as ResourceCategory)) return c.json({ error: 'Invalid category' }, 400);
 
     // 1. Try KV
-    const cached = await c.env.VRCSTORAGE_KV.get(`resource:category:${category}`, 'json');
+    const cacheKey = `resource:category:${category}:page:${page}:limit:${limit}`;
+    const cached = await c.env.VRCSTORAGE_KV.get(cacheKey, 'json');
     if (cached) {
         return c.json(cached);
     }
 
+    // Fetch one extra item to determine if there is a next page
     const stmt = c.env.DB.prepare(`
 		SELECT r.*, m.r2_key as thumbnail_key 
 		FROM resources r 
 		LEFT JOIN media m ON r.thumbnail_uuid = m.uuid 
 		WHERE r.category = ? AND r.is_active = 1 
 		ORDER BY r.created_at DESC
-	`).bind(category);
+        LIMIT ? OFFSET ?
+	`).bind(category, limit + 1, offset);
     const { results } = await stmt.all<Resource & { thumbnail_key: string | null }>();
 
-    const mapped = results.map(r => ({
+    const hasNextPage = results.length > limit;
+    const paginatedResults = hasNextPage ? results.slice(0, limit) : results;
+
+    const mapped = paginatedResults.map(r => ({
         ...r,
         timestamp: r.created_at * 1000
     }));
 
-    const response = { resources: mapped };
+    const response = {
+        resources: mapped,
+        pagination: {
+            page,
+            hasNextPage,
+            hasPrevPage: page > 1
+        }
+    };
 
     // 2. Update KV
-    await c.env.VRCSTORAGE_KV.put(`resource:category:${category}`, JSON.stringify(response), { expirationTtl: 300 }); // 5 mins
+    await c.env.VRCSTORAGE_KV.put(cacheKey, JSON.stringify(response), { expirationTtl: 300 }); // 5 mins
 
     return c.json(response);
 });

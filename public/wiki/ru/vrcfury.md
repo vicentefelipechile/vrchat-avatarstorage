@@ -18,7 +18,7 @@ VRCFury - это бесплатный плагин Unity, который зна�
 
 ## Где получить?
 - [VRCFury Official Website](https://vrcfury.com/)
-- [GitLab - VRCFury](https://gitlab.com/VRCFury/VRCFury)
+- [GitLab - VRCFury](https://github.com/VRCFury/VRCFury)
 
 ## Как установить?
 1. Скачайте VRCFury с официального сайта или GitLab

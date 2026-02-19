@@ -18,7 +18,7 @@ It was the industry standard for years, but is currently being replaced by **SPS
 - **Limitations:** Sometimes struggles with multiple penetrators or distances.
 
 ## Where to get it?
-- [Gumroad - Raliv DPS](https://raliv.gumroad.com/l/lwthuB)
+- [Gumroad - Raliv DPS](https://vrcfury.com/sps)
 
 ## How to install it?
 1. Purchase and download the package from Gumroad.

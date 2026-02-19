@@ -18,7 +18,7 @@ VRCFury is a free Unity plugin that greatly simplifies VRChat avatar configurati
 
 ## Where to get it?
 - [VRCFury Official Website](https://vrcfury.com/)
-- [GitLab - VRCFury](https://gitlab.com/VRCFury/VRCFury)
+- [GitLab - VRCFury](https://github.com/VRCFury/VRCFury)
 
 ## How to install?
 1. Download VRCFury from its official website or GitLab

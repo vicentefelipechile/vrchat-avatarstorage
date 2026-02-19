@@ -18,7 +18,7 @@ C'était la norme de l'industrie pendant des années, mais il est actuellement r
 - **Limitations :** A parfois des problèmes avec plusieurs pénétrateurs ou les distances.
 
 ## Où l'obtenir ?
-- [Gumroad - Raliv DPS](https://raliv.gumroad.com/l/lwthuB)
+- [Gumroad - Raliv DPS](https://vrcfury.com/sps)
 
 ## Comment l'installer ?
 1. Achetez et téléchargez le paquet depuis Gumroad.

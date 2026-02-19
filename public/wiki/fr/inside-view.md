@@ -5,7 +5,7 @@
 ## Qu'est-ce que c'est ?
 **Inside View**, créé par **Liindy** [1], est un asset pour les avatars VRChat qui permet de voir l'intérieur d'un maillage (comme un orifice SPS) en ajoutant une profondeur visuelle simulée.
 
-Contrairement à la simple suppression des faces arrière du maillage (backface culling), Inside View utilise un "Screen Shader" qui projette une texture de profondeur à l'intérieur de l'orifice, créant une illusion d'intérieur réaliste sans avoir besoin de modéliser une géométrie interne complexe. Il est couramment utilisé avec des systèmes comme [SPS](./sps.md) pour améliorer la visualisation pendant le ERP.
+Contrairement à la simple suppression des faces arrière du maillage (backface culling), Inside View utilise un "Screen Shader" qui projette une texture de profondeur à l'intérieur de l'orifice, créant une illusion d'intérieur réaliste sans avoir besoin de modéliser une géométrie interne complexe. Il est couramment utilisé avec des systèmes comme [SPS](/wiki?topic=sps) pour améliorer la visualisation pendant le ERP.
 
 ## Caractéristiques Principales
 - **Profondeur Simulée :** Crée l'illusion d'un tunnel ou d'un intérieur détaillé.
@@ -51,4 +51,4 @@ L'asset fonctionne via une animation de profondeur (Depth Animation).
 
 [1] Liindy. (n.d.). *Inside View (VRCFury)*. Jinxxy. https://jinxxy.com/Liindy/InsideView
 
-[2] Liindy. (n.d.). *Inside View*. Gumroad. https://liindy.gumroad.com/l/InsideView
+[2] Liindy. (n.d.). *Inside View*. Gumroad. https://jinxxy.com/Liindy/InsideView

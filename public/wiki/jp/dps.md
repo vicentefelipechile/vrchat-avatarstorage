@@ -18,7 +18,7 @@
 - **制限:** 複数の挿入側や距離を扱う際に問題が発生することがあります。
 
 ## どこで入手できる？
-- [Gumroad - Raliv DPS](https://raliv.gumroad.com/l/lwthuB)
+- [Gumroad - Raliv DPS](https://vrcfury.com/sps)
 
 ## インストール方法は？
 1. Gumroad からパッケージを購入してダウンロードします。

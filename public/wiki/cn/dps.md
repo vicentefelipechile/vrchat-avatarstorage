@@ -18,7 +18,7 @@
 - **局限性：** 有时在处理多个穿透者或距离时会出现问题。
 
 ## 哪里可以获得？
-- [Gumroad - Raliv DPS](https://raliv.gumroad.com/l/lwthuB)
+- [Gumroad - Raliv DPS](https://vrcfury.com/sps)
 
 ## 如何安装？
 1. 从 Gumroad 购买并下载包。

@@ -27,7 +27,7 @@ VRChat устанавливает строгий лимит в **256 бит** с
 ## Продвинутое Использование
 Помимо управления одеждой из меню, параметры могут контролироваться через:
 - **PhysBones:** Чтобы определить, трогает ли кто-то ваше ухо или волосы [3].
-- **Contacts:** Для обнаружения коллизий (как в системах [SPS](./sps.md) или [PCS](./pcs.md)).
+- **Contacts:** Для обнаружения коллизий (как в системах [SPS](/wiki?topic=sps) или [PCS](/wiki?topic=pcs)).
 - **OSC:** Для получения данных от внешних программ (мониторы сердечного ритма, отслеживание лица или Spotify) [3].
 
 ## Как Создать
@@ -108,12 +108,12 @@ VRChat вводит этот лимит в основном для **оптим�
 
 ## Ссылки
 
-[1] VRChat. (н.д.). *Expression Parameters*. VRChat Documentation. https://docs.vrchat.com/docs/expression-parameters
+[1] VRChat. (н.д.). *Expression Parameters*. VRChat Documentation. https://creators.vrchat.com/avatars/animator-parameters/#expression-parameters-asset
 
-[2] VRChat. (н.д.). *Avatar Parameter Driver*. VRChat Documentation. https://docs.vrchat.com/docs/avatar-parameter-driver
+[2] VRChat. (н.д.). *Avatar Parameter Driver*. VRChat Documentation. https://creators.vrchat.com/avatars/state-behaviors/#avatar-parameter-driver
 
-[3] VRChat. (н.д.). *OSC Overview*. VRChat Documentation. https://docs.vrchat.com/docs/osc-overview
+[3] VRChat. (н.д.). *OSC Overview*. VRChat Documentation. https://creators.vrchat.com/avatars/osc/
 
-[4] Franada. (н.д.). *GoGo Loco Documentation*. https://www.3d.franada.com/gogoloco
+[4] Franada. (н.д.). *GoGo Loco Documentation*. https://github.com/Franada/goloco
 
-[5] VRCFury. (н.д.). *SPS - Super Plug Shader*. VRCFury Documentation. https://vrcfury.com/components/sps
+[5] VRCFury. (н.д.). *SPS - Super Plug Shader*. VRCFury Documentation. https://vrcfury.com/sps

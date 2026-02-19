@@ -33,19 +33,6 @@ const app = new Hono<{ Bindings: Env }>();
 // Security Headers & CORS
 securityMiddleware(app);
 
-// IP Blocking Middleware
-app.use('*', async (c, next) => {
-	const blockedIpsEnv = c.env.idiota;
-	if (blockedIpsEnv) {
-		const blockedIps = blockedIpsEnv.split(';').map(ip => ip.trim());
-		const clientIp = c.req.header('CF-Connecting-IP');
-		if (clientIp && blockedIps.includes(clientIp)) {
-			return c.text('Andate', 403);
-		}
-	}
-	await next();
-});
-
 // =========================================================================================================
 // Rate Limiting
 // =========================================================================================================

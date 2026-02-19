@@ -17,7 +17,7 @@ Gogo Locoは、**franada** [1] によって作成されたVRChatアバター用�
 > 手動でインストールすることも可能ですが、インストールを容易にし、他のメニューとの競合を避けるために、**VRCFury** の使用を強くお勧めします。
 
 ## 入手場所
-- [GitHub - Gogo Loco (無料)](https://github.com/franada/gogo-loco)
+- [GitHub - Gogo Loco (無料)](https://github.com/Franada/goloco)
 - [Gumroad - Gogo Loco (制作者を支援)](https://franadavrc.gumroad.com/l/gogoloco)
 
 ## 持っていないモデルに追加できますか？
@@ -92,7 +92,7 @@ VRCFuryを使用したくない場合や、完全に制御したい場合は、�
 
 ## 参考文献
 
-[1] Franada. (n.d.). *Gogo Loco*. GitHub. https://github.com/franada/gogo-loco
+[1] Franada. (n.d.). *Gogo Loco*. GitHub. https://github.com/Franada/goloco
 
 [2] Franada. (n.d.). *Gogo Loco*. Gumroad. https://franadavrc.gumroad.com/l/gogoloco
 

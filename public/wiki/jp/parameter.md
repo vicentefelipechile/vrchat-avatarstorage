@@ -27,7 +27,7 @@ VRChatでは、アバターごとに**256ビット**の同期データという�
 ## 高度な使用法
 メニューから服を制御するだけでなく、パラメータは以下によっても制御できます。
 - **PhysBones:** 誰かがあなたの耳や髪に触れたかを検出するため[3]。
-- **Contacts:** 衝突を検出するため（[SPS](./sps.md)や[PCS](./pcs.md)システムなど）。
+- **Contacts:** 衝突を検出するため（[SPS](/wiki?topic=sps)や[PCS](/wiki?topic=pcs)システムなど）。
 - **OSC:** 外部プログラム（心拍数モニター、フェイシャルトラッキング、Spotifyなど）からデータを受信するため[3]。
 
 ## 作成方法
@@ -108,12 +108,12 @@ VRChatは主に**ネットワークの最適化**のためにこの制限を設�
 
 ## 参考文献
 
-[1] VRChat. (n.d.). *Expression Parameters*. VRChat Documentation. https://docs.vrchat.com/docs/expression-parameters
+[1] VRChat. (n.d.). *Expression Parameters*. VRChat Documentation. https://creators.vrchat.com/avatars/animator-parameters/#expression-parameters-asset
 
-[2] VRChat. (n.d.). *Avatar Parameter Driver*. VRChat Documentation. https://docs.vrchat.com/docs/avatar-parameter-driver
+[2] VRChat. (n.d.). *Avatar Parameter Driver*. VRChat Documentation. https://creators.vrchat.com/avatars/state-behaviors/#avatar-parameter-driver
 
-[3] VRChat. (n.d.). *OSC Overview*. VRChat Documentation. https://docs.vrchat.com/docs/osc-overview
+[3] VRChat. (n.d.). *OSC Overview*. VRChat Documentation. https://creators.vrchat.com/avatars/osc/
 
-[4] Franada. (n.d.). *GoGo Loco Documentation*. https://www.3d.franada.com/gogoloco
+[4] Franada. (n.d.). *GoGo Loco Documentation*. https://github.com/Franada/goloco
 
-[5] VRCFury. (n.d.). *SPS - Super Plug Shader*. VRCFury Documentation. https://vrcfury.com/components/sps
+[5] VRCFury. (n.d.). *SPS - Super Plug Shader*. VRCFury Documentation. https://vrcfury.com/sps

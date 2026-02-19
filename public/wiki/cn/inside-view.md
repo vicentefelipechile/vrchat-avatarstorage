@@ -5,7 +5,7 @@
 ## 它是什么？
 **Inside View**，由 **Liindy** [1] 创建，是一个用于 VRChat 虚拟形象的资产，它允许通过添加模拟的视觉深度来查看网格内部（如 SPS 孔）。
 
-与简单地删除网格的背面（背面剔除）不同，Inside View 使用“屏幕着色器”在孔内投射深度纹理，从而在不需要建模复杂的内部几何形状的情况下创造逼真的内部错觉。它通常与 [SPS](./sps.md) 等系统一起使用，以改善 ERP 期间的可视化。
+与简单地删除网格的背面（背面剔除）不同，Inside View 使用“屏幕着色器”在孔内投射深度纹理，从而在不需要建模复杂的内部几何形状的情况下创造逼真的内部错觉。它通常与 [SPS](/wiki?topic=sps) 等系统一起使用，以改善 ERP 期间的可视化。
 
 ## 主要特点
 - **模拟深度:** 创造隧道或详细内部的错觉。
@@ -51,4 +51,4 @@
 
 [1] Liindy. (n.d.). *Inside View (VRCFury)*. Jinxxy. https://jinxxy.com/Liindy/InsideView
 
-[2] Liindy. (n.d.). *Inside View*. Gumroad. https://liindy.gumroad.com/l/InsideView
+[2] Liindy. (n.d.). *Inside View*. Gumroad. https://jinxxy.com/Liindy/InsideView

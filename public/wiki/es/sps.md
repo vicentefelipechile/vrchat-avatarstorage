@@ -83,4 +83,4 @@ No necesitas subir el avatar para probar si funciona.
 
 [3] VRCD. (s.f.). *SPS Tutorial*. VRCD. https://vrcd.org.cn
 
-[4] VRCFury. (s.f.). *SPS Troubleshooting*. VRCFury Documentation. https://vrcfury.com/sps/troubleshooting
+[4] VRCFury. (s.f.). *SPS Troubleshooting*. VRCFury Documentation. https://vrcfury.com/sps

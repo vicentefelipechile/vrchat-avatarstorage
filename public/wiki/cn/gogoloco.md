@@ -17,7 +17,7 @@ Gogo Loco 是由 **franada** [1] 创建的 VRChat 虚拟形象高级运动系统
 > 虽然可以手动安装，但强烈建议使用 **VRCFury** 以简化安装并避免与其他菜单冲突。
 
 ## 哪里获取？
-- [GitHub - Gogo Loco (免费)](https://github.com/franada/gogo-loco)
+- [GitHub - Gogo Loco (免费)](https://github.com/Franada/goloco)
 - [Gumroad - Gogo Loco (支持作者)](https://franadavrc.gumroad.com/l/gogoloco)
 
 ## 可以添加到没有它的模型上吗？
@@ -92,7 +92,7 @@ Gogo Loco 是由 **franada** [1] 创建的 VRChat 虚拟形象高级运动系统
 
 ## 参考资料
 
-[1] Franada. (n.d.). *Gogo Loco*. GitHub. https://github.com/franada/gogo-loco
+[1] Franada. (n.d.). *Gogo Loco*. GitHub. https://github.com/Franada/goloco
 
 [2] Franada. (n.d.). *Gogo Loco*. Gumroad. https://franadavrc.gumroad.com/l/gogoloco
 

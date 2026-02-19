@@ -17,7 +17,7 @@ Gogo Loco — это продвинутая система передвижен�
 > Хотя его можно установить вручную, настоятельно рекомендуется использовать **VRCFury** для упрощения установки и предотвращения конфликтов с другими меню.
 
 ## Где взять?
-- [GitHub - Gogo Loco (Бесплатно)](https://github.com/franada/gogo-loco)
+- [GitHub - Gogo Loco (Бесплатно)](https://github.com/Franada/goloco)
 - [Gumroad - Gogo Loco (Поддержать автора)](https://franadavrc.gumroad.com/l/gogoloco)
 
 ## Можно ли добавить на модели, где этого нет?
@@ -92,7 +92,7 @@ Gogo Loco — это продвинутая система передвижен�
 
 ## Ссылки
 
-[1] Franada. (n.d.). *Gogo Loco*. GitHub. https://github.com/franada/gogo-loco
+[1] Franada. (n.d.). *Gogo Loco*. GitHub. https://github.com/Franada/goloco
 
 [2] Franada. (n.d.). *Gogo Loco*. Gumroad. https://franadavrc.gumroad.com/l/gogoloco
 

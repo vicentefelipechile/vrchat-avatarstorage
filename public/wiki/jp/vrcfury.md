@@ -18,7 +18,7 @@ VRCFuryは、VRChatアバターの設定を大幅に簡素化する無料のUnit
 
 ## どこで入手できますか？
 - [VRCFury Official Website](https://vrcfury.com/)
-- [GitLab - VRCFury](https://gitlab.com/VRCFury/VRCFury)
+- [GitLab - VRCFury](https://github.com/VRCFury/VRCFury)
 
 ## インストール方法は？
 1. 公式ウェブサイトまたはGitLabからVRCFuryをダウンロード

@@ -18,7 +18,7 @@ Fue el estándar de la industria durante años, pero actualmente está siendo re
 - **Limitaciones:** A veces tiene problemas con múltiples penetradores o distancias.
 
 ## ¿Dónde obtenerlo?
-- [Gumroad - Raliv DPS](https://raliv.gumroad.com/l/lwthuB)
+- [VRCFury SPS (Reemplazo Gratuito Oficial)](https://vrcfury.com/sps)
 
 ## ¿Cómo instalarlo?
 1. Compra y descarga el paquete desde Gumroad.

@@ -18,7 +18,7 @@ VRCFury est un plugin Unity gratuit qui simplifie grandement la configuration de
 
 ## Où l'obtenir ?
 - [VRCFury Official Website](https://vrcfury.com/)
-- [GitLab - VRCFury](https://gitlab.com/VRCFury/VRCFury)
+- [GitLab - VRCFury](https://github.com/VRCFury/VRCFury)
 
 ## Comment l'installer ?
 1. Téléchargez VRCFury depuis son site officiel ou GitLab

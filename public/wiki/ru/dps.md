@@ -18,7 +18,7 @@
 - **Ограничения:** Иногда возникают проблемы с множественными проникателями или расстояниями.
 
 ## Где взять?
-- [Gumroad - Raliv DPS](https://raliv.gumroad.com/l/lwthuB)
+- [Gumroad - Raliv DPS](https://vrcfury.com/sps)
 
 ## Как установить?
 1. Купите и скачайте пакет с Gumroad.

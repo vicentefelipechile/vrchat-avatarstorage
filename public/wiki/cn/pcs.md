@@ -73,10 +73,10 @@
 
 ## 参考资料
 
-[1] Dismay. (n.d.). *Penetration Contact System*. Gumroad. https://dismay.gumroad.com/l/PCS
+[1] Dismay. (n.d.). *Penetration Contact System*. Gumroad. https://dismay.booth.pm/items/5001027
 
 [2] VRCFury. (n.d.). *VRCFury Documentation*. https://vrcfury.com
 
-[3] OscGoesBrrr. (n.d.). *OscGoesBrrr*. https://oscgoesbrrr.com
+[3] OscGoesBrrr. (n.d.). *OscGoesBrrr*. https://osc.toys
 
-[4] Intiface. (n.d.). *Intiface Central*. https://intiface.com/central
+[4] Intiface. (n.d.). *Intiface Central*. https://intiface.com/desktop/
