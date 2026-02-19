@@ -38,10 +38,10 @@ export const ResourceSchema = z.object({
     title: z.string().min(3, 'Title too short').max(100, 'Title too long'),
     description: z.string().max(2000, 'Description too long').optional(),
     category: z.enum(RESOURCE_CATEGORIES),
-    thumbnail_uuid: z.string().uuid('Invalid thumbnail UUID'),
-    reference_image_uuid: z.string().uuid('Invalid reference image UUID').optional().nullable(),
+    thumbnail_uuid: z.uuid('Invalid thumbnail UUID'),
+    reference_image_uuid: z.uuid('Invalid reference image UUID').optional().nullable(),
     links: z.array(LinkSchema).optional(),
-    media_files: z.array(z.string().uuid()).optional(),
+    media_files: z.array(z.uuid()).optional(),
     token: z.string().optional()
 });
 

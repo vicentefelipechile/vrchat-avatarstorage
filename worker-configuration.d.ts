@@ -13,6 +13,7 @@ declare namespace Cloudflare {
         TURNSTILE_SITE_KEY: string;
         TURNSTILE_SECRET_KEY: string;
         JWT_SECRET: string;
+        idiota: string;
     }
 }
 interface Env extends Cloudflare.Env { }
@@ -20,7 +21,7 @@ type StringifyValues<EnvType extends Record<string, unknown>> = {
     [Binding in keyof EnvType]: EnvType[Binding] extends string ? EnvType[Binding] : string;
 };
 declare namespace NodeJS {
-    interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "TURNSTILE_SITE_KEY" | "TURNSTILE_SECRET_KEY" | "JWT_SECRET">> { }
+    interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "TURNSTILE_SITE_KEY" | "TURNSTILE_SECRET_KEY" | "JWT_SECRET" | "idiota">> { }
 }
 
 // Begin runtime types
