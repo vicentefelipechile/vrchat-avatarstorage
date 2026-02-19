@@ -20,7 +20,6 @@ export default class UploadView extends AbstractView {
                             <option value="worlds">${t('cats.worlds')}</option>
                             <option value="assets">${t('cats.assets')}</option>
                             <option value="clothes">${t('cats.clothes')}</option>
-                            <option value="others">${t('cats.others')}</option>
                         </select>
                     </div>
 

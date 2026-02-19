@@ -64,7 +64,7 @@ export interface CreateResourceMedia {
 // ----------------------------------------------------------------------------
 // RECURSOS (AVATARES, MODELOS, ETC.)
 // ----------------------------------------------------------------------------
-export const RESOURCE_CATEGORIES = ['avatars', 'worlds', 'assets', 'clothes', 'others'] as const;
+export const RESOURCE_CATEGORIES = ['avatars', 'worlds', 'assets', 'clothes'] as const;
 export type ResourceCategory = typeof RESOURCE_CATEGORIES[number];
 
 export interface Resource {
