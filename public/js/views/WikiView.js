@@ -27,7 +27,8 @@ export default class WikiView extends AbstractView {
                 title: 'wiki.categories.vrchat',
                 topics: [
                     { id: 'parameter', label: 'wiki.parameter.title' },
-                    { id: 'setup', label: 'wiki.setup.title' }
+                    { id: 'setup', label: 'wiki.setup.title' },
+                    { id: 'unityhub-error', label: 'wiki.unityhubError.title' }
                 ]
             },
             {

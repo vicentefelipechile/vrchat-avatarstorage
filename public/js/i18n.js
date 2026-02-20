@@ -31,6 +31,7 @@ const translations = {
             haptics: { title: 'Guía de Hápticos' },
             comments: { title: 'Comentarios' },
             desktopPuppeteer: { title: 'Desktop Puppeteer' },
+            unityhubError: { title: 'Error Unity Hub' },
             categories: { vrchat: 'VRChat', dependencies: 'Dependencias', erp: 'ERP', informative: 'Informativo' }
         }
     },
@@ -64,6 +65,7 @@ const translations = {
             haptics: { title: 'Haptics Guide' },
             comments: { title: 'Wiki Comments' },
             desktopPuppeteer: { title: 'Desktop Puppeteer' },
+            unityhubError: { title: 'Unity Hub Error' },
             categories: { vrchat: 'VRChat', dependencies: 'Dependencies', erp: 'ERP', informative: 'Informative' }
         }
     },
@@ -97,6 +99,7 @@ const translations = {
             haptics: { title: 'Руководство по Хаптике' },
             comments: { title: 'Комментарии Вики' },
             desktopPuppeteer: { title: 'Desktop Puppeteer' },
+            unityhubError: { title: 'Ошибка Unity Hub' },
             categories: { vrchat: 'VRChat', dependencies: 'Зависимости', erp: 'ERP', informative: 'Информационный' }
         }
     },
@@ -130,6 +133,7 @@ const translations = {
             haptics: { title: 'ハプティクスガイド' },
             comments: { title: 'Wikiコメント' },
             desktopPuppeteer: { title: 'Desktop Puppeteer' },
+            unityhubError: { title: 'Unity Hubエラー' },
             categories: { vrchat: 'VRChat', dependencies: '依存関係', erp: 'ERP', informative: '情報' }
         }
     },
@@ -163,6 +167,7 @@ const translations = {
             haptics: { title: '触觉指南' },
             comments: { title: 'Wiki 评论' },
             desktopPuppeteer: { title: 'Desktop Puppeteer' },
+            unityhubError: { title: 'Unity Hub 错误' },
             categories: { vrchat: 'VRChat', dependencies: '依赖项', erp: 'ERP', informative: '信息' }
         }
     },
@@ -196,6 +201,7 @@ const translations = {
             haptics: { title: 'Guide Haptique' },
             comments: { title: 'Commentaires Wiki' },
             desktopPuppeteer: { title: 'Desktop Puppeteer' },
+            unityhubError: { title: 'Erreur Unity Hub' },
             categories: { vrchat: 'VRChat', dependencies: 'Dépendances', erp: 'ERP', informative: 'Informatif' }
         }
     }
