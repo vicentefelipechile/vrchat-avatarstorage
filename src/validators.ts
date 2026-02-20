@@ -1,13 +1,17 @@
 import { z } from 'zod';
 import { RESOURCE_CATEGORIES } from './types';
-import DOMPurify from 'isomorphic-dompurify';
-
 // ============================================================================
 // Sanitization Helper
 // ============================================================================
 
-const sanitizeHtml = (str: string) => {
-    return DOMPurify.sanitize(str);
+// DOMPurify requires a real `document` object which Cloudflare Workers doesn't
+// provide. Since we strip all tags anyway, a regex-based approach is equivalent
+// and works in any JS environment.
+const sanitizeHtml = (str: string): string => {
+    return str
+        .replace(/<[^>]*>/g, '')       // strip all HTML tags
+        .replace(/javascript:/gi, '')   // strip javascript: URIs
+        .replace(/on\w+\s*=/gi, '');   // strip inline event handlers (onclick=, etc.)
 };
 
 // ============================================================================
