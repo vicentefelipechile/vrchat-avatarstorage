@@ -355,11 +355,15 @@ export default class WikiView extends AbstractView {
         return comments.map(c => {
             // Render markdown content
             let content = c.text;
-            if (window.marked) {
+            if (window.marked && window.DOMPurify) {
                 // Parse markdown
                 content = window.marked.parse(c.text);
-                // Basic sanitization (strip script tags) to prevent XSS
-                // Ideally use DOMPurify, but for now simple regex
+                // Sanitize HTML with DOMPurify
+                content = window.DOMPurify.sanitize(content);
+            } else if (window.marked) {
+                // Parse markdown
+                content = window.marked.parse(c.text);
+                // Basic sanitization (strip script tags) to prevent XSS as fallback
                 content = content.replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gm, "");
             } else {
                 // Fallback to text if marked not available

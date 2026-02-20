@@ -30,6 +30,9 @@ import wikiRoutes from './routes/wiki';
 
 const app = new Hono<{ Bindings: Env }>();
 
+const MINUTE = 60;
+const HOUR = 60 * 60;
+
 // Security Headers & CORS
 securityMiddleware(app);
 
@@ -38,23 +41,23 @@ securityMiddleware(app);
 // =========================================================================================================
 
 // Auth Rate Limits (Stricter)
-app.use('/api/login', rateLimit({ limit: 10, windowSeconds: 60 * 15, keyPrefix: 'auth_login' }));
-app.use('/api/register', rateLimit({ limit: 5, windowSeconds: 60 * 60, keyPrefix: 'auth_register' }));
+app.use('/api/login', rateLimit({ limit: 10, windowSeconds: MINUTE * 15, keyPrefix: 'auth_login' }));
+app.use('/api/register', rateLimit({ limit: 5, windowSeconds: HOUR, keyPrefix: 'auth_register' }));
 app.use('/api/comments/*', async (c, next) => {
 	if (c.req.method === 'POST') {
-		return rateLimit({ limit: 10, windowSeconds: 60 * 5, keyPrefix: 'comments_post' })(c, next);
+		return rateLimit({ limit: 10, windowSeconds: MINUTE * 2, keyPrefix: 'comments_post' })(c, next);
 	}
-	return rateLimit({ limit: 50, windowSeconds: 60 * 5, keyPrefix: 'comments_get' })(c, next);
+	return rateLimit({ limit: 50, windowSeconds: MINUTE * 5, keyPrefix: 'comments_get' })(c, next);
 });
 app.use('/api/wiki/comments', async (c, next) => {
 	if (c.req.method === 'POST') {
-		return rateLimit({ limit: 5, windowSeconds: 60 * 5, keyPrefix: 'wiki_comments_post' })(c, next);
+		return rateLimit({ limit: 5, windowSeconds: MINUTE * 5, keyPrefix: 'wiki_comments_post' })(c, next);
 	}
-	return rateLimit({ limit: 100, windowSeconds: 60 * 1, keyPrefix: 'wiki_comments_get' })(c, next);
+	return rateLimit({ limit: 100, windowSeconds: MINUTE, keyPrefix: 'wiki_comments_get' })(c, next);
 });
 
 // Global Rate Limit
-app.use('*', rateLimit({ limit: 500, windowSeconds: 60 * 5 })); // 100 req / 5 min
+app.use('*', rateLimit({ limit: 500, windowSeconds: MINUTE * 5 })); // 100 req / 5 min
 
 // Error Handler for Zod
 app.onError((err, c) => {

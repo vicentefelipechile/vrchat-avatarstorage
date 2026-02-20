@@ -61,7 +61,7 @@ wiki.post('/comments', async (c) => {
     const commentUuid = crypto.randomUUID();
 
     try {
-        c.env.DB.prepare(
+        await c.env.DB.prepare(
             'INSERT INTO wiki_comments (uuid, author_uuid, text) VALUES (?, ?, ?)'
         ).bind(commentUuid, user.uuid, text).run();
 

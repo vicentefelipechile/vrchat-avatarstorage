@@ -137,10 +137,12 @@ export default class ItemView extends AbstractView {
 
         // Render Markdown Description
         let descriptionHtml = '';
-        if (window.marked) {
-            descriptionHtml = window.marked.parse(res.description || '');
+        if (window.marked && window.DOMPurify) {
+            descriptionHtml = window.DOMPurify.sanitize(window.marked.parse(res.description || ''));
+        } else if (window.marked) {
+            descriptionHtml = window.marked.parse(res.description || ''); // Fallback
         } else {
-            descriptionHtml = `<p>${res.description}</p>`;
+            descriptionHtml = `<p>${(res.description || '').replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</p>`;
         }
 
         return `
@@ -200,7 +202,15 @@ export default class ItemView extends AbstractView {
     renderComments(comments, isAdmin) {
         if (!comments || comments.length === 0) return `<p>${t('item.noComments')}</p>`;
 
-        return comments.map(c => `
+        return comments.map(c => {
+            let content = c.text;
+            if (window.marked && window.DOMPurify) {
+                content = window.DOMPurify.sanitize(window.marked.parse(c.text));
+            } else {
+                content = c.text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            }
+
+            return `
             <div id="comment-${c.uuid}" class="comment" style="display: flex; gap: 10px;">
                 <div style="flex-shrink: 0;">
                     <img src="${c.author_avatar}" alt="${c.author}" class="comment-avatar">
@@ -210,10 +220,11 @@ export default class ItemView extends AbstractView {
                         <span>${c.author} <span style="font-weight: normal; font-size: 0.8em; color: var(--text-muted);">(${new Date(c.timestamp).toLocaleString()})</span></span>
                         ${isAdmin ? `<button onclick="deleteComment('${c.uuid}')" class="btn" style="padding: 2px 5px; font-size: 0.8em; background: #ff4444; color: white;">${t('admin.delete')}</button>` : ''}
                     </div>
-                    <div style="white-space: pre-wrap;">${c.text}</div>
+                    <div class="markdown-body" style="word-break: break-word;">${content}</div>
                 </div>
             </div>
-        `).join('');
+            `;
+        }).join('');
     }
 
     async postRender() {
