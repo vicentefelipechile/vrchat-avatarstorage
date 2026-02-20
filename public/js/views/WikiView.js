@@ -27,6 +27,7 @@ export default class WikiView extends AbstractView {
                 title: 'wiki.categories.vrchat',
                 topics: [
                     { id: 'parameter', label: 'wiki.parameter.title' },
+                    { id: 'action-menu', label: 'wiki.actionMenu.title' },
                     { id: 'setup', label: 'wiki.setup.title' },
                     { id: 'unityhub-error', label: 'wiki.unityhubError.title' }
                 ]
@@ -38,7 +39,8 @@ export default class WikiView extends AbstractView {
                     { id: 'poiyomi', label: 'wiki.poiyomi.title' },
                     { id: 'vrcfury', label: 'wiki.vrcfury.title' },
                     { id: 'gogoloco', label: 'wiki.gogoloco.title' },
-                    { id: 'desktop-puppeteer', label: 'wiki.desktopPuppeteer.title' }
+                    { id: 'desktop-puppeteer', label: 'wiki.desktopPuppeteer.title' },
+                    { id: 'gesture-manager-emulator', label: 'wiki.gestureManager.title' }
                 ]
             },
             {

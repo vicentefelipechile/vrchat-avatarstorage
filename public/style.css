@@ -409,6 +409,9 @@ hr {
 
 #lightbox-img-wrap {
     position: relative;
+    /* Shrink to the image's natural display size, but never exceed the viewport */
+    width: fit-content;
+    height: fit-content;
     max-width: 90vw;
     max-height: 90vh;
     overflow: hidden;
@@ -418,16 +421,12 @@ hr {
     cursor: zoom-in;
 }
 
-#lightbox-img-wrap.zoomed {
-    cursor: zoom-out;
-    overflow: auto;
-    max-width: 92vw;
-    max-height: 92vh;
-}
-
 #lightbox-img {
-    max-width: 100%;
+    /* Let the image define its own size up to viewport limits */
+    max-width: 90vw;
     max-height: 90vh;
+    width: auto;
+    height: auto;
     display: block;
     object-fit: contain;
     transition: transform 0.25s ease;
@@ -435,13 +434,6 @@ hr {
     user-select: none;
     -webkit-user-drag: none;
     border: 2px solid var(--border-color);
-}
-
-#lightbox-img-wrap.zoomed #lightbox-img {
-    transform: scale(2);
-    max-width: none;
-    max-height: none;
-    cursor: zoom-out;
 }
 
 /* Lightbox nav buttons */

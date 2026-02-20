@@ -281,11 +281,23 @@ export default class ItemView extends AbstractView {
             isZoomed = zoomed;
             if (zoomed) {
                 if (e) updateOrigin(e);
+                // Expand the clipping window to the full viewport so small images
+                // also get a large area to pan through when zoomed
+                imgWrap.style.width = '90vw';
+                imgWrap.style.height = '90vh';
                 imgEl.style.transform = `scale(${ZOOM_SCALE})`;
                 imgWrap.style.cursor = 'zoom-out';
                 imgEl.style.cursor = 'zoom-out';
             } else {
                 imgEl.style.transform = 'scale(1)';
+                // Delay shrinking the wrap until the CSS scale transition finishes (250ms)
+                // so the container doesn't clip the image mid-animation
+                setTimeout(() => {
+                    if (!isZoomed) {
+                        imgWrap.style.width = '';
+                        imgWrap.style.height = '';
+                    }
+                }, 250);
                 // Keep transformOrigin where the cursor was so the zoom-out
                 // animates back from that point, not from the center.
                 imgWrap.style.cursor = 'zoom-in';
@@ -341,6 +353,12 @@ export default class ItemView extends AbstractView {
             if (e.key === 'Escape') close();
             if (e.key === 'ArrowLeft') open(current - 1);
             if (e.key === 'ArrowRight') open(current + 1);
+        });
+
+        // Reset scroll lock if the user navigates away (browser back/forward)
+        // while the lightbox is open, so the next page isn't left unscrollable
+        window.addEventListener('popstate', () => {
+            document.body.style.overflow = '';
         });
     }
 
