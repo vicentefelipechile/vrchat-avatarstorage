@@ -21,6 +21,19 @@
 - [GitHub - NSFW Locomotion](https://github.com/LastationVRChat/NSFW-Locomotion)
 - [Lastation Package Listing (VCC用)](https://lastationvrchat.github.io/Lastation-Package-Listing/)
 
+## アバターにすでにGoGo Locoがある場合はどうすればいいですか？
+警告で述べたように、**両方のシステムを同時にインストールすることはできません**。アバターにすでにGoGo Locoが付属している場合、または以前にインストールした場合は、Unityのエラーやメニューの破損を防ぐために、NSFW Locomotionを追加する前に完全に削除する必要があります。
+
+### オリジナルのGoGo Locoをアンインストールする手順：
+1. **VRCFuryでインストールした場合（簡単な方法）：**
+   - Unityの階層（`Hierarchy`）でアバターの子としてGoGo Locoのプレハブを見つけ、削除します（右クリック -> `Delete`）。
+2. **アバターに手動で統合した場合：**
+   - **Playable Layers：** アバターを選択し、`VRC Avatar Descriptor`コンポーネントに移動して、「Playable Layers」まで下にスクロールします。GoGo Locoコントローラー（Base、Action、FX）を削除するか、アバターに付属していたオリジナルと交換します。
+   - **パラメータとメニュー：** 同じコンポーネントで、パラメーターリスト（`Expressions Parameters`）を開き、GoGo Locoに属するもの（通常は`Go/`で始まる）をすべて削除します。次に、メニュー（`Expressions Menu`）を開き、GoGoサブメニューを開くボタンを削除します。
+   - *（オプション）* そのプロジェクトで通常のGoGo Locoを使用している他のアバターがない場合は、`Assets`から`GoGo`フォルダーを削除します。
+
+アバターが古いシステムから完全に消去されたら、通常どおりNSFW Locomotionをインストールできます。
+
 ## インストール方法は？ (VCCの使用を推奨)
 最も簡単な方法は、**VRChat Creator Companion (VCC)**を使用することです。
 
@@ -39,3 +52,11 @@ VCCを使用したくない場合（非推奨）：
 2. パッケージをUnityにインポートします。
 3. 対応するプレハブをアバターにドラッグします（`(VRCFury)`と表示されているもの）。
    - 「Write Defaults」が有効な場合は`WD`を使用し、そうでない場合は通常バージョンを使用してください。
+
+---
+
+## 参考文献
+
+LastationVRChat. (n.d.). *NSFW Locomotion* [コンピューターソフトウェア]. GitHub. https://github.com/LastationVRChat/NSFW-Locomotion
+
+Redditユーザー. (n.d.). *Help! How do i remove gogoloco from my avatar?* [オンラインフォーラムの投稿]. Reddit. https://www.reddit.com/r/VRchat/comments/17b1n2e/help_how_do_i_remove_gogoloco_from_my_avatar/

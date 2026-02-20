@@ -21,6 +21,19 @@ Il conserve toutes les fonctions du GoGo Loco original mais ajoute du contenu sp
 - [GitHub - NSFW Locomotion](https://github.com/LastationVRChat/NSFW-Locomotion)
 - [Lastation Package Listing (Pour VCC)](https://lastationvrchat.github.io/Lastation-Package-Listing/)
 
+## Que faire si l'avatar a déjà GoGo Loco ?
+Comme mentionné dans l'avertissement, **vous ne pouvez pas avoir les deux systèmes installés en même temps**. Si votre avatar venait avec GoGo Loco ou que vous l'avez installé précédemment, vous devez le désinstaller complètement avant d'ajouter NSFW Locomotion pour éviter les erreurs Unity ou les menus cassés.
+
+### Étapes pour désinstaller le GoGo Loco original :
+1. **Si installé avec VRCFury (Méthode facile) :**
+   - Dans Unity, trouvez le prefab de GoGo Loco dans la hiérarchie (`Hierarchy`) comme enfant de votre avatar et supprimez-le (Clic droit -> `Delete`).
+2. **Si intégré manuellement dans l'avatar :**
+   - **Playable Layers :** Sélectionnez votre avatar, accédez au composant `VRC Avatar Descriptor` et descendez jusqu'à "Playable Layers". Supprimez ou remplacez les contrôleurs de GoGo Loco (Base, Action, FX) par ceux d'origine fournis avec l'avatar.
+   - **Paramètres et Menu :** Dans le même composant, ouvrez votre liste de paramètres (`Expressions Parameters`) et supprimez tous ceux appartenant à GoGo Loco (ils commencent généralement par `Go/`). Ouvrez ensuite votre menu (`Expressions Menu`) et supprimez le bouton qui ouvre le sous-menu de GoGo.
+   - *(Facultatif)* Si aucun autre avatar n'utilise GoGo Loco dans ce projet, supprimez le dossier `GoGo` de vos `Assets`.
+
+Une fois que l'avatar est complètement nettoyé de l'ancien système, vous pouvez procéder à l'installation de NSFW Locomotion normalement.
+
 ## Comment l'installer ? (Recommandé avec VCC)
 La méthode la plus simple est d'utiliser le **VRChat Creator Companion (VCC)**.
 
@@ -39,3 +52,11 @@ Si vous préférez ne pas utiliser VCC (non recommandé) :
 2. Importez le package dans Unity.
 3. Glissez le prefab correspondant sur votre avatar (celui qui indique `(VRCFury)`).
    - Utilisez `WD` si vous avez "Write Defaults" activé, ou la version normale sinon.
+
+---
+
+## Références
+
+LastationVRChat. (s.d.). *NSFW Locomotion* [Logiciel informatique]. GitHub. https://github.com/LastationVRChat/NSFW-Locomotion
+
+Utilisateur Reddit. (s.d.). *Help! How do i remove gogoloco from my avatar?* [Message sur un forum en ligne]. Reddit. https://www.reddit.com/r/VRchat/comments/17b1n2e/help_how_do_i_remove_gogoloco_from_my_avatar/

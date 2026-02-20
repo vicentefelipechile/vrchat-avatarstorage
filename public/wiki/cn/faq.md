@@ -11,3 +11,13 @@ Poiyomi和VRCFury是不断更新的第三方工具。模型创建者无法合法
 
 ### 我需要Poiyomi的Pro版本吗？
 这取决于模型。大多数使用免费版本即可。如果模型需要Pro版本，创建者会在描述中说明。Pro功能包括折射效果、毛发着色器和几何效果。
+
+### 什么是 .spp (Substance Painter) 或 Photoshop (.psd) 文件？
+**.spp** 文件是 "Substance 3D Painter" 程序的纹理项目（就像 **.psd** 是 Photoshop 的项目一样）。这些文件**不需要**用于将虚拟形象上传到 VRChat。包含它们仅仅是为了如果您想要编辑、重绘或创建服装、身体或头发的自定义纹理。如果您不知道如何编辑纹理，可以完全忽略它们。
+
+### 什么是 .blend 文件？
+**.blend** 文件是保存为 Blender（一款免费的 3D 建模软件）格式的原始 3D 模型。与纹理文件一样，**您不需要它来安装或上传您的虚拟形象到 VRChat**。提供它以防您想要在 Blender 中打开模型来编辑网格 (mesh)、定制服装或修改骨骼。
+
+> [!NOTE]
+> 笔记
+> 要将虚拟形象上传到 VRChat，**您只需使用 Unity 包 (`.unitypackage`)**。像 Substance Painter (.spp) 或 Blender (.blend) 这样的编辑工具是完全可选的，供希望进行高级修改的创作者使用。

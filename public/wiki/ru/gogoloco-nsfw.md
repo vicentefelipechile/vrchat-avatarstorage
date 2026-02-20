@@ -21,6 +21,19 @@
 - [GitHub - NSFW Locomotion](https://github.com/LastationVRChat/NSFW-Locomotion)
 - [Lastation Package Listing (Для VCC)](https://lastationvrchat.github.io/Lastation-Package-Listing/)
 
+## Что делать, если на аватаре уже есть GoGo Loco?
+Как упоминалось в предупреждении, **вы не можете иметь обе системы одновременно**. Если ваш аватар уже поставлялся с GoGo Loco или вы установили его ранее, вы должны полностью удалить его перед добавлением NSFW Locomotion, чтобы избежать ошибок Unity или сломанных меню.
+
+### Шаги по удалению оригинального GoGo Loco:
+1. **Если установлено с помощью VRCFury (Простой метод):**
+   - В Unity найдите префаб GoGo Loco в иерархии (`Hierarchy`) как дочерний элемент вашего аватара и удалите его (Правая кнопка мыши -> `Delete`).
+2. **Если интегрировано в аватар вручную:**
+   - **Playable Layers:** Выберите свой аватар, перейдите к компоненту `VRC Avatar Descriptor` и прокрутите вниз до "Playable Layers". Удалите или замените контроллеры GoGo Loco (Base, Action, FX) на оригинальные, которые шли с аватаром.
+   - **Параметры и Меню:** В том же компоненте откройте список параметров (`Expressions Parameters`) и удалите все, принадлежащие GoGo Loco (обычно начинаются с `Go/`). Затем откройте свое меню (`Expressions Menu`) и удалите кнопку, открывающую подменю GoGo.
+   - *(Необязательно)* Если в этом проекте нет других аватаров, использующих обычный GoGo Loco, удалите папку `GoGo` из ваших `Assets`.
+
+Как только аватар будет полностью очищен от старой системы, вы можете приступить к нормальной установке NSFW Locomotion.
+
 ## Как установить? (Рекомендуется через VCC)
 Самый простой способ — использовать **VRChat Creator Companion (VCC)**.
 
@@ -38,4 +51,12 @@
 1. Скачайте *последний релиз* с GitHub.
 2. Импортируйте пакет в Unity.
 3. Перетащите соответствующий префаб на ваш аватар (тот, что помечен `(VRCFury)`).
-   - Используйте `WD`, если у вас включен "Write Defaults", или обычную версию, если нет.
+   - Используйте `WD`, если у вас включено "Write Defaults", или обычную версию, если нет.
+
+---
+
+## Рекомендации
+
+LastationVRChat. (б.д.). *NSFW Locomotion* [Компьютерное программное обеспечение]. GitHub. https://github.com/LastationVRChat/NSFW-Locomotion
+
+Пользователь Reddit. (б.д.). *Help! How do i remove gogoloco from my avatar?* [Сообщение на онлайн-форуме]. Reddit. https://www.reddit.com/r/VRchat/comments/17b1n2e/help_how_do_i_remove_gogoloco_from_my_avatar/
