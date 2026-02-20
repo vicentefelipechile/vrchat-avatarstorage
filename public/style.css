@@ -387,6 +387,128 @@ hr {
     background: #000;
 }
 
+/* Gallery image cursor hint */
+.gallery-item a {
+    cursor: zoom-in;
+}
+
+/* Lightbox Overlay */
+#lightbox-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(0, 0, 0, 0.92);
+    align-items: center;
+    justify-content: center;
+}
+
+#lightbox-overlay.active {
+    display: flex;
+}
+
+#lightbox-img-wrap {
+    position: relative;
+    max-width: 90vw;
+    max-height: 90vh;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: zoom-in;
+}
+
+#lightbox-img-wrap.zoomed {
+    cursor: zoom-out;
+    overflow: auto;
+    max-width: 92vw;
+    max-height: 92vh;
+}
+
+#lightbox-img {
+    max-width: 100%;
+    max-height: 90vh;
+    display: block;
+    object-fit: contain;
+    transition: transform 0.25s ease;
+    transform-origin: center center;
+    user-select: none;
+    -webkit-user-drag: none;
+    border: 2px solid var(--border-color);
+}
+
+#lightbox-img-wrap.zoomed #lightbox-img {
+    transform: scale(2);
+    max-width: none;
+    max-height: none;
+    cursor: zoom-out;
+}
+
+/* Lightbox nav buttons */
+.lightbox-btn {
+    position: fixed;
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--btn-bg);
+    color: var(--btn-text);
+    border: none;
+    font-size: 2rem;
+    padding: 16px 20px;
+    cursor: pointer;
+    z-index: 10000;
+    line-height: 1;
+    opacity: 0.85;
+    transition: opacity 0.15s, background 0.15s;
+    font-family: monospace;
+}
+
+.lightbox-btn:hover {
+    opacity: 1;
+    background: var(--btn-hover);
+}
+
+#lightbox-prev {
+    left: 12px;
+}
+
+#lightbox-next {
+    right: 12px;
+}
+
+/* Close button */
+#lightbox-close {
+    position: fixed;
+    top: 14px;
+    right: 18px;
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 2.2rem;
+    cursor: pointer;
+    z-index: 10000;
+    line-height: 1;
+    opacity: 0.8;
+    transition: opacity 0.15s;
+    font-family: monospace;
+}
+
+#lightbox-close:hover {
+    opacity: 1;
+}
+
+/* Counter label */
+#lightbox-counter {
+    position: fixed;
+    bottom: 18px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #fff;
+    font-family: monospace;
+    font-size: 0.9rem;
+    opacity: 0.75;
+    pointer-events: none;
+}
+
 /* --- Mobile Responsiveness --- */
 
 /* Hamburger Menu (Hidden by default) */

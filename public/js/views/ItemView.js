@@ -64,6 +64,8 @@ export default class ItemView extends AbstractView {
         }
 
         // --- Gallery ---
+        // Collect only image URLs for the lightbox (videos stay inline)
+        const lightboxImages = [];
         let galleryHtml = '';
         const hasMedia = res.mediaFiles && res.mediaFiles.length > 0;
         const hasThumbnail = res.thumbnail_key;
@@ -71,38 +73,41 @@ export default class ItemView extends AbstractView {
         if (hasMedia || hasThumbnail) {
             galleryHtml = '<div class="gallery-grid">';
 
-            // Add thumbnail as first item if it exists
+            // Thumbnail as first lightbox image
             if (hasThumbnail) {
                 const thumbnailUrl = `/api/download/${res.thumbnail_key}`;
+                const idx = lightboxImages.length;
+                lightboxImages.push(thumbnailUrl);
                 galleryHtml += `
                     <div class="gallery-item">
-                        <a href="${thumbnailUrl}" target="_blank">
+                        <div class="gallery-item-link" data-lightbox-index="${idx}" style="display:block;width:100%;height:100%;cursor:zoom-in;">
                             <img src="${thumbnailUrl}" alt="Thumbnail" loading="lazy">
-                        </a>
+                        </div>
                     </div>
                 `;
             }
 
-            // Add other media files
+            // Other media files
             if (hasMedia) {
                 res.mediaFiles.forEach(media => {
                     const url = `/api/download/${media.r2_key}`;
-                    // If it's a video
                     if (media.media_type === 'video') {
                         galleryHtml += `
                             <div class="gallery-item">
-                                <video controls style="width: 100%; height: 100%; object-fit: cover;">
+                                <video controls style="width:100%;height:100%;object-fit:cover;">
                                     <source src="${url}" type="video/mp4">
                                     Your browser does not support the video tag.
                                 </video>
                             </div>
                         `;
                     } else if (media.media_type === 'image') {
+                        const idx = lightboxImages.length;
+                        lightboxImages.push(url);
                         galleryHtml += `
                             <div class="gallery-item">
-                                <a href="${url}" target="_blank">
+                                <div class="gallery-item-link" data-lightbox-index="${idx}" style="display:block;width:100%;height:100%;cursor:zoom-in;">
                                     <img src="${url}" alt="Gallery Image" loading="lazy">
-                                </a>
+                                </div>
                             </div>
                         `;
                     }
@@ -111,6 +116,9 @@ export default class ItemView extends AbstractView {
 
             galleryHtml += '</div>';
         }
+
+        // Store image list on the instance for postRender
+        this._lightboxImages = lightboxImages;
 
         // --- Admin Actions ---
         const adminActions = this.getAdminActions(res);
@@ -168,6 +176,17 @@ export default class ItemView extends AbstractView {
                 ${adminActions}
                 <hr>
                 ${commentsHtml}
+            </div>
+
+            <!-- Lightbox overlay (injected once, reused for all images) -->
+            <div id="lightbox-overlay" role="dialog" aria-modal="true">
+                <button id="lightbox-close" aria-label="Close">&times;</button>
+                <button id="lightbox-prev" class="lightbox-btn" aria-label="Previous">&#8592;</button>
+                <div id="lightbox-img-wrap">
+                    <img id="lightbox-img" src="" alt="">
+                </div>
+                <button id="lightbox-next" class="lightbox-btn" aria-label="Next">&#8594;</button>
+                <div id="lightbox-counter"></div>
             </div>
         `;
     }
@@ -227,9 +246,110 @@ export default class ItemView extends AbstractView {
         }).join('');
     }
 
+    setupLightbox() {
+        const images = this._lightboxImages || [];
+        if (images.length === 0) return;
+
+        const overlay = document.getElementById('lightbox-overlay');
+        const imgEl = document.getElementById('lightbox-img');
+        const imgWrap = document.getElementById('lightbox-img-wrap');
+        const counter = document.getElementById('lightbox-counter');
+        const btnClose = document.getElementById('lightbox-close');
+        const btnPrev = document.getElementById('lightbox-prev');
+        const btnNext = document.getElementById('lightbox-next');
+
+        if (!overlay) return;
+
+        const ZOOM_SCALE = 2.5;
+        let current = 0;
+        let isZoomed = false;
+
+        // Update transform-origin to the cursor position relative to the image.
+        // We remap [margin, 1-margin] → [0%, 100%] so the user doesn't need to reach
+        // the literal edge pixel to see a corner – reaching ~15% inside the border is enough.
+        const MARGIN = 0.09;
+        const remap = (v) => Math.min(Math.max((v - MARGIN) / (1 - 2 * MARGIN) * 100, 0), 100);
+
+        const updateOrigin = (e) => {
+            const rect = imgEl.getBoundingClientRect();
+            const rawX = (e.clientX - rect.left) / rect.width;
+            const rawY = (e.clientY - rect.top) / rect.height;
+            imgEl.style.transformOrigin = `${remap(rawX)}% ${remap(rawY)}%`;
+        };
+
+        const setZoom = (zoomed, e) => {
+            isZoomed = zoomed;
+            if (zoomed) {
+                if (e) updateOrigin(e);
+                imgEl.style.transform = `scale(${ZOOM_SCALE})`;
+                imgWrap.style.cursor = 'zoom-out';
+                imgEl.style.cursor = 'zoom-out';
+            } else {
+                imgEl.style.transform = 'scale(1)';
+                // Keep transformOrigin where the cursor was so the zoom-out
+                // animates back from that point, not from the center.
+                imgWrap.style.cursor = 'zoom-in';
+                imgEl.style.cursor = 'zoom-in';
+            }
+        };
+
+        const open = (idx) => {
+            current = ((idx % images.length) + images.length) % images.length;
+            imgEl.src = images[current];
+            setZoom(false);
+            counter.textContent = `${current + 1} / ${images.length}`;
+            overlay.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        };
+
+        const close = () => {
+            overlay.classList.remove('active');
+            setZoom(false);
+            imgEl.src = '';
+            document.body.style.overflow = '';
+        };
+
+        // Open lightbox when clicking gallery thumbnails
+        document.querySelectorAll('.gallery-item-link[data-lightbox-index]').forEach(el => {
+            el.addEventListener('click', () => open(parseInt(el.dataset.lightboxIndex, 10)));
+        });
+
+        // Toggle zoom on click, anchored to cursor position
+        imgWrap.addEventListener('click', (e) => {
+            e.stopPropagation();
+            setZoom(!isZoomed, e);
+        });
+
+        // While zoomed, move the zoom origin to follow the cursor
+        imgEl.addEventListener('mousemove', (e) => {
+            if (!isZoomed) return;
+            updateOrigin(e);
+        });
+
+        // Close on dark backdrop click
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) close();
+        });
+
+        btnClose.addEventListener('click', close);
+        btnPrev.addEventListener('click', (e) => { e.stopPropagation(); open(current - 1); });
+        btnNext.addEventListener('click', (e) => { e.stopPropagation(); open(current + 1); });
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (!overlay.classList.contains('active')) return;
+            if (e.key === 'Escape') close();
+            if (e.key === 'ArrowLeft') open(current - 1);
+            if (e.key === 'ArrowRight') open(current + 1);
+        });
+    }
+
     async postRender() {
         const uuid = this.params.id;
         const commentsContainer = document.getElementById('comments-container');
+
+        // Set up the image lightbox
+        this.setupLightbox();
 
         // Bind Admin Actions
         const btnApprove = document.getElementById(`btn-approve-${uuid}`);
