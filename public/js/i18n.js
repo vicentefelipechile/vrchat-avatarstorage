@@ -204,6 +204,40 @@ const translations = {
             unityhubError: { title: 'Erreur Unity Hub' },
             categories: { vrchat: 'VRChat', dependencies: 'Dépendances', erp: 'ERP', informative: 'Informatif' }
         }
+    },
+    pt: {
+        common: { loading: 'Carregando...', loadingResources: 'Carregando recursos...', loadingComments: 'Carregando comentários...', loadingCleanup: 'Carregando informações de limpeza...', loadingPending: 'Carregando recursos pendentes...', accessDenied: 'Acesso Negado', noResourcesFound: 'Nenhum recurso encontrado nesta categoria.', error: 'Erro' },
+        nav: { home: 'Início', avatars: 'Avatares', worlds: 'Mundos', assets: 'Assets', clothes: 'Roupas', others: 'Outros', login: 'Login', upload: 'Enviar', admin: 'Admin', settings: 'Configurações', menu: 'Menu', wiki: 'Wiki' },
+        settings: { title: 'Configurações de Usuário', avatar: 'Foto de Perfil', save: 'Salvar Alterações', success: 'Perfil atualizado com sucesso', logout: 'Sair' },
+        home: { welcome: 'Bem-vindo ao VRCStorage', browse: 'Navegar recursos por categoria:', latest: 'Últimos Recursos' },
+        card: { view: 'Ver Detalhes' },
+        category: { showing: 'Mostrando', of: 'de', resources: 'recursos', prev: 'Anterior', next: 'Próximo' },
+        pagination: { prev: 'Anterior', next: 'Próximo', page: 'Página', of: 'de' },
+        admin: { title: 'Painel de Administrador', noPending: 'Não há recursos pendentes de aprovação.', delete: 'Excluir', deleteConfirm: 'Tem certeza de que deseja excluir este comentário?', cleanupOrphaned: 'Limpar Arquivos Órfãos', cleanupConfirm: 'Limpar arquivos órfãos? Isso excluirá arquivos enviados há mais de 24 horas que não estão associados a nenhum recurso.', cleaning: 'Limpando...', cleanupSuccess: 'Limpeza concluída: {count} arquivos excluídos', error: 'Erro', networkError: 'Erro de rede', orphanedFiles: 'Arquivos Órfãos', totalMedia: 'Total de Arquivos', totalResources: 'Total de Recursos', orphanedFilesFound: 'Arquivos Órfãos Encontrados', orphanedFilesDesc: 'Foram encontrados {count} arquivos enviados há mais de {hours} horas que não estão associados a nenhum recurso.', viewFileList: 'Ver lista de arquivos', noOrphanedFiles: 'Sem Arquivos Órfãos', noOrphanedFilesDesc: 'Não há arquivos órfãos no momento. O sistema está limpo.', pendingResources: 'Recursos Pendentes' },
+        item: { notFound: 'Recurso Não Encontrado', category: 'Categoria', uploaded: 'Enviado em', uuid: 'UUID', description: 'Descrição', downloads: 'Downloads', downloadMain: 'Baixar (R2 Main)', backup: 'Backup', loginReq: 'Login Necessário', loginMsg: 'Você deve estar logado para baixar recursos.', goToLogin: 'Ir para o Login', comments: 'Comentários', noComments: 'Ainda sem comentários.', postComment: 'Postar Comentário', commentPlaceholder: 'Escreva seu comentário...', send: 'Enviar', sending: 'Enviando...', deleting: 'Excluindo...', loginToComment: 'Faça login para comentar', underReview: 'Aguardando aprovação do administrador', approve: 'Aprovar', reject: 'Rejeitar', deactivate: 'Desativar', confirmDeactivate: 'Tem certeza de que deseja desativar este recurso?', confirmReject: 'Tem certeza de que deseja rejeitar e excluir este recurso?', adminPanel: 'Painel de Administrador', pendingApproval: 'Este recurso aguarda aprovação.' },
+        login: { title: 'Login', username: 'Usuário', password: 'Senha', btn: 'Entrar', hint: 'Dica: user / password', error: 'Credenciais inválidas', register: 'Não tem conta? Registre-se', logout: 'Sair', logoutConfirm: 'Tem certeza que quer sair?' },
+        register: { title: 'Registro', btn: 'Registrar', loginLink: 'Já tem conta? Faça o login', success: 'Registro realizado com sucesso. Faça o login.' },
+        upload: { title: 'Enviar Recurso', name: 'Título', desc: 'Descrição', cat: 'Categoria', file: 'Arquivo', btn: 'Enviar', success: 'Enviado com sucesso', thumbnail: 'Miniatura (Thumbnail)', reference: 'Galeria (Imagens/Vídeos)', mainFile: 'Arquivo Principal', preview: 'Pré-Visualização', optional: 'Opcional', required: '*', uploading: 'Enviando arquivos...', uploadingThumbnail: 'Enviando miniatura...', uploadingReference: 'Enviando arquivos da galeria...', uploadingFile: 'Enviando arquivo principal...', creating: 'Criando recurso...', error: 'Erro', fileTypes: 'Apenas arquivos RAR, ZIP ou UnityPackage', imageVideo: 'Imagem ou vídeo para a pré-visualização', imageVideoAdditional: 'Máximo de 8 arquivos (Imagens/Vídeos)', validFile: 'arquivo válido', invalidFile: 'Arquivo inválido', markdownPlaceholder: 'Escreva a descrição usando Markdown...', noContent: 'Sem conteúdo', resourceName: 'Nome do recurso', errorMainFile: 'O arquivo principal deve ser .rar, .zip ou .unitypackage', errorThumbnail: 'Você deve selecionar uma miniatura', errorThumbnailUpload: 'Erro ao enviar a miniatura', errorReferenceUpload: 'Erro ao enviar arquivos da galeria', errorFileUpload: 'Erro ao enviar arquivo principal', errorCreateResource: 'Erro ao criar recurso', errorUnknown: 'Erro desconhecido', errorCaptcha: 'Por favor, complete o CAPTCHA', maxFiles: 'Máximo de 8 arquivos permitidos', backupLinks: 'Links de Backup (Opcional)', backupLinksHint: 'Um URL por linha (Google Drive, Dropbox, etc.). Também pode ser o link original do produto.' },
+        cats: { avatars: 'Avatares', worlds: 'Mundos', assets: 'Assets', clothes: 'Roupas', others: 'Outros' },
+        wiki: {
+            title: 'Wiki - Guia de Dependências',
+            poiyomi: { title: 'Poiyomi Toon Shader' },
+            vrcfury: { title: 'VRCFury' },
+            setup: { title: 'Guia de Instalação' },
+            faq: { title: 'Perguntas Frequentes' },
+            gogoloco: { title: 'GoGo Loco' },
+            gogolocoNsfw: { title: 'NSFW Locomotion' },
+            sps: { title: 'SPS (Super Plug Shader)' },
+            dps: { title: 'DPS (Dynamic Penetration System)' },
+            insideView: { title: 'Inside View' },
+            parameter: { title: 'Parâmetros do Avatar' },
+            nsfwEssentials: { title: 'Guia Essencial NSFW' },
+            haptics: { title: 'Guia Haptic' },
+            comments: { title: 'Comentários da Wiki' },
+            desktopPuppeteer: { title: 'Desktop Puppeteer' },
+            unityhubError: { title: 'Erro Unity Hub' },
+            categories: { vrchat: 'VRChat', dependencies: 'Dependências', erp: 'ERP', informative: 'Informativo' }
+        }
     }
 };
 
