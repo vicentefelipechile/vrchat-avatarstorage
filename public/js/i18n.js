@@ -30,6 +30,7 @@ const translations = {
             nsfwEssentials: { title: 'Guía Esencial NSFW' },
             haptics: { title: 'Guía de Hápticos' },
             comments: { title: 'Comentarios' },
+            desktopPuppeteer: { title: 'Desktop Puppeteer' },
             categories: { vrchat: 'VRChat', dependencies: 'Dependencias', erp: 'ERP', informative: 'Informativo' }
         }
     },
@@ -62,6 +63,7 @@ const translations = {
             nsfwEssentials: { title: 'NSFW Essentials' },
             haptics: { title: 'Haptics Guide' },
             comments: { title: 'Wiki Comments' },
+            desktopPuppeteer: { title: 'Desktop Puppeteer' },
             categories: { vrchat: 'VRChat', dependencies: 'Dependencies', erp: 'ERP', informative: 'Informative' }
         }
     },
@@ -94,6 +96,7 @@ const translations = {
             nsfwEssentials: { title: 'Основы NSFW' },
             haptics: { title: 'Руководство по Хаптике' },
             comments: { title: 'Комментарии Вики' },
+            desktopPuppeteer: { title: 'Desktop Puppeteer' },
             categories: { vrchat: 'VRChat', dependencies: 'Зависимости', erp: 'ERP', informative: 'Информационный' }
         }
     },
@@ -126,6 +129,7 @@ const translations = {
             nsfwEssentials: { title: 'NSFW エッセンシャル' },
             haptics: { title: 'ハプティクスガイド' },
             comments: { title: 'Wikiコメント' },
+            desktopPuppeteer: { title: 'Desktop Puppeteer' },
             categories: { vrchat: 'VRChat', dependencies: '依存関係', erp: 'ERP', informative: '情報' }
         }
     },
@@ -158,6 +162,7 @@ const translations = {
             nsfwEssentials: { title: 'NSFW 基础指南' },
             haptics: { title: '触觉指南' },
             comments: { title: 'Wiki 评论' },
+            desktopPuppeteer: { title: 'Desktop Puppeteer' },
             categories: { vrchat: 'VRChat', dependencies: '依赖项', erp: 'ERP', informative: '信息' }
         }
     },
@@ -190,6 +195,7 @@ const translations = {
             nsfwEssentials: { title: 'Les Essentiels NSFW' },
             haptics: { title: 'Guide Haptique' },
             comments: { title: 'Commentaires Wiki' },
+            desktopPuppeteer: { title: 'Desktop Puppeteer' },
             categories: { vrchat: 'VRChat', dependencies: 'Dépendances', erp: 'ERP', informative: 'Informatif' }
         }
     }
