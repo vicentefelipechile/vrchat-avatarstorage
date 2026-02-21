@@ -618,6 +618,10 @@ hr {
         padding: 15px;
     }
 
+    .wiki-content {
+        padding: 20px;
+    }
+
     /* Navbar */
     nav .container {
         flex-wrap: wrap;
