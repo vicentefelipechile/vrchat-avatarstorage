@@ -383,6 +383,217 @@ nav .container {
     color: var(--text-muted);
 }
 
+/* Item View Styles */
+.item-header {
+    background: var(--bg-card);
+    border: 2px solid var(--border-color);
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.item-header-breadcrumb {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 15px;
+}
+
+.item-header-breadcrumb a {
+    color: var(--text-link);
+    text-decoration: none;
+}
+
+.item-header-breadcrumb a:hover {
+    text-decoration: underline;
+}
+
+.item-header-title-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.item-header-title {
+    flex: 1;
+    margin: 0;
+    font-size: 1.8rem;
+    line-height: 1.3;
+}
+
+.item-header-badge {
+    background: var(--btn-bg);
+    color: var(--btn-text);
+    padding: 5px 12px;
+    font-size: 0.75rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    border: 1px solid var(--border-color);
+    white-space: nowrap;
+}
+
+.item-header-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    padding-top: 15px;
+    border-top: 1px solid var(--border-light);
+}
+
+.item-author {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.item-author-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 2px solid var(--border-color);
+    object-fit: cover;
+    background: var(--bg-hover);
+}
+
+.item-author-avatar-placeholder {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 2px solid var(--border-color);
+    background: var(--bg-hover);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    font-weight: bold;
+    color: var(--text-muted);
+}
+
+.item-author-name {
+    font-weight: bold;
+    font-size: 0.95rem;
+}
+
+.item-stats {
+    display: flex;
+    gap: 20px;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+.item-stats span {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+/* Download Section */
+.download-section {
+    background: var(--bg-card);
+    border: 2px solid var(--border-color);
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.download-section h3 {
+    margin: 0 0 15px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.download-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.download-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 15px 20px;
+    font-size: 1rem;
+    font-weight: bold;
+    text-decoration: none;
+    background: var(--btn-bg);
+    color: var(--btn-text);
+    border: 2px solid var(--border-color);
+    transition: all 0.2s ease;
+}
+
+.download-btn:hover {
+    background: var(--btn-hover);
+    transform: translateY(-2px);
+    box-shadow: 3px 3px 0 var(--shadow-hover);
+}
+
+.download-btn.secondary {
+    background: transparent;
+    color: var(--text-main);
+    font-weight: normal;
+}
+
+.download-btn.secondary:hover {
+    background: var(--bg-hover);
+}
+
+/* Login required box for downloads */
+.login-req-box {
+    background: var(--bg-hover);
+    padding: 20px;
+    border: 2px solid var(--border-color);
+    text-align: center;
+}
+
+.login-req-box p {
+    margin: 0 0 15px 0;
+}
+
+.login-req-box .btn {
+    display: inline-block;
+}
+
+/* Description section */
+.description-section {
+    background: var(--bg-card);
+    border: 2px solid var(--border-color);
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.description-section h3 {
+    margin: 0 0 15px 0;
+}
+
+.description-box {
+    line-height: 1.6;
+}
+
+/* Gallery section */
+.gallery-section {
+    background: var(--bg-card);
+    border: 2px solid var(--border-color);
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.gallery-section h3 {
+    margin: 0 0 15px 0;
+}
+
+/* Comments section */
+.comments-section {
+    background: var(--bg-card);
+    border: 2px solid var(--border-color);
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.comments-section h2 {
+    margin: 0 0 20px 0;
+}
+
 .card-image-placeholder {
     background: linear-gradient(135deg, var(--bg-hover) 25%, var(--bg-card) 50%, var(--bg-hover) 75%);
     background-size: 200% 200%;

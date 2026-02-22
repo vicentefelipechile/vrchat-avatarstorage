@@ -20,17 +20,16 @@ export default class ItemView extends AbstractView {
         const category = res.category ? (t('cats.' + res.category) || res.category) : 'Unknown';
         const date = new Date(res.created_at * 1000).toLocaleString();
 
-        let linksHtml = '';
+        // Download section
+        let adminActions = '';
+        let downloadSectionHtml = '';
         if (user) {
-            // Get download links from the full links array
             const downloadLinks = res.links ? res.links.filter(l => l.link_type === 'download') : [];
 
             if (downloadLinks.length > 0) {
-                linksHtml = `<div style="display: flex; gap: 10px; flex-wrap: wrap;">`;
+                downloadSectionHtml = `<div style="display: flex; gap: 10px; flex-wrap: wrap;">`;
 
                 downloadLinks.forEach((link, index) => {
-                    // If link has a title (filename), use it - these are official downloads
-                    // Links without title are external backups (Google Drive, etc.)
                     let linkText;
                     if (link.link_title) {
                         linkText = link.link_title;
@@ -40,13 +39,12 @@ export default class ItemView extends AbstractView {
                     }
 
                     const buttonStyle = link.link_title ? '' : ' style="background: #555;"';
-                    linksHtml += `<a href="${link.link_url}" target="_blank" class="btn"${buttonStyle}>${linkText}</a>`;
+                    downloadSectionHtml += `<a href="${link.link_url}" target="_blank" class="btn"${buttonStyle}>${linkText}</a>`;
                 });
 
-                linksHtml += `</div>`;
+                downloadSectionHtml += `</div>`;
             } else {
-                // Fallback to old structure if links array is not available
-                linksHtml = `
+                downloadSectionHtml = `
                     <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                         <a href="${res.downloadUrl}" target="_blank" class="btn">${t('item.downloadMain')}</a>
                         ${res.backupUrls.map((url, i) => `
@@ -55,7 +53,7 @@ export default class ItemView extends AbstractView {
                     </div>`;
             }
         } else {
-            linksHtml = `
+            downloadSectionHtml = `
                 <div class="login-req-box">
                     <p><strong>${t('item.loginReq')}</strong></p>
                     <p>${t('item.loginMsg')}</p>
@@ -121,7 +119,7 @@ export default class ItemView extends AbstractView {
         this._lightboxImages = lightboxImages;
 
         // --- Admin Actions ---
-        const adminActions = this.getAdminActions(res);
+        adminActions = this.getAdminActions(res);
 
         // --- Comments Section ---
         let commentsHtml = `
@@ -172,13 +170,13 @@ export default class ItemView extends AbstractView {
 
                 <hr>
                 <h3>${t('item.downloads')}</h3>
-                ${linksHtml}
+                ${downloadSectionHtml}
                 ${adminActions}
                 <hr>
                 ${commentsHtml}
             </div>
 
-            <!-- Lightbox overlay (injected once, reused for all images) -->
+            <!-- Lightbox overlay -->
             <div id="lightbox-overlay" role="dialog" aria-modal="true">
                 <button id="lightbox-close" aria-label="Close">&times;</button>
                 <button id="lightbox-prev" class="lightbox-btn" aria-label="Previous">&#8592;</button>
