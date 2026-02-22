@@ -8,58 +8,51 @@ export default class CategoryView extends AbstractView {
         const categoryKey = decodeURIComponent(this.params.id);
         const displayName = t('cats.' + categoryKey) || categoryKey;
 
-        // Store category key for postRender
         this.categoryKey = categoryKey;
 
-        // Return loading skeleton immediately
         return `
-            <h1>${displayName}</h1>
+            <div class="category-header">
+                <h1>${displayName}</h1>
+                <p class="category-description">${t('cats.desc.' + categoryKey) || ''}</p>
+            </div>
             <div id="category-resources">
-                <div style="text-align: center; padding: 40px;">
-                    <p style="color: #666; margin: 0;">${t('common.loadingResources')}</p>
+                <div class="loading-skeleton">
+                    <div class="skeleton-card"></div>
+                    <div class="skeleton-card"></div>
+                    <div class="skeleton-card"></div>
+                    <div class="skeleton-card"></div>
+                    <div class="skeleton-card"></div>
                 </div>
             </div>
         `;
     }
 
     async postRender() {
-        // Parse page from query params or default to 1
         const urlParams = new URLSearchParams(window.location.search);
         const page = parseInt(urlParams.get('page')) || 1;
 
-        // Fetch data with pagination
         const data = await DataCache.fetch(`/api/resources/category/${this.categoryKey}?page=${page}`, 300000);
 
-        // Update the resources container
         const container = document.getElementById('category-resources');
         if (container) {
             if (!data.resources || data.resources.length === 0) {
-                container.innerHTML = `<p>${t('common.noResourcesFound')}</p>`;
+                container.innerHTML = `<p class="no-results">${t('common.noResourcesFound')}</p>`;
             } else {
-                const cardsHtml = data.resources.map(res => `
-                    <div class="card">
-                        ${res.thumbnail_key ? `<div class="card-image"><img src="/api/download/${res.thumbnail_key}" alt="${res.title}" loading="lazy"></div>` : ''}
-                        <h3>${res.title}</h3>
-                        <div class="meta">${t('cats.' + res.category) || res.category} | ${new Date(res.timestamp).toLocaleDateString()}</div>
-                        <p>${stripMarkdown(res.description).substring(0, 100)}...</p>
-                        <a href="/item/${res.uuid}" data-link class="btn">${t('card.view')}</a>
-                    </div>
-                `).join('');
+                const cardsHtml = data.resources.map(res => this.renderCard(res)).join('');
 
-                // Pagination Controls
                 let paginationHtml = '';
                 if (data.pagination) {
                     const { page, hasPrevPage, hasNextPage } = data.pagination;
 
                     if (hasPrevPage || hasNextPage) {
                         paginationHtml = `
-                            <div class="pagination" style="display: flex; justify-content: center; align-items: center; gap: 20px; margin-top: 30px;">
+                            <div class="pagination">
                                 <a href="/category/${this.categoryKey}?page=${page - 1}"
                                    class="btn ${!hasPrevPage ? 'disabled' : ''}"
                                    ${!hasPrevPage ? 'style="pointer-events: none; opacity: 0.5;"' : 'data-link'}>
                                    &laquo; ${t('pagination.prev') || 'Previous'}
                                 </a>
-
+                                <span class="page-info">${page}</span>
                                 <a href="/category/${this.categoryKey}?page=${page + 1}"
                                    class="btn ${!hasNextPage ? 'disabled' : ''}"
                                    ${!hasNextPage ? 'style="pointer-events: none; opacity: 0.5;"' : 'data-link'}>
@@ -73,5 +66,57 @@ export default class CategoryView extends AbstractView {
                 container.innerHTML = `<div class="grid">${cardsHtml}</div>${paginationHtml}`;
             }
         }
+    }
+
+    renderCard(res) {
+        const title = stripMarkdown(res.title).substring(0, 50);
+        const description = stripMarkdown(res.description || '').substring(0, 80);
+        const categoryLabel = t('cats.' + res.category) || res.category;
+        const date = new Date(res.timestamp).toLocaleDateString();
+        const downloads = res.download_count || 0;
+        
+        const authorName = res.author?.username || 'Unknown';
+        const authorAvatar = res.author?.avatar_url || '';
+        const avatarImg = authorAvatar 
+            ? `<img src="${authorAvatar}" alt="${authorName}" class="card-author-avatar" onerror="this.style.display='none'">`
+            : `<div class="card-author-avatar-placeholder">${authorName.charAt(0).toUpperCase()}</div>`;
+
+        return `
+            <div class="card">
+                <a href="/item/${res.uuid}" data-link class="card-link">
+                    ${res.thumbnail_key ? `
+                        <div class="card-image">
+                            <img src="/api/download/${res.thumbnail_key}" alt="${title}" loading="lazy">
+                            <span class="card-badge">${categoryLabel}</span>
+                        </div>
+                    ` : `
+                        <div class="card-image card-image-placeholder">
+                            <span class="card-badge">${categoryLabel}</span>
+                        </div>
+                    `}
+                </a>
+                <div class="card-body">
+                    <h3>${title}${res.title.length > 50 ? '...' : ''}</h3>
+                    
+                    <div class="card-author">
+                        ${avatarImg}
+                        <span class="card-author-name">${authorName}</span>
+                    </div>
+                    
+                    <div class="card-meta">
+                        <span>${date}</span>
+                        <div class="card-stats">
+                            <span>📥 ${downloads}</span>
+                        </div>
+                    </div>
+                    
+                    <p class="card-description">${description}${description.length >= 80 ? '...' : ''}</p>
+                    
+                    <div class="card-footer">
+                        <a href="/item/${res.uuid}" data-link class="btn">${t('card.view')}</a>
+                    </div>
+                </div>
+            </div>
+        `;
     }
 }

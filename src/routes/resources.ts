@@ -39,21 +39,30 @@ resources.get('/latest', async (c) => {
             r.thumbnail_uuid,
             r.created_at,
             r.download_count,
-            m.r2_key as thumbnail_key
+            m.r2_key as thumbnail_key,
+            u.username as author_username,
+            u.avatar_url as author_avatar
         FROM resources r
         INNER JOIN media m ON r.thumbnail_uuid = m.uuid
+        LEFT JOIN users u ON r.author_uuid = u.uuid
         WHERE r.is_active = 1
         ORDER BY r.created_at DESC
-        LIMIT 6
+        LIMIT 10
     `);
 
-    const { results } = await stmt.all();
+    const { results } = await stmt.all<any>();
     c.header('Cache-Control', 'public, max-age=60');
 
-    // 2. Update KV
-    await c.env.VRCSTORAGE_KV.put('resource:latest', JSON.stringify(results), { expirationTtl: 60 });
+    const mapped = results.map(r => ({
+        ...r,
+        timestamp: r.created_at * 1000,
+        author: r.author_username ? { username: r.author_username, avatar_url: r.author_avatar } : null
+    }));
 
-    return c.json(results);
+    // 2. Update KV
+    await c.env.VRCSTORAGE_KV.put('resource:latest', JSON.stringify(mapped), { expirationTtl: 60 });
+
+    return c.json(mapped);
 });
 
 /**
@@ -63,7 +72,7 @@ resources.get('/latest', async (c) => {
 resources.get('/category/:category', async (c) => {
     const category = c.req.param('category');
     const page = parseInt(c.req.query('page') || '1');
-    const limit = 12;
+    const limit = 15;
     const offset = (page - 1) * limit;
 
     if (!category) return c.json({ error: 'Missing category' }, 400);
@@ -79,21 +88,27 @@ resources.get('/category/:category', async (c) => {
 
     // Fetch one extra item to determine if there is a next page
     const stmt = c.env.DB.prepare(`
-		SELECT r.*, m.r2_key as thumbnail_key 
+		SELECT 
+            r.*, 
+            m.r2_key as thumbnail_key,
+            u.username as author_username,
+            u.avatar_url as author_avatar
 		FROM resources r 
-		LEFT JOIN media m ON r.thumbnail_uuid = m.uuid 
+		LEFT JOIN media m ON r.thumbnail_uuid = m.uuid
+        LEFT JOIN users u ON r.author_uuid = u.uuid
 		WHERE r.category = ? AND r.is_active = 1 
 		ORDER BY r.created_at DESC
         LIMIT ? OFFSET ?
 	`).bind(category, limit + 1, offset);
-    const { results } = await stmt.all<Resource & { thumbnail_key: string | null }>();
+    const { results } = await stmt.all<Resource & { thumbnail_key: string | null; author_username: string | null; author_avatar: string | null }>();
 
     const hasNextPage = results.length > limit;
     const paginatedResults = hasNextPage ? results.slice(0, limit) : results;
 
     const mapped = paginatedResults.map(r => ({
         ...r,
-        timestamp: r.created_at * 1000
+        timestamp: r.created_at * 1000,
+        author: r.author_username ? { username: r.author_username, avatar_url: r.author_avatar } : null
     }));
 
     const response = {

@@ -210,29 +210,30 @@ document.addEventListener('DOMContentLoaded', async () => {
     // --------------------------
 
     document.body.addEventListener('click', e => {
-        if (e.target.matches('[data-link]')) {
+        const link = e.target.closest('[data-link]');
+        if (link) {
             e.preventDefault();
-            navigateTo(e.target.href);
+            navigateTo(link.href);
         }
     });
 
-    // Prefetching logic
+    // Prefetching logic - trigger on card hover
     document.body.addEventListener('mouseover', e => {
-        let link = e.target.closest('a[href^="/item/"]');
-        if (!link) {
-            const card = e.target.closest('.card');
-            if (card) {
-                link = card.querySelector('a[href^="/item/"]');
-            }
-        }
+        // Find the card or any link with /item/
+        const card = e.target.closest('.card');
+        const link = e.target.closest('a[href^="/item/"]');
+        
+        // Use link from card if found, otherwise use direct link
+        const targetLink = link || (card ? card.querySelector('a[href^="/item/"]') : null);
 
-        if (link) {
-            const href = link.getAttribute('href');
+        if (targetLink) {
+            const href = targetLink.getAttribute('href');
             if (href) {
                 const uuid = href.split('/item/')[1];
                 if (uuid) {
+                    // Prefetch resource data and comments
                     DataCache.prefetch(`/api/resources/${uuid}`, { ttl: 300000, persistent: true });
-                    DataCache.prefetch(`/api/resources/${uuid}/comments`, 300000);
+                    DataCache.prefetch(`/api/resources/${uuid}/comments`, { ttl: 300000 });
                 }
             }
         }
