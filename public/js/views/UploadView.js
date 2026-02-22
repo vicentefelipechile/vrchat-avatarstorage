@@ -23,7 +23,7 @@ export default class UploadView extends AbstractView {
                         </select>
                     </div>
 
-                    <div id="avatar-fields" style="display: none; background: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 20px; border: 1px solid #dee2e6;">
+                    <div id="avatar-fields" style="display: none; background: var(--bg-card); padding: 15px; border-radius: 5px; margin-bottom: 20px; border: 1px solid var(--border-color);">
                         <h3 style="margin-top: 0; margin-bottom: 15px;">Avatar Options</h3>
                         <div class="upload-grid">
                             <div class="form-group">
@@ -83,28 +83,28 @@ export default class UploadView extends AbstractView {
                     <div class="form-group" style="margin-bottom: 20px;">
                         <label><strong>${t('upload.thumbnail')} ${t('upload.required')}</strong></label>
                         <input type="file" id="thumbnail" accept="image/png,image/jpg,image/jpeg,image/webp,image/gif,image/avif" required>
-                        <small style="color: #666;">${t('upload.imageVideo')}</small>
+                        <small style="color: var(--text-muted);">${t('upload.imageVideo')}</small>
                         <div id="thumbnail-preview" style="margin-top: 10px;"></div>
                     </div>
                     
                     <div class="form-group" style="margin-bottom: 20px;">
                         <label><strong>${t('upload.reference')} (${t('upload.optional')})</strong></label>
                         <input type="file" id="reference-image" accept="image/png,image/jpg,image/jpeg,image/webp,image/gif,image/avif,video/mp4,video/webm" multiple>
-                        <small style="color: #666;">${t('upload.imageVideoAdditional')}</small>
+                        <small style="color: var(--text-muted);">${t('upload.imageVideoAdditional')}</small>
                         <div id="reference-preview" style="margin-top: 10px;"></div>
                     </div>
 
                     <div class="form-group">
                         <label><strong>${t('upload.mainFile')} (.rar, .zip, .unitypackage) ${t('upload.required')}</strong></label>
                         <input type="file" id="file" accept=".rar,.zip,.unitypackage" multiple required>
-                        <small style="color: #666;">${t('upload.fileTypes')} (Max 3)</small>
-                        <div id="file-info" style="margin-top: 10px; color: #666;"></div>
+                        <small style="color: var(--text-muted);">${t('upload.fileTypes')} (Max 3)</small>
+                        <div id="file-info" style="margin-top: 10px; color: var(--text-muted);"></div>
                     </div>
 
                     <div class="form-group">
                         <label><strong>${t('upload.backupLinks')}</strong></label>
                          <textarea id="backup-links" rows="3" placeholder="https://example.com/backup1&#10;https://example.com/backup2" style="width: 100%; font-family: monospace; resize: vertical;"></textarea>
-                         <small style="color: #666;">${t('upload.backupLinksHint')}</small>
+                         <small style="color: var(--text-muted);">${t('upload.backupLinksHint')}</small>
                     </div>
 
                     <div class="form-group" style="margin: 20px 0;">
@@ -262,7 +262,7 @@ export default class UploadView extends AbstractView {
 
                 const container = document.createElement('div');
                 container.className = 'preview-item';
-                container.style.cssText = 'display: inline-block; position: relative; border: 2px solid #333; padding: 10px; margin: 5px; background: #fff;';
+                container.style.cssText = 'display: inline-block; position: relative; border: 2px solid var(--border-color); padding: 10px; margin: 5px; background: var(--bg-card);';
 
                 const deleteBtn = document.createElement('button');
                 deleteBtn.innerHTML = '✕';
@@ -282,7 +282,7 @@ export default class UploadView extends AbstractView {
 
                 const filename = document.createElement('div');
                 filename.textContent = file.name;
-                filename.style.cssText = 'margin-top: 5px; font-size: 12px; color: #666; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;';
+                filename.style.cssText = 'margin-top: 5px; font-size: 12px; color: var(--text-muted); max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;';
 
                 container.appendChild(deleteBtn);
                 container.appendChild(mediaElement);
@@ -305,7 +305,7 @@ export default class UploadView extends AbstractView {
 
                 const container = document.createElement('div');
                 container.className = 'preview-item';
-                container.style.cssText = 'display: inline-block; position: relative; border: 2px solid #333; padding: 10px; margin: 5px; background: #fff; vertical-align: top;';
+                container.style.cssText = 'display: inline-block; position: relative; border: 2px solid var(--border-color); padding: 10px; margin: 5px; background: var(--bg-card); vertical-align: top;';
 
                 const deleteBtn = document.createElement('button');
                 deleteBtn.innerHTML = '✕';
@@ -332,7 +332,7 @@ export default class UploadView extends AbstractView {
 
                 const filename = document.createElement('div');
                 filename.textContent = file.name;
-                filename.style.cssText = 'margin-top: 5px; font-size: 12px; color: #666; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;';
+                filename.style.cssText = 'margin-top: 5px; font-size: 12px; color: var(--text-muted); max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;';
 
                 container.appendChild(deleteBtn);
                 container.appendChild(mediaElement);
