@@ -232,6 +232,6 @@ Puedes convertir manualmente tus avatares usando VRChat SDK → Utilities → Co
 
 ## Referencias
 
-VRChat. (2025). *PhysBones*. VRChat Creators. Recuperado de https://creators.vrchat.com/common-components/physbones/
+VRChat. (2025). *PhysBones*. VRChat Creators. https://creators.vrchat.com/common-components/physbones/
 
-VRChat. (2025). *VRCPhysBoneCollider*. VRChat Creators. Recuperado de https://creators.vrchat.com/common-components/physbones/#vrcphysbonecollider
+VRChat. (2025). *VRCPhysBoneCollider*. VRChat Creators. https://creators.vrchat.com/common-components/physbones/#vrcphysbonecollider

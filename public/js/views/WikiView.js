@@ -40,6 +40,7 @@ export default class WikiView extends AbstractView {
                     { id: 'vrcfury', label: 'wiki.vrcfury.title' },
                     { id: 'modular-avatar', label: 'wiki.modularAvatar.title' },
                     { id: 'physbones', label: 'wiki.physbones.title' },
+                    { id: 'syncdances', label: 'wiki.syncdances.title' },
                     { id: 'vrcquesttools', label: 'wiki.vrcquesttools.title' },
                     { id: 'gogoloco', label: 'wiki.gogoloco.title' },
                     { id: 'desktop-puppeteer', label: 'wiki.desktopPuppeteer.title' },

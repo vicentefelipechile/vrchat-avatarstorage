@@ -86,10 +86,10 @@ Para más información sobre el sistema de ranking de rendimiento, consulta la [
 
 ## Referencias
 
-kurotu. (s. f.). *VRCQuestTools - Avatar Converter and Utilities for Android*. GitHub Pages. Recuperado de https://kurotu.github.io/VRCQuestTools/
+kurotu. (s. f.). *VRCQuestTools - Avatar Converter and Utilities for Android*. GitHub Pages. https://kurotu.github.io/VRCQuestTools/
 
-kurotu. (s. f.). *Introduction*. VRCQuestTools Docs. Recuperado de https://kurotu.github.io/VRCQuestTools/docs/intro
+kurotu. (s. f.). *Introduction*. VRCQuestTools Docs. https://kurotu.github.io/VRCQuestTools/docs/intro
 
-kurotu. (2025). *kurotu/VRCQuestTools* [Software]. GitHub. Recuperado de https://github.com/kurotu/VRCQuestTools
+kurotu. (2025). *kurotu/VRCQuestTools* [Software]. GitHub. https://github.com/kurotu/VRCQuestTools
 
-VRChat Inc. (2025). *Performance Ranks*. VRChat Creator Documentation. Recuperado de https://creators.vrchat.com/avatars/avatar-performance-ranking-system/
+VRChat Inc. (2025). *Performance Ranks*. VRChat Creator Documentation. https://creators.vrchat.com/avatars/avatar-performance-ranking-system/

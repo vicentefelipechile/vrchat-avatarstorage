@@ -93,8 +93,8 @@ Modular Avatar y VRCFury son **herramientas complementarias**. Muchas outfits mo
 
 ## Referencias
 
-Modular Avatar. (s. f.). *Modular Avatar*. Nadena Dev. Recuperado de https://modular-avatar.nadena.dev/
+Modular Avatar. (s. f.). *Modular Avatar*. Nadena Dev. https://modular-avatar.nadena.dev/
 
-Modular Avatar. (s. f.). *Tutorials*. Nadena Dev. Recuperado de https://modular-avatar.nadena.dev/docs/tutorials
+Modular Avatar. (s. f.). *Tutorials*. Nadena Dev. https://modular-avatar.nadena.dev/docs/tutorials
 
-bd_. (2026). *bdunderscore/modular-avatar* [Software]. GitHub. Recuperado de https://github.com/bdunderscore/modular-avatar
+bd_. (2026). *bdunderscore/modular-avatar* [Software]. GitHub. https://github.com/bdunderscore/modular-avatar

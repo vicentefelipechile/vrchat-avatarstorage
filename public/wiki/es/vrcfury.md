@@ -57,6 +57,6 @@ Este método ya no es el recomendado y se considera obsoleto (Legacy), pero sigu
 
 ## Referencias
 
-VRCFury. (s. f.). *Download*. VRCFury. Recuperado de https://vrcfury.com/download/
+VRCFury. (s. f.). *Download*. VRCFury. https://vrcfury.com/download/
 
-VRCFury. (s. f.). *VRCFury*. GitHub. Recuperado de https://github.com/VRCFury/VRCFury
+VRCFury. (s. f.). *VRCFury*. GitHub. https://github.com/VRCFury/VRCFury

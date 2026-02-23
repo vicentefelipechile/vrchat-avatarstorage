@@ -58,6 +58,6 @@ Este es el método clásico. Debes considerar que es más difícil de actualizar
 
 ## Referencias
 
-Poiyomi. (s. f.). *Download*. Poiyomi Shaders. Recuperado de https://poiyomi.com/download
+Poiyomi. (s. f.). *Download*. Poiyomi Shaders. https://poiyomi.com/download
 
-Poiyomi. (s. f.). *PoiyomiToonShader: A feature rich toon shader for Unity and VRChat*. GitHub. Recuperado de https://github.com/poiyomi/PoiyomiToonShader
+Poiyomi. (s. f.). *PoiyomiToonShader: A feature rich toon shader for Unity and VRChat*. GitHub. https://github.com/poiyomi/PoiyomiToonShader

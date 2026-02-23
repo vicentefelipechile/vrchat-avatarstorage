@@ -59,4 +59,4 @@ JustKissSFX es un asset de efectos de sonido (SFX) para VRChat desarrollado por 
 
 ## Referencias
 
-Never Stop Dreaming. (2024). *チュパサウンド JustKissSFX*. BOOTH. Recuperado de https://booth.pm/ja/items/5534236
+Never Stop Dreaming. (2024). *チュパサウンド JustKissSFX*. BOOTH. https://booth.pm/ja/items/5534236
