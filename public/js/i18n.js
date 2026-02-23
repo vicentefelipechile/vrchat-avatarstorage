@@ -35,6 +35,7 @@ const translations = {
             comments: { title: 'Comentarios' },
             desktopPuppeteer: { title: 'Desktop Puppeteer' },
             unityhubError: { title: 'Error Unity Hub' },
+            justkisssfx: { title: 'JustKissSFX' },
             categories: { vrchat: 'VRChat', dependencies: 'Dependencias', erp: 'ERP', informative: 'Informativo' }
         }
     },
@@ -72,6 +73,7 @@ const translations = {
             comments: { title: 'Wiki Comments' },
             desktopPuppeteer: { title: 'Desktop Puppeteer' },
             unityhubError: { title: 'Unity Hub Error' },
+            justkisssfx: { title: 'JustKissSFX' },
             categories: { vrchat: 'VRChat', dependencies: 'Dependencies', erp: 'ERP', informative: 'Informative' }
         }
     },
@@ -109,6 +111,7 @@ const translations = {
             desktopPuppeteer: { title: 'Desktop Puppeteer' },
             unityhubError: { title: 'Ошибка Unity Hub' },
             modularAvatar: { title: 'Modular Avatar' },
+            justkisssfx: { title: 'JustKissSFX' },
             categories: { vrchat: 'VRChat', dependencies: 'Зависимости', erp: 'ERP', informative: 'Информационный' }
         }
     },
@@ -146,6 +149,7 @@ const translations = {
             comments: { title: 'Wikiコメント' },
             desktopPuppeteer: { title: 'Desktop Puppeteer' },
             unityhubError: { title: 'Unity Hubエラー' },
+            justkisssfx: { title: 'JustKissSFX' },
             categories: { vrchat: 'VRChat', dependencies: '依存関係', erp: 'ERP', informative: '情報' }
         }
     },
@@ -183,6 +187,7 @@ const translations = {
             comments: { title: 'Wiki 评论' },
             desktopPuppeteer: { title: 'Desktop Puppeteer' },
             unityhubError: { title: 'Unity Hub 错误' },
+            justkisssfx: { title: 'JustKissSFX' },
             categories: { vrchat: 'VRChat', dependencies: '依赖项', erp: 'ERP', informative: '信息' }
         }
     },
@@ -220,6 +225,7 @@ const translations = {
             comments: { title: 'Commentaires Wiki' },
             desktopPuppeteer: { title: 'Desktop Puppeteer' },
             unityhubError: { title: 'Erreur Unity Hub' },
+            justkisssfx: { title: 'JustKissSFX' },
             categories: { vrchat: 'VRChat', dependencies: 'Dépendances', erp: 'ERP', informative: 'Informatif' }
         }
     },
@@ -257,6 +263,7 @@ const translations = {
             comments: { title: 'Comentários da Wiki' },
             desktopPuppeteer: { title: 'Desktop Puppeteer' },
             unityhubError: { title: 'Erro Unity Hub' },
+            justkisssfx: { title: 'JustKissSFX' },
             categories: { vrchat: 'VRChat', dependencies: 'Dependências', erp: 'ERP', informative: 'Informativo' }
         }
     }

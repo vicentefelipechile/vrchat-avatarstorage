@@ -55,6 +55,7 @@ export default class WikiView extends AbstractView {
                     { id: 'pcs', label: 'wiki.pcs.title' },
                     { id: 'haptics', label: 'wiki.haptics.title' },
                     { id: 'dps', label: 'wiki.dps.title' },
+                    { id: 'justkisssfx', label: 'wiki.justkisssfx.title' },
                 ]
             }
         ];
