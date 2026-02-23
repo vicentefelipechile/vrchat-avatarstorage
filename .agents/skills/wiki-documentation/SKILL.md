@@ -42,10 +42,39 @@ This skill establishes strict rules for creating and editing documents in the `v
 
 ## Language and Localization
 
-1.  **Draft in Spanish:**
+1.  **Supported Languages:**
+    *   The wiki supports **7 languages**: `es` (Spanish), `en` (English), `ru` (Russian), `jp` (Japanese), `cn` (Chinese), `fr` (French), `pt` (Portuguese).
+    *   Always create content for **all 7 languages** when adding a new wiki topic.
+
+2.  **Draft in Spanish:**
     *   All information and writing must be performed **first in Spanish**.
     *   Automatic translations should not be carried out until the Spanish content is finalized and reviewed.
 
-2.  **User Confirmation for Translation:**
+3.  **User Confirmation for Translation:**
     *   Once the Spanish document is accepted, the agent MUST request explicit confirmation from the user to proceed with the implementation in other languages.
     *   This applies to both wiki files (`public/wiki/[lang]/*.md`) and text strings in code or language configuration files (e.g., `i18n.js`).
+
+## Adding New Wiki Topics
+
+When adding a new wiki topic, you MUST update the following files:
+
+1.  **Create Wiki Files:**
+    *   Create markdown files in `public/wiki/[lang]/` for all 7 languages:
+        *   `public/wiki/es/new-topic.md`
+        *   `public/wiki/en/new-topic.md`
+        *   `public/wiki/ru/new-topic.md`
+        *   `public/wiki/jp/new-topic.md`
+        *   `public/wiki/cn/new-topic.md`
+        *   `public/wiki/fr/new-topic.md`
+        *   `public/wiki/pt/new-topic.md`
+
+2.  **Update WikiView.js:**
+    *   Add the new topic to `public/js/views/WikiView.js` in the appropriate category under `this.categories`.
+    *   Use format: `{ id: 'new-topic', label: 'wiki.newTopic.title' }`
+
+3.  **Update i18n.js:**
+    *   Add the title translation for the new topic in ALL 7 language sections in `public/js/i18n.js`.
+    *   Format: `newTopic: { title: 'Title in Language' }` inside each `wiki:` section.
+
+> [!IMPORTANT]
+> Failing to update WikiView.js and i18n.js will result in the wiki topic not appearing in the navigation menu.

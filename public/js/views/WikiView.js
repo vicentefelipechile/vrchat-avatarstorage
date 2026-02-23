@@ -39,6 +39,7 @@ export default class WikiView extends AbstractView {
                     { id: 'poiyomi', label: 'wiki.poiyomi.title' },
                     { id: 'vrcfury', label: 'wiki.vrcfury.title' },
                     { id: 'modular-avatar', label: 'wiki.modularAvatar.title' },
+                    { id: 'vrcquesttools', label: 'wiki.vrcquesttools.title' },
                     { id: 'gogoloco', label: 'wiki.gogoloco.title' },
                     { id: 'desktop-puppeteer', label: 'wiki.desktopPuppeteer.title' },
                     { id: 'gesture-manager-emulator', label: 'wiki.gestureManager.title' }
