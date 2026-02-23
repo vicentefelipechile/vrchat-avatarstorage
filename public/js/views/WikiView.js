@@ -136,6 +136,20 @@ export default class WikiView extends AbstractView {
             if (e.target.matches('.delete-comment-btn')) {
                 const uuid = e.target.getAttribute('data-uuid');
                 await this.deleteComment(uuid, e.target);
+                return;
+            }
+
+            // Handle internal wiki links
+            const link = e.target.closest('a');
+            if (link) {
+                const href = link.getAttribute('href');
+                if (href) {
+                    const match = href.match(/^\/wiki\?topic=(.+)$/);
+                    if (match) {
+                        e.preventDefault();
+                        this.loadTopic(match[1]);
+                    }
+                }
             }
         });
     }
