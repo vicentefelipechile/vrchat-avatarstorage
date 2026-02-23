@@ -81,13 +81,26 @@ comments.post('/:uuid/comments', async (c) => {
 
 /**
  * Endpoint: /:commentId
- * Elimina un comentario específico.
+ * Elimina un comentario específico (solo el autor o un admin).
  */
 comments.delete('/:commentId', async (c) => {
     const authUser = await getAuthUser(c);
     if (!authUser) return c.json({ error: 'Unauthorized' }, 401);
 
     const commentId = c.req.param('commentId');
+
+    // Obtener el comentario
+    const comment = await c.env.DB.prepare('SELECT author_uuid FROM comments WHERE uuid = ?').bind(commentId).first<any>();
+    if (!comment) return c.json({ error: 'Comment not found' }, 404);
+
+    // Obtener usuario actual
+    const user = await c.env.DB.prepare('SELECT uuid FROM users WHERE username = ?').bind(authUser.username).first<any>();
+
+    // Verificar: es admin O es el autor del comentario
+    if (!authUser.is_admin && user.uuid !== comment.author_uuid) {
+        return c.json({ error: 'Forbidden' }, 403);
+    }
+
     try {
         await c.env.DB.prepare('DELETE FROM comments WHERE uuid = ?').bind(commentId).run();
         return c.json({ success: true });

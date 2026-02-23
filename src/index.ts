@@ -59,6 +59,11 @@ app.use('/api/wiki/comments', async (c, next) => {
 // Global Rate Limit
 app.use('*', rateLimit({ limit: 500, windowSeconds: MINUTE * 5 })); // 100 req / 5 min
 
+// Additional Rate Limits for sensitive endpoints
+app.use('/api/upload/*', rateLimit({ limit: 20, windowSeconds: MINUTE * 5, keyPrefix: 'upload' }));
+app.use('/api/user', rateLimit({ limit: 10, windowSeconds: MINUTE, keyPrefix: 'user_update' }));
+app.use('/api/admin/*', rateLimit({ limit: 30, windowSeconds: MINUTE, keyPrefix: 'admin' }));
+
 // Error Handler for Zod
 app.onError((err, c) => {
 	if (err instanceof z.ZodError) {

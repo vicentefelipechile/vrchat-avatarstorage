@@ -17,6 +17,18 @@ const users = new Hono<{ Bindings: Env }>();
  * Registra un nuevo usuario.
  */
 users.post('/register', async (c) => {
+    const ip = c.req.header('CF-Connecting-IP') || 'unknown';
+
+    // Rate limit: max 5 registration attempts per IP per hour
+    const registerAttemptsKey = `register_attempt:${ip}`;
+    const attempts = await c.env.VRCSTORAGE_KV.get(registerAttemptsKey, 'json') as { count: number; reset: number } | null;
+    const now = Date.now();
+
+    if (attempts && attempts.count >= 5 && now < attempts.reset) {
+        const retryAfter = Math.ceil((attempts.reset - now) / 1000);
+        return c.json({ error: 'Too many registration attempts. Try again in 1 hour.', retryAfter }, 400);
+    }
+
     const body = await c.req.json();
 
     // Validation
@@ -29,7 +41,7 @@ users.post('/register', async (c) => {
     // User Check
     const existingUser = await c.env.DB.prepare('SELECT 1 FROM users WHERE username = ?').bind(username).first();
     if (existingUser) {
-        return c.json({ error: 'Username taken' }, 409);
+        return c.json({ error: 'Username already taken' }, 409);
     }
 
     const { hash } = await hashPassword(password);
@@ -41,9 +53,28 @@ users.post('/register', async (c) => {
             'INSERT INTO users (uuid, username, password_hash, avatar_url) VALUES (?, ?, ?, ?)'
         ).bind(uuid, username, hash, avatarUrl).run();
 
+        // Clear registration attempts on success
+        await c.env.VRCSTORAGE_KV.delete(registerAttemptsKey);
+
         return c.json({ success: true });
     } catch (e) {
         console.error('Registration error:', e);
+
+        // Increment failed attempt count
+        if (attempts) {
+            await c.env.VRCSTORAGE_KV.put(
+                registerAttemptsKey,
+                JSON.stringify({ count: attempts.count + 1, reset: attempts.reset }),
+                { expirationTtl: Math.ceil((attempts.reset - now) / 1000) }
+            );
+        } else {
+            await c.env.VRCSTORAGE_KV.put(
+                registerAttemptsKey,
+                JSON.stringify({ count: 1, reset: now + 3600000 }),
+                { expirationTtl: 3600 }
+            );
+        }
+
         return c.json({ error: 'Registration failed' }, 500);
     }
 });
@@ -53,6 +84,18 @@ users.post('/register', async (c) => {
  * Inicia sesion de un usuario.
  */
 users.post('/login', async (c) => {
+    const ip = c.req.header('CF-Connecting-IP') || 'unknown';
+
+    // Rate limit: max 10 login attempts per IP per 15 minutes
+    const loginAttemptsKey = `login_attempt:${ip}`;
+    const attempts = await c.env.VRCSTORAGE_KV.get(loginAttemptsKey, 'json') as { count: number; reset: number } | null;
+    const now = Date.now();
+
+    if (attempts && attempts.count >= 10 && now < attempts.reset) {
+        const retryAfter = Math.ceil((attempts.reset - now) / 1000);
+        return c.json({ error: 'Too many login attempts. Try again later.', retryAfter }, 429);
+    }
+
     const body = await c.req.json();
 
     // Validation
@@ -62,22 +105,59 @@ users.post('/login', async (c) => {
     const isValid = await verifyTurnstile(token || '', c.env.TURNSTILE_SECRET_KEY);
     if (!isValid) return c.json({ error: 'Invalid CAPTCHA' }, 403);
 
+    // Fixed delay to prevent timing attacks (always check password even if user doesn't exist)
     const user = await c.env.DB.prepare('SELECT * FROM users WHERE username = ?').bind(username).first<User>();
 
-    if (user) {
-        const isMatch = await verifyPassword(password, user.password_hash);
-        if (isMatch) {
-            // Secure: false for localhost development
-            // Secure session
-            await createSession(c, { username: user.username, is_admin: user.is_admin });
-
-            // Cache user in KV
-            const sessionUser = { username: user.username, is_admin: user.is_admin === 1 };
-            await c.env.VRCSTORAGE_KV.put(`user:${user.username}`, JSON.stringify(sessionUser), { expirationTtl: 60 * 60 * 24 * 7 });
-
-            return c.json({ success: true });
+    // Always use constant-time comparison to prevent username enumeration
+    if (!user) {
+        // Increment failed attempt count
+        if (attempts) {
+            await c.env.VRCSTORAGE_KV.put(
+                loginAttemptsKey,
+                JSON.stringify({ count: attempts.count + 1, reset: attempts.reset }),
+                { expirationTtl: Math.ceil((attempts.reset - now) / 1000) }
+            );
+        } else {
+            await c.env.VRCSTORAGE_KV.put(
+                loginAttemptsKey,
+                JSON.stringify({ count: 1, reset: now + 900000 }),
+                { expirationTtl: 900 }
+            );
         }
+        // Always return same message to prevent user enumeration
+        return c.json({ error: 'Invalid credentials' }, 401);
     }
+
+    const isMatch = await verifyPassword(password, user.password_hash);
+    if (isMatch) {
+        // Clear failed attempts on successful login
+        await c.env.VRCSTORAGE_KV.delete(loginAttemptsKey);
+
+        // Secure session
+        await createSession(c, { username: user.username, is_admin: user.is_admin });
+
+        // Cache user in KV
+        const sessionUser = { username: user.username, is_admin: user.is_admin === 1 };
+        await c.env.VRCSTORAGE_KV.put(`user:${user.username}`, JSON.stringify(sessionUser), { expirationTtl: 60 * 60 * 24 * 7 });
+
+        return c.json({ success: true });
+    }
+
+    // Increment failed attempt count on wrong password
+    if (attempts) {
+        await c.env.VRCSTORAGE_KV.put(
+            loginAttemptsKey,
+            JSON.stringify({ count: attempts.count + 1, reset: attempts.reset }),
+            { expirationTtl: Math.ceil((attempts.reset - now) / 1000) }
+        );
+    } else {
+        await c.env.VRCSTORAGE_KV.put(
+            loginAttemptsKey,
+            JSON.stringify({ count: 1, reset: now + 900000 }),
+            { expirationTtl: 900 }
+        );
+    }
+
     return c.json({ error: 'Invalid credentials' }, 401);
 });
 
