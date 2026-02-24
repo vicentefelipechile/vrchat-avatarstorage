@@ -173,7 +173,7 @@ CREATE INDEX IF NOT EXISTS idx_wiki_comments_created_at ON wiki_comments(created
 -- ----------------------------------------------------------------------------
 
 -- ----------------------------------------------------------------------------
--- SECCIÓN 9: SISTEMA DE TAGS Y BÚSQUEDA
+-- SECCIÓN 9: SISTEMA DE TAGS
 -- ----------------------------------------------------------------------------
 
 -- Tabla de Tags
@@ -193,27 +193,10 @@ CREATE TABLE IF NOT EXISTS resource_tags (
     FOREIGN KEY(tag_id) REFERENCES tags(id) ON DELETE CASCADE
 );
 
--- Tabla Virtual FTS5 para Búsqueda Full Text
-CREATE VIRTUAL TABLE IF NOT EXISTS resources_fts USING fts5(
-    title, 
-    description, 
-    content='resources', 
-    content_rowid='rowid'
-);
-
--- Triggers para mantener sincronizada la tabla FTS
-CREATE TRIGGER IF NOT EXISTS resources_ai AFTER INSERT ON resources BEGIN
-  INSERT INTO resources_fts(rowid, title, description) VALUES (new.rowid, new.title, new.description);
-END;
-
-CREATE TRIGGER IF NOT EXISTS resources_ad AFTER DELETE ON resources BEGIN
-  INSERT INTO resources_fts(resources_fts, rowid, title, description) VALUES('delete', old.rowid, old.title, old.description);
-END;
-
-CREATE TRIGGER IF NOT EXISTS resources_au AFTER UPDATE ON resources BEGIN
-  INSERT INTO resources_fts(resources_fts, rowid, title, description) VALUES('delete', old.rowid, old.title, old.description);
-  INSERT INTO resources_fts(rowid, title, description) VALUES (new.rowid, new.title, new.description);
-END;
+-- NOTA: FTS5 (resources_fts) y sus triggers fueron eliminados el 2026-02-24
+-- por incompatibilidad con D1 y corrupción de la base de datos en producción.
+-- La búsqueda por texto se realiza con LIKE sobre los índices existentes
+-- (idx_resources_title, idx_resources_category).
 
 -- ----------------------------------------------------------------------------
 -- SECCIÓN 10: HISTORIAL DE CAMBIOS (AUDIT LOG)
