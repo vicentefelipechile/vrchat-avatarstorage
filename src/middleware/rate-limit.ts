@@ -39,7 +39,7 @@ export const rateLimit = (config: RateLimitConfig) => {
                     await c.env.VRCSTORAGE_KV.put(
                         key,
                         JSON.stringify({ count: record.count + 1, reset: record.reset }),
-                        { expirationTtl: Math.ceil((record.reset - now) / 1000) }
+                        { expirationTtl: Math.max(60, Math.ceil((record.reset - now) / 1000)) }
                     );
                 }
             } else {

@@ -1,88 +1,85 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>VRCStorage</title>
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<meta name="description" content="VRCStorage & Asset Storage - Share and download resources." />
+		<meta property="og:title" content="VRCStorage" />
+		<meta property="og:description" content="VRCStorage & Asset Storage - Share and download resources." />
+		<meta property="og:url" content="https://vrchat-avatarstorage.vicentefelipechile.workers.dev/" />
+		<meta property="og:image" content="https://vrchat-avatarstorage.vicentefelipechile.workers.dev/favicon.svg" />
+		<meta property="og:type" content="website" />
+		<meta name="theme-color" content="#2b2d31" />
+		<link rel="stylesheet" href="/style.css" />
+		<script>
+			(function () {
+				const storedTheme = localStorage.getItem('theme');
+				const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+				if (storedTheme === 'dark' || (!storedTheme && systemPrefersDark)) {
+					document.documentElement.setAttribute('data-theme', 'dark');
+				}
+			})();
+		</script>
+		<div id="turnstile-widget" style="display: none"></div>
+		<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 
-<head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>VRCStorage</title>
-	<link rel="icon" type="image/svg+xml" href="/favicon.svg">
-	<meta name="description" content="VRCStorage & Asset Storage - Share and download resources.">
-	<meta property="og:title" content="VRCStorage">
-	<meta property="og:description" content="VRCStorage & Asset Storage - Share and download resources.">
-	<meta property="og:url" content="https://vrchat-avatarstorage.vicentefelipechile.workers.dev/">
-	<meta property="og:image" content="https://vrchat-avatarstorage.vicentefelipechile.workers.dev/favicon.svg">
-	<meta property="og:type" content="website">
-	<meta name="theme-color" content="#2b2d31">
-	<link rel="stylesheet" href="/style.css">
-	<script>
-		(function () {
-			const storedTheme = localStorage.getItem('theme');
-			const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-			if (storedTheme === 'dark' || (!storedTheme && systemPrefersDark)) {
-				document.documentElement.setAttribute('data-theme', 'dark');
-			}
-		})();
-	</script>
-	<div id="turnstile-widget" style="display: none;"></div>
-	<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+		<!-- Marked for Markdown rendering (Global for now, simpler) -->
+		<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+		<!-- DOMPurify for XSS sanitization -->
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
+	</head>
 
-	<!-- Marked for Markdown rendering (Global for now, simpler) -->
-	<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-	<!-- DOMPurify for XSS sanitization -->
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
-
-</head>
-
-<body>
-	<nav>
-		<div class="container">
-			<div class="logo"><strong>VRCStorage</strong></div>
-			<button class="menu-toggle" id="mobile-menu-btn">☰</button>
-			<div class="nav-links">
-				<select id="lang-selector" style="margin-right: 5px; padding: 5px;">
-					<option value="es">Español</option>
-					<option value="en">English</option>
-					<option value="pt">Português</option>
-					<option value="ru">Русский</option>
-					<option value="jp">日本語</option>
-					<option value="cn">中文</option>
-					<option value="fr">Français</option>
-				</select>
-				<button id="theme-toggle" class="btn" style="margin-right: 15px; padding: 5px 10px;"
-					aria-label="Toggle Dark Mode">☀️</button>
-				<a href="/" data-link data-i18n="nav.home">Home</a>
-				<a href="/category/avatars" data-link data-i18n="nav.avatars">Avatares</a>
-				<!-- <a href="/category/worlds" data-link data-i18n="nav.worlds">Mundos</a> -->
-				<a href="/category/assets" data-link data-i18n="nav.assets">Assets</a>
-				<a href="/category/clothes" data-link data-i18n="nav.clothes">Ropa</a>
-				<a href="/wiki" data-link data-i18n="nav.wiki">Wiki</a>
-				<!-- User Menu Dropdown -->
-				<div class="user-menu" style="display: none; position: relative;">
-					<button class="user-menu-btn" id="user-menu-btn">
-						<span data-i18n="nav.menu">Menu</span>
-					</button>
-					<div class="user-menu-dropdown" id="user-menu-dropdown">
-						<a href="/upload" data-link data-i18n="nav.upload">Subir</a>
-						<a href="/admin" data-link data-i18n="nav.admin" style="display: none;">Admin</a>
-						<a href="/settings" data-link data-i18n="nav.settings">Configuración</a>
-						<a href="#" id="logout-btn" data-i18n="settings.logout">Cerrar Sesión</a>
+	<body>
+		<nav>
+			<div class="container">
+				<div class="logo"><strong>VRCStorage</strong></div>
+				<button class="menu-toggle" id="mobile-menu-btn">☰</button>
+				<div class="nav-links">
+					<select id="lang-selector" style="margin-right: 5px; padding: 5px">
+						<option value="es">Español</option>
+						<option value="en">English</option>
+						<option value="pt">Português</option>
+						<option value="ru">Русский</option>
+						<option value="jp">日本語</option>
+						<option value="cn">中文</option>
+						<option value="fr">Français</option>
+					</select>
+					<button id="theme-toggle" class="btn" style="margin-right: 15px; padding: 5px 10px" aria-label="Toggle Dark Mode">☀️</button>
+					<a href="/" data-link data-i18n="nav.home">Home</a>
+					<a href="/category/avatars" data-link data-i18n="nav.avatars">Avatares</a>
+					<!-- <a href="/category/worlds" data-link data-i18n="nav.worlds">Mundos</a> -->
+					<a href="/category/assets" data-link data-i18n="nav.assets">Assets</a>
+					<a href="/category/clothes" data-link data-i18n="nav.clothes">Ropa</a>
+					<a href="/wiki" data-link data-i18n="nav.wiki">Wiki</a>
+					<!-- User Menu Dropdown -->
+					<div class="user-menu" style="display: none; position: relative">
+						<button class="user-menu-btn" id="user-menu-btn">
+							<span data-i18n="nav.menu">Menu</span>
+						</button>
+						<div class="user-menu-dropdown" id="user-menu-dropdown">
+							<a href="/upload" data-link data-i18n="nav.upload">Subir</a>
+							<a href="/favorites" data-link data-i18n="nav.favorites">Favoritos</a>
+							<a href="/admin" data-link data-i18n="nav.admin" style="display: none">Admin</a>
+							<a href="/settings" data-link data-i18n="nav.settings">Configuración</a>
+							<a href="#" id="logout-btn" data-i18n="settings.logout">Cerrar Sesión</a>
+						</div>
 					</div>
+					<a href="/login" data-link class="login-link" style="margin-left: 20px" data-i18n="nav.login">Login</a>
 				</div>
-				<a href="/login" data-link class="login-link" style="margin-left: 20px;" data-i18n="nav.login">Login</a>
 			</div>
-		</div>
-	</nav>
+		</nav>
 
-	<main class="container" id="app">
-		<!-- Content injected here by app.js -->
-		<p>Loading...</p>
-	</main>
+		<main class="container" id="app">
+			<!-- Content injected here by app.js -->
+			<p>Loading...</p>
+		</main>
 
-	<footer>
-		<p>&copy; 2026 VRCStorage - Grayscale Edition</p>
-	</footer>
+		<footer>
+			<p>&copy; 2026 VRCStorage - Grayscale Edition</p>
+		</footer>
 
-	<script type="module" src="/js/app.js"></script>
-</body>
-
+		<script type="module" src="/js/app.js"></script>
+	</body>
 </html>

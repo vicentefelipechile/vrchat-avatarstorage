@@ -18,15 +18,13 @@
 		{
 			"binding": "DB",
 			"database_name": "vrcstorage",
-			"database_id": "ba294f40-ddf9-4c5c-9c7f-32740a4f55df",
-			"remote": true
+			"database_id": "ba294f40-ddf9-4c5c-9c7f-32740a4f55df"
 		}
 	],
 	"r2_buckets": [
 		{
 			"bucket_name": "vrcstorage",
-			"binding": "BUCKET",
-			"remote": true
+			"binding": "BUCKET"
 		}
 	],
 	"kv_namespaces": [

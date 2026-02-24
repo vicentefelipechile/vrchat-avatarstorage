@@ -21,14 +21,25 @@ admin.get('/pending', async (c) => {
 
     try {
         const resources = await c.env.DB.prepare(`
-			SELECT r.*, m.r2_key as thumbnail_key 
-			FROM resources r 
-			LEFT JOIN media m ON r.thumbnail_uuid = m.uuid 
-			WHERE r.is_active = 0 
-			ORDER BY r.created_at DESC
-		`).all<Resource & { thumbnail_key: string | null }>();
+            SELECT 
+                r.*, 
+                m.r2_key as thumbnail_key,
+                u.username as author_username,
+                u.avatar_url as author_avatar
+            FROM resources r 
+            LEFT JOIN media m ON r.thumbnail_uuid = m.uuid 
+            LEFT JOIN users u ON r.author_uuid = u.uuid
+            WHERE r.is_active = 0 
+            ORDER BY r.created_at DESC
+        `).all<Resource & { thumbnail_key: string | null; author_username: string | null; author_avatar: string | null }>();
 
-        return c.json(resources.results);
+        const mapped = resources.results.map(r => ({
+            ...r,
+            timestamp: r.created_at * 1000,
+            author: r.author_username ? { username: r.author_username, avatar_url: r.author_avatar } : null
+        }));
+
+        return c.json(mapped);
     } catch (e) {
         console.error('Admin pending fetch error:', e);
         return c.json({ error: 'Failed to fetch pending resources' }, 500);
@@ -231,6 +242,25 @@ admin.post('/cleanup/orphaned-media', async (c) => {
     } catch (e) {
         console.error('Cleanup error:', e);
         return c.json({ error: 'Cleanup failed' }, 500);
+    }
+});
+
+/**
+ * Endpoint: /cache/clear/:username
+ * Limpia la cache de un usuario especifico. Util para refrescar permisos de admin.
+ */
+admin.post('/cache/clear/:username', async (c) => {
+    const user = await getAuthUser(c);
+    if (!user) return c.json({ error: 'Unauthorized' }, 401);
+    if (!user.is_admin) return c.json({ error: 'Forbidden' }, 403);
+
+    const targetUsername = c.req.param('username');
+    try {
+        await c.env.VRCSTORAGE_KV.delete(`user:${targetUsername}`);
+        return c.json({ success: true, message: `Cache cleared for user ${targetUsername}` });
+    } catch (e) {
+        console.error('Cache clear error:', e);
+        return c.json({ error: 'Failed to clear cache' }, 500);
     }
 });
 

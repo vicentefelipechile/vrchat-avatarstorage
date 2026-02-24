@@ -23,43 +23,48 @@ export default class UploadView extends AbstractView {
                         </select>
                     </div>
 
-                    <div id="avatar-fields" style="display: none; background: var(--bg-card); padding: 15px; border-radius: 5px; margin-bottom: 20px; border: 1px solid var(--border-color);">
-                        <h3 style="margin-top: 0; margin-bottom: 15px;">Avatar Options</h3>
+                    <div class="form-group">
+                        <label><strong>${t('upload.tags')}</strong> <small>(${t('upload.tagsHint')})</small></label>
+                        <input type="text" id="tags" placeholder="anime, horror, quest, nsfw">
+                    </div>
+
+                    <div id="avatar-fields" style="display: none; background: var(--bg-card); padding: 15px; margin-bottom: 20px; border: 1px solid var(--border-color);">
+                        <h3 style="margin-top: 0; margin-bottom: 15px;">${t('avatar.options')}</h3>
                         <div class="upload-grid">
                             <div class="form-group">
-                                <label><strong>Platform</strong></label>
+                                <label><strong>${t('avatar.platform')}</strong></label>
                                 <select id="avatar-platform" class="form-control">
-                                    <option value="PC Only" selected>PC Only (Default)</option>
-                                    <option value="Quest">Quest</option>
-                                    <option value="PC / Quest">PC / Quest</option>
+                                    <option value="PC Only" selected>${t('avatar.pcOnly')} (${t('avatar.default')})</option>
+                                    <option value="Quest">${t('avatar.quest')}</option>
+                                    <option value="PC / Quest">${t('avatar.pcQuest')}</option>
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label><strong>SDK</strong></label>
+                                <label><strong>${t('avatar.sdk')}</strong></label>
                                 <select id="avatar-sdk" class="form-control">
-                                    <option value="3.0" selected>3.0 (Default)</option>
+                                    <option value="3.0" selected>3.0 (${t('avatar.default')})</option>
                                     <option value="2.0">2.0</option>
                                 </select>
                             </div>
                         </div>
                         <div class="upload-grid">
                              <div class="form-group">
-                                <label><strong>Version</strong> (e.g. v1.0)</label>
+                                <label><strong>${t('avatar.version')}</strong> (e.g. v1.0)</label>
                                 <input type="text" id="avatar-version" placeholder="v1.0">
                             </div>
                             <div class="form-group" style="display: flex; align-items: center; margin-top: 30px;">
                                 <input type="checkbox" id="avatar-blend" style="width: auto; margin-right: 10px;">
-                                <label for="avatar-blend" style="margin-bottom: 0;"><strong>Contains .blend file?</strong></label>
+                                <label for="avatar-blend" style="margin-bottom: 0;"><strong>${t('avatar.blend')}</strong></label>
                             </div>
                         </div>
                         <div class="upload-grid" style="margin-top: 10px;">
                              <div class="form-group" style="display: flex; align-items: center;">
                                 <input type="checkbox" id="avatar-poiyomi" style="width: auto; margin-right: 10px;">
-                                <label for="avatar-poiyomi" style="margin-bottom: 0;"><strong>Uses Poiyomi?</strong></label>
+                                <label for="avatar-poiyomi" style="margin-bottom: 0;"><strong>${t('avatar.poiyomi')}</strong></label>
                             </div>
                             <div class="form-group" style="display: flex; align-items: center;">
                                 <input type="checkbox" id="avatar-vrcfury" style="width: auto; margin-right: 10px;">
-                                <label for="avatar-vrcfury" style="margin-bottom: 0;"><strong>Uses VRCFury?</strong></label>
+                                <label for="avatar-vrcfury" style="margin-bottom: 0;"><strong>${t('avatar.vrcfury')}</strong></label>
                             </div>
                         </div>
                     </div>
@@ -108,7 +113,7 @@ export default class UploadView extends AbstractView {
                     </div>
 
                     <div class="form-group" style="margin: 20px 0;">
-                        <label><strong>CAPTCHA *</strong></label>
+                        <label><strong>${t('upload.captcha')}</strong></label>
                         <div id="turnstile-container"></div>
                     </div>
 
@@ -394,8 +399,8 @@ export default class UploadView extends AbstractView {
             uploadError.textContent = '';
 
             if (files.length > 3) {
-                fileInfo.innerHTML = `<span style="color: red;">✗ Max 3 files allowed</span>`;
-                uploadError.textContent = 'Max 3 files allowed';
+                fileInfo.innerHTML = `<span style="color: red;">✗ ${t('upload.errorMaxFiles')}</span>`;
+                uploadError.textContent = t('upload.errorMaxFiles');
                 fileInput.value = '';
                 return;
             }
@@ -422,11 +427,11 @@ export default class UploadView extends AbstractView {
                 if (!isValid) {
                     color = 'red';
                     symbol = '✗';
-                    message += ' - Invalid file type';
+                    message += ` - ${t('upload.errorInvalidFileType')}`;
                 } else if (!sizeValid) {
                     color = 'red';
                     symbol = '✗';
-                    message += ` - Too large (max ${maxMB}MB)`;
+                    message += ` - ${t('upload.errorFileTooLarge')} (max ${maxMB}MB)`;
                 }
 
                 const div = document.createElement('div');
@@ -567,6 +572,8 @@ export default class UploadView extends AbstractView {
             const title = document.getElementById('title').value;
             let description = descriptionField.value; // Use let to allow modification
             const category = document.getElementById('category').value;
+            const tagsInput = document.getElementById('tags').value;
+            const tags = tagsInput.split(',').map(t => t.trim()).filter(t => t.length > 0);
 
             // Append Avatar Information if Category is Avatars
             if (category === 'avatars') {
@@ -726,7 +733,8 @@ export default class UploadView extends AbstractView {
                     thumbnail_uuid: thumbnailData.media_uuid,
                     reference_image_uuid: galleryUuids.length > 0 ? galleryUuids[0] : null,
                     media_files: [thumbnailData.media_uuid, ...galleryUuids, ...uploadedFilesData.map(f => f.media_uuid)], // Add all media UUIDs
-                    links: fileLinks
+                    links: fileLinks,
+                    tags: tags // Add tags to payload
                 };
 
                 // Add Backup Links

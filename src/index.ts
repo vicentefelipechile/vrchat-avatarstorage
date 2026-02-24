@@ -23,6 +23,8 @@ import uploadRoutes from './routes/uploads';
 import downloadRoutes from './routes/downloads';
 import utilRoutes from './routes/utils';
 import wikiRoutes from './routes/wiki';
+import tagsRoutes from './routes/tags';
+import favoritesRoutes from './routes/favorites';
 
 // =========================================================================================================
 // Variables
@@ -63,6 +65,7 @@ app.use('*', rateLimit({ limit: 500, windowSeconds: MINUTE * 5 })); // 100 req /
 app.use('/api/upload/*', rateLimit({ limit: 150, windowSeconds: MINUTE * 5, keyPrefix: 'upload' }));
 app.use('/api/user', rateLimit({ limit: 10, windowSeconds: MINUTE, keyPrefix: 'user_update' }));
 app.use('/api/admin/*', rateLimit({ limit: 30, windowSeconds: MINUTE, keyPrefix: 'admin' }));
+app.use('/api/favorites/*', rateLimit({ limit: 30, windowSeconds: MINUTE, keyPrefix: 'favorites' }));
 
 // Error Handler for Zod
 app.onError((err, c) => {
@@ -72,7 +75,6 @@ app.onError((err, c) => {
 	console.error(err);
 	return c.json({ error: 'Internal Server Error' }, 500);
 });
-
 
 // =========================================================================================================
 // Middleware
@@ -87,7 +89,6 @@ app.use('/download/*', async (c, next) => {
 	await next();
 });
 
-
 // =========================================================================================================
 // Mount Routes
 // =========================================================================================================
@@ -98,8 +99,10 @@ app.route('/api/admin', adminRoutes);
 app.route('/api/resources', commentRoutes);
 app.route('/api/comments', commentRoutes);
 app.route('/api/wiki', wikiRoutes);
+app.route('/api/tags', tagsRoutes);
 app.route('/api/upload', uploadRoutes);
 app.route('/api/download', downloadRoutes);
+app.route('/api/favorites', favoritesRoutes);
 app.route('/api', utilRoutes);
 
 // =========================================================================================================
@@ -153,7 +156,9 @@ app.get('/item/:uuid', async (c) => {
 			// Replace Meta Tags
 			const title = resource.title;
 			const description = resource.description || 'VRCStorage & Asset Storage';
-			const imageUrl = thumbnail ? `${new URL(c.req.url).origin}/api/download/${thumbnail.r2_key}` : `${new URL(c.req.url).origin}/favicon.svg`;
+			const imageUrl = thumbnail
+				? `${new URL(c.req.url).origin}/api/download/${thumbnail.r2_key}`
+				: `${new URL(c.req.url).origin}/favicon.svg`;
 			const url = `${new URL(c.req.url).origin}/item/${uuid}`;
 
 			// Simple replacements
@@ -177,7 +182,6 @@ app.get('/item/:uuid', async (c) => {
 // Serve Static Files (SPA Fallback)
 // =========================================================================================================
 
-
 app.get('/*', async (c) => {
 	const asset = await c.env.ASSETS.fetch(c.req.raw);
 	if (asset.status === 404) {
@@ -199,7 +203,8 @@ async function cleanupOrphanedMedia(env: Env) {
 	const cutoffTime = Math.floor(Date.now() / 1000) - TWENTY_FOUR_HOURS;
 
 	try {
-		const orphanedMedia = await env.DB.prepare(`
+		const orphanedMedia = await env.DB.prepare(
+			`
 			SELECT m.uuid, m.r2_key 
 			FROM media m
 			WHERE m.created_at < ?
@@ -213,14 +218,16 @@ async function cleanupOrphanedMedia(env: Env) {
 			AND NOT EXISTS (
 				SELECT 1 FROM users WHERE INSTR(users.avatar_url, m.r2_key) > 0
 			)
-		`).bind(cutoffTime).all<Media>();
+		`,
+		)
+			.bind(cutoffTime)
+			.all<Media>();
 
 		let deletedCount = 0;
 
 		for (const media of orphanedMedia.results) {
 			await env.BUCKET.delete(media.r2_key);
-			await env.DB.prepare('DELETE FROM media WHERE uuid = ?')
-				.bind(media.uuid).run();
+			await env.DB.prepare('DELETE FROM media WHERE uuid = ?').bind(media.uuid).run();
 			deletedCount++;
 		}
 
@@ -237,5 +244,5 @@ export default {
 	scheduled: async (event: ScheduledEvent, env: Env, ctx: ExecutionContext) => {
 		console.log('[CRON] Running scheduled cleanup task');
 		ctx.waitUntil(cleanupOrphanedMedia(env));
-	}
+	},
 };

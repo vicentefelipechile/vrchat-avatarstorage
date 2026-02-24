@@ -5,92 +5,96 @@ import { renderTurnstile, stripMarkdown } from '../utils.js';
 import { deleteComment, approveResource, rejectResource, deactivateResource } from '../admin.js';
 
 export default class ItemView extends AbstractView {
-    async getHtml() {
-        const uuid = this.params.id;
-        // Fetch item details immediately
-        const res = await DataCache.fetch(`/api/resources/${uuid}`, { ttl: 300000, persistent: true }); // Persistent cache for immutable items
+	async getHtml() {
+		const uuid = this.params.id;
+		// Fetch item details immediately
+		const res = await DataCache.fetch(`/api/resources/${uuid}`, { ttl: 60000 }); // Short cache for mutable items
 
-        if (!res) return `<h1>${t('item.notFound')}</h1>`;
+		if (!res) return `<h1>${t('item.notFound')}</h1>`;
 
-        // Auth is already loaded from localStorage, no need to wait
-        const user = window.appState.user;
-        const isAdmin = window.appState.isAdmin;
+		// Auth is already loaded from localStorage, no need to wait
+		const user = window.appState.user;
+		const isAdmin = window.appState.isAdmin;
 
-        // --- Resource Details ---
-        const category = res.category ? (t('cats.' + res.category) || res.category) : 'Unknown';
-        const date = new Date(res.created_at * 1000).toLocaleString();
+		// --- Resource Details ---
+		const category = res.category ? t('cats.' + res.category) || res.category : t('common.unknown');
+		const date = new Date(res.created_at * 1000).toLocaleString();
 
-        // Download section
-        let adminActions = '';
-        let downloadSectionHtml = '';
-        if (user) {
-            const downloadLinks = res.links ? res.links.filter(l => l.link_type === 'download') : [];
+		// Download section
+		let adminActions = '';
+		let downloadSectionHtml = '';
+		if (user) {
+			const downloadLinks = res.links ? res.links.filter((l) => l.link_type === 'download') : [];
 
-            if (downloadLinks.length > 0) {
-                downloadSectionHtml = `<div style="display: flex; gap: 10px; flex-wrap: wrap;">`;
+			if (downloadLinks.length > 0) {
+				downloadSectionHtml = `<div style="display: flex; gap: 10px; flex-wrap: wrap;">`;
 
-                downloadLinks.forEach((link, index) => {
-                    let linkText;
-                    if (link.link_title) {
-                        linkText = link.link_title;
-                    } else {
-                        const backupNum = downloadLinks.slice(0, index).filter(l => !l.link_title).length + 1;
-                        linkText = `${t('item.backup')} ${backupNum}`;
-                    }
+				downloadLinks.forEach((link, index) => {
+					let linkText;
+					if (link.link_title) {
+						linkText = link.link_title;
+					} else {
+						const backupNum = downloadLinks.slice(0, index).filter((l) => !l.link_title).length + 1;
+						linkText = `${t('item.backup')} ${backupNum}`;
+					}
 
-                    const buttonStyle = link.link_title ? '' : ' style="background: #555;"';
-                    downloadSectionHtml += `<a href="${link.link_url}" target="_blank" class="btn"${buttonStyle}>${linkText}</a>`;
-                });
+					const buttonStyle = link.link_title ? '' : ' style="background: #555;"';
+					downloadSectionHtml += `<a href="${link.link_url}" target="_blank" class="btn"${buttonStyle}>${linkText}</a>`;
+				});
 
-                downloadSectionHtml += `</div>`;
-            } else {
-                downloadSectionHtml = `
+				downloadSectionHtml += `</div>`;
+			} else {
+				downloadSectionHtml = `
                     <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                         <a href="${res.downloadUrl}" target="_blank" class="btn">${t('item.downloadMain')}</a>
-                        ${res.backupUrls.map((url, i) => `
+                        ${res.backupUrls
+													.map(
+														(url, i) => `
                             <a href="${url}" target="_blank" class="btn" style="background: #666;">${t('item.backup')} ${i + 1}</a>
-                        `).join('')}
+                        `,
+													)
+													.join('')}
                     </div>`;
-            }
-        } else {
-            downloadSectionHtml = `
+			}
+		} else {
+			downloadSectionHtml = `
                 <div class="login-req-box">
                     <p><strong>${t('item.loginReq')}</strong></p>
                     <p>${t('item.loginMsg')}</p>
                     <a href="/login" data-link class="btn">${t('item.goToLogin')}</a>
                 </div>`;
-        }
+		}
 
-        // --- Gallery ---
-        // Collect only image URLs for the lightbox (videos stay inline)
-        const lightboxImages = [];
-        let galleryHtml = '';
-        const hasMedia = res.mediaFiles && res.mediaFiles.length > 0;
-        const hasThumbnail = res.thumbnail_key;
+		// --- Gallery ---
+		// Collect only image URLs for the lightbox (videos stay inline)
+		const lightboxImages = [];
+		let galleryHtml = '';
+		const hasMedia = res.mediaFiles && res.mediaFiles.length > 0;
+		const hasThumbnail = res.thumbnail_key;
 
-        if (hasMedia || hasThumbnail) {
-            galleryHtml = '<div class="gallery-grid">';
+		if (hasMedia || hasThumbnail) {
+			galleryHtml = '<div class="gallery-grid">';
 
-            // Thumbnail as first lightbox image
-            if (hasThumbnail) {
-                const thumbnailUrl = `/api/download/${res.thumbnail_key}`;
-                const idx = lightboxImages.length;
-                lightboxImages.push(thumbnailUrl);
-                galleryHtml += `
+			// Thumbnail as first lightbox image
+			if (hasThumbnail) {
+				const thumbnailUrl = `/api/download/${res.thumbnail_key}`;
+				const idx = lightboxImages.length;
+				lightboxImages.push(thumbnailUrl);
+				galleryHtml += `
                     <div class="gallery-item">
                         <div class="gallery-item-link" data-lightbox-index="${idx}" style="display:block;width:100%;height:100%;cursor:zoom-in;">
                             <img src="${thumbnailUrl}" alt="Thumbnail" loading="lazy">
                         </div>
                     </div>
                 `;
-            }
+			}
 
-            // Other media files
-            if (hasMedia) {
-                res.mediaFiles.forEach(media => {
-                    const url = `/api/download/${media.r2_key}`;
-                    if (media.media_type === 'video') {
-                        galleryHtml += `
+			// Other media files
+			if (hasMedia) {
+				res.mediaFiles.forEach((media) => {
+					const url = `/api/download/${media.r2_key}`;
+					if (media.media_type === 'video') {
+						galleryHtml += `
                             <div class="gallery-item">
                                 <video controls style="width:100%;height:100%;object-fit:cover;">
                                     <source src="${url}" type="video/mp4">
@@ -98,38 +102,57 @@ export default class ItemView extends AbstractView {
                                 </video>
                             </div>
                         `;
-                    } else if (media.media_type === 'image') {
-                        const idx = lightboxImages.length;
-                        lightboxImages.push(url);
-                        galleryHtml += `
+					} else if (media.media_type === 'image') {
+						const idx = lightboxImages.length;
+						lightboxImages.push(url);
+						galleryHtml += `
                             <div class="gallery-item">
                                 <div class="gallery-item-link" data-lightbox-index="${idx}" style="display:block;width:100%;height:100%;cursor:zoom-in;">
                                     <img src="${url}" alt="Gallery Image" loading="lazy">
                                 </div>
                             </div>
                         `;
-                    }
-                });
-            }
+					}
+				});
+			}
 
-            galleryHtml += '</div>';
-        }
+			galleryHtml += '</div>';
+		}
 
-        // Store image list on the instance for postRender
-        this._lightboxImages = lightboxImages;
+		// Store image list on the instance for postRender
+		this._lightboxImages = lightboxImages;
 
-        // --- Admin Actions ---
-        adminActions = this.getAdminActions(res);
+		// --- Admin Actions ---
+		adminActions = this.getAdminActions(res);
 
-        // --- Comments Section ---
-        let commentsHtml = `
+		// --- Header Tools ---
+		const isOwner = user && res.author && user.username === res.author.username;
+		const canEdit = isAdmin || (isOwner && res.is_active === 0);
+
+		let headerTools = `<div style="display: flex; gap: 10px; flex-shrink: 0; margin-top: 5px; align-items: center;">`;
+		if (user) {
+			headerTools += `<button type="button" class="btn-favorite" id="btn-favorite" data-uuid="${res.uuid}" style="background: transparent; border: 1px solid var(--border-color); padding: 5px 10px; cursor: pointer;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="favorite-icon"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+                <span class="favorite-text" style="margin-left: 5px;">${t('nav.favorites')}</span>
+            </button>`;
+		}
+		if (canEdit) {
+			headerTools += `<a href="/resource/${res.uuid}/edit" data-link class="btn" style="background: #17a2b8; padding: 5px 15px;">${t('item.edit')}</a>`;
+		}
+		headerTools += `<a href="/resource/${res.uuid}/history" data-link class="btn" style="background: #6c757d; padding: 5px 15px;">${t('item.history')}</a>`;
+		headerTools += `</div>`;
+
+		// --- Comments Section ---
+		let commentsHtml = `
             <div id="comments-section" style="margin-top: 40px;">
                 <h2>${t('item.comments')}</h2>
                 <div id="comments-container">
                     <p>${t('common.loadingComments')}</p>
                 </div>
                 
-                ${user ? `
+                ${
+									user
+										? `
                 <form id="comment-form" style="margin-top: 20px;">
                     <div class="form-group">
                         <textarea id="comment-text" rows="3" placeholder="${t('item.commentPlaceholder')}" required style="width: 100%; font-family: inherit; padding: 10px;"></textarea>
@@ -137,23 +160,28 @@ export default class ItemView extends AbstractView {
                     <div id="turnstile-comment" class="mb-10"></div>
                     <button type="submit" class="btn">${t('item.send')}</button>
                 </form>
-                ` : `<hr><h3>${t('item.loginToComment')}</h3>`}
+                `
+										: `<hr><h3>${t('item.loginToComment')}</h3>`
+								}
             </div>
         `;
 
-        // Render Markdown Description
-        let descriptionHtml = '';
-        if (window.marked && window.DOMPurify) {
-            descriptionHtml = window.DOMPurify.sanitize(window.marked.parse(res.description || ''));
-        } else if (window.marked) {
-            descriptionHtml = window.marked.parse(res.description || ''); // Fallback
-        } else {
-            descriptionHtml = `<p>${(res.description || '').replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</p>`;
-        }
+		// Render Markdown Description
+		let descriptionHtml = '';
+		if (window.marked && window.DOMPurify) {
+			descriptionHtml = window.DOMPurify.sanitize(window.marked.parse(res.description || ''));
+		} else if (window.marked) {
+			descriptionHtml = window.marked.parse(res.description || ''); // Fallback
+		} else {
+			descriptionHtml = `<p>${(res.description || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>`;
+		}
 
-        return `
+		return `
             <div class="details-box">
-                <h1>${res.title}</h1>
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 15px; margin-bottom: 15px;">
+                    <h1 style="margin: 0; line-height: 1.2; word-break: break-word;">${res.title}</h1>
+                    ${headerTools}
+                </div>
                 <div class="meta" style="margin-bottom: 20px;">
                     <strong>${t('item.category')}:</strong> <a href="/category/${res.category}" data-link>${category}</a> | 
                     <strong>${t('item.uploaded')}:</strong> ${date} | 
@@ -187,47 +215,70 @@ export default class ItemView extends AbstractView {
                 <div id="lightbox-counter"></div>
             </div>
         `;
-    }
+	}
 
-    getAdminActions(res) {
-        if (!window.appState || !window.appState.isAdmin) return '';
+	getAdminActions(res) {
+		const appState = window.appState || {};
+		const isAdmin = appState.isAdmin;
+		const isAuthor = appState.user && appState.user.uuid === res.author_uuid; // Need to ensure we have user uuid in appState or check username
+		// Actually appState.user usually has { username, is_admin }, might not have uuid easily unless I stored it.
+		// Let's assume username match for now or update auth.ts later to return uuid in session.
+		// Checking username:
+		const isOwner = appState.user && appState.user.username === res.author?.username;
 
-        let buttons = '';
-        if (!res.is_active || res.is_active === 0) {
-            // Pending
-            buttons = `
-                <hr>
-                <div style="background: #fff3cd; color: #856404; padding: 15px; border: 2px solid #ffeeba; margin-top: 10px; margin-bottom: 20px;">
-                    <h3>${t('item.adminPanel')}</h3>
-                    <p>${t('item.pendingApproval')}</p>
-                    <button class="btn" style="background-color: #28a745;" id="btn-approve-${res.uuid}">${t('item.approve')}</button>
-                    <button class="btn" style="background-color: #dc3545;" id="btn-reject-${res.uuid}">${t('item.reject')}</button>
-                </div>
-            `;
-        } else {
-            // Active
-            buttons = `
-                <div style="background: #d1ecf1; color: #0c5460; padding: 15px; border: 2px solid #bee5eb; margin-top: 10px; margin-bottom: 20px;">
-                    <h3>${t('item.adminPanel')}</h3>
-                    <button class="btn" style="background-color: #ffc107; color: black;" id="btn-deactivate-${res.uuid}">${t('item.deactivate')}</button>
-                </div>
-            `;
-        }
-        return buttons;
-    }
+		let buttons = '';
 
-    renderComments(comments, isAdmin) {
-        if (!comments || comments.length === 0) return `<p>${t('item.noComments')}</p>`;
+		if (!res.is_active || res.is_active === 0) {
+			// Pending
+			if (isAdmin) {
+				buttons = `
+                    <hr>
+                    <div style="background: #fff3cd; color: #856404; padding: 15px; border: 2px solid #ffeeba; margin-top: 10px; margin-bottom: 20px;">
+                        <h3>${t('item.adminPanel')}</h3>
+                        <p>${t('item.pendingApproval')}</p>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <button class="btn" style="background-color: #28a745;" id="btn-approve-${res.uuid}">${t('item.approve')}</button>
+                            <button class="btn" style="background-color: #dc3545;" id="btn-reject-${res.uuid}">${t('item.reject')}</button>
+                        </div>
+                    </div>
+                `;
+			} else if (isOwner) {
+				buttons = `
+                    <hr>
+                    <div style="background: #fff3cd; color: #856404; padding: 15px; border: 2px solid #ffeeba; margin-top: 10px; margin-bottom: 20px;">
+                        <p>${t('item.underReview')}</p>
+                    </div>
+                `;
+			}
+		} else {
+			// Active
+			if (isAdmin) {
+				buttons = `
+                    <div style="background: #d1ecf1; color: #0c5460; padding: 15px; border: 2px solid #bee5eb; margin-top: 10px; margin-bottom: 20px;">
+                        <h3>${t('item.adminPanel')}</h3>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <button class="btn" style="background-color: #ffc107; color: black;" id="btn-deactivate-${res.uuid}">${t('item.deactivate')}</button>
+                        </div>
+                    </div>
+                `;
+			}
+		}
+		return buttons;
+	}
 
-        return comments.map(c => {
-            let content = c.text;
-            if (window.marked && window.DOMPurify) {
-                content = window.DOMPurify.sanitize(window.marked.parse(c.text));
-            } else {
-                content = c.text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-            }
+	renderComments(comments, isAdmin) {
+		if (!comments || comments.length === 0) return `<p>${t('item.noComments')}</p>`;
 
-            return `
+		return comments
+			.map((c) => {
+				let content = c.text;
+				if (window.marked && window.DOMPurify) {
+					content = window.DOMPurify.sanitize(window.marked.parse(c.text));
+				} else {
+					content = c.text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+				}
+
+				return `
             <div id="comment-${c.uuid}" class="comment" style="display: flex; gap: 10px;">
                 <div style="flex-shrink: 0;">
                     <img src="${c.author_avatar}" alt="${c.author}" class="comment-avatar">
@@ -241,205 +292,266 @@ export default class ItemView extends AbstractView {
                 </div>
             </div>
             `;
-        }).join('');
-    }
+			})
+			.join('');
+	}
 
-    setupLightbox() {
-        const images = this._lightboxImages || [];
-        if (images.length === 0) return;
+	setupLightbox() {
+		const images = this._lightboxImages || [];
+		if (images.length === 0) return;
 
-        const overlay = document.getElementById('lightbox-overlay');
-        const imgEl = document.getElementById('lightbox-img');
-        const imgWrap = document.getElementById('lightbox-img-wrap');
-        const counter = document.getElementById('lightbox-counter');
-        const btnClose = document.getElementById('lightbox-close');
-        const btnPrev = document.getElementById('lightbox-prev');
-        const btnNext = document.getElementById('lightbox-next');
+		const overlay = document.getElementById('lightbox-overlay');
+		const imgEl = document.getElementById('lightbox-img');
+		const imgWrap = document.getElementById('lightbox-img-wrap');
+		const counter = document.getElementById('lightbox-counter');
+		const btnClose = document.getElementById('lightbox-close');
+		const btnPrev = document.getElementById('lightbox-prev');
+		const btnNext = document.getElementById('lightbox-next');
 
-        if (!overlay) return;
+		if (!overlay) return;
 
-        const ZOOM_SCALE = 2.5;
-        let current = 0;
-        let isZoomed = false;
+		const ZOOM_SCALE = 2.5;
+		let current = 0;
+		let isZoomed = false;
 
-        // Update transform-origin to the cursor position relative to the image.
-        // We remap [margin, 1-margin] → [0%, 100%] so the user doesn't need to reach
-        // the literal edge pixel to see a corner – reaching ~15% inside the border is enough.
-        const MARGIN = 0.09;
-        const remap = (v) => Math.min(Math.max((v - MARGIN) / (1 - 2 * MARGIN) * 100, 0), 100);
+		// Update transform-origin to the cursor position relative to the image.
+		// We remap [margin, 1-margin] → [0%, 100%] so the user doesn't need to reach
+		// the literal edge pixel to see a corner – reaching ~15% inside the border is enough.
+		const MARGIN = 0.09;
+		const remap = (v) => Math.min(Math.max(((v - MARGIN) / (1 - 2 * MARGIN)) * 100, 0), 100);
 
-        const updateOrigin = (e) => {
-            const rect = imgEl.getBoundingClientRect();
-            const rawX = (e.clientX - rect.left) / rect.width;
-            const rawY = (e.clientY - rect.top) / rect.height;
-            imgEl.style.transformOrigin = `${remap(rawX)}% ${remap(rawY)}%`;
-        };
+		const updateOrigin = (e) => {
+			const rect = imgEl.getBoundingClientRect();
+			const rawX = (e.clientX - rect.left) / rect.width;
+			const rawY = (e.clientY - rect.top) / rect.height;
+			imgEl.style.transformOrigin = `${remap(rawX)}% ${remap(rawY)}%`;
+		};
 
-        const setZoom = (zoomed, e) => {
-            isZoomed = zoomed;
-            if (zoomed) {
-                if (e) updateOrigin(e);
-                // Expand the clipping window to the full viewport so small images
-                // also get a large area to pan through when zoomed
-                imgWrap.style.width = '90vw';
-                imgWrap.style.height = '90vh';
-                imgEl.style.transform = `scale(${ZOOM_SCALE})`;
-                imgWrap.style.cursor = 'zoom-out';
-                imgEl.style.cursor = 'zoom-out';
-            } else {
-                imgEl.style.transform = 'scale(1)';
-                // Delay shrinking the wrap until the CSS scale transition finishes (250ms)
-                // so the container doesn't clip the image mid-animation
-                setTimeout(() => {
-                    if (!isZoomed) {
-                        imgWrap.style.width = '';
-                        imgWrap.style.height = '';
-                    }
-                }, 250);
-                // Keep transformOrigin where the cursor was so the zoom-out
-                // animates back from that point, not from the center.
-                imgWrap.style.cursor = 'zoom-in';
-                imgEl.style.cursor = 'zoom-in';
-            }
-        };
+		const setZoom = (zoomed, e) => {
+			isZoomed = zoomed;
+			if (zoomed) {
+				if (e) updateOrigin(e);
+				// Expand the clipping window to the full viewport so small images
+				// also get a large area to pan through when zoomed
+				imgWrap.style.width = '90vw';
+				imgWrap.style.height = '90vh';
+				imgEl.style.transform = `scale(${ZOOM_SCALE})`;
+				imgWrap.style.cursor = 'zoom-out';
+				imgEl.style.cursor = 'zoom-out';
+			} else {
+				imgEl.style.transform = 'scale(1)';
+				// Delay shrinking the wrap until the CSS scale transition finishes (250ms)
+				// so the container doesn't clip the image mid-animation
+				setTimeout(() => {
+					if (!isZoomed) {
+						imgWrap.style.width = '';
+						imgWrap.style.height = '';
+					}
+				}, 250);
+				// Keep transformOrigin where the cursor was so the zoom-out
+				// animates back from that point, not from the center.
+				imgWrap.style.cursor = 'zoom-in';
+				imgEl.style.cursor = 'zoom-in';
+			}
+		};
 
-        const open = (idx) => {
-            current = ((idx % images.length) + images.length) % images.length;
-            imgEl.src = images[current];
-            setZoom(false);
-            counter.textContent = `${current + 1} / ${images.length}`;
-            overlay.classList.add('active');
-            document.body.style.overflow = 'hidden';
-        };
+		const open = (idx) => {
+			current = ((idx % images.length) + images.length) % images.length;
+			imgEl.src = images[current];
+			setZoom(false);
+			counter.textContent = `${current + 1} / ${images.length}`;
+			overlay.classList.add('active');
+			document.body.style.overflow = 'hidden';
+		};
 
-        const close = () => {
-            overlay.classList.remove('active');
-            setZoom(false);
-            imgEl.src = '';
-            document.body.style.overflow = '';
-        };
+		const close = () => {
+			overlay.classList.remove('active');
+			setZoom(false);
+			imgEl.src = '';
+			document.body.style.overflow = '';
+		};
 
-        // Open lightbox when clicking gallery thumbnails
-        document.querySelectorAll('.gallery-item-link[data-lightbox-index]').forEach(el => {
-            el.addEventListener('click', () => open(parseInt(el.dataset.lightboxIndex, 10)));
-        });
+		// Open lightbox when clicking gallery thumbnails
+		document.querySelectorAll('.gallery-item-link[data-lightbox-index]').forEach((el) => {
+			el.addEventListener('click', () => open(parseInt(el.dataset.lightboxIndex, 10)));
+		});
 
-        // Toggle zoom on click, anchored to cursor position
-        imgWrap.addEventListener('click', (e) => {
-            e.stopPropagation();
-            setZoom(!isZoomed, e);
-        });
+		// Toggle zoom on click, anchored to cursor position
+		imgWrap.addEventListener('click', (e) => {
+			e.stopPropagation();
+			setZoom(!isZoomed, e);
+		});
 
-        // While zoomed, move the zoom origin to follow the cursor
-        imgEl.addEventListener('mousemove', (e) => {
-            if (!isZoomed) return;
-            updateOrigin(e);
-        });
+		// While zoomed, move the zoom origin to follow the cursor
+		imgEl.addEventListener('mousemove', (e) => {
+			if (!isZoomed) return;
+			updateOrigin(e);
+		});
 
-        // Close on dark backdrop click
-        overlay.addEventListener('click', (e) => {
-            if (e.target === overlay) close();
-        });
+		// Close on dark backdrop click
+		overlay.addEventListener('click', (e) => {
+			if (e.target === overlay) close();
+		});
 
-        btnClose.addEventListener('click', close);
-        btnPrev.addEventListener('click', (e) => { e.stopPropagation(); open(current - 1); });
-        btnNext.addEventListener('click', (e) => { e.stopPropagation(); open(current + 1); });
+		btnClose.addEventListener('click', close);
+		btnPrev.addEventListener('click', (e) => {
+			e.stopPropagation();
+			open(current - 1);
+		});
+		btnNext.addEventListener('click', (e) => {
+			e.stopPropagation();
+			open(current + 1);
+		});
 
-        // Keyboard navigation
-        document.addEventListener('keydown', (e) => {
-            if (!overlay.classList.contains('active')) return;
-            if (e.key === 'Escape') close();
-            if (e.key === 'ArrowLeft') open(current - 1);
-            if (e.key === 'ArrowRight') open(current + 1);
-        });
+		// Keyboard navigation
+		document.addEventListener('keydown', (e) => {
+			if (!overlay.classList.contains('active')) return;
+			if (e.key === 'Escape') close();
+			if (e.key === 'ArrowLeft') open(current - 1);
+			if (e.key === 'ArrowRight') open(current + 1);
+		});
 
-        // Reset scroll lock if the user navigates away (browser back/forward)
-        // while the lightbox is open, so the next page isn't left unscrollable
-        window.addEventListener('popstate', () => {
-            document.body.style.overflow = '';
-        });
-    }
+		// Reset scroll lock if the user navigates away (browser back/forward)
+		// while the lightbox is open, so the next page isn't left unscrollable
+		window.addEventListener('popstate', () => {
+			document.body.style.overflow = '';
+		});
+	}
 
-    async postRender() {
-        const uuid = this.params.id;
-        const commentsContainer = document.getElementById('comments-container');
+	async postRender() {
+		const uuid = this.params.id;
+		const commentsContainer = document.getElementById('comments-container');
 
-        // Set up the image lightbox
-        this.setupLightbox();
+		// Set up the image lightbox
+		this.setupLightbox();
 
-        // Bind Admin Actions
-        const btnApprove = document.getElementById(`btn-approve-${uuid}`);
-        if (btnApprove) btnApprove.addEventListener('click', () => approveResource(uuid));
+		// Set up favorite button
+		await this.setupFavoriteButton(uuid);
 
-        const btnReject = document.getElementById(`btn-reject-${uuid}`);
-        if (btnReject) btnReject.addEventListener('click', () => rejectResource(uuid));
+		// Bind Admin Actions
+		const btnApprove = document.getElementById(`btn-approve-${uuid}`);
+		if (btnApprove) btnApprove.addEventListener('click', () => approveResource(uuid));
 
-        const btnDeactivate = document.getElementById(`btn-deactivate-${uuid}`);
-        if (btnDeactivate) btnDeactivate.addEventListener('click', () => deactivateResource(uuid));
+		const btnReject = document.getElementById(`btn-reject-${uuid}`);
+		if (btnReject) btnReject.addEventListener('click', () => rejectResource(uuid));
 
-        // Fetch and render comments asynchronously
-        try {
-            const comments = await DataCache.fetch(`/api/resources/${uuid}/comments`, 300000);
-            const isAdmin = window.appState && window.appState.isAdmin;
-            commentsContainer.innerHTML = this.renderComments(comments, isAdmin);
-        } catch (e) {
-            console.error('Failed to load comments', e);
-            commentsContainer.innerHTML = `<p>Error loading comments.</p>`;
-        }
+		const btnDeactivate = document.getElementById(`btn-deactivate-${uuid}`);
+		if (btnDeactivate) btnDeactivate.addEventListener('click', () => deactivateResource(uuid));
 
-        const form = document.getElementById('comment-form');
-        if (form) {
-            renderTurnstile('#turnstile-comment');
-            form.addEventListener('submit', async e => {
-                e.preventDefault();
+		// Fetch and render comments asynchronously
+		try {
+			const comments = await DataCache.fetch(`/api/resources/${uuid}/comments`, 300000);
+			const isAdmin = window.appState && window.appState.isAdmin;
+			commentsContainer.innerHTML = this.renderComments(comments, isAdmin);
+		} catch (e) {
+			console.error('Failed to load comments', e);
+			commentsContainer.innerHTML = `<p>${t('item.errorLoadingComments')}</p>`;
+		}
 
-                const submitBtn = form.querySelector('button[type="submit"]');
-                const originalText = submitBtn.textContent;
-                const text = document.getElementById('comment-text').value;
+		const form = document.getElementById('comment-form');
+		if (form) {
+			renderTurnstile('#turnstile-comment');
+			form.addEventListener('submit', async (e) => {
+				e.preventDefault();
 
-                // Disable button and show loading state
-                submitBtn.disabled = true;
-                submitBtn.textContent = 'Enviando...';
-                submitBtn.style.opacity = '0.6';
+				const submitBtn = form.querySelector('button[type="submit"]');
+				const originalText = submitBtn.textContent;
+				const text = document.getElementById('comment-text').value;
 
-                try {
-                    // Get Turnstile Token
-                    const formData = new FormData(form);
-                    const token = formData.get('cf-turnstile-response');
+				// Disable button and show loading state
+				submitBtn.disabled = true;
+				submitBtn.textContent = t('item.sending');
+				submitBtn.style.opacity = '0.6';
 
-                    const res = await fetch(`/api/resources/${uuid}/comments`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ text, author: 'user', token })
-                    });
+				try {
+					// Get Turnstile Token
+					const formData = new FormData(form);
+					const token = formData.get('cf-turnstile-response');
 
-                    if (res.ok) {
-                        // Clear form
-                        document.getElementById('comment-text').value = '';
-                        if (window.turnstile) window.turnstile.reset();
+					const res = await fetch(`/api/resources/${uuid}/comments`, {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({ text, author: 'user', token }),
+					});
 
-                        // Refresh comments - Bypass cache to show new comment immediately
-                        const comments = await fetch(`/api/resources/${uuid}/comments`).then(res => res.json());
-                        // Update cache
-                        DataCache.cache.set(`/api/resources/${uuid}/comments`, { data: comments, timestamp: Date.now() });
-                        const isAdmin = window.appState && window.appState.isAdmin;
-                        commentsContainer.innerHTML = this.renderComments(comments, isAdmin);
-                    } else {
-                        const data = await res.json();
-                        let msg = data.error || 'Unknown';
-                        if (data.details && Array.isArray(data.details)) {
-                            msg += ': ' + data.details.map(d => d.message).join(', ');
-                        }
-                        alert('Error: ' + msg);
-                    }
-                } finally {
-                    // Re-enable button and restore original text
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = originalText;
-                    submitBtn.style.opacity = '1';
-                }
-            });
-        }
-        window.deleteComment = deleteComment;
-    }
+					if (res.ok) {
+						// Clear form
+						document.getElementById('comment-text').value = '';
+						if (window.turnstile) window.turnstile.reset();
+
+						// Refresh comments - Bypass cache to show new comment immediately
+						const comments = await fetch(`/api/resources/${uuid}/comments`).then((res) => res.json());
+						// Update cache
+						DataCache.cache.set(`/api/resources/${uuid}/comments`, { data: comments, timestamp: Date.now() });
+						const isAdmin = window.appState && window.appState.isAdmin;
+						commentsContainer.innerHTML = this.renderComments(comments, isAdmin);
+					} else {
+						const data = await res.json();
+						let msg = data.error || 'Unknown';
+						if (data.details && Array.isArray(data.details)) {
+							msg += ': ' + data.details.map((d) => d.message).join(', ');
+						}
+						alert('Error: ' + msg);
+					}
+				} finally {
+					// Re-enable button and restore original text
+					submitBtn.disabled = false;
+					submitBtn.textContent = originalText;
+					submitBtn.style.opacity = '1';
+				}
+			});
+		}
+		window.deleteComment = deleteComment;
+	}
+
+	async setupFavoriteButton(uuid) {
+		const btnFavorite = document.getElementById('btn-favorite');
+		if (!btnFavorite) return;
+
+		const icon = btnFavorite.querySelector('.favorite-icon');
+
+		// Check if already a favorite
+		try {
+			const res = await fetch(`/api/favorites/check/${uuid}`);
+			const data = await res.json();
+			if (data.is_favorite) {
+				icon.setAttribute('fill', 'currentColor');
+				btnFavorite.classList.add('is-favorite');
+			}
+		} catch (e) {
+			console.error('Error checking favorite status:', e);
+		}
+
+		btnFavorite.addEventListener('click', async (e) => {
+			e.preventDefault();
+
+			const isFavorite = btnFavorite.classList.contains('is-favorite');
+
+			try {
+				if (isFavorite) {
+					// Remove from favorites
+					const res = await fetch(`/api/favorites/${uuid}`, { method: 'DELETE' });
+					if (res.ok) {
+						icon.removeAttribute('fill');
+						btnFavorite.classList.remove('is-favorite');
+						DataCache.clear();
+					}
+				} else {
+					// Add to favorites
+					const res = await fetch('/api/favorites', {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({ resource_uuid: uuid }),
+					});
+					if (res.ok) {
+						icon.setAttribute('fill', 'currentColor');
+						btnFavorite.classList.add('is-favorite');
+						DataCache.clear();
+					}
+				}
+			} catch (e) {
+				console.error('Error toggling favorite:', e);
+			}
+		});
+	}
 }

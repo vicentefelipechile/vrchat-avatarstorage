@@ -9,20 +9,20 @@
 // USUARIOS
 // ----------------------------------------------------------------------------
 export interface User {
-    uuid: string;
-    username: string;
-    password_hash: string;
-    avatar_url: string | null;
-    created_at: number; // Unix timestamp
-    is_admin: number;
+	uuid: string;
+	username: string;
+	password_hash: string;
+	avatar_url: string | null;
+	created_at: number; // Unix timestamp
+	is_admin: number;
 }
 
 // Tipo para crear un nuevo usuario (sin campos generados automáticamente)
 export interface CreateUser {
-    uuid: string;
-    username: string;
-    password_hash: string;
-    avatar_url?: string | null;
+	uuid: string;
+	username: string;
+	password_hash: string;
+	avatar_url?: string | null;
 }
 
 // ----------------------------------------------------------------------------
@@ -31,77 +31,91 @@ export interface CreateUser {
 export type MediaType = 'image' | 'video' | 'file';
 
 export interface Media {
-    uuid: string;
-    r2_key: string;           // Clave en Cloudflare R2
-    media_type: MediaType;    // 'image' o 'file'
-    file_name: string;
-    created_at: number;       // Unix timestamp
+	uuid: string;
+	r2_key: string; // Clave en Cloudflare R2
+	media_type: MediaType; // 'image' o 'file'
+	file_name: string;
+	created_at: number; // Unix timestamp
 }
 
 export interface CreateMedia {
-    uuid: string;
-    r2_key: string;
-    media_type: MediaType;
-    file_name: string;
+	uuid: string;
+	r2_key: string;
+	media_type: MediaType;
+	file_name: string;
 }
 
 // ----------------------------------------------------------------------------
 // RELACIÓN RECURSOS-MEDIOS
 // ----------------------------------------------------------------------------
 export interface ResourceMedia {
-    uuid: string;
-    resource_uuid: string;
-    media_uuid: string;
-    created_at: number; // Unix timestamp
+	uuid: string;
+	resource_uuid: string;
+	media_uuid: string;
+	created_at: number; // Unix timestamp
 }
 
 export interface CreateResourceMedia {
-    uuid: string;
-    resource_uuid: string;
-    media_uuid: string;
+	uuid: string;
+	resource_uuid: string;
+	media_uuid: string;
 }
 
 // ----------------------------------------------------------------------------
 // RECURSOS (AVATARES, MODELOS, ETC.)
 // ----------------------------------------------------------------------------
 export const RESOURCE_CATEGORIES = ['avatars', 'worlds', 'assets', 'clothes'] as const;
-export type ResourceCategory = typeof RESOURCE_CATEGORIES[number];
+export type ResourceCategory = (typeof RESOURCE_CATEGORIES)[number];
 
 export interface Resource {
-    uuid: string;
-    title: string;
-    description: string | null;
-    category: ResourceCategory;
-    thumbnail_uuid: string;        // Miniatura principal
-    reference_image_uuid: string | null; // Imagen de referencia adicional
-    author_uuid: string;
-    download_count: number;
-    is_active: number;    // 0 or 1
-    created_at: number;   // Unix timestamp
-    updated_at: number;   // Unix timestamp
+	uuid: string;
+	title: string;
+	description: string | null;
+	category: ResourceCategory;
+	thumbnail_uuid: string; // Miniatura principal
+	reference_image_uuid: string | null; // Imagen de referencia adicional
+	author_uuid: string;
+	download_count: number;
+	is_active: number; // 0 or 1
+	created_at: number; // Unix timestamp
+	updated_at: number; // Unix timestamp
 }
 
 export interface CreateResource {
-    uuid: string;
-    title: string;
-    description?: string | null;
-    category: ResourceCategory;
-    thumbnail_uuid: string;
-    reference_image_uuid?: string | null;
-    author_uuid: string;
+	uuid: string;
+	title: string;
+	description?: string | null;
+	category: ResourceCategory;
+	thumbnail_uuid: string;
+	reference_image_uuid?: string | null;
+	author_uuid: string;
 }
 
 // Tipo extendido con información del autor (para consultas JOIN)
 export interface ResourceWithAuthor extends Resource {
-    author: User;
+	author: User;
 }
 
-// Tipo extendido con medios asociados
+// ----------------------------------------------------------------------------
+// TAGS (ETIQUETAS)
+// ----------------------------------------------------------------------------
+export interface Tag {
+	id: number;
+	name: string;
+}
+
+export interface ResourceTag {
+	resource_uuid: string;
+	tag_id: number;
+}
+
+// Tipo extendido con medios asociados y tags
 export interface ResourceWithMedia extends Resource {
-    author: User;
-    thumbnail: Media;
-    reference_image: Media | null;
-    media_files: Media[];
+	author: User;
+	thumbnail: Media;
+	reference_image: Media | null;
+	media_files: Media[];
+	tags: Tag[]; // New: Tags associated with the resource
 }
 
 // ----------------------------------------------------------------------------
@@ -110,46 +124,67 @@ export interface ResourceWithMedia extends Resource {
 export type LinkType = 'download' | 'demo' | 'documentation' | 'general';
 
 export interface ResourceLink {
-    uuid: string;
-    resource_uuid: string;
-    link_url: string;
-    link_title: string | null;     // Título descriptivo opcional
-    link_type: LinkType;           // Tipo de enlace
-    display_order: number;         // Orden de visualización
-    created_at: number;            // Unix timestamp
+	uuid: string;
+	resource_uuid: string;
+	link_url: string;
+	link_title: string | null; // Título descriptivo opcional
+	link_type: LinkType; // Tipo de enlace
+	display_order: number; // Orden de visualización
+	created_at: number; // Unix timestamp
 }
 
 export interface CreateResourceLink {
-    uuid: string;
-    resource_uuid: string;
-    link_url: string;
-    link_title?: string | null;
-    link_type?: LinkType;
-    display_order?: number;
+	uuid: string;
+	resource_uuid: string;
+	link_url: string;
+	link_title?: string | null;
+	link_type?: LinkType;
+	display_order?: number;
 }
 
 // ----------------------------------------------------------------------------
 // COMENTARIOS
 // ----------------------------------------------------------------------------
 export interface Comment {
-    uuid: string;
-    resource_uuid: string;
-    author_uuid: string;
-    text: string;
-    created_at: number; // Unix timestamp
-    updated_at: number; // Unix timestamp
+	uuid: string;
+	resource_uuid: string;
+	author_uuid: string;
+	text: string;
+	created_at: number; // Unix timestamp
+	updated_at: number; // Unix timestamp
 }
 
 export interface CreateComment {
-    uuid: string;
-    resource_uuid: string;
-    author_uuid: string;
-    text: string;
+	uuid: string;
+	resource_uuid: string;
+	author_uuid: string;
+	text: string;
 }
 
 // Tipo extendido con información del autor
 export interface CommentWithAuthor extends Comment {
-    author: User;
+	author: User;
+}
+
+// ----------------------------------------------------------------------------
+// HISTORIAL DE RECURSOS (AUDIT LOG)
+// ----------------------------------------------------------------------------
+export type ChangeType = 'content_edit' | 'tag_change' | 'approval';
+
+export interface ResourceHistory {
+	uuid: string;
+	resource_uuid: string;
+	actor_uuid: string;
+	change_type: ChangeType;
+	previous_data: string; // JSON string
+	created_at: number;
+}
+
+export interface ResourceHistoryWithActor extends ResourceHistory {
+	actor: {
+		username: string;
+		avatar_url: string | null;
+	};
 }
 
 // ----------------------------------------------------------------------------
@@ -158,31 +193,51 @@ export interface CommentWithAuthor extends Comment {
 
 // Respuesta de autenticación
 export interface AuthResponse {
-    token: string;
-    user: Omit<User, 'password_hash'>;
+	token: string;
+	user: Omit<User, 'password_hash'>;
 }
 
 // Paginación
 export interface PaginationParams {
-    page?: number;
-    limit?: number;
+	page?: number;
+	limit?: number;
 }
 
 export interface PaginatedResponse<T> {
-    data: T[];
-    pagination: {
-        page: number;
-        limit: number;
-        total: number;
-        total_pages: number;
-    };
+	data: T[];
+	pagination: {
+		page: number;
+		limit: number;
+		total: number;
+		total_pages: number;
+	};
 }
 
 // Filtros de búsqueda para recursos
 export interface ResourceFilters extends PaginationParams {
-    category?: string;
-    author_uuid?: string;
-    search?: string;
-    sort_by?: 'created_at' | 'download_count' | 'title';
-    sort_order?: 'asc' | 'desc';
+	category?: string;
+	author_uuid?: string;
+	search?: string;
+	tags?: string; // New: Comma separated tags
+	sort_by?: 'created_at' | 'download_count' | 'title';
+	sort_order?: 'asc' | 'desc';
+}
+
+// ----------------------------------------------------------------------------
+// FAVORITOS DE USUARIOS
+// ----------------------------------------------------------------------------
+export interface UserFavorite {
+	user_uuid: string;
+	resource_uuid: string;
+	display_order: number;
+	created_at: number;
+}
+
+export interface UserFavoriteWithResource extends UserFavorite {
+	resource: Resource;
+	author: {
+		username: string;
+		avatar_url: string | null;
+	};
+	thumbnail: Media;
 }

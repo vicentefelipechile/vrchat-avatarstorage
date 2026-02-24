@@ -166,3 +166,84 @@ CREATE TABLE IF NOT EXISTS wiki_comments (
 
 -- Index for global feed
 CREATE INDEX IF NOT EXISTS idx_wiki_comments_created_at ON wiki_comments(created_at DESC);
+
+
+-- ----------------------------------------------------------------------------
+-- SCHEMA EDIT 2026-02-23 21:03
+-- ----------------------------------------------------------------------------
+
+-- ----------------------------------------------------------------------------
+-- SECCIÓN 9: SISTEMA DE TAGS Y BÚSQUEDA
+-- ----------------------------------------------------------------------------
+
+-- Tabla de Tags
+CREATE TABLE IF NOT EXISTS tags (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT UNIQUE NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_tags_name ON tags(name);
+
+-- Tabla Relacional Recursos-Tags
+CREATE TABLE IF NOT EXISTS resource_tags (
+    resource_uuid TEXT NOT NULL,
+    tag_id INTEGER NOT NULL,
+    PRIMARY KEY (resource_uuid, tag_id),
+    FOREIGN KEY(resource_uuid) REFERENCES resources(uuid) ON DELETE CASCADE,
+    FOREIGN KEY(tag_id) REFERENCES tags(id) ON DELETE CASCADE
+);
+
+-- Tabla Virtual FTS5 para Búsqueda Full Text
+CREATE VIRTUAL TABLE IF NOT EXISTS resources_fts USING fts5(
+    title, 
+    description, 
+    content='resources', 
+    content_rowid='rowid'
+);
+
+-- Triggers para mantener sincronizada la tabla FTS
+CREATE TRIGGER IF NOT EXISTS resources_ai AFTER INSERT ON resources BEGIN
+  INSERT INTO resources_fts(rowid, title, description) VALUES (new.rowid, new.title, new.description);
+END;
+
+CREATE TRIGGER IF NOT EXISTS resources_ad AFTER DELETE ON resources BEGIN
+  INSERT INTO resources_fts(resources_fts, rowid, title, description) VALUES('delete', old.rowid, old.title, old.description);
+END;
+
+CREATE TRIGGER IF NOT EXISTS resources_au AFTER UPDATE ON resources BEGIN
+  INSERT INTO resources_fts(resources_fts, rowid, title, description) VALUES('delete', old.rowid, old.title, old.description);
+  INSERT INTO resources_fts(rowid, title, description) VALUES (new.rowid, new.title, new.description);
+END;
+
+-- ----------------------------------------------------------------------------
+-- SECCIÓN 10: HISTORIAL DE CAMBIOS (AUDIT LOG)
+-- ----------------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS resource_history (
+    uuid TEXT PRIMARY KEY,
+    resource_uuid TEXT NOT NULL,
+    actor_uuid TEXT NOT NULL,           -- Quién hizo el cambio (Admin)
+    change_type TEXT NOT NULL,          -- 'content_edit', 'tag_change', 'approval'
+    previous_data TEXT NOT NULL,        -- JSON con el estado anterior del recurso
+    created_at INTEGER DEFAULT (unixepoch()),
+    FOREIGN KEY(resource_uuid) REFERENCES resources(uuid) ON DELETE CASCADE,
+    FOREIGN KEY(actor_uuid) REFERENCES users(uuid)
+);
+
+CREATE INDEX IF NOT EXISTS idx_resource_history_resource ON resource_history(resource_uuid, created_at DESC);
+
+-- ----------------------------------------------------------------------------
+-- SECCIÓN 11: FAVORITOS DE USUARIOS
+-- ----------------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS user_favorites (
+    user_uuid TEXT NOT NULL,
+    resource_uuid TEXT NOT NULL,
+    display_order INTEGER DEFAULT 0,        -- Orden de visualización (0 = más reciente)
+    created_at INTEGER DEFAULT (unixepoch()),
+    PRIMARY KEY (user_uuid, resource_uuid),
+    FOREIGN KEY(user_uuid) REFERENCES users(uuid) ON DELETE CASCADE,
+    FOREIGN KEY(resource_uuid) REFERENCES resources(uuid) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_favorites_user_order ON user_favorites(user_uuid, display_order DESC);

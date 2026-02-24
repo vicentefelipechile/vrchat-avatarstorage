@@ -28,6 +28,15 @@ export default class AdminView extends AbstractView {
                 </div>
             </div>
 
+            <!-- Cache Management -->
+            <div class="admin-card" style="margin-bottom: 20px; background: var(--card-bg); padding: 20px; border: 1px solid var(--border-color);">
+                <h3 style="margin-top: 0;">${t('admin.cacheClear')}</h3>
+                <div style="display: flex; gap: 10px; max-width: 400px;">
+                    <input type="text" id="cache-username" class="form-input" placeholder="${t('admin.usernamePlaceholder')}" style="flex: 1; padding: 10px; border: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-color);">
+                    <button id="btn-clear-cache" class="btn">${t('admin.clearCacheBtn')}</button>
+                </div>
+            </div>
+
             <!-- Cleanup Section -->
             <div id="cleanup-section">
                 <div class="cleanup-card loading">
@@ -115,16 +124,8 @@ export default class AdminView extends AbstractView {
             if (pending.length === 0) {
                 pendingContainer.innerHTML = `<p>${t('admin.noPending')}</p>`;
             } else {
-                const cardsHtml = pending.map(res => `
-                < div class="card" >
-                    ${res.thumbnail_key ? `<div class="card-image"><img src="/api/download/${res.thumbnail_key}" alt="${res.title}" loading="lazy"></div>` : ''}
-                        <h3>${res.title}</h3>
-                        <div class="meta">${t('cats.' + res.category) || res.category} | ${new Date(res.timestamp).toLocaleDateString()}</div>
-                        <p>${stripMarkdown(res.description).substring(0, 100)}...</p>
-                        <a href="/item/${res.uuid}" data-link class="btn">${t('card.view')}</a>
-                    </div >
-                `).join('');
-                pendingContainer.innerHTML = `< div class="grid" > ${cardsHtml}</div > `;
+                const cardsHtml = pending.map(res => this.renderCard(res)).join('');
+                pendingContainer.innerHTML = `<div class="grid">${cardsHtml}</div>`;
             }
         }
 
@@ -160,5 +161,87 @@ export default class AdminView extends AbstractView {
                 }
             });
         }
+
+        // Setup Cache Clear Button
+        const clearCacheBtn = document.getElementById('btn-clear-cache');
+        if (clearCacheBtn) {
+            clearCacheBtn.addEventListener('click', async () => {
+                const usernameInput = document.getElementById('cache-username');
+                const username = usernameInput.value.trim();
+                
+                if (!username) return;
+
+                const originalText = clearCacheBtn.innerText;
+                clearCacheBtn.disabled = true;
+                clearCacheBtn.innerText = '...';
+
+                try {
+                    const res = await fetch(`/api/admin/cache/clear/${encodeURIComponent(username)}`, {
+                        method: 'POST'
+                    });
+                    const data = await res.json();
+
+                    if (res.ok) {
+                        alert(t('admin.cacheClearSuccess').replace('{user}', username));
+                        usernameInput.value = '';
+                    } else {
+                        alert(t('admin.error') + ': ' + (data.error || t('admin.cacheClearError')));
+                    }
+                } catch (e) {
+                    alert(t('admin.networkError'));
+                } finally {
+                    clearCacheBtn.disabled = false;
+                    clearCacheBtn.innerText = originalText;
+                }
+            });
+        }
+    }
+
+    renderCard(res) {
+        const title = stripMarkdown(res.title).substring(0, 50);
+        const description = stripMarkdown(res.description || '').substring(0, 80);
+        const categoryLabel = t('cats.' + res.category) || res.category;
+        const date = new Date(res.timestamp).toLocaleDateString();
+        
+        const authorName = res.author?.username || 'Unknown';
+        const authorAvatar = res.author?.avatar_url || '';
+        const avatarImg = authorAvatar 
+            ? `<img src="${authorAvatar}" alt="${authorName}" class="card-author-avatar" onerror="this.style.display='none'">`
+            : `<div class="card-author-avatar-placeholder">${authorName.charAt(0).toUpperCase()}</div>`;
+
+        return `
+            <div class="card">
+                <a href="/item/${res.uuid}" data-link class="card-link">
+                    ${res.thumbnail_key ? `
+                        <div class="card-image">
+                            <img src="/api/download/${res.thumbnail_key}" alt="${title}" loading="lazy">
+                            <span class="card-badge">${categoryLabel}</span>
+                        </div>
+                    ` : `
+                        <div class="card-image card-image-placeholder">
+                            <span class="card-badge">${categoryLabel}</span>
+                        </div>
+                    `}
+                </a>
+                <div class="card-body">
+                    <h3>${title}${res.title.length > 50 ? '...' : ''}</h3>
+                    
+                    <div class="card-author">
+                        ${avatarImg}
+                        <span class="card-author-name">${authorName}</span>
+                    </div>
+                    
+                    <div class="card-meta">
+                        <span>${date}</span>
+                    </div>
+                    
+                    <p class="card-description">${description}${description.length >= 80 ? '...' : ''}</p>
+                    
+                    <div class="card-footer">
+                        <a href="/item/${res.uuid}" data-link class="btn">${t('card.view')}</a>
+                    </div>
+                </div>
+            </div>
+        `;
     }
 }
