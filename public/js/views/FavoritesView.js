@@ -157,7 +157,7 @@ export default class FavoritesView extends AbstractView {
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ resource_uuid: uuid, move_to_top: true }),
 			});
-			DataCache.clear();
+			DataCache.clear('/api/favorites');
 		} catch (err) {
 			console.error('Error moving favorite to top:', err);
 		}
@@ -184,7 +184,7 @@ export default class FavoritesView extends AbstractView {
 		// Send request to server in background
 		try {
 			fetch(`/api/favorites/${uuid}`, { method: 'DELETE' });
-			DataCache.clear();
+			DataCache.clear('/api/favorites');
 		} catch (err) {
 			console.error('Error removing favorite:', err);
 		}

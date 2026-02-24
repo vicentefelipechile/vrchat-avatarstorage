@@ -8,7 +8,7 @@ export default class ItemView extends AbstractView {
 	async getHtml() {
 		const uuid = this.params.id;
 		// Fetch item details immediately
-		const res = await DataCache.fetch(`/api/resources/${uuid}`, { ttl: 60000 }); // Short cache for mutable items
+		const res = await DataCache.fetch(`/api/resources/${uuid}`, { ttl: 60000, persistent: true }); // Short cache for mutable items
 
 		if (!res) return `<h1>${t('item.notFound')}</h1>`;
 
@@ -440,7 +440,7 @@ export default class ItemView extends AbstractView {
 
 		// Fetch and render comments asynchronously
 		try {
-			const comments = await DataCache.fetch(`/api/resources/${uuid}/comments`, 300000);
+			const comments = await DataCache.fetch(`/api/resources/${uuid}/comments`, { ttl: 300000, persistent: true });
 			const isAdmin = window.appState && window.appState.isAdmin;
 			commentsContainer.innerHTML = this.renderComments(comments, isAdmin);
 		} catch (e) {
@@ -547,7 +547,7 @@ export default class ItemView extends AbstractView {
 						body: JSON.stringify({ resource_uuid: uuid }),
 					});
 				}
-				DataCache.clear();
+				DataCache.clear('/api/auth/status');
 			} catch (e) {
 				console.error('Error toggling favorite:', e);
 			}
