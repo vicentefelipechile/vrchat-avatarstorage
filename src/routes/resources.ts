@@ -160,11 +160,9 @@ resources.get('/', async (c) => {
  * Keeping it simple as alias to search with category param.
  */
 resources.get('/category/:category', async (c) => {
-    // Redirect to new search endpoint format internally or client side?
-    // Let's just forward logic, but simpler to just use the code above. 
-    // For now, I'll copy the minimal logic to keep it working as is.
-    const category = c.req.param('category');
-    return c.redirect(`/api/resources?category=${category}`);
+	const category = c.req.param('category');
+	const page = c.req.query('page') || '1';
+	return c.redirect(`/api/resources?category=${category}&page=${page}`);
 });
 
 /**
