@@ -232,6 +232,11 @@ CREATE TABLE IF NOT EXISTS resource_history (
 
 CREATE INDEX IF NOT EXISTS idx_resource_history_resource ON resource_history(resource_uuid, created_at DESC);
 
+
+-- ----------------------------------------------------------------------------
+-- SCHEMA EDIT 2026-02-23 23:03
+-- ----------------------------------------------------------------------------
+
 -- ----------------------------------------------------------------------------
 -- SECCIÓN 11: FAVORITOS DE USUARIOS
 -- ----------------------------------------------------------------------------

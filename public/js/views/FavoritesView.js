@@ -143,27 +143,21 @@ export default class FavoritesView extends AbstractView {
 	}
 
 	async moveToTop(uuid) {
+		// Optimistic update - update UI immediately by moving card to top
+		const card = document.querySelector(`.card[data-resource-id="${uuid}"]`);
+		const grid = document.querySelector('#favorites-resources .grid');
+		if (card && grid) {
+			grid.insertBefore(card, grid.firstChild);
+		}
+
+		// Send request to server in background
 		try {
-			const response = await fetch('/api/favorites/reorder', {
+			fetch('/api/favorites/reorder', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ resource_uuid: uuid, move_to_top: true }),
 			});
-
-			if (response.ok) {
-				// Clear cache completely
-				DataCache.clear();
-
-				// Fetch fresh data directly without cache
-				const urlParams = new URLSearchParams(window.location.search);
-				const page = parseInt(urlParams.get('page')) || 1;
-				const freshData = await fetch(`/api/favorites?page=${page}`).then((r) => r.json());
-
-				this.renderFavorites(freshData);
-			} else {
-				const err = await response.json();
-				alert('Error: ' + (err.error || 'Unknown error'));
-			}
+			DataCache.clear();
 		} catch (err) {
 			console.error('Error moving favorite to top:', err);
 		}
@@ -172,22 +166,25 @@ export default class FavoritesView extends AbstractView {
 	async removeFavorite(uuid) {
 		if (!confirm(t('common.removeFavorite') + '?')) return;
 
-		try {
-			const response = await fetch(`/api/favorites/${uuid}`, {
-				method: 'DELETE',
-			});
+		// Optimistic update - remove card immediately
+		const card = document.querySelector(`.card[data-resource-id="${uuid}"]`);
+		if (card) {
+			card.remove();
+		}
 
-			if (response.ok) {
-				// Clear cache completely
-				DataCache.clear();
-
-				// Fetch fresh data directly without cache
-				const urlParams = new URLSearchParams(window.location.search);
-				const page = parseInt(urlParams.get('page')) || 1;
-				const freshData = await fetch(`/api/favorites?page=${page}`).then((r) => r.json());
-
-				this.renderFavorites(freshData);
+		// Check if no more cards
+		const container = document.getElementById('favorites-resources');
+		const remainingCards = container?.querySelectorAll('.card');
+		if (!remainingCards || remainingCards.length === 0) {
+			if (container) {
+				container.innerHTML = `<p class="no-results">${t('common.noFavorites')}</p>`;
 			}
+		}
+
+		// Send request to server in background
+		try {
+			fetch(`/api/favorites/${uuid}`, { method: 'DELETE' });
+			DataCache.clear();
 		} catch (err) {
 			console.error('Error removing favorite:', err);
 		}

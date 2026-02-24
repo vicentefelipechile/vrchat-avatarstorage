@@ -527,28 +527,27 @@ export default class ItemView extends AbstractView {
 
 			const isFavorite = btnFavorite.classList.contains('is-favorite');
 
+			// Optimistic update - update UI immediately
+			if (isFavorite) {
+				icon.removeAttribute('fill');
+				btnFavorite.classList.remove('is-favorite');
+			} else {
+				icon.setAttribute('fill', 'currentColor');
+				btnFavorite.classList.add('is-favorite');
+			}
+
+			// Send request to server in background
 			try {
 				if (isFavorite) {
-					// Remove from favorites
-					const res = await fetch(`/api/favorites/${uuid}`, { method: 'DELETE' });
-					if (res.ok) {
-						icon.removeAttribute('fill');
-						btnFavorite.classList.remove('is-favorite');
-						DataCache.clear();
-					}
+					fetch(`/api/favorites/${uuid}`, { method: 'DELETE' });
 				} else {
-					// Add to favorites
-					const res = await fetch('/api/favorites', {
+					fetch('/api/favorites', {
 						method: 'POST',
 						headers: { 'Content-Type': 'application/json' },
 						body: JSON.stringify({ resource_uuid: uuid }),
 					});
-					if (res.ok) {
-						icon.setAttribute('fill', 'currentColor');
-						btnFavorite.classList.add('is-favorite');
-						DataCache.clear();
-					}
 				}
+				DataCache.clear();
 			} catch (e) {
 				console.error('Error toggling favorite:', e);
 			}
