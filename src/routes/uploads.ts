@@ -64,6 +64,18 @@ uploads.put('/', async (c) => {
                 'INSERT INTO media (uuid, r2_key, media_type, file_name) VALUES (?, ?, ?, ?)'
             ).bind(mediaUuid, r2Key, validation.mediaType, filename).run();
 
+            // Enqueue async post-processing job (runs after response is sent)
+            // Currently logs the upload; extend here for virus scanning, thumbnail gen, etc.
+            c.executionCtx.waitUntil(
+                c.env.UPLOAD_QUEUE.send({
+                    media_uuid: mediaUuid,
+                    r2_key: r2Key,
+                    media_type: validation.mediaType,
+                    file_name: filename,
+                    uploaded_at: Date.now(),
+                })
+            );
+
             return c.json({
                 media_uuid: mediaUuid,
                 r2_key: r2Key,

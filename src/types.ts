@@ -244,3 +244,16 @@ export interface UserFavoriteWithResource extends UserFavorite {
 	};
 	thumbnail: Media;
 }
+
+// ----------------------------------------------------------------------------
+// CLOUDFLARE QUEUES
+// ----------------------------------------------------------------------------
+
+/** Message sent to the upload processing queue after a file is stored in R2. */
+export interface UploadQueueMessage {
+	media_uuid: string;
+	r2_key: string;
+	media_type: 'image' | 'video' | 'file';
+	file_name: string;
+	uploaded_at: number; // Unix ms timestamp
+}

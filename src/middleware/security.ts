@@ -5,7 +5,10 @@ import { Context, Next } from 'hono';
 export const securityMiddleware = (app: any) => {
     app.use('*', secureHeaders());
     app.use('*', cors({
-        origin: '*', // Modify this for production
+        origin: [
+            'https://vrchat-avatarstorage.vicentefelipechile.workers.dev',
+            'https://vrcstorage.net', // add your custom domain if you have one
+        ],
         allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
         allowHeaders: ['Content-Type', 'Authorization'],
         exposeHeaders: ['Content-Length'],

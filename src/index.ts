@@ -11,7 +11,7 @@
 
 import { Hono } from 'hono';
 import { getAuthUser } from './auth';
-import { Media } from './types';
+import { Media, UploadQueueMessage } from './types';
 import { z } from 'zod';
 import { securityMiddleware } from './middleware/security';
 import { rateLimit } from './middleware/rate-limit';
@@ -48,6 +48,7 @@ securityMiddleware(app);
 // Auth — strict (1 req / 60s per IP)
 app.use('/api/login', async (c, next) => rateLimit({ binding: c.env.RL_STRICT, keyPrefix: 'login' })(c, next));
 app.use('/api/register', async (c, next) => rateLimit({ binding: c.env.RL_STRICT, keyPrefix: 'register' })(c, next));
+app.use('/api/login/2fa', async (c, next) => rateLimit({ binding: c.env.RL_STRICT, keyPrefix: 'login_2fa' })(c, next));
 
 // Comments — differentiate POST (strict) from GET (medium)
 app.use('/api/comments/*', async (c, next) => {
@@ -251,5 +252,20 @@ export default {
 	scheduled: async (event: ScheduledEvent, env: Env, ctx: ExecutionContext) => {
 		console.log('[CRON] Running scheduled cleanup task');
 		ctx.waitUntil(cleanupOrphanedMedia(env));
+	},
+	queue: async (batch: MessageBatch<UploadQueueMessage>, env: Env, ctx: ExecutionContext) => {
+		for (const msg of batch.messages) {
+			const { media_uuid, r2_key, media_type, file_name } = msg.body;
+			try {
+				// ── Hook point for async post-processing ──────────────────────────
+				// Add here: virus scanning, thumbnail generation, content moderation
+				// ──────────────────────────────────────────────────────────────────
+				console.log(`[QUEUE] Processing upload: ${media_uuid} (${media_type}) → ${file_name}`);
+				msg.ack();
+			} catch (e) {
+				console.error(`[QUEUE] Failed to process ${r2_key}:`, e);
+				msg.retry();
+			}
+		}
 	},
 };

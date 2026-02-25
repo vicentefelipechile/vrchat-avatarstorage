@@ -18,6 +18,9 @@ const resources = new Hono<{ Bindings: Env }>();
  * Este endpoint existe para que la pagina principal "/" pueda mostrar los ultimos 6 recursos subidos.
  */
 resources.get('/latest', async (c) => {
+    // Always declare CDN caching intent regardless of cache source
+    c.header('Cache-Control', 'public, max-age=60');
+
     // 1. Try KV
     const cached = await c.env.VRCSTORAGE_KV.get('resource:latest', 'json');
     if (cached) {
@@ -66,11 +69,11 @@ resources.get('/', async (c) => {
     const page = parseInt(c.req.query('page') || '1');
     const limit = 15;
     const offset = (page - 1) * limit;
-    
+
     const query = c.req.query('q');
     const category = c.req.query('category');
     const tagsParam = c.req.query('tags'); // Comma separated tags
-    
+
     // Base params
     const params: any[] = [];
     let whereClauses = ['r.is_active = 1'];
@@ -160,9 +163,9 @@ resources.get('/', async (c) => {
  * Keeping it simple as alias to search with category param.
  */
 resources.get('/category/:category', async (c) => {
-	const category = c.req.param('category');
-	const page = c.req.query('page') || '1';
-	return c.redirect(`/api/resources?category=${category}&page=${page}`);
+    const category = c.req.param('category');
+    const page = c.req.query('page') || '1';
+    return c.redirect(`/api/resources?category=${category}&page=${page}`);
 });
 
 /**
@@ -174,7 +177,7 @@ resources.get('/:uuid', async (c) => {
     if (!uuid) return c.json({ error: 'Missing uuid' }, 400);
 
     // Try KV? Maybe skip for now to ensure tags are fresh, or handle cache invalidation carefully.
-    
+
     const resource = await c.env.DB.prepare('SELECT * FROM resources WHERE uuid = ?').bind(uuid).first<Resource>();
     if (!resource) return c.json({ error: 'Not found' }, 404);
 
@@ -242,7 +245,7 @@ resources.get('/:uuid', async (c) => {
  */
 resources.get('/:uuid/history', async (c) => {
     const uuid = c.req.param('uuid');
-    
+
     try {
         const history = await c.env.DB.prepare(`
             SELECT h.*, u.username, u.avatar_url 
@@ -300,13 +303,13 @@ resources.post('/', async (c) => {
         if (tags && Array.isArray(tags)) {
             for (const tagName of tags) {
                 // Try to find tag
-                let tag = await c.env.DB.prepare('SELECT id FROM tags WHERE name = ?').bind(tagName).first<{id: number}>();
+                let tag = await c.env.DB.prepare('SELECT id FROM tags WHERE name = ?').bind(tagName).first<{ id: number }>();
                 if (!tag) {
                     // Create tag
-                    const newTag = await c.env.DB.prepare('INSERT INTO tags (name) VALUES (?) RETURNING id').bind(tagName).first<{id: number}>();
+                    const newTag = await c.env.DB.prepare('INSERT INTO tags (name) VALUES (?) RETURNING id').bind(tagName).first<{ id: number }>();
                     if (newTag) tag = newTag;
                 }
-                
+
                 if (tag) {
                     await c.env.DB.prepare('INSERT INTO resource_tags (resource_uuid, tag_id) VALUES (?, ?)').bind(resourceUuid, tag.id).run();
                 }
@@ -380,7 +383,7 @@ resources.put('/:uuid', async (c) => {
     // Validate only partial fields? Or full schema? 
     // Using partial validation for flexibility or full? Let's assume updates allow changing standard fields.
     // Also Admin can send 'tags' (array of strings) and 'is_active'
-    
+
     const title = body.title !== undefined ? body.title : resource.title;
     const description = body.description !== undefined ? body.description : resource.description;
     const category = body.category !== undefined ? body.category : resource.category;
@@ -402,8 +405,8 @@ resources.put('/:uuid', async (c) => {
                 SELECT t.name FROM tags t 
                 JOIN resource_tags rt ON t.id = rt.tag_id 
                 WHERE rt.resource_uuid = ?
-            `).bind(uuid).all<{name: string}>();
-            
+            `).bind(uuid).all<{ name: string }>();
+
             const previousData = {
                 title: resource.title,
                 description: resource.description,
@@ -430,7 +433,7 @@ resources.put('/:uuid', async (c) => {
         if (isAdmin && body.tags !== undefined) {
             // Delete old tags
             batch.push(c.env.DB.prepare('DELETE FROM resource_tags WHERE resource_uuid = ?').bind(uuid));
-            
+
             // Insert new tags (ensure they exist first or create them?)
             // For simplicity, we assume tags must be created/exist? Or create on fly?
             // "el administrador puede agregar los tags que sean necesarios" -> create on fly implies better UX.
@@ -439,30 +442,30 @@ resources.put('/:uuid', async (c) => {
 
         // Execute batch so far? No, we need tag IDs.
         // Let's do tag logic before batch or separate.
-        
+
         if (isAdmin && body.tags !== undefined) {
-             // Resolve IDs
-             for (const tagName of tags) {
-                 // Try to find tag
-                 let tag = await c.env.DB.prepare('SELECT id FROM tags WHERE name = ?').bind(tagName).first<{id: number}>();
-                 if (!tag) {
-                     // Create tag
-                     const res = await c.env.DB.prepare('INSERT INTO tags (name) VALUES (?) RETURNING id').bind(tagName).first<{id: number}>();
-                     if (res) tag = res;
-                 }
-                 
-                 if (tag) {
-                     batch.push(c.env.DB.prepare('INSERT INTO resource_tags (resource_uuid, tag_id) VALUES (?, ?)').bind(uuid, tag.id));
-                 }
-             }
+            // Resolve IDs
+            for (const tagName of tags) {
+                // Try to find tag
+                let tag = await c.env.DB.prepare('SELECT id FROM tags WHERE name = ?').bind(tagName).first<{ id: number }>();
+                if (!tag) {
+                    // Create tag
+                    const res = await c.env.DB.prepare('INSERT INTO tags (name) VALUES (?) RETURNING id').bind(tagName).first<{ id: number }>();
+                    if (res) tag = res;
+                }
+
+                if (tag) {
+                    batch.push(c.env.DB.prepare('INSERT INTO resource_tags (resource_uuid, tag_id) VALUES (?, ?)').bind(uuid, tag.id));
+                }
+            }
         }
-        
+
         // Note: We cannot put async logic (finding/creating tags) inside the batch array directly if we want a single atomic transaction easily with D1 batch() 
         // because we need the IDs.
         // So we will run the batch update/history/delete_tags first, then insert new tags?
         // Or run everything sequentially. D1 isn't strict SQL transaction in batch() same as `BEGIN TRANSACTION`.
         // `db.batch()` executes them in order.
-        
+
         // Let's restructure:
         // 1. Prepare history insert (if admin)
         // 2. Prepare resource update
@@ -470,16 +473,16 @@ resources.put('/:uuid', async (c) => {
         // 4. Resolve tag IDs (async)
         // 5. Prepare tag inserts
         // 6. Execute all in one batch
-        
+
         const operations = [];
 
         if (isAdmin) {
-             const currentTags = await c.env.DB.prepare(`
+            const currentTags = await c.env.DB.prepare(`
                 SELECT t.name FROM tags t 
                 JOIN resource_tags rt ON t.id = rt.tag_id 
                 WHERE rt.resource_uuid = ?
-            `).bind(uuid).all<{name: string}>();
-            
+            `).bind(uuid).all<{ name: string }>();
+
             const previousData = {
                 title: resource.title,
                 description: resource.description,
@@ -502,26 +505,26 @@ resources.put('/:uuid', async (c) => {
 
         if (isAdmin && body.tags !== undefined) {
             operations.push(c.env.DB.prepare('DELETE FROM resource_tags WHERE resource_uuid = ?').bind(uuid));
-            
+
             for (const tagName of tags) {
-                 let tagId: number;
-                 let tag = await c.env.DB.prepare('SELECT id FROM tags WHERE name = ?').bind(tagName).first<{id: number}>();
-                 if (!tag) {
-                     // We must await this, so we can't be in a sync batch builder loop if we want true atomicity?
-                     // D1 doesn't support "INSERT OR IGNORE returning ID" easily across all SQLite versions seamlessly or valid syntax for D1's specific quirks sometimes.
-                     // But we can just run this separate.
-                     const newTag = await c.env.DB.prepare('INSERT INTO tags (name) VALUES (?) RETURNING id').bind(tagName).first<{id: number}>();
-                     tagId = newTag!.id;
-                 } else {
-                     tagId = tag.id;
-                 }
-                 operations.push(c.env.DB.prepare('INSERT INTO resource_tags (resource_uuid, tag_id) VALUES (?, ?)').bind(uuid, tagId));
+                let tagId: number;
+                let tag = await c.env.DB.prepare('SELECT id FROM tags WHERE name = ?').bind(tagName).first<{ id: number }>();
+                if (!tag) {
+                    // We must await this, so we can't be in a sync batch builder loop if we want true atomicity?
+                    // D1 doesn't support "INSERT OR IGNORE returning ID" easily across all SQLite versions seamlessly or valid syntax for D1's specific quirks sometimes.
+                    // But we can just run this separate.
+                    const newTag = await c.env.DB.prepare('INSERT INTO tags (name) VALUES (?) RETURNING id').bind(tagName).first<{ id: number }>();
+                    tagId = newTag!.id;
+                } else {
+                    tagId = tag.id;
+                }
+                operations.push(c.env.DB.prepare('INSERT INTO resource_tags (resource_uuid, tag_id) VALUES (?, ?)').bind(uuid, tagId));
             }
         }
 
         // 4. Update Links (New Files)
         if (body.new_links && Array.isArray(body.new_links)) {
-            const lastLink = await c.env.DB.prepare('SELECT display_order FROM resource_links WHERE resource_uuid = ? ORDER BY display_order DESC LIMIT 1').bind(uuid).first<{display_order: number}>();
+            const lastLink = await c.env.DB.prepare('SELECT display_order FROM resource_links WHERE resource_uuid = ? ORDER BY display_order DESC LIMIT 1').bind(uuid).first<{ display_order: number }>();
             let nextOrder = (lastLink?.display_order || 0) + 1;
 
             for (const link of body.new_links) {

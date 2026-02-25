@@ -63,5 +63,20 @@
 		"crons": [
 			"0 3 * * *"
 		]
+	},
+	"queues": {
+		"producers": [
+			{
+				"queue": "vrcstorage-upload-processing",
+				"binding": "UPLOAD_QUEUE"
+			}
+		],
+		"consumers": [
+			{
+				"queue": "vrcstorage-upload-processing",
+				"max_batch_size": 10,
+				"max_batch_timeout": 5
+			}
+		]
 	}
 }

@@ -18,17 +18,8 @@ const users = new Hono<{ Bindings: Env }>();
  * Registra un nuevo usuario.
  */
 users.post('/register', async (c) => {
-	const ip = c.req.header('CF-Connecting-IP') || 'unknown';
-
-	// Rate limit: max 5 registration attempts per IP per hour
-	const registerAttemptsKey = `register_attempt:${ip}`;
-	const attempts = (await c.env.VRCSTORAGE_KV.get(registerAttemptsKey, 'json')) as { count: number; reset: number } | null;
-	const now = Date.now();
-
-	if (attempts && attempts.count >= 5 && now < attempts.reset) {
-		const retryAfter = Math.ceil((attempts.reset - now) / 1000);
-		return c.json({ error: 'Too many registration attempts. Try again in 1 hour.', retryAfter }, 400);
-	}
+	// Rate limiting is handled by the native Cloudflare ratelimit binding (RL_STRICT)
+	// applied as middleware in index.ts — no KV-based tracking needed here.
 
 	const body = await c.req.json();
 
@@ -54,22 +45,9 @@ users.post('/register', async (c) => {
 			.bind(uuid, username, hash, avatarUrl)
 			.run();
 
-		// Clear registration attempts on success
-		await c.env.VRCSTORAGE_KV.delete(registerAttemptsKey);
-
 		return c.json({ success: true });
 	} catch (e) {
 		console.error('Registration error:', e);
-
-		// Increment failed attempt count
-		if (attempts) {
-			await c.env.VRCSTORAGE_KV.put(registerAttemptsKey, JSON.stringify({ count: attempts.count + 1, reset: attempts.reset }), {
-				expirationTtl: Math.ceil((attempts.reset - now) / 1000),
-			});
-		} else {
-			await c.env.VRCSTORAGE_KV.put(registerAttemptsKey, JSON.stringify({ count: 1, reset: now + 3600000 }), { expirationTtl: 3600 });
-		}
-
 		return c.json({ error: 'Registration failed' }, 500);
 	}
 });
@@ -79,17 +57,8 @@ users.post('/register', async (c) => {
  * Inicia sesion de un usuario.
  */
 users.post('/login', async (c) => {
-	const ip = c.req.header('CF-Connecting-IP') || 'unknown';
-
-	// Rate limit: max 10 login attempts per IP per 15 minutes
-	const loginAttemptsKey = `login_attempt:${ip}`;
-	const attempts = (await c.env.VRCSTORAGE_KV.get(loginAttemptsKey, 'json')) as { count: number; reset: number } | null;
-	const now = Date.now();
-
-	if (attempts && attempts.count >= 10 && now < attempts.reset) {
-		const retryAfter = Math.ceil((attempts.reset - now) / 1000);
-		return c.json({ error: 'Too many login attempts. Try again later.', retryAfter }, 429);
-	}
+	// Rate limiting is handled by the native Cloudflare ratelimit binding (RL_STRICT)
+	// applied as middleware in index.ts — no KV-based tracking needed here.
 
 	const body = await c.req.json();
 
@@ -100,28 +69,15 @@ users.post('/login', async (c) => {
 	const isValid = await verifyTurnstile(token || '', c.env.TURNSTILE_SECRET_KEY);
 	if (!isValid) return c.json({ error: 'Invalid CAPTCHA' }, 403);
 
-	// Fixed delay to prevent timing attacks (always check password even if user doesn't exist)
+	// Always query DB even for unknown users to prevent timing-based username enumeration
 	const user = await c.env.DB.prepare('SELECT * FROM users WHERE username = ?').bind(username).first<User>();
 
-	// Always use constant-time comparison to prevent username enumeration
 	if (!user) {
-		// Increment failed attempt count
-		if (attempts) {
-			await c.env.VRCSTORAGE_KV.put(loginAttemptsKey, JSON.stringify({ count: attempts.count + 1, reset: attempts.reset }), {
-				expirationTtl: Math.ceil((attempts.reset - now) / 1000),
-			});
-		} else {
-			await c.env.VRCSTORAGE_KV.put(loginAttemptsKey, JSON.stringify({ count: 1, reset: now + 900000 }), { expirationTtl: 900 });
-		}
-		// Always return same message to prevent user enumeration
 		return c.json({ error: 'Invalid credentials' }, 401);
 	}
 
 	const isMatch = await verifyPassword(password, user.password_hash);
 	if (isMatch) {
-		// Clear failed attempts on successful login
-		await c.env.VRCSTORAGE_KV.delete(loginAttemptsKey);
-
 		// Check if 2FA is enabled
 		if (user.two_factor_enabled === 1) {
 			// Return requires_2fa to trigger second step
@@ -136,15 +92,6 @@ users.post('/login', async (c) => {
 		await c.env.VRCSTORAGE_KV.put(`user:${user.username}`, JSON.stringify(sessionUser), { expirationTtl: 60 * 60 * 24 * 7 });
 
 		return c.json({ success: true });
-	}
-
-	// Increment failed attempt count on wrong password
-	if (attempts) {
-		await c.env.VRCSTORAGE_KV.put(loginAttemptsKey, JSON.stringify({ count: attempts.count + 1, reset: attempts.reset }), {
-			expirationTtl: Math.ceil((attempts.reset - now) / 1000),
-		});
-	} else {
-		await c.env.VRCSTORAGE_KV.put(loginAttemptsKey, JSON.stringify({ count: 1, reset: now + 900000 }), { expirationTtl: 900 });
 	}
 
 	return c.json({ error: 'Invalid credentials' }, 401);
@@ -240,17 +187,8 @@ users.post('/logout', (c) => {
  * Verifica el código 2FA y crea la sesión
  */
 users.post('/login/2fa', async (c) => {
-	const ip = c.req.header('CF-Connecting-IP') || 'unknown';
-
-	// Rate limit: max 5 2FA attempts per IP per 5 minutes
-	const twoFactorAttemptsKey = `2fa_attempt:${ip}`;
-	const attempts = (await c.env.VRCSTORAGE_KV.get(twoFactorAttemptsKey, 'json')) as { count: number; reset: number } | null;
-	const now = Date.now();
-
-	if (attempts && attempts.count >= 5 && now < attempts.reset) {
-		const retryAfter = Math.ceil((attempts.reset - now) / 1000);
-		return c.json({ error: 'Too many 2FA attempts. Try again later.', retryAfter }, 429);
-	}
+	// Rate limiting is handled by the native Cloudflare ratelimit binding (RL_STRICT)
+	// applied as middleware in index.ts — no KV-based tracking needed here.
 
 	const body = await c.req.json();
 	const { username, code } = body;
@@ -288,19 +226,8 @@ users.post('/login/2fa', async (c) => {
 	}
 
 	if (!isValid) {
-		// Increment failed 2FA attempts
-		if (attempts) {
-			await c.env.VRCSTORAGE_KV.put(twoFactorAttemptsKey, JSON.stringify({ count: attempts.count + 1, reset: attempts.reset }), {
-				expirationTtl: Math.ceil((attempts.reset - now) / 1000),
-			});
-		} else {
-			await c.env.VRCSTORAGE_KV.put(twoFactorAttemptsKey, JSON.stringify({ count: 1, reset: now + 300000 }), { expirationTtl: 300 });
-		}
 		return c.json({ error: 'Invalid code' }, 401);
 	}
-
-	// Clear failed 2FA attempts on successful verification
-	await c.env.VRCSTORAGE_KV.delete(twoFactorAttemptsKey);
 
 	// Create session
 	await createSession(c, { username: user.username, is_admin: user.is_admin });
