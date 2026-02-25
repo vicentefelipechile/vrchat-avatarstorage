@@ -1,58 +1,34 @@
 import { Context, Next } from 'hono';
 
 interface RateLimitConfig {
-    limit: number;
-    limitLogged?: number;
-    windowSeconds: number;
+    /** The native Cloudflare Rate Limiting binding to use */
+    binding: RateLimit;
+    /** Prefix used to isolate counters per route (combined with the client IP) */
     keyPrefix?: string;
 }
 
+/**
+ * Cloudflare native Rate Limiting middleware.
+ * Uses the `ratelimits` binding defined in wrangler.jsonc instead of KV.
+ * The limit and period are configured in wrangler.jsonc per binding.
+ */
 export const rateLimit = (config: RateLimitConfig) => {
-    const { limit, windowSeconds, keyPrefix = 'global' } = config;
-
     return async (c: Context<{ Bindings: Env }>, next: Next) => {
         const ip = c.req.header('CF-Connecting-IP') || 'unknown';
-        const key = `ratelimit:${keyPrefix}:${ip}`;
-        const now = Date.now();
+        const key = `${config.keyPrefix ?? 'global'}:${ip}`;
 
         try {
-            const record = await c.env.VRCSTORAGE_KV.get(key, 'json') as { count: number; reset: number } | null;
-
-            if (record) {
-                if (now >= record.reset) {
-                    // Window expired, reset
-                    await c.env.VRCSTORAGE_KV.put(
-                        key,
-                        JSON.stringify({ count: 1, reset: now + windowSeconds * 1000 }),
-                        { expirationTtl: windowSeconds }
-                    );
-                } else {
-                    // Inside window
-                    if (record.count >= limit) {
-                        const retryAfter = Math.ceil((record.reset - now) / 1000);
-                        return c.json(
-                            { error: 'Too Many Requests', retryAfter },
-                            429,
-                            { 'Retry-After': String(retryAfter) }
-                        );
-                    }
-                    await c.env.VRCSTORAGE_KV.put(
-                        key,
-                        JSON.stringify({ count: record.count + 1, reset: record.reset }),
-                        { expirationTtl: Math.max(60, Math.ceil((record.reset - now) / 1000)) }
-                    );
-                }
-            } else {
-                // New record
-                await c.env.VRCSTORAGE_KV.put(
-                    key,
-                    JSON.stringify({ count: 1, reset: now + windowSeconds * 1000 }),
-                    { expirationTtl: windowSeconds }
+            const { success } = await config.binding.limit({ key });
+            if (!success) {
+                return c.json(
+                    { error: 'Too Many Requests' },
+                    429,
+                    { 'Retry-After': '60' }
                 );
             }
         } catch (e) {
             console.error('Rate limit error:', e);
-            // Fail open if KV fails
+            // Fail open — let request through if the binding is unavailable
         }
 
         await next();
