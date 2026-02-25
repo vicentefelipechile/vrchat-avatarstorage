@@ -4,6 +4,7 @@ import { Context } from 'hono';
 import { sign, verify } from 'hono/jwt';
 import { getCookie, setCookie } from 'hono/cookie';
 import { User } from './types';
+import { decryptSecret } from './auth/2fa';
 
 export async function hashPassword(password: string): Promise<{ hash: string; salt?: string }> {
     const hash = hashSync(password, 10);
@@ -85,4 +86,20 @@ export function deleteSession(c: Context) {
         path: '/',
         maxAge: 0,
     });
+}
+
+// ----------------------------------------------------------------------------
+// 2FA HELPERS
+// ----------------------------------------------------------------------------
+
+export async function getUserWith2FA(c: Context<{ Bindings: Env }>, username: string): Promise<User | null> {
+    const user = await c.env.DB.prepare('SELECT * FROM users WHERE username = ?').bind(username).first<User>();
+    return user;
+}
+
+export function getDecrypted2FASecret(c: Context<{ Bindings: Env }>, user: User): string | null {
+    if (!user.two_factor_secret) return null;
+    const secret = c.env.JWT_SECRET;
+    if (!secret) return null;
+    return decryptSecret(user.two_factor_secret, secret);
 }

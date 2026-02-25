@@ -25,6 +25,7 @@ import utilRoutes from './routes/utils';
 import wikiRoutes from './routes/wiki';
 import tagsRoutes from './routes/tags';
 import favoritesRoutes from './routes/favorites';
+import twoFactorRoutes from './routes/2fa';
 
 // =========================================================================================================
 // Variables
@@ -66,6 +67,7 @@ app.use('/api/upload/*', rateLimit({ limit: 150, windowSeconds: MINUTE * 5, keyP
 app.use('/api/user', rateLimit({ limit: 10, windowSeconds: MINUTE, keyPrefix: 'user_update' }));
 app.use('/api/admin/*', rateLimit({ limit: 30, windowSeconds: MINUTE, keyPrefix: 'admin' }));
 app.use('/api/favorites/*', rateLimit({ limit: 30, windowSeconds: MINUTE, keyPrefix: 'favorites' }));
+app.use('/api/2fa/*', rateLimit({ limit: 20, windowSeconds: MINUTE, keyPrefix: '2fa' }));
 
 // Error Handler for Zod
 app.onError((err, c) => {
@@ -104,6 +106,7 @@ app.route('/api/upload', uploadRoutes);
 app.route('/api/download', downloadRoutes);
 app.route('/api/favorites', favoritesRoutes);
 app.route('/api', utilRoutes);
+app.route('/api/2fa', twoFactorRoutes);
 
 // =========================================================================================================
 // SEO routes

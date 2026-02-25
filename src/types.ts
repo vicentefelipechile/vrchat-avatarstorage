@@ -13,8 +13,11 @@ export interface User {
 	username: string;
 	password_hash: string;
 	avatar_url: string | null;
-	created_at: number; // Unix timestamp
+	created_at: number;
 	is_admin: number;
+	two_factor_enabled: number;
+	two_factor_secret: string | null;
+	two_factor_backup_codes: string | null;
 }
 
 // Tipo para crear un nuevo usuario (sin campos generados automáticamente)

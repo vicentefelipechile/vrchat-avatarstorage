@@ -20,6 +20,8 @@
 	"dependencies": {
 		"bcryptjs": "^3.0.3",
 		"hono": "^4.11.9",
+		"otpauth": "^9.5.0",
+		"qrcode": "^1.5.4",
 		"zod": "^4.3.6"
 	}
 }

@@ -110,3 +110,27 @@ export const FavoriteOrderSchema = z.object({
 		.optional()
 		.transform((val) => val ?? false),
 });
+
+// ============================================================================
+// 2FA Schemas
+// ============================================================================
+
+export const TwoFactorSetupSchema = z.object({
+	password: z.string().min(1, 'Password is required'),
+	token: z.string().optional(),
+});
+
+export const TwoFactorVerifySchema = z.object({
+	code: z.string().length(6, 'Code must be 6 digits').regex(/^\d+$/, 'Code must be numeric'),
+});
+
+export const TwoFactorDisableSchema = z.object({
+	password: z.string().min(1, 'Password is required'),
+	code: z.string().optional(),
+	token: z.string().optional(),
+});
+
+export const TwoFactorLoginSchema = z.object({
+	username: z.string(),
+	code: z.string().length(6, 'Code must be 6 digits').regex(/^\d+$/, 'Code must be numeric'),
+});
