@@ -605,6 +605,7 @@ nav .container {
 	0% {
 		background-position: 200% 0;
 	}
+
 	100% {
 		background-position: -200% 0;
 	}
@@ -743,6 +744,7 @@ nav .container {
 	0% {
 		background-position: 200% 0;
 	}
+
 	100% {
 		background-position: -200% 0;
 	}
@@ -1233,6 +1235,7 @@ hr {
 }
 
 @media (max-width: 768px) {
+
 	/* Layout */
 	.container {
 		padding: 15px;
@@ -1514,7 +1517,7 @@ hr {
 	box-shadow: 6px 6px 0px var(--shadow-color);
 }
 
-.markdown-alert > :last-child {
+.markdown-alert> :last-child {
 	margin-bottom: 0;
 }
 
@@ -1826,4 +1829,430 @@ hr {
 
 .wiki-content tr:nth-child(even) {
 	background-color: var(--bg-code);
+}
+
+/* ============================================================
+   FOOTER LINKS
+   ============================================================ */
+footer {
+	background-color: var(--bg-nav);
+	border-top: 2px solid var(--border-color);
+	padding: 15px 20px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 10px;
+}
+
+footer p {
+	margin: 0;
+	font-size: 0.85rem;
+	color: var(--text-muted);
+}
+
+.footer-links {
+	display: flex;
+	gap: 15px;
+}
+
+.footer-links a {
+	font-size: 0.85rem;
+	font-weight: bold;
+	color: var(--text-muted);
+	text-decoration: none;
+	padding: 4px 0;
+	border-bottom: 1px solid transparent;
+	transition: color 0.2s, border-color 0.2s;
+}
+
+.footer-links a:hover {
+	color: var(--text-main);
+	background: none;
+	border-bottom-color: var(--border-color);
+}
+
+/* ============================================================
+   TOS PAGE
+   ============================================================ */
+.tos-page {
+	max-width: 860px;
+	margin: 0 auto;
+}
+
+.tos-header {
+	background: var(--bg-card);
+	border: 2px solid var(--border-color);
+	padding: 30px;
+	margin-bottom: 20px;
+}
+
+.tos-header h1 {
+	margin: 0 0 8px 0;
+	font-size: 1.8rem;
+}
+
+.tos-subtitle {
+	color: var(--text-muted);
+	margin: 0 0 8px 0;
+}
+
+.tos-date {
+	font-size: 0.8rem;
+	color: var(--text-muted);
+	margin: 0;
+}
+
+.tos-content {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.tos-section {
+	background: var(--bg-card);
+	border: 2px solid var(--border-color);
+	border-bottom: none;
+	padding: 24px 30px;
+}
+
+.tos-section:last-child {
+	border-bottom: 2px solid var(--border-color);
+}
+
+.tos-section h2 {
+	margin: 0 0 12px 0;
+	font-size: 1.05rem;
+	padding-bottom: 8px;
+	border-bottom: 1px solid var(--border-light);
+}
+
+.tos-section p {
+	margin: 0 0 10px 0;
+	line-height: 1.7;
+	color: var(--text-main);
+}
+
+.tos-section p:last-child {
+	margin-bottom: 0;
+}
+
+.tos-section ul {
+	margin: 8px 0 0 0;
+	padding-left: 24px;
+	line-height: 1.7;
+	color: var(--text-main);
+}
+
+.tos-section ul li {
+	margin-bottom: 6px;
+}
+
+.tos-contact {
+	font-size: 1rem;
+	margin-top: 10px;
+}
+
+.tos-footer-note {
+	background: var(--bg-hover);
+	border: 2px solid var(--border-color);
+	border-top: none;
+	padding: 16px 30px;
+	margin-top: 0;
+}
+
+.tos-footer-note p {
+	margin: 0;
+	font-size: 0.85rem;
+	color: var(--text-muted);
+	font-style: italic;
+	text-align: center;
+}
+
+/* ============================================================
+   DMCA PAGE
+   ============================================================ */
+.dmca-page {
+	max-width: 860px;
+	margin: 0 auto;
+}
+
+.dmca-header {
+	background: var(--bg-card);
+	border: 2px solid var(--border-color);
+	padding: 30px;
+	margin-bottom: 5px;
+}
+
+.dmca-header h1 {
+	margin: 0 0 8px 0;
+	font-size: 1.8rem;
+}
+
+.dmca-subtitle {
+	color: var(--text-muted);
+	margin: 0;
+}
+
+/* Tabs */
+.dmca-tabs {
+	display: flex;
+	gap: 0;
+	margin-bottom: 0;
+	border-left: 2px solid var(--border-color);
+	border-right: 2px solid var(--border-color);
+}
+
+.dmca-tab-btn {
+	flex: 1;
+	padding: 12px 20px;
+	background: var(--bg-hover);
+	color: var(--text-muted);
+	border: none;
+	border-bottom: 2px solid var(--border-color);
+	border-top: 2px solid var(--border-color);
+	font-family: inherit;
+	font-size: 0.95rem;
+	font-weight: bold;
+	cursor: pointer;
+	transition: background 0.2s, color 0.2s;
+}
+
+.dmca-tab-btn:first-child {
+	border-right: 1px solid var(--border-color);
+}
+
+.dmca-tab-btn.active {
+	background: var(--bg-card);
+	color: var(--text-main);
+	border-bottom: 2px solid var(--bg-card);
+}
+
+.dmca-tab-btn:hover:not(.active) {
+	background: var(--bg-card);
+	color: var(--text-main);
+}
+
+/* Panels */
+.dmca-panel {
+	background: var(--bg-card);
+	border: 2px solid var(--border-color);
+	border-top: none;
+	padding: 28px 30px;
+	margin-bottom: 20px;
+}
+
+/* Story builder (Simple mode) */
+.dmca-story-intro {
+	color: var(--text-muted);
+	margin: 0 0 20px 0;
+	font-size: 0.9rem;
+}
+
+.dmca-story-line {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 10px;
+	margin-bottom: 14px;
+}
+
+.dmca-story-text {
+	font-size: 0.95rem;
+	color: var(--text-muted);
+	white-space: nowrap;
+}
+
+.dmca-select {
+	background: var(--bg-input);
+	color: var(--text-main);
+	border: 2px solid var(--border-color);
+	padding: 6px 10px;
+	font-family: inherit;
+	font-size: 0.9rem;
+	cursor: pointer;
+}
+
+.dmca-select-full {
+	width: 100%;
+}
+
+.dmca-select:focus {
+	outline: none;
+	border-color: var(--text-muted);
+}
+
+.dmca-input-inline {
+	background: var(--bg-input);
+	color: var(--text-main);
+	border: 2px solid var(--border-color);
+	padding: 6px 10px;
+	font-family: inherit;
+	font-size: 0.9rem;
+	min-width: 200px;
+}
+
+.dmca-input-url {
+	min-width: 320px;
+	flex: 1;
+}
+
+.dmca-input-inline:focus {
+	outline: none;
+	border-color: var(--text-muted);
+}
+
+.dmca-preview-box {
+	background: var(--bg-hover);
+	border: 2px solid var(--border-color);
+	padding: 16px 20px;
+	margin: 24px 0 20px 0;
+}
+
+.dmca-preview-label {
+	font-size: 0.8rem;
+	font-weight: bold;
+	color: var(--text-muted);
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	margin: 0 0 10px 0;
+}
+
+.dmca-preview-text {
+	font-size: 0.9rem;
+	line-height: 1.7;
+	white-space: pre-wrap;
+	color: var(--text-main);
+}
+
+/* Advanced mode */
+.dmca-advanced-intro {
+	color: var(--text-muted);
+	margin: 0 0 20px 0;
+	font-size: 0.9rem;
+}
+
+.dmca-label {
+	display: block;
+	font-weight: bold;
+	font-size: 0.9rem;
+	margin: 20px 0 6px 0;
+}
+
+.dmca-hint {
+	font-size: 0.8rem;
+	color: var(--text-muted);
+	margin: 0 0 8px 0;
+}
+
+/* Field group (label + hint + textarea) in Simple mode */
+.dmca-field-group {
+	margin-top: 20px;
+	margin-bottom: 4px;
+}
+
+.dmca-field-label {
+	display: block;
+	font-weight: bold;
+	font-size: 0.9rem;
+	margin-bottom: 4px;
+	color: var(--text-main);
+}
+
+.dmca-textarea-sm {
+	width: 100%;
+	background: var(--bg-input);
+	color: var(--text-main);
+	border: 2px solid var(--border-color);
+	padding: 10px;
+	font-family: inherit;
+	font-size: 0.88rem;
+	resize: vertical;
+	line-height: 1.5;
+	box-sizing: border-box;
+}
+
+.dmca-textarea-sm:focus {
+	outline: none;
+	border-color: var(--text-muted);
+}
+
+.dmca-textarea {
+	width: 100%;
+	background: var(--bg-input);
+	color: var(--text-main);
+	border: 2px solid var(--border-color);
+	padding: 12px;
+	font-family: inherit;
+	font-size: 0.9rem;
+	resize: vertical;
+	line-height: 1.6;
+	box-sizing: border-box;
+}
+
+.dmca-textarea:focus {
+	outline: none;
+	border-color: var(--text-muted);
+}
+
+/* Send button */
+.dmca-send-btn {
+	margin-top: 20px;
+	font-size: 0.95rem;
+	padding: 12px 24px;
+}
+
+/* Info box */
+.dmca-info-box {
+	background: var(--bg-card);
+	border: 2px solid var(--border-color);
+	border-left: 6px solid var(--border-color);
+	padding: 20px 24px;
+	margin-bottom: 30px;
+}
+
+.dmca-info-box h3 {
+	margin: 0 0 12px 0;
+	font-size: 1rem;
+}
+
+.dmca-info-box ul {
+	margin: 0 0 12px 0;
+	padding-left: 20px;
+	color: var(--text-muted);
+	font-size: 0.9rem;
+	line-height: 1.7;
+}
+
+.dmca-contact {
+	margin: 0;
+	font-size: 0.95rem;
+}
+
+@media (max-width: 768px) {
+
+	.tos-section,
+	.tos-header,
+	.dmca-header,
+	.dmca-panel {
+		padding: 18px 16px;
+	}
+
+	.tos-footer-note {
+		padding: 14px 16px;
+	}
+
+	.dmca-input-url {
+		min-width: 100%;
+	}
+
+	.dmca-story-line {
+		flex-direction: column;
+		align-items: flex-start;
+	}
+
+	footer {
+		flex-direction: column;
+		align-items: flex-start;
+	}
 }

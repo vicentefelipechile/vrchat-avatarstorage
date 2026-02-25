@@ -10,6 +10,8 @@ import WikiView from './views/WikiView.js';
 import EditResourceView from './views/EditResourceView.js';
 import HistoryView from './views/HistoryView.js';
 import FavoritesView from './views/FavoritesView.js';
+import TOSView from './views/TOSView.js';
+import DMCAView from './views/DMCAView.js';
 import { pathToRegex, getParams } from './utils.js';
 
 export const router = async () => {
@@ -26,6 +28,8 @@ export const router = async () => {
 		{ path: '/admin', view: AdminView },
 		{ path: '/favorites', view: FavoritesView },
 		{ path: '/wiki', view: WikiView },
+		{ path: '/tos', view: TOSView },
+		{ path: '/dmca', view: DMCAView },
 	];
 
 	const potentialMatches = routes.map((route) => {
@@ -51,11 +55,37 @@ export const router = async () => {
 
 	if (view.postRender) await view.postRender();
 
+	// Scroll handling:
+	// - Wiki pages: always preserve scroll (long articles)
+	// - Forward navigation (link click): reset to top
+	// - Back/forward (popstate): restore saved scroll position
+	const isWiki = location.pathname === '/wiki' || location.pathname.startsWith('/wiki/');
+	if (!isWiki) {
+		if (navigateToFlag) {
+			// Forward navigation — scroll to top
+			window.scrollTo({ top: 0, behavior: 'instant' });
+		} else {
+			// Popstate — restore saved scroll if available
+			const savedScroll = history.state?.scrollY ?? 0;
+			window.scrollTo({ top: savedScroll, behavior: 'instant' });
+		}
+	}
+	navigateToFlag = false;
+
 	// Dispatch event so app.js can update Nav
 	window.dispatchEvent(new CustomEvent('route-changed'));
 };
 
 export const navigateTo = (url) => {
+	// Save current scroll before leaving this page
+	const state = history.state || {};
+	history.replaceState({ ...state, scrollY: window.scrollY }, '');
+
+	// Mark the next router() call as a forward navigation
+	navigateToFlag = true;
 	history.pushState(null, null, url);
 	router();
 };
+
+// False = popstate (back/forward), true = navigateTo (forward link click)
+let navigateToFlag = false;
