@@ -23,14 +23,19 @@ export const DataCache = {
 			}
 		}
 
-		// 2. Always check localStorage if not in memory (resources are immutable, cached data is always valid)
+		// 2. Check localStorage with TTL validation
 		try {
 			const key = `cache:${url}`;
 			const cached = localStorage.getItem(key);
 			if (cached) {
 				const parsed = JSON.parse(cached);
-				this.cache.set(url, parsed);
-				return parsed.data;
+				const age = now - parsed.timestamp;
+				if (persistent || age < ttl) {
+					this.cache.set(url, parsed);
+					return parsed.data;
+				} else {
+					localStorage.removeItem(key);
+				}
 			}
 		} catch (e) {
 			console.warn('LocalStorage read error', e);

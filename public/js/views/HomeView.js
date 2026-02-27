@@ -4,18 +4,18 @@ import { t } from '../i18n.js';
 import { stripMarkdown } from '../utils.js';
 
 export default class HomeView extends AbstractView {
-    async getHtml() {
-        const apiCategories = ['avatars', 'assets', 'clothes'];
-        
-        const latest = await DataCache.fetch('/api/resources/latest', 60000);
+	async getHtml() {
+		const apiCategories = ['avatars', 'assets', 'clothes'];
 
-        const categoriesHtml = apiCategories.map(cat =>
-            `<a href="/category/${cat}" data-link class="category-btn">${t('cats.' + cat)}</a>`
-        ).join('');
+		const latest = await DataCache.fetch('/api/resources/latest', 3600000);
 
-        const cardsHtml = latest.map(res => this.renderCard(res)).join('');
+		const categoriesHtml = apiCategories
+			.map((cat) => `<a href="/category/${cat}" data-link class="category-btn">${t('cats.' + cat)}</a>`)
+			.join('');
 
-        return `
+		const cardsHtml = latest.map((res) => this.renderCard(res)).join('');
+
+		return `
             <section class="hero-section">
                 <h1>${t('home.welcome')}</h1>
                 <p>${t('home.browse')}</p>
@@ -26,34 +26,38 @@ export default class HomeView extends AbstractView {
                 <div class="grid">${cardsHtml}</div>
             </section>
         `;
-    }
+	}
 
-    renderCard(res) {
-        const title = stripMarkdown(res.title).substring(0, 50);
-        const description = stripMarkdown(res.description || '').substring(0, 80);
-        const categoryLabel = t('cats.' + res.category) || res.category;
-        const date = new Date(res.timestamp || res.created_at * 1000).toLocaleDateString();
-        const downloads = res.download_count || 0;
-        
-        const authorName = res.author?.username || 'Unknown';
-        const authorAvatar = res.author?.avatar_url || '';
-        const avatarImg = authorAvatar 
-            ? `<img src="${authorAvatar}" alt="${authorName}" class="card-author-avatar" onerror="this.style.display='none'">`
-            : `<div class="card-author-avatar-placeholder">${authorName.charAt(0).toUpperCase()}</div>`;
+	renderCard(res) {
+		const title = stripMarkdown(res.title).substring(0, 50);
+		const description = stripMarkdown(res.description || '').substring(0, 80);
+		const categoryLabel = t('cats.' + res.category) || res.category;
+		const date = new Date(res.timestamp || res.created_at * 1000).toLocaleDateString();
+		const downloads = res.download_count || 0;
 
-        return `
+		const authorName = res.author?.username || 'Unknown';
+		const authorAvatar = res.author?.avatar_url || '';
+		const avatarImg = authorAvatar
+			? `<img src="${authorAvatar}" alt="${authorName}" class="card-author-avatar" onerror="this.style.display='none'">`
+			: `<div class="card-author-avatar-placeholder">${authorName.charAt(0).toUpperCase()}</div>`;
+
+		return `
             <div class="card">
                 <a href="/item/${res.uuid}" data-link class="card-link">
-                    ${res.thumbnail_key ? `
+                    ${
+											res.thumbnail_key
+												? `
                         <div class="card-image">
                             <img src="/api/download/${res.thumbnail_key}" alt="${title}" loading="lazy">
                             <span class="card-badge">${categoryLabel}</span>
                         </div>
-                    ` : `
+                    `
+												: `
                         <div class="card-image card-image-placeholder">
                             <span class="card-badge">${categoryLabel}</span>
                         </div>
-                    `}
+                    `
+										}
                 </a>
                 <div class="card-body">
                     <h3>${title}${res.title.length > 50 ? '...' : ''}</h3>
@@ -78,5 +82,5 @@ export default class HomeView extends AbstractView {
                 </div>
             </div>
         `;
-    }
+	}
 }

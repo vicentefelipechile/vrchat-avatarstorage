@@ -1,10 +1,11 @@
 import AbstractView from './AbstractView.js';
 import { t } from '../i18n.js';
 import { renderTurnstile } from '../utils.js';
+import { DataCache } from '../cache.js';
 
 export default class UploadView extends AbstractView {
-    async getHtml() {
-        return `
+	async getHtml() {
+		return `
             <div style="max-width: 1200px; margin: 0 auto;">
                 <h1>${t('upload.title')}</h1>
                 <form id="upload-form">
@@ -127,671 +128,685 @@ export default class UploadView extends AbstractView {
                 </form>
             </div>
         `;
-    }
-
-    async postRender() {
-        const router = (await import('../router.js')).router; // Circular dependency handling? Or pass router
-        // Actually, we can just use navigateTo from router or global
-        // We might need to export navigateTo from router.js
-
-        const form = document.getElementById('upload-form');
-        const descriptionField = document.getElementById('description');
-        const markdownPreview = document.getElementById('markdown-preview');
-        const thumbnailInput = document.getElementById('thumbnail');
-        const referenceInput = document.getElementById('reference-image');
-        const fileInput = document.getElementById('file');
-        const thumbnailPreview = document.getElementById('thumbnail-preview');
-        const referencePreview = document.getElementById('reference-preview');
-        const fileInfo = document.getElementById('file-info');
-        const uploadError = document.getElementById('upload-error');
-        const progressContainer = document.getElementById('progress-container');
-        const progressBar = document.getElementById('progress-bar');
-        const progressText = document.getElementById('progress-text');
-
-        let turnstileToken = null;
-        let turnstileWidgetId = null;
-
-        // Initialize Turnstile
-        try {
-            const configRes = await fetch('/api/config');
-            const config = await configRes.json();
-
-            if (window.turnstile) {
-                turnstileWidgetId = window.turnstile.render('#turnstile-container', {
-                    sitekey: config.turnstileSiteKey,
-                    callback: function (token) {
-                        turnstileToken = token;
-                    },
-                    'expired-callback': function () {
-                        turnstileToken = null;
-                    }
-                });
-            }
-        } catch (e) {
-            console.error('Failed to load Turnstile config', e);
-        }
-
-        // Avatar Fields Logic
-        const categorySelect = document.getElementById('category');
-        const avatarFields = document.getElementById('avatar-fields');
-
-        const toggleAvatarFields = () => {
-            if (categorySelect.value === 'avatars') {
-                avatarFields.style.display = 'block';
-            } else {
-                avatarFields.style.display = 'none';
-            }
-        };
-
-        categorySelect.addEventListener('change', toggleAvatarFields);
-        toggleAvatarFields(); // Initial check
-
-        // Markdown Preview
-        descriptionField.addEventListener('input', () => {
-            const markdown = descriptionField.value;
-            if (window.marked) {
-                markdownPreview.innerHTML = window.marked.parse(markdown || `*${t('upload.noContent')}*`);
-            } else {
-                markdownPreview.textContent = markdown || t('upload.noContent');
-            }
-        });
-
-        // Trigger initial preview
-        descriptionField.dispatchEvent(new Event('input'));
-
-        // Size limits (must match backend)
-        const SIZE_LIMITS = {
-            image: 20 * 1024 * 1024,    // 20MB
-            video: 100 * 1024 * 1024,   // 100MB
-            file: 1500 * 1024 * 1024     // 1500MB
-        };
-        const MAX_IMAGE_DIMENSION = 4096; // 4096x4096 pixels
-
-        // Helper: Validate image dimensions
-        const validateImageDimensions = (file) => {
-            return new Promise((resolve) => {
-                const img = new Image();
-                const url = URL.createObjectURL(file);
-
-                img.onload = () => {
-                    URL.revokeObjectURL(url);
-                    if (img.width > MAX_IMAGE_DIMENSION || img.height > MAX_IMAGE_DIMENSION) {
-                        resolve({
-                            valid: false,
-                            error: `Image dimensions too large. Maximum: ${MAX_IMAGE_DIMENSION}x${MAX_IMAGE_DIMENSION} pixels, got ${img.width}x${img.height} pixels`
-                        });
-                    } else {
-                        resolve({ valid: true, width: img.width, height: img.height });
-                    }
-                };
-
-                img.onerror = () => {
-                    URL.revokeObjectURL(url);
-                    resolve({ valid: false, error: 'Could not load image for validation' });
-                };
-
-                img.src = url;
-            });
-        };
-
-        // Thumbnail Preview with Validation
-        thumbnailInput.addEventListener('change', async (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                const isVideo = file.type.startsWith('video/');
-                const isImage = file.type.startsWith('image/');
-
-                // Validate file size
-                const maxSize = isVideo ? SIZE_LIMITS.video : SIZE_LIMITS.image;
-                if (file.size > maxSize) {
-                    const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
-                    const maxMB = (maxSize / (1024 * 1024)).toFixed(0);
-                    alert(`File too large. Maximum size for ${isVideo ? 'videos' : 'images'}: ${maxMB}MB, got ${sizeMB}MB`);
-                    thumbnailInput.value = '';
-                    thumbnailPreview.innerHTML = '';
-                    return;
-                }
-
-                // Validate image dimensions
-                if (isImage) {
-                    const dimensionCheck = await validateImageDimensions(file);
-                    if (!dimensionCheck.valid) {
-                        alert(dimensionCheck.error);
-                        thumbnailInput.value = '';
-                        thumbnailPreview.innerHTML = '';
-                        return;
-                    }
-                }
-
-                const url = URL.createObjectURL(file);
-
-                const container = document.createElement('div');
-                container.className = 'preview-item';
-                container.style.cssText = 'display: inline-block; position: relative; border: 2px solid var(--border-color); padding: 10px; margin: 5px; background: var(--bg-card);';
-
-                const deleteBtn = document.createElement('button');
-                deleteBtn.innerHTML = '✕';
-                deleteBtn.className = 'preview-delete-btn';
-                deleteBtn.style.cssText = 'position: absolute; top: 5px; right: 5px; background: #dc3545; color: white; border: none; border-radius: 3px; width: 25px; height: 25px; cursor: pointer; font-weight: bold; z-index: 10;';
-                deleteBtn.onclick = (e) => {
-                    e.preventDefault();
-                    thumbnailInput.value = '';
-                    thumbnailPreview.innerHTML = '';
-                    URL.revokeObjectURL(url);
-                };
-
-                const mediaElement = document.createElement(isVideo ? 'video' : 'img');
-                mediaElement.src = url;
-                mediaElement.style.cssText = 'max-width: 200px; max-height: 200px; display: block;';
-                if (isVideo) mediaElement.controls = true;
-
-                const filename = document.createElement('div');
-                filename.textContent = file.name;
-                filename.style.cssText = 'margin-top: 5px; font-size: 12px; color: var(--text-muted); max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;';
-
-                container.appendChild(deleteBtn);
-                container.appendChild(mediaElement);
-                container.appendChild(filename);
-
-                thumbnailPreview.innerHTML = '';
-                thumbnailPreview.appendChild(container);
-            }
-        });
-
-        // Reference Image Preview with File Management
-        let selectedReferenceFiles = [];
-
-        const renderReferencePreview = () => {
-            referencePreview.innerHTML = '';
-
-            selectedReferenceFiles.forEach((file, index) => {
-                const isVideo = file.type.startsWith('video/');
-                const url = URL.createObjectURL(file);
-
-                const container = document.createElement('div');
-                container.className = 'preview-item';
-                container.style.cssText = 'display: inline-block; position: relative; border: 2px solid var(--border-color); padding: 10px; margin: 5px; background: var(--bg-card); vertical-align: top;';
-
-                const deleteBtn = document.createElement('button');
-                deleteBtn.innerHTML = '✕';
-                deleteBtn.className = 'preview-delete-btn';
-                deleteBtn.style.cssText = 'position: absolute; top: 5px; right: 5px; background: #dc3545; color: white; border: none; border-radius: 3px; width: 25px; height: 25px; cursor: pointer; font-weight: bold; z-index: 10;';
-                deleteBtn.onclick = (e) => {
-                    e.preventDefault();
-                    // Remove file from array
-                    selectedReferenceFiles.splice(index, 1);
-
-                    // Update input with remaining files using DataTransfer
-                    const dt = new DataTransfer();
-                    selectedReferenceFiles.forEach(f => dt.items.add(f));
-                    referenceInput.files = dt.files;
-
-                    // Re-render previews
-                    renderReferencePreview();
-                };
-
-                const mediaElement = document.createElement(isVideo ? 'video' : 'img');
-                mediaElement.src = url;
-                mediaElement.style.cssText = 'max-width: 200px; max-height: 200px; object-fit: cover; display: block;';
-                if (isVideo) mediaElement.controls = true;
-
-                const filename = document.createElement('div');
-                filename.textContent = file.name;
-                filename.style.cssText = 'margin-top: 5px; font-size: 12px; color: var(--text-muted); max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;';
-
-                container.appendChild(deleteBtn);
-                container.appendChild(mediaElement);
-                container.appendChild(filename);
-
-                referencePreview.appendChild(container);
-            });
-        };
-
-        referenceInput.addEventListener('change', async (e) => {
-            const files = Array.from(e.target.files);
-
-            if (files.length > 8) {
-                alert(t('upload.maxFiles'));
-                referenceInput.value = '';
-                selectedReferenceFiles = [];
-                renderReferencePreview();
-                return;
-            }
-
-            // Validate each file
-            for (const file of files) {
-                const isVideo = file.type.startsWith('video/');
-                const isImage = file.type.startsWith('image/');
-                const maxSize = isVideo ? SIZE_LIMITS.video : SIZE_LIMITS.image;
-
-                // Check file size
-                if (file.size > maxSize) {
-                    const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
-                    const maxMB = (maxSize / (1024 * 1024)).toFixed(0);
-                    alert(`File "${file.name}" is too large. Maximum size for ${isVideo ? 'videos' : 'images'}: ${maxMB}MB, got ${sizeMB}MB`);
-                    referenceInput.value = '';
-                    selectedReferenceFiles = [];
-                    renderReferencePreview();
-                    return;
-                }
-
-                // Check image dimensions
-                if (isImage) {
-                    const dimensionCheck = await validateImageDimensions(file);
-                    if (!dimensionCheck.valid) {
-                        alert(`Image "${file.name}": ${dimensionCheck.error}`);
-                        referenceInput.value = '';
-                        selectedReferenceFiles = [];
-                        renderReferencePreview();
-                        return;
-                    }
-                }
-            }
-
-            selectedReferenceFiles = files;
-            renderReferencePreview();
-        });
-
-        // File Validation
-        fileInput.addEventListener('change', (e) => {
-            const files = Array.from(e.target.files);
-            fileInfo.innerHTML = '';
-            uploadError.textContent = '';
-
-            if (files.length > 3) {
-                fileInfo.innerHTML = `<span style="color: red;">✗ ${t('upload.errorMaxFiles')}</span>`;
-                uploadError.textContent = t('upload.errorMaxFiles');
-                fileInput.value = '';
-                return;
-            }
-
-            const validExtensions = ['.rar', '.zip', '.unitypackage'];
-            const MAX_FILE_SIZE = SIZE_LIMITS.file;
-            let allValid = true;
-
-            files.forEach(file => {
-                const fileName = file.name.toLowerCase();
-                const isValid = validExtensions.some(ext => fileName.endsWith(ext));
-                const sizeValid = file.size <= MAX_FILE_SIZE;
-
-                if (!isValid) allValid = false;
-                if (!sizeValid) allValid = false;
-
-                const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
-                const maxMB = (MAX_FILE_SIZE / (1024 * 1024)).toFixed(0);
-
-                let color = 'green';
-                let symbol = '✓';
-                let message = `${file.name} (${sizeMB} MB)`;
-
-                if (!isValid) {
-                    color = 'red';
-                    symbol = '✗';
-                    message += ` - ${t('upload.errorInvalidFileType')}`;
-                } else if (!sizeValid) {
-                    color = 'red';
-                    symbol = '✗';
-                    message += ` - ${t('upload.errorFileTooLarge')} (max ${maxMB}MB)`;
-                }
-
-                const div = document.createElement('div');
-                div.innerHTML = `<span style="color: ${color};">${symbol} ${message}</span>`;
-                fileInfo.appendChild(div);
-            });
-
-            if (!allValid) {
-                uploadError.textContent = `${t('upload.error')}: Invalid files detected. Check the list above.`;
-                fileInput.value = '';
-            }
-        });
-
-        // Helper: Upload with progress
-        const uploadFileWithProgress = (url, formData, onProgress) => {
-            return new Promise((resolve, reject) => {
-                const xhr = new XMLHttpRequest();
-                xhr.open('PUT', url);
-
-                if (onProgress) {
-                    xhr.upload.onprogress = (e) => {
-                        if (e.lengthComputable) {
-                            const percentComplete = (e.loaded / e.total) * 100;
-                            onProgress(percentComplete);
-                        }
-                    };
-                }
-
-                xhr.onload = () => {
-                    if (xhr.status >= 200 && xhr.status < 300) {
-                        try {
-                            resolve(JSON.parse(xhr.responseText));
-                        } catch (e) {
-                            reject(new Error('Invalid JSON response'));
-                        }
-                    } else {
-                        reject(new Error(`Upload failed with status ${xhr.status}`));
-                    }
-                };
-
-                xhr.onerror = () => reject(new Error('Network error during upload'));
-                xhr.send(formData);
-            });
-        };
-
-        // Helper: Upload Large File (Chunked)
-        const uploadLargeFile = async (file, mediaType, onProgress) => {
-            const CHUNK_SIZE = 30 * 1024 * 1024; // 30MB
-            const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
-
-            // 1. Init
-            const initRes = await fetch('/api/upload/init', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ filename: file.name, media_type: mediaType })
-            });
-
-            if (!initRes.ok) throw new Error('Failed to initialize upload');
-            const { uploadId, key } = await initRes.json();
-
-            // 2. Upload Parts
-            const parts = [];
-            let loaded = 0;
-
-            for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
-                const start = chunkIndex * CHUNK_SIZE;
-                const end = Math.min(start + CHUNK_SIZE, file.size);
-                const chunk = file.slice(start, end);
-                const partNumber = chunkIndex + 1;
-
-                const partRes = await fetch('/api/upload/part', {
-                    method: 'PUT',
-                    headers: {
-                        'X-Upload-ID': uploadId,
-                        'X-Key': key,
-                        'X-Part-Number': partNumber.toString(),
-                        'Content-Type': 'application/octet-stream' // Important
-                    },
-                    body: chunk
-                });
-
-                if (!partRes.ok) throw new Error(`Failed to upload part ${partNumber}`);
-                const partData = await partRes.json();
-                parts.push(partData);
-
-                loaded += chunk.size;
-                const percent = (loaded / file.size) * 100;
-                onProgress(percent);
-            }
-
-            // 3. Complete
-            const completeRes = await fetch('/api/upload/complete', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    uploadId,
-                    key,
-                    parts,
-                    filename: file.name,
-                    media_type: mediaType
-                })
-            });
-
-            if (!completeRes.ok) throw new Error('Failed to complete upload');
-            return await completeRes.json();
-        };
-
-        // Helper: Update Progress UI
-        const updateProgress = (text, percent) => {
-            progressContainer.style.display = 'block';
-            progressBar.value = percent;
-            progressText.innerText = `${text} (${Math.round(percent)}%)`;
-        };
-
-        // Form Submit
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const btn = e.target.querySelector('button');
-            const originalText = btn.textContent;
-            btn.textContent = t('upload.uploading');
-            btn.disabled = true;
-            uploadError.textContent = '';
-
-            // Block navigation
-            const preventNav = (e) => {
-                e.preventDefault();
-                e.returnValue = '';
-            };
-            window.addEventListener('beforeunload', preventNav);
-
-            // Visual block for navbar
-            const nav = document.querySelector('nav');
-            if (nav) {
-                nav.style.pointerEvents = 'none';
-                nav.style.opacity = '0.5';
-            }
-
-            const title = document.getElementById('title').value;
-            let description = descriptionField.value; // Use let to allow modification
-            const category = document.getElementById('category').value;
-            const tagsInput = document.getElementById('tags').value;
-            const tags = tagsInput.split(',').map(t => t.trim()).filter(t => t.length > 0);
-
-            // Append Avatar Information if Category is Avatars
-            if (category === 'avatars') {
-                const platform = document.getElementById('avatar-platform').value;
-                const sdk = document.getElementById('avatar-sdk').value;
-                const version = document.getElementById('avatar-version').value;
-                const hasBlend = document.getElementById('avatar-blend').checked;
-                const usesPoiyomi = document.getElementById('avatar-poiyomi').checked;
-                const usesVrcFury = document.getElementById('avatar-vrcfury').checked;
-
-                let extraInfo = '\n\n---\n\n### Avatar Details\n';
-                extraInfo += `* Platform: ${platform}\n`;
-                extraInfo += `* SDK: ${sdk}\n`;
-                extraInfo += `* Version: ${version || 'Not specified'}\n`;
-                extraInfo += `* Contains .blend: ${hasBlend ? 'Yes' : 'No'}\n`;
-                extraInfo += `* Uses Poiyomi: ${usesPoiyomi ? 'Yes' : 'No'}\n`;
-                extraInfo += `* Uses VRCFury: ${usesVrcFury ? 'Yes' : 'No'}\n`;
-
-                description += extraInfo;
-            }
-            const file = fileInput.files[0];
-            const files = Array.from(fileInput.files); // Start using array of files
-            const thumbnail = thumbnailInput.files[0];
-            const referenceFiles = referenceInput.files;
-
-            const resetState = () => {
-                window.removeEventListener('beforeunload', preventNav);
-                if (nav) {
-                    nav.style.pointerEvents = 'auto';
-                    nav.style.opacity = '1';
-                }
-                btn.textContent = originalText;
-                btn.disabled = false;
-            };
-
-            // Validate main file(s)
-            const validExtensions = ['.rar', '.zip', '.unitypackage'];
-            let allFilesValid = true;
-
-            if (files.length === 0) {
-                uploadError.textContent = `${t('upload.error')}: No file selected`;
-                resetState();
-                return;
-            }
-
-            if (files.length > 3) {
-                uploadError.textContent = `${t('upload.error')}: Max 3 files allowed`;
-                resetState();
-                return;
-            }
-
-            files.forEach(f => {
-                const fName = f.name.toLowerCase();
-                if (!validExtensions.some(ext => fName.endsWith(ext))) {
-                    allFilesValid = false;
-                }
-            });
-
-            if (!allFilesValid) {
-                uploadError.textContent = `${t('upload.error')}: ${t('upload.errorMainFile')}`;
-                resetState();
-                return;
-            }
-
-            if (!thumbnail) {
-                uploadError.textContent = `${t('upload.error')}: ${t('upload.errorThumbnail')}`;
-                resetState();
-                return;
-            }
-
-            if (!turnstileToken) {
-                uploadError.textContent = `${t('upload.error')}: ${t('upload.errorCaptcha')}`;
-                resetState();
-                return;
-            }
-
-            try {
-                // 1. Upload Thumbnail
-                const thumbnailFormData = new FormData();
-                thumbnailFormData.append('file', thumbnail);
-                thumbnailFormData.append('media_type', thumbnail.type.startsWith('video/') ? 'video' : 'image');
-
-                updateProgress(t('upload.uploadingThumbnail'), 0);
-                const thumbnailData = await uploadFileWithProgress('/api/upload', thumbnailFormData, (p) => {
-                    updateProgress(t('upload.uploadingThumbnail'), p);
-                });
-
-                // 2. Upload Reference Images (Gallery)
-                const galleryUuids = [];
-                if (referenceFiles.length > 0) {
-                    if (referenceFiles.length > 8) {
-                        alert(t('upload.maxFiles'));
-                        resetState();
-                        progressContainer.style.display = 'none';
-                        return;
-                    }
-
-                    for (let i = 0; i < referenceFiles.length; i++) {
-                        const file = referenceFiles[i];
-                        const formData = new FormData();
-                        formData.append('file', file);
-                        formData.append('media_type', file.type.startsWith('video/') ? 'video' : 'image');
-
-                        updateProgress(`${t('upload.uploadingReference')} (${i + 1}/${referenceFiles.length})`, 0);
-                        const data = await uploadFileWithProgress('/api/upload', formData, (p) => {
-                            updateProgress(`${t('upload.uploadingReference')} (${i + 1}/${referenceFiles.length})`, p);
-                        });
-                        galleryUuids.push(data.media_uuid);
-                    }
-                }
-
-                // 3. Upload Main File(s)
-                const files = Array.from(fileInput.files);
-                const uploadedFilesData = [];
-
-                for (let i = 0; i < files.length; i++) {
-                    const file = files[i];
-                    const fileFormData = new FormData();
-                    fileFormData.append('file', file);
-                    fileFormData.append('media_type', 'file');
-
-                    const progressLabel = `${t('upload.uploadingFile')} (${i + 1}/${files.length})`;
-                    updateProgress(progressLabel, 0);
-
-                    let fileData;
-                    if (file.size > 30 * 1024 * 1024) {
-                        // Use Chunked Upload for > 30MB
-                        fileData = await uploadLargeFile(file, 'file', (p) => {
-                            updateProgress(progressLabel, p);
-                        });
-                    } else {
-                        // Standard Upload
-                        fileData = await uploadFileWithProgress('/api/upload', fileFormData, (p) => {
-                            updateProgress(progressLabel, p);
-                        });
-                    }
-                    uploadedFilesData.push({ ...fileData, originalName: file.name, size: file.size });
-                }
-
-                // 4. Create Resource
-                updateProgress(t('upload.creating'), 100);
-
-                // Construct links for uploaded files
-                const fileLinks = uploadedFilesData.map((f, index) => ({
-                    link_url: `/api/download/${f.r2_key}`,
-                    link_title: f.originalName,
-                    link_type: 'download',
-                    display_order: index,
-                    file_size: f.size,
-                    version: '1.0'
-                }));
-
-                const resourceBody = {
-                    title,
-                    description,
-                    category,
-                    thumbnail_uuid: thumbnailData.media_uuid,
-                    reference_image_uuid: galleryUuids.length > 0 ? galleryUuids[0] : null,
-                    media_files: [thumbnailData.media_uuid, ...galleryUuids, ...uploadedFilesData.map(f => f.media_uuid)], // Add all media UUIDs
-                    links: fileLinks,
-                    tags: tags // Add tags to payload
-                };
-
-                // Add Backup Links
-                const backupLinksText = document.getElementById('backup-links').value;
-                if (backupLinksText) {
-                    const urls = backupLinksText.split('\n').map(u => u.trim()).filter(u => u.length > 0);
-                    urls.forEach((url, index) => {
-                        resourceBody.links.push({
-                            link_url: url,
-                            link_title: 'Backup ' + (index + 1),
-                            link_type: 'download',
-                            display_order: fileLinks.length + index + 1
-                        });
-                    });
-                }
-
-                // Add token
-                resourceBody.token = turnstileToken;
-
-                const res = await fetch('/api/resources', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(resourceBody)
-                });
-
-                if (res.ok) {
-                    const data = await res.json();
-                    window.removeEventListener('beforeunload', preventNav); // Allow navigation
-                    if (nav) {
-                        nav.style.pointerEvents = 'auto';
-                        nav.style.opacity = '1';
-                    }
-                    navigateTo('/item/' + data.uuid);
-                } else {
-                    const err = await res.json();
-                    throw new Error(err.error || t('upload.errorCreateResource'));
-                }
-            } catch (err) {
-                console.error(err);
-                uploadError.textContent = `${t('upload.error')}: ${err.message}`;
-                progressContainer.style.display = 'none';
-                resetState();
-                if (window.turnstile && turnstileWidgetId) {
-                    window.turnstile.reset(turnstileWidgetId);
-                    turnstileToken = null;
-                }
-            }
-        });
-    }
+	}
+
+	async postRender() {
+		const router = (await import('../router.js')).router; // Circular dependency handling? Or pass router
+		// Actually, we can just use navigateTo from router or global
+		// We might need to export navigateTo from router.js
+
+		const form = document.getElementById('upload-form');
+		const descriptionField = document.getElementById('description');
+		const markdownPreview = document.getElementById('markdown-preview');
+		const thumbnailInput = document.getElementById('thumbnail');
+		const referenceInput = document.getElementById('reference-image');
+		const fileInput = document.getElementById('file');
+		const thumbnailPreview = document.getElementById('thumbnail-preview');
+		const referencePreview = document.getElementById('reference-preview');
+		const fileInfo = document.getElementById('file-info');
+		const uploadError = document.getElementById('upload-error');
+		const progressContainer = document.getElementById('progress-container');
+		const progressBar = document.getElementById('progress-bar');
+		const progressText = document.getElementById('progress-text');
+
+		let turnstileToken = null;
+		let turnstileWidgetId = null;
+
+		// Initialize Turnstile
+		try {
+			const configRes = await fetch('/api/config');
+			const config = await configRes.json();
+
+			if (window.turnstile) {
+				turnstileWidgetId = window.turnstile.render('#turnstile-container', {
+					sitekey: config.turnstileSiteKey,
+					callback: function (token) {
+						turnstileToken = token;
+					},
+					'expired-callback': function () {
+						turnstileToken = null;
+					},
+				});
+			}
+		} catch (e) {
+			console.error('Failed to load Turnstile config', e);
+		}
+
+		// Avatar Fields Logic
+		const categorySelect = document.getElementById('category');
+		const avatarFields = document.getElementById('avatar-fields');
+
+		const toggleAvatarFields = () => {
+			if (categorySelect.value === 'avatars') {
+				avatarFields.style.display = 'block';
+			} else {
+				avatarFields.style.display = 'none';
+			}
+		};
+
+		categorySelect.addEventListener('change', toggleAvatarFields);
+		toggleAvatarFields(); // Initial check
+
+		// Markdown Preview
+		descriptionField.addEventListener('input', () => {
+			const markdown = descriptionField.value;
+			if (window.marked) {
+				markdownPreview.innerHTML = window.marked.parse(markdown || `*${t('upload.noContent')}*`);
+			} else {
+				markdownPreview.textContent = markdown || t('upload.noContent');
+			}
+		});
+
+		// Trigger initial preview
+		descriptionField.dispatchEvent(new Event('input'));
+
+		// Size limits (must match backend)
+		const SIZE_LIMITS = {
+			image: 20 * 1024 * 1024, // 20MB
+			video: 100 * 1024 * 1024, // 100MB
+			file: 1500 * 1024 * 1024, // 1500MB
+		};
+		const MAX_IMAGE_DIMENSION = 4096; // 4096x4096 pixels
+
+		// Helper: Validate image dimensions
+		const validateImageDimensions = (file) => {
+			return new Promise((resolve) => {
+				const img = new Image();
+				const url = URL.createObjectURL(file);
+
+				img.onload = () => {
+					URL.revokeObjectURL(url);
+					if (img.width > MAX_IMAGE_DIMENSION || img.height > MAX_IMAGE_DIMENSION) {
+						resolve({
+							valid: false,
+							error: `Image dimensions too large. Maximum: ${MAX_IMAGE_DIMENSION}x${MAX_IMAGE_DIMENSION} pixels, got ${img.width}x${img.height} pixels`,
+						});
+					} else {
+						resolve({ valid: true, width: img.width, height: img.height });
+					}
+				};
+
+				img.onerror = () => {
+					URL.revokeObjectURL(url);
+					resolve({ valid: false, error: 'Could not load image for validation' });
+				};
+
+				img.src = url;
+			});
+		};
+
+		// Thumbnail Preview with Validation
+		thumbnailInput.addEventListener('change', async (e) => {
+			const file = e.target.files[0];
+			if (file) {
+				const isVideo = file.type.startsWith('video/');
+				const isImage = file.type.startsWith('image/');
+
+				// Validate file size
+				const maxSize = isVideo ? SIZE_LIMITS.video : SIZE_LIMITS.image;
+				if (file.size > maxSize) {
+					const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+					const maxMB = (maxSize / (1024 * 1024)).toFixed(0);
+					alert(`File too large. Maximum size for ${isVideo ? 'videos' : 'images'}: ${maxMB}MB, got ${sizeMB}MB`);
+					thumbnailInput.value = '';
+					thumbnailPreview.innerHTML = '';
+					return;
+				}
+
+				// Validate image dimensions
+				if (isImage) {
+					const dimensionCheck = await validateImageDimensions(file);
+					if (!dimensionCheck.valid) {
+						alert(dimensionCheck.error);
+						thumbnailInput.value = '';
+						thumbnailPreview.innerHTML = '';
+						return;
+					}
+				}
+
+				const url = URL.createObjectURL(file);
+
+				const container = document.createElement('div');
+				container.className = 'preview-item';
+				container.style.cssText =
+					'display: inline-block; position: relative; border: 2px solid var(--border-color); padding: 10px; margin: 5px; background: var(--bg-card);';
+
+				const deleteBtn = document.createElement('button');
+				deleteBtn.innerHTML = '✕';
+				deleteBtn.className = 'preview-delete-btn';
+				deleteBtn.style.cssText =
+					'position: absolute; top: 5px; right: 5px; background: #dc3545; color: white; border: none; border-radius: 3px; width: 25px; height: 25px; cursor: pointer; font-weight: bold; z-index: 10;';
+				deleteBtn.onclick = (e) => {
+					e.preventDefault();
+					thumbnailInput.value = '';
+					thumbnailPreview.innerHTML = '';
+					URL.revokeObjectURL(url);
+				};
+
+				const mediaElement = document.createElement(isVideo ? 'video' : 'img');
+				mediaElement.src = url;
+				mediaElement.style.cssText = 'max-width: 200px; max-height: 200px; display: block;';
+				if (isVideo) mediaElement.controls = true;
+
+				const filename = document.createElement('div');
+				filename.textContent = file.name;
+				filename.style.cssText =
+					'margin-top: 5px; font-size: 12px; color: var(--text-muted); max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;';
+
+				container.appendChild(deleteBtn);
+				container.appendChild(mediaElement);
+				container.appendChild(filename);
+
+				thumbnailPreview.innerHTML = '';
+				thumbnailPreview.appendChild(container);
+			}
+		});
+
+		// Reference Image Preview with File Management
+		let selectedReferenceFiles = [];
+
+		const renderReferencePreview = () => {
+			referencePreview.innerHTML = '';
+
+			selectedReferenceFiles.forEach((file, index) => {
+				const isVideo = file.type.startsWith('video/');
+				const url = URL.createObjectURL(file);
+
+				const container = document.createElement('div');
+				container.className = 'preview-item';
+				container.style.cssText =
+					'display: inline-block; position: relative; border: 2px solid var(--border-color); padding: 10px; margin: 5px; background: var(--bg-card); vertical-align: top;';
+
+				const deleteBtn = document.createElement('button');
+				deleteBtn.innerHTML = '✕';
+				deleteBtn.className = 'preview-delete-btn';
+				deleteBtn.style.cssText =
+					'position: absolute; top: 5px; right: 5px; background: #dc3545; color: white; border: none; border-radius: 3px; width: 25px; height: 25px; cursor: pointer; font-weight: bold; z-index: 10;';
+				deleteBtn.onclick = (e) => {
+					e.preventDefault();
+					// Remove file from array
+					selectedReferenceFiles.splice(index, 1);
+
+					// Update input with remaining files using DataTransfer
+					const dt = new DataTransfer();
+					selectedReferenceFiles.forEach((f) => dt.items.add(f));
+					referenceInput.files = dt.files;
+
+					// Re-render previews
+					renderReferencePreview();
+				};
+
+				const mediaElement = document.createElement(isVideo ? 'video' : 'img');
+				mediaElement.src = url;
+				mediaElement.style.cssText = 'max-width: 200px; max-height: 200px; object-fit: cover; display: block;';
+				if (isVideo) mediaElement.controls = true;
+
+				const filename = document.createElement('div');
+				filename.textContent = file.name;
+				filename.style.cssText =
+					'margin-top: 5px; font-size: 12px; color: var(--text-muted); max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;';
+
+				container.appendChild(deleteBtn);
+				container.appendChild(mediaElement);
+				container.appendChild(filename);
+
+				referencePreview.appendChild(container);
+			});
+		};
+
+		referenceInput.addEventListener('change', async (e) => {
+			const files = Array.from(e.target.files);
+
+			if (files.length > 8) {
+				alert(t('upload.maxFiles'));
+				referenceInput.value = '';
+				selectedReferenceFiles = [];
+				renderReferencePreview();
+				return;
+			}
+
+			// Validate each file
+			for (const file of files) {
+				const isVideo = file.type.startsWith('video/');
+				const isImage = file.type.startsWith('image/');
+				const maxSize = isVideo ? SIZE_LIMITS.video : SIZE_LIMITS.image;
+
+				// Check file size
+				if (file.size > maxSize) {
+					const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+					const maxMB = (maxSize / (1024 * 1024)).toFixed(0);
+					alert(`File "${file.name}" is too large. Maximum size for ${isVideo ? 'videos' : 'images'}: ${maxMB}MB, got ${sizeMB}MB`);
+					referenceInput.value = '';
+					selectedReferenceFiles = [];
+					renderReferencePreview();
+					return;
+				}
+
+				// Check image dimensions
+				if (isImage) {
+					const dimensionCheck = await validateImageDimensions(file);
+					if (!dimensionCheck.valid) {
+						alert(`Image "${file.name}": ${dimensionCheck.error}`);
+						referenceInput.value = '';
+						selectedReferenceFiles = [];
+						renderReferencePreview();
+						return;
+					}
+				}
+			}
+
+			selectedReferenceFiles = files;
+			renderReferencePreview();
+		});
+
+		// File Validation
+		fileInput.addEventListener('change', (e) => {
+			const files = Array.from(e.target.files);
+			fileInfo.innerHTML = '';
+			uploadError.textContent = '';
+
+			if (files.length > 3) {
+				fileInfo.innerHTML = `<span style="color: red;">✗ ${t('upload.errorMaxFiles')}</span>`;
+				uploadError.textContent = t('upload.errorMaxFiles');
+				fileInput.value = '';
+				return;
+			}
+
+			const validExtensions = ['.rar', '.zip', '.unitypackage'];
+			const MAX_FILE_SIZE = SIZE_LIMITS.file;
+			let allValid = true;
+
+			files.forEach((file) => {
+				const fileName = file.name.toLowerCase();
+				const isValid = validExtensions.some((ext) => fileName.endsWith(ext));
+				const sizeValid = file.size <= MAX_FILE_SIZE;
+
+				if (!isValid) allValid = false;
+				if (!sizeValid) allValid = false;
+
+				const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+				const maxMB = (MAX_FILE_SIZE / (1024 * 1024)).toFixed(0);
+
+				let color = 'green';
+				let symbol = '✓';
+				let message = `${file.name} (${sizeMB} MB)`;
+
+				if (!isValid) {
+					color = 'red';
+					symbol = '✗';
+					message += ` - ${t('upload.errorInvalidFileType')}`;
+				} else if (!sizeValid) {
+					color = 'red';
+					symbol = '✗';
+					message += ` - ${t('upload.errorFileTooLarge')} (max ${maxMB}MB)`;
+				}
+
+				const div = document.createElement('div');
+				div.innerHTML = `<span style="color: ${color};">${symbol} ${message}</span>`;
+				fileInfo.appendChild(div);
+			});
+
+			if (!allValid) {
+				uploadError.textContent = `${t('upload.error')}: Invalid files detected. Check the list above.`;
+				fileInput.value = '';
+			}
+		});
+
+		// Helper: Upload with progress
+		const uploadFileWithProgress = (url, formData, onProgress) => {
+			return new Promise((resolve, reject) => {
+				const xhr = new XMLHttpRequest();
+				xhr.open('PUT', url);
+
+				if (onProgress) {
+					xhr.upload.onprogress = (e) => {
+						if (e.lengthComputable) {
+							const percentComplete = (e.loaded / e.total) * 100;
+							onProgress(percentComplete);
+						}
+					};
+				}
+
+				xhr.onload = () => {
+					if (xhr.status >= 200 && xhr.status < 300) {
+						try {
+							resolve(JSON.parse(xhr.responseText));
+						} catch (e) {
+							reject(new Error('Invalid JSON response'));
+						}
+					} else {
+						reject(new Error(`Upload failed with status ${xhr.status}`));
+					}
+				};
+
+				xhr.onerror = () => reject(new Error('Network error during upload'));
+				xhr.send(formData);
+			});
+		};
+
+		// Helper: Upload Large File (Chunked)
+		const uploadLargeFile = async (file, mediaType, onProgress) => {
+			const CHUNK_SIZE = 30 * 1024 * 1024; // 30MB
+			const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+
+			// 1. Init
+			const initRes = await fetch('/api/upload/init', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ filename: file.name, media_type: mediaType }),
+			});
+
+			if (!initRes.ok) throw new Error('Failed to initialize upload');
+			const { uploadId, key } = await initRes.json();
+
+			// 2. Upload Parts
+			const parts = [];
+			let loaded = 0;
+
+			for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
+				const start = chunkIndex * CHUNK_SIZE;
+				const end = Math.min(start + CHUNK_SIZE, file.size);
+				const chunk = file.slice(start, end);
+				const partNumber = chunkIndex + 1;
+
+				const partRes = await fetch('/api/upload/part', {
+					method: 'PUT',
+					headers: {
+						'X-Upload-ID': uploadId,
+						'X-Key': key,
+						'X-Part-Number': partNumber.toString(),
+						'Content-Type': 'application/octet-stream', // Important
+					},
+					body: chunk,
+				});
+
+				if (!partRes.ok) throw new Error(`Failed to upload part ${partNumber}`);
+				const partData = await partRes.json();
+				parts.push(partData);
+
+				loaded += chunk.size;
+				const percent = (loaded / file.size) * 100;
+				onProgress(percent);
+			}
+
+			// 3. Complete
+			const completeRes = await fetch('/api/upload/complete', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					uploadId,
+					key,
+					parts,
+					filename: file.name,
+					media_type: mediaType,
+				}),
+			});
+
+			if (!completeRes.ok) throw new Error('Failed to complete upload');
+			return await completeRes.json();
+		};
+
+		// Helper: Update Progress UI
+		const updateProgress = (text, percent) => {
+			progressContainer.style.display = 'block';
+			progressBar.value = percent;
+			progressText.innerText = `${text} (${Math.round(percent)}%)`;
+		};
+
+		// Form Submit
+		form.addEventListener('submit', async (e) => {
+			e.preventDefault();
+			const btn = e.target.querySelector('button');
+			const originalText = btn.textContent;
+			btn.textContent = t('upload.uploading');
+			btn.disabled = true;
+			uploadError.textContent = '';
+
+			// Block navigation
+			const preventNav = (e) => {
+				e.preventDefault();
+				e.returnValue = '';
+			};
+			window.addEventListener('beforeunload', preventNav);
+
+			// Visual block for navbar
+			const nav = document.querySelector('nav');
+			if (nav) {
+				nav.style.pointerEvents = 'none';
+				nav.style.opacity = '0.5';
+			}
+
+			const title = document.getElementById('title').value;
+			let description = descriptionField.value; // Use let to allow modification
+			const category = document.getElementById('category').value;
+			const tagsInput = document.getElementById('tags').value;
+			const tags = tagsInput
+				.split(',')
+				.map((t) => t.trim())
+				.filter((t) => t.length > 0);
+
+			// Append Avatar Information if Category is Avatars
+			if (category === 'avatars') {
+				const platform = document.getElementById('avatar-platform').value;
+				const sdk = document.getElementById('avatar-sdk').value;
+				const version = document.getElementById('avatar-version').value;
+				const hasBlend = document.getElementById('avatar-blend').checked;
+				const usesPoiyomi = document.getElementById('avatar-poiyomi').checked;
+				const usesVrcFury = document.getElementById('avatar-vrcfury').checked;
+
+				let extraInfo = '\n\n---\n\n### Avatar Details\n';
+				extraInfo += `* Platform: ${platform}\n`;
+				extraInfo += `* SDK: ${sdk}\n`;
+				extraInfo += `* Version: ${version || 'Not specified'}\n`;
+				extraInfo += `* Contains .blend: ${hasBlend ? 'Yes' : 'No'}\n`;
+				extraInfo += `* Uses Poiyomi: ${usesPoiyomi ? 'Yes' : 'No'}\n`;
+				extraInfo += `* Uses VRCFury: ${usesVrcFury ? 'Yes' : 'No'}\n`;
+
+				description += extraInfo;
+			}
+			const file = fileInput.files[0];
+			const files = Array.from(fileInput.files); // Start using array of files
+			const thumbnail = thumbnailInput.files[0];
+			const referenceFiles = referenceInput.files;
+
+			const resetState = () => {
+				window.removeEventListener('beforeunload', preventNav);
+				if (nav) {
+					nav.style.pointerEvents = 'auto';
+					nav.style.opacity = '1';
+				}
+				btn.textContent = originalText;
+				btn.disabled = false;
+			};
+
+			// Validate main file(s)
+			const validExtensions = ['.rar', '.zip', '.unitypackage'];
+			let allFilesValid = true;
+
+			if (files.length === 0) {
+				uploadError.textContent = `${t('upload.error')}: No file selected`;
+				resetState();
+				return;
+			}
+
+			if (files.length > 3) {
+				uploadError.textContent = `${t('upload.error')}: Max 3 files allowed`;
+				resetState();
+				return;
+			}
+
+			files.forEach((f) => {
+				const fName = f.name.toLowerCase();
+				if (!validExtensions.some((ext) => fName.endsWith(ext))) {
+					allFilesValid = false;
+				}
+			});
+
+			if (!allFilesValid) {
+				uploadError.textContent = `${t('upload.error')}: ${t('upload.errorMainFile')}`;
+				resetState();
+				return;
+			}
+
+			if (!thumbnail) {
+				uploadError.textContent = `${t('upload.error')}: ${t('upload.errorThumbnail')}`;
+				resetState();
+				return;
+			}
+
+			if (!turnstileToken) {
+				uploadError.textContent = `${t('upload.error')}: ${t('upload.errorCaptcha')}`;
+				resetState();
+				return;
+			}
+
+			try {
+				// 1. Upload Thumbnail
+				const thumbnailFormData = new FormData();
+				thumbnailFormData.append('file', thumbnail);
+				thumbnailFormData.append('media_type', thumbnail.type.startsWith('video/') ? 'video' : 'image');
+
+				updateProgress(t('upload.uploadingThumbnail'), 0);
+				const thumbnailData = await uploadFileWithProgress('/api/upload', thumbnailFormData, (p) => {
+					updateProgress(t('upload.uploadingThumbnail'), p);
+				});
+
+				// 2. Upload Reference Images (Gallery)
+				const galleryUuids = [];
+				if (referenceFiles.length > 0) {
+					if (referenceFiles.length > 8) {
+						alert(t('upload.maxFiles'));
+						resetState();
+						progressContainer.style.display = 'none';
+						return;
+					}
+
+					for (let i = 0; i < referenceFiles.length; i++) {
+						const file = referenceFiles[i];
+						const formData = new FormData();
+						formData.append('file', file);
+						formData.append('media_type', file.type.startsWith('video/') ? 'video' : 'image');
+
+						updateProgress(`${t('upload.uploadingReference')} (${i + 1}/${referenceFiles.length})`, 0);
+						const data = await uploadFileWithProgress('/api/upload', formData, (p) => {
+							updateProgress(`${t('upload.uploadingReference')} (${i + 1}/${referenceFiles.length})`, p);
+						});
+						galleryUuids.push(data.media_uuid);
+					}
+				}
+
+				// 3. Upload Main File(s)
+				const files = Array.from(fileInput.files);
+				const uploadedFilesData = [];
+
+				for (let i = 0; i < files.length; i++) {
+					const file = files[i];
+					const fileFormData = new FormData();
+					fileFormData.append('file', file);
+					fileFormData.append('media_type', 'file');
+
+					const progressLabel = `${t('upload.uploadingFile')} (${i + 1}/${files.length})`;
+					updateProgress(progressLabel, 0);
+
+					let fileData;
+					if (file.size > 30 * 1024 * 1024) {
+						// Use Chunked Upload for > 30MB
+						fileData = await uploadLargeFile(file, 'file', (p) => {
+							updateProgress(progressLabel, p);
+						});
+					} else {
+						// Standard Upload
+						fileData = await uploadFileWithProgress('/api/upload', fileFormData, (p) => {
+							updateProgress(progressLabel, p);
+						});
+					}
+					uploadedFilesData.push({ ...fileData, originalName: file.name, size: file.size });
+				}
+
+				// 4. Create Resource
+				updateProgress(t('upload.creating'), 100);
+
+				// Construct links for uploaded files
+				const fileLinks = uploadedFilesData.map((f, index) => ({
+					link_url: `/api/download/${f.r2_key}`,
+					link_title: f.originalName,
+					link_type: 'download',
+					display_order: index,
+					file_size: f.size,
+					version: '1.0',
+				}));
+
+				const resourceBody = {
+					title,
+					description,
+					category,
+					thumbnail_uuid: thumbnailData.media_uuid,
+					reference_image_uuid: galleryUuids.length > 0 ? galleryUuids[0] : null,
+					media_files: [thumbnailData.media_uuid, ...galleryUuids, ...uploadedFilesData.map((f) => f.media_uuid)], // Add all media UUIDs
+					links: fileLinks,
+					tags: tags, // Add tags to payload
+				};
+
+				// Add Backup Links
+				const backupLinksText = document.getElementById('backup-links').value;
+				if (backupLinksText) {
+					const urls = backupLinksText
+						.split('\n')
+						.map((u) => u.trim())
+						.filter((u) => u.length > 0);
+					urls.forEach((url, index) => {
+						resourceBody.links.push({
+							link_url: url,
+							link_title: 'Backup ' + (index + 1),
+							link_type: 'download',
+							display_order: fileLinks.length + index + 1,
+						});
+					});
+				}
+
+				// Add token
+				resourceBody.token = turnstileToken;
+
+				const res = await fetch('/api/resources', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify(resourceBody),
+				});
+
+				if (res.ok) {
+					const data = await res.json();
+					DataCache.clear('/api/resources/latest');
+					DataCache.clear(`/api/resources?category=${category}`);
+					window.removeEventListener('beforeunload', preventNav); // Allow navigation
+					if (nav) {
+						nav.style.pointerEvents = 'auto';
+						nav.style.opacity = '1';
+					}
+					navigateTo('/item/' + data.uuid);
+				} else {
+					const err = await res.json();
+					throw new Error(err.error || t('upload.errorCreateResource'));
+				}
+			} catch (err) {
+				console.error(err);
+				uploadError.textContent = `${t('upload.error')}: ${err.message}`;
+				progressContainer.style.display = 'none';
+				resetState();
+				if (window.turnstile && turnstileWidgetId) {
+					window.turnstile.reset(turnstileWidgetId);
+					turnstileToken = null;
+				}
+			}
+		});
+	}
 }
 
 // Simple navigation helper if ignoring the module import issue
 function navigateTo(url) {
-    history.pushState(null, null, url);
-    // Router should pick this up via popstate dispatch or we call router() manually
-    // Ideally we import router, but avoiding circular dep issues for now.
-    // Better: Dispatch custom event 'navigate'
-    const event = new PopStateEvent('popstate');
-    window.dispatchEvent(event);
+	history.pushState(null, null, url);
+	// Router should pick this up via popstate dispatch or we call router() manually
+	// Ideally we import router, but avoiding circular dep issues for now.
+	// Better: Dispatch custom event 'navigate'
+	const event = new PopStateEvent('popstate');
+	window.dispatchEvent(event);
 }

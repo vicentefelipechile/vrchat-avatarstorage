@@ -31,7 +31,7 @@ export default class CategoryView extends AbstractView {
 		const urlParams = new URLSearchParams(window.location.search);
 		const page = parseInt(urlParams.get('page')) || 1;
 
-		const data = await DataCache.fetch(`/api/resources/category/${this.categoryKey}?page=${page}`, { ttl: 300000, persistent: true });
+		const data = await DataCache.fetch(`/api/resources/category/${this.categoryKey}?page=${page}`, { ttl: 3600000, persistent: true });
 
 		const container = document.getElementById('category-resources');
 		if (container) {
