@@ -108,12 +108,8 @@ Ainsi, vous contrôlez plusieurs options en ne dépensant que 8 bits de votre bu
 
 ## Références
 
-[1] VRChat. (n.d.). *Expression Parameters*. VRChat Documentation. https://creators.vrchat.com/avatars/animator-parameters/#expression-parameters-asset
-
-[2] VRChat. (n.d.). *Avatar Parameter Driver*. VRChat Documentation. https://creators.vrchat.com/avatars/state-behaviors/#avatar-parameter-driver
-
-[3] VRChat. (n.d.). *OSC Overview*. VRChat Documentation. https://creators.vrchat.com/avatars/osc/
-
-[4] Franada. (n.d.). *GoGo Loco Documentation*. https://github.com/Franada/goloco
-
-[5] VRCFury. (n.d.). *SPS - Super Plug Shader*. VRCFury Documentation. https://vrcfury.com/sps
+* VRChat. (n.d.). Expression Parameters. VRChat Documentation. https://creators.vrchat.com/avatars/animator-parameters/#expression-parameters-asset
+* VRChat. (n.d.). Avatar Parameter Driver. VRChat Documentation. https://creators.vrchat.com/avatars/state-behaviors/#avatar-parameter-driver
+* VRChat. (n.d.). OSC Overview. VRChat Documentation. https://creators.vrchat.com/avatars/osc/
+* Franada. (n.d.). GoGo Loco Documentation. https://github.com/Franada/goloco
+* VRCFury. (n.d.). SPS - Super Plug Shader. VRCFury Documentation. https://vrcfury.com/sps

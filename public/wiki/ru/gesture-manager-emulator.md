@@ -53,10 +53,7 @@
 
 ## Ссылки
 
-[1] BlackStartx. (б.д.). *VRC-Gesture-Manager*. GitHub. https://github.com/BlackStartx/VRC-Gesture-Manager
-
-[2] VRChat. (б.д.). *Expression Menu and Controls*. VRChat Documentation. https://creators.vrchat.com/avatars/expression-menu-and-controls
-
-[3] VRChat. (б.д.). *VCC Documentation*. VRChat Creator Companion. https://vcc.docs.vrchat.com
-
-[4] BlackStartx. (б.д.). *Gesture Manager*. Booth. https://blackstartx.booth.pm/items/3922472
+* BlackStartx. (б.д.). VRC-Gesture-Manager. GitHub. https://github.com/BlackStartx/VRC-Gesture-Manager
+* VRChat. (б.д.). Expression Menu and Controls. VRChat Documentation. https://creators.vrchat.com/avatars/expression-menu-and-controls
+* VRChat. (б.д.). VCC Documentation. VRChat Creator Companion. https://vcc.docs.vrchat.com
+* BlackStartx. (б.д.). Gesture Manager. Booth. https://blackstartx.booth.pm/items/3922472

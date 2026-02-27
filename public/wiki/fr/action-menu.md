@@ -54,8 +54,6 @@ Si vous devez tester quelque chose qui nécessite le réseau ou des interactions
 
 ## Références
 
-[1] VRChat. (s.d.). *Expression Menu and Controls*. VRChat Documentation. https://creators.vrchat.com/avatars/expression-menu-and-controls
-
-[2] BlackStartx. (s.d.). *VRC-Gesture-Manager*. GitHub. https://github.com/BlackStartx/VRC-Gesture-Manager
-
-[3] Lyuma. (s.d.). *Av3Emulator*. GitHub. https://github.com/lyuma/Av3Emulator
+* VRChat. (s.d.). Expression Menu and Controls. VRChat Documentation. https://creators.vrchat.com/avatars/expression-menu-and-controls
+* BlackStartx. (s.d.). VRC-Gesture-Manager. GitHub. https://github.com/BlackStartx/VRC-Gesture-Manager
+* Lyuma. (s.d.). Av3Emulator. GitHub. https://github.com/lyuma/Av3Emulator

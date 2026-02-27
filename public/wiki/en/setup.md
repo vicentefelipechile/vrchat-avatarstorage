@@ -37,10 +37,7 @@ Drag the **avatar prefab** into the scene. If everything is correct and Poiyomi 
 
 ## References
 
-[1] VRChat Inc. (n.d.). *VRChat Creator Companion*. VRChat. https://vrchat.com/home/download
-
-[2] Unity Technologies. (n.d.). *Unity Hub*. Unity. https://unity.com/download
-
-[3] Poiyomi. (n.d.). *Poiyomi Toon Shader*. GitHub. https://github.com/poiyomi/PoiyomiToonShader
-
-[4] VRCFury. (n.d.). *VRCFury Documentation*. https://vrcfury.com
+* VRChat Inc. (n.d.). VRChat Creator Companion. VRChat. https://vrchat.com/home/download
+* Unity Technologies. (n.d.). Unity Hub. Unity. https://unity.com/download
+* Poiyomi. (n.d.). Poiyomi Toon Shader. GitHub. https://github.com/poiyomi/PoiyomiToonShader
+* VRCFury. (n.d.). VRCFury Documentation. https://vrcfury.com

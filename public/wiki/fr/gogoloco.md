@@ -92,10 +92,7 @@ Si vous préférez ne pas utiliser VRCFury ou avez besoin d'un contrôle total, 
 
 ## Références
 
-[1] Franada. (s.d.). *Gogo Loco*. GitHub. https://github.com/Franada/goloco
-
-[2] Franada. (s.d.). *Gogo Loco*. Gumroad. https://franadavrc.gumroad.com/l/gogoloco
-
-[3] VRCFury. (s.d.). *VRCFury Documentation*. https://vrcfury.com
-
-[4] VRLabs. (s.d.). *Avatar 3.0 Manager*. GitHub. https://github.com/VRLabs/Avatars-3.0-Manager
+* Franada. (s.d.). Gogo Loco. GitHub. https://github.com/Franada/goloco
+* Franada. (s.d.). Gogo Loco. Gumroad. https://franadavrc.gumroad.com/l/gogoloco
+* VRCFury. (s.d.). VRCFury Documentation. https://vrcfury.com
+* VRLabs. (s.d.). Avatar 3.0 Manager. GitHub. https://github.com/VRLabs/Avatars-3-0-Manager

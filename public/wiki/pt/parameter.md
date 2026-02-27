@@ -108,12 +108,8 @@ Logo e com esse prospecto técnico prático exato você é capaz integramente co
 
 ## Referências
 
-[1] VRChat. (s.d.). *Expression Parameters*. VRChat Documentation. https://creators.vrchat.com/avatars/animator-parameters/#expression-parameters-asset
-
-[2] VRChat. (s.d.). *Avatar Parameter Driver*. VRChat Documentation. https://creators.vrchat.com/avatars/state-behaviors/#avatar-parameter-driver
-
-[3] VRChat. (s.d.). *OSC Overview*. VRChat Documentation. https://creators.vrchat.com/avatars/osc/
-
-[4] Franada. (s.d.). *GoGo Loco Documentation*. https://github.com/Franada/goloco
-
-[5] VRCFury. (s.d.). *SPS - Super Plug Shader*. VRCFury Documentation. https://vrcfury.com/sps
+* VRChat. (s.d.). Expression Parameters. VRChat Documentation. https://creators.vrchat.com/avatars/animator-parameters/#expression-parameters-asset
+* VRChat. (s.d.). Avatar Parameter Driver. VRChat Documentation. https://creators.vrchat.com/avatars/state-behaviors/#avatar-parameter-driver
+* VRChat. (s.d.). OSC Overview. VRChat Documentation. https://creators.vrchat.com/avatars/osc/
+* Franada. (s.d.). GoGo Loco Documentation. https://github.com/Franada/goloco
+* VRCFury. (s.d.). SPS - Super Plug Shader. VRCFury Documentation. https://vrcfury.com/sps

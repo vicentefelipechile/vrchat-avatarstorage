@@ -51,4 +51,4 @@ The installation process is divided into two main parts: preparing the avatar in
 
 ## References
 
-[1] Esska. (n.d.). *Esska Desktop Puppeteer*. BOOTH. https://esska.booth.pm/items/6366670
+* Esska. (n.d.). Esska Desktop Puppeteer. BOOTH. https://esska.booth.pm/items/6366670

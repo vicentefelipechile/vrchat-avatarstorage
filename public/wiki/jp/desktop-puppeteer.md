@@ -51,4 +51,4 @@
 
 ## 参考文献
 
-[1] Esska. (n.d.). *Esska Desktop Puppeteer*. BOOTH. https://esska.booth.pm/items/6366670
+* Esska. (n.d.). Esska Desktop Puppeteer. BOOTH. https://esska.booth.pm/items/6366670

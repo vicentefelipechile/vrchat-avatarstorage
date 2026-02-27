@@ -77,10 +77,7 @@ Você não precisa fazer o upload do avatar para testar se funciona.
 
 ## Referências
 
-[1] VRCFury. (s.d.). *SPS (Super Plug Shader)*. VRCFury Documentation. https://vrcfury.com/sps
-
-[2] VRCFury. (s.d.). *Download & Install*. VRCFury Documentation. https://vrcfury.com/download
-
-[3] VRCD. (s.d.). *SPS Tutorial*. VRCD. https://vrcd.org.cn
-
-[4] VRCFury. (s.d.). *SPS Troubleshooting*. VRCFury Documentation. https://vrcfury.com/sps
+* VRCFury. (s.d.). SPS (Super Plug Shader). VRCFury Documentation. https://vrcfury.com/sps
+* VRCFury. (s.d.). Download & Install. VRCFury Documentation. https://vrcfury.com/download
+* VRCD. (s.d.). SPS Tutorial. VRCD. https://vrcd.org.cn
+* VRCFury. (s.d.). SPS Troubleshooting. VRCFury Documentation. https://vrcfury.com/sps

@@ -51,4 +51,4 @@
 
 ## Рекомендации
 
-[1] Esska. (б.д.). *Esska Desktop Puppeteer*. BOOTH. https://esska.booth.pm/items/6366670
+* Esska. (б.д.). Esska Desktop Puppeteer. BOOTH. https://esska.booth.pm/items/6366670

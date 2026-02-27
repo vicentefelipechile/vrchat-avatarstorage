@@ -49,6 +49,5 @@
 
 ## Ссылки
 
-[1] Liindy. (н.д.). *Inside View (VRCFury)*. Jinxxy. https://jinxxy.com/Liindy/InsideView
-
-[2] Liindy. (н.д.). *Inside View*. Gumroad. https://jinxxy.com/Liindy/InsideView
+* Liindy. (н.д.). Inside View (VRCFury). Jinxxy. https://jinxxy.com/Liindy/InsideView
+* Liindy. (н.д.). Inside View. Gumroad. https://jinxxy.com/Liindy/InsideView

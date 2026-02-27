@@ -37,10 +37,7 @@ VCCのプロジェクトメニューで **"Open Project"** をクリックして
 
 ## 参考文献
 
-[1] VRChat Inc. (日付なし). *VRChat Creator Companion*. VRChat. https://vrchat.com/home/download
-
-[2] Unity Technologies. (日付なし). *Unity Hub*. Unity. https://unity.com/download
-
-[3] Poiyomi. (日付なし). *Poiyomi Toon Shader*. GitHub. https://github.com/poiyomi/PoiyomiToonShader
-
-[4] VRCFury. (日付なし). *VRCFury Documentation*. https://vrcfury.com
+* VRChat Inc. (日付なし). VRChat Creator Companion. VRChat. https://vrchat.com/home/download
+* Unity Technologies. (日付なし). Unity Hub. Unity. https://unity.com/download
+* Poiyomi. (日付なし). Poiyomi Toon Shader. GitHub. https://github.com/poiyomi/PoiyomiToonShader
+* VRCFury. (日付なし). VRCFury Documentation. https://vrcfury.com

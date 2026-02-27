@@ -73,10 +73,7 @@ Se não, use o **Avatars 3.0 Manager** para mesclar o Controlador FX e os Parâm
 
 ## Referências
 
-[1] Dismay. (s.d.). *Penetration Contact System*. Booth. https://dismay.booth.pm/items/5001027
-
-[2] VRCFury. (s.d.). *VRCFury Documentation*. https://vrcfury.com
-
-[3] OscGoesBrrr. (s.d.). *OscGoesBrrr*. https://osc.toys
-
-[4] Intiface. (s.d.). *Intiface Central*. https://intiface.com/desktop/
+* Dismay. (s.d.). Penetration Contact System. Booth. https://dismay.booth.pm/items/5001027
+* VRCFury. (s.d.). VRCFury Documentation. https://vrcfury.com
+* OscGoesBrrr. (s.d.). OscGoesBrrr. https://osc.toys
+* Intiface. (s.d.). Intiface Central. https://intiface.com/desktop/

@@ -37,10 +37,7 @@
 
 ## 参考资料
 
-[1] VRChat Inc. (无日期). *VRChat Creator Companion*. VRChat. https://vrchat.com/home/download
-
-[2] Unity Technologies. (无日期). *Unity Hub*. Unity. https://unity.com/download
-
-[3] Poiyomi. (无日期). *Poiyomi Toon Shader*. GitHub. https://github.com/poiyomi/PoiyomiToonShader
-
-[4] VRCFury. (无日期). *VRCFury Documentation*. https://vrcfury.com
+* VRChat Inc. (无日期). VRChat Creator Companion. VRChat. https://vrchat.com/home/download
+* Unity Technologies. (无日期). Unity Hub. Unity. https://unity.com/download
+* Poiyomi. (无日期). Poiyomi Toon Shader. GitHub. https://github.com/poiyomi/PoiyomiToonShader
+* VRCFury. (无日期). VRCFury Documentation. https://vrcfury.com

@@ -37,10 +37,7 @@ Arrastra el **prefab del avatar** a la escena. Si todo está correcto y Poiyomi 
 
 ## Referencias
 
-[1] VRChat Inc. (s.f.). *VRChat Creator Companion*. VRChat. https://vrchat.com/home/download
-
-[2] Unity Technologies. (s.f.). *Unity Hub*. Unity. https://unity.com/download
-
-[3] Poiyomi. (s.f.). *Poiyomi Toon Shader*. GitHub. https://github.com/poiyomi/PoiyomiToonShader
-
-[4] VRCFury. (s.f.). *VRCFury Documentation*. https://vrcfury.com
+* VRChat Inc. (s.f.). VRChat Creator Companion. VRChat. https://vrchat.com/home/download
+* Unity Technologies. (s.f.). Unity Hub. Unity. https://unity.com/download
+* Poiyomi. (s.f.). Poiyomi Toon Shader. GitHub. https://github.com/poiyomi/PoiyomiToonShader
+* VRCFury. (s.f.). VRCFury Documentation. https://vrcfury.com

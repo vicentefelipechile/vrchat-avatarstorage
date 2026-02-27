@@ -37,10 +37,7 @@
 
 ## Ссылки
 
-[1] VRChat Inc. (б.д.). *VRChat Creator Companion*. VRChat. https://vrchat.com/home/download
-
-[2] Unity Technologies. (б.д.). *Unity Hub*. Unity. https://unity.com/download
-
-[3] Poiyomi. (б.д.). *Poiyomi Toon Shader*. GitHub. https://github.com/poiyomi/PoiyomiToonShader
-
-[4] VRCFury. (б.д.). *VRCFury Documentation*. https://vrcfury.com
+* VRChat Inc. (б.д.). VRChat Creator Companion. VRChat. https://vrchat.com/home/download
+* Unity Technologies. (б.д.). Unity Hub. Unity. https://unity.com/download
+* Poiyomi. (б.д.). Poiyomi Toon Shader. GitHub. https://github.com/poiyomi/PoiyomiToonShader
+* VRCFury. (б.д.). VRCFury Documentation. https://vrcfury.com

@@ -54,8 +54,6 @@
 
 ## Ссылки
 
-[1] VRChat. (б.д.). *Expression Menu and Controls*. VRChat Documentation. https://creators.vrchat.com/avatars/expression-menu-and-controls
-
-[2] BlackStartx. (б.д.). *VRC-Gesture-Manager*. GitHub. https://github.com/BlackStartx/VRC-Gesture-Manager
-
-[3] Lyuma. (б.д.). *Av3Emulator*. GitHub. https://github.com/lyuma/Av3Emulator
+* VRChat. (б.д.). Expression Menu and Controls. VRChat Documentation. https://creators.vrchat.com/avatars/expression-menu-and-controls
+* BlackStartx. (б.д.). VRC-Gesture-Manager. GitHub. https://github.com/BlackStartx/VRC-Gesture-Manager
+* Lyuma. (б.д.). Av3Emulator. GitHub. https://github.com/lyuma/Av3Emulator

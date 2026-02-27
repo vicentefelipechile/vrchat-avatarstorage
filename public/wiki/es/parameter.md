@@ -108,12 +108,8 @@ Si quieres crear un selector de colores para tu ropa:
 
 ## Referencias
 
-[1] VRChat. (s.f.). *Expression Parameters*. VRChat Documentation. https://creators.vrchat.com/avatars/animator-parameters/#expression-parameters-asset
-
-[2] VRChat. (s.f.). *Avatar Parameter Driver*. VRChat Documentation. https://creators.vrchat.com/avatars/state-behaviors/#avatar-parameter-driver
-
-[3] VRChat. (s.f.). *OSC Overview*. VRChat Documentation. https://creators.vrchat.com/avatars/osc/
-
-[4] Franada. (s.f.). *GoGo Loco Documentation*. https://github.com/Franada/goloco
-
-[5] VRCFury. (s.f.). *SPS - Super Plug Shader*. VRCFury Documentation. https://vrcfury.com/sps
+* VRChat. (s.f.). Expression Parameters. VRChat Documentation. https://creators.vrchat.com/avatars/animator-parameters/#expression-parameters-asset
+* VRChat. (s.f.). Avatar Parameter Driver. VRChat Documentation. https://creators.vrchat.com/avatars/state-behaviors/#avatar-parameter-driver
+* VRChat. (s.f.). OSC Overview. VRChat Documentation. https://creators.vrchat.com/avatars/osc/
+* Franada. (s.f.). GoGo Loco Documentation. https://github.com/Franada/goloco
+* VRCFury. (s.f.). SPS - Super Plug Shader. VRCFury Documentation. https://vrcfury.com/sps

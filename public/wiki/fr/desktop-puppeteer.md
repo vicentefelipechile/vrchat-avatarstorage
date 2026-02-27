@@ -51,4 +51,4 @@ Le processus d'installation est divisé en deux parties principales : la prépar
 
 ## Références
 
-[1] Esska. (s.d.). *Esska Desktop Puppeteer*. BOOTH. https://esska.booth.pm/items/6366670
+* Esska. (s.d.). Esska Desktop Puppeteer. BOOTH. https://esska.booth.pm/items/6366670

@@ -49,6 +49,5 @@ O asset funciona através de uma animação de profundidade (Depth Animation).
 
 ## Referências
 
-[1] Liindy. (s.d.). *Inside View (VRCFury)*. Jinxxy. https://jinxxy.com/Liindy/InsideView
-
-[2] Liindy. (s.d.). *Inside View*. Jinxxy. https://jinxxy.com/Liindy/InsideView
+* Liindy. (s.d.). Inside View (VRCFury). Jinxxy. https://jinxxy.com/Liindy/InsideView
+* Liindy. (s.d.). Inside View. Jinxxy. https://jinxxy.com/Liindy/InsideView

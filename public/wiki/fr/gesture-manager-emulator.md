@@ -53,10 +53,7 @@ Si vous n'utilisez pas le VCC ou si vous avez besoin d'une version spécifique :
 
 ## Références
 
-[1] BlackStartx. (s.d.). *VRC-Gesture-Manager*. GitHub. https://github.com/BlackStartx/VRC-Gesture-Manager
-
-[2] VRChat. (s.d.). *Expression Menu and Controls*. VRChat Documentation. https://creators.vrchat.com/avatars/expression-menu-and-controls
-
-[3] VRChat. (s.d.). *VCC Documentation*. VRChat Creator Companion. https://vcc.docs.vrchat.com
-
-[4] BlackStartx. (s.d.). *Gesture Manager*. Booth. https://blackstartx.booth.pm/items/3922472
+* BlackStartx. (s.d.). VRC-Gesture-Manager. GitHub. https://github.com/BlackStartx/VRC-Gesture-Manager
+* VRChat. (s.d.). Expression Menu and Controls. VRChat Documentation. https://creators.vrchat.com/avatars/expression-menu-and-controls
+* VRChat. (s.d.). VCC Documentation. VRChat Creator Companion. https://vcc.docs.vrchat.com
+* BlackStartx. (s.d.). Gesture Manager. Booth. https://blackstartx.booth.pm/items/3922472

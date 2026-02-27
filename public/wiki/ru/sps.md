@@ -77,10 +77,7 @@ SPS полностью управляется через инструменты 
 
 ## Ссылки
 
-[1] VRCFury. (n.d.). *SPS (Super Plug Shader)*. VRCFury Documentation. https://vrcfury.com/sps
-
-[2] VRCFury. (n.d.). *Download & Install*. VRCFury Documentation. https://vrcfury.com/download
-
-[3] VRCD. (n.d.). *SPS Tutorial*. VRCD. https://vrcd.org.cn
-
-[4] VRCFury. (n.d.). *SPS Troubleshooting*. VRCFury Documentation. https://vrcfury.com/sps
+* VRCFury. (n.d.). SPS (Super Plug Shader). VRCFury Documentation. https://vrcfury.com/sps
+* VRCFury. (n.d.). Download & Install. VRCFury Documentation. https://vrcfury.com/download
+* VRCD. (n.d.). SPS Tutorial. VRCD. https://vrcd.org.cn
+* VRCFury. (n.d.). SPS Troubleshooting. VRCFury Documentation. https://vrcfury.com/sps
