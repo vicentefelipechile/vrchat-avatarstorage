@@ -87,6 +87,52 @@
 		<p>&copy; 2026 VRCStorage - Grayscale Edition</p>
 	</footer>
 
+	<!-- Version Info Button -->
+	<button id="version-info-btn" class="version-info-btn" aria-label="Version Info" title="Version Info">
+		<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+			<circle cx="12" cy="12" r="10"></circle>
+			<path d="M12 16v-4"></path>
+			<path d="M12 8h.01"></path>
+		</svg>
+	</button>
+
+	<!-- Version Info Modal -->
+	<div id="version-info-modal" class="version-info-modal" style="display: none;">
+		<div class="version-info-content">
+			<div class="version-info-header">
+				<h3>Version Info</h3>
+				<button id="version-info-close" class="version-info-close">&times;</button>
+			</div>
+			<div id="version-info-loading" class="version-info-loading">
+				<p>Loading...</p>
+			</div>
+			<div id="version-info-data" class="version-info-data" style="display: none;">
+				<table class="version-info-table">
+					<tr><th colspan="2" style="text-align: center;">Worker</th></tr>
+					<tr><td>Version ID</td><td><code id="vi-version-id">-</code></td></tr>
+					<tr><td>Version Tag</td><td><code id="vi-version-tag">-</code></td></tr>
+					<tr><td>Commit</td><td><code id="vi-commit">-</code></td></tr>
+					<tr><td>Deployed At</td><td><code id="vi-deployed">-</code></td></tr>
+					<tr><td>Compatibility</td><td><code id="vi-compat">-</code></td></tr>
+					<tr><th colspan="2" style="text-align: center;">Runtime</th></tr>
+					<tr><td>Runtime</td><td><code id="vi-runtime">-</code></td></tr>
+					<tr><td>Node Version</td><td><code id="vi-node">-</code></td></tr>
+					<tr><th colspan="2" style="text-align: center;">Environment</th></tr>
+					<tr><td>Country</td><td><code id="vi-country">-</code></td></tr>
+					<tr><td>Colo</td><td><code id="vi-colo">-</code></td></tr>
+					<tr><td>Ray ID</td><td><code id="vi-ray">-</code></td></tr>
+					<tr><td>Request ID</td><td><code id="vi-req-id">-</code></td></tr>
+				</table>
+				<p style="text-align: center; margin-top: 10px; font-size: 12px; color: #888;">
+					Generated: <span id="vi-generated">-</span>
+				</p>
+			</div>
+			<div id="version-info-error" class="version-info-error" style="display: none;">
+				<p>Failed to load version info</p>
+			</div>
+		</div>
+	</div>
+
 	<script type="module" src="/js/app.js"></script>
 </body>
 

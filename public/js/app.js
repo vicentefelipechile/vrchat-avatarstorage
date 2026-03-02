@@ -209,6 +209,86 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     // --------------------------
 
+    // --- Version Info Modal Logic ---
+    const versionInfoBtn = document.getElementById('version-info-btn');
+    const versionInfoModal = document.getElementById('version-info-modal');
+    const versionInfoClose = document.getElementById('version-info-close');
+    const versionInfoLoading = document.getElementById('version-info-loading');
+    const versionInfoData = document.getElementById('version-info-data');
+    const versionInfoError = document.getElementById('version-info-error');
+    let versionInfoLoaded = false;
+
+    function populateVersionInfo(data) {
+        if (data.worker) {
+            document.getElementById('vi-version-id').textContent = data.worker.versionId || 'unknown';
+            document.getElementById('vi-version-tag').textContent = data.worker.versionTag || 'unknown';
+            document.getElementById('vi-commit').textContent = data.worker.commitHash || 'unknown';
+            document.getElementById('vi-deployed').textContent = data.worker.deployedAt || 'unknown';
+            document.getElementById('vi-compat').textContent = data.worker.compatibilityDate || 'unknown';
+        }
+        if (data.runtime) {
+            document.getElementById('vi-runtime').textContent = data.runtime.name || 'unknown';
+            document.getElementById('vi-node').textContent = data.request.nodeVersion || 'unknown';
+        }
+        if (data.environment) {
+            document.getElementById('vi-country').textContent = data.environment.country || 'unknown';
+            document.getElementById('vi-colo').textContent = data.environment.colo || 'unknown';
+        }
+        if (data.request) {
+            document.getElementById('vi-ray').textContent = data.request.rayId || 'unknown';
+            document.getElementById('vi-req-id').textContent = data.request.requestId || 'unknown';
+        }
+        if (data.build) {
+            document.getElementById('vi-generated').textContent = data.build.timestamp || 'unknown';
+        }
+    }
+
+    async function loadVersionInfo() {
+        if (versionInfoLoaded) return;
+        
+        try {
+            const response = await fetch('/api/version');
+            if (!response.ok) throw new Error('Failed to fetch');
+            const data = await response.json();
+            populateVersionInfo(data);
+            versionInfoLoading.style.display = 'none';
+            versionInfoData.style.display = 'block';
+            versionInfoLoaded = true;
+        } catch (err) {
+            console.error('Failed to load version info:', err);
+            versionInfoLoading.style.display = 'none';
+            versionInfoError.style.display = 'block';
+        }
+    }
+
+    if (versionInfoBtn && versionInfoModal) {
+        versionInfoBtn.addEventListener('click', () => {
+            versionInfoModal.style.display = 'flex';
+            loadVersionInfo();
+        });
+
+        if (versionInfoClose) {
+            versionInfoClose.addEventListener('click', () => {
+                versionInfoModal.style.display = 'none';
+            });
+        }
+
+        // Close on background click
+        versionInfoModal.addEventListener('click', (e) => {
+            if (e.target === versionInfoModal) {
+                versionInfoModal.style.display = 'none';
+            }
+        });
+
+        // Close on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && versionInfoModal.style.display === 'flex') {
+                versionInfoModal.style.display = 'none';
+            }
+        });
+    }
+    // --------------------------
+
     document.body.addEventListener('click', e => {
         const link = e.target.closest('[data-link]');
         if (link) {
