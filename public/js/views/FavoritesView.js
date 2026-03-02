@@ -5,6 +5,8 @@ import { stripMarkdown } from '../utils.js';
 
 export default class FavoritesView extends AbstractView {
 	async getHtml() {
+		this.setTitle('VRCStorage - Favorites');
+
 		return `
             <div class="category-header">
                 <h1>${t('nav.favorites')}</h1>

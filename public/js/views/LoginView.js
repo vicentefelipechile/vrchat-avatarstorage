@@ -9,6 +9,8 @@ export default class LoginView extends AbstractView {
 	}
 
 	async getHtml() {
+		this.setTitle('VRCStorage - Login');
+
 		if (window.appState.isLoggedIn) {
 			window.navigateTo('/settings');
 			return '';

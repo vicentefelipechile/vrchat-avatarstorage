@@ -1,9 +1,19 @@
 import * as OTPAuth from 'otpauth';
+import { seal, unseal, defaults } from '@hapi/iron';
 
 export interface TwoFactorSetup {
 	secret: string;
 	otpauthUrl: string;
 	backupCodes: string[];
+}
+
+const SEAL_OPTIONS = {
+	...defaults,
+	ttl: 1000 * 60 * 60 * 24 * 365, // 1 year - long lived for stored secrets
+};
+
+function getEncryptionPassword(encryptionKey: string): string {
+	return encryptionKey;
 }
 
 export function generateTwoFactorSecret(username: string, issuer: string = 'VRCStorage'): TwoFactorSetup {
@@ -44,7 +54,10 @@ export function verifyTwoFactorCode(secret: string, code: string): boolean {
 export function generateBackupCodes(count: number = 8): string[] {
 	const codes: string[] = [];
 	for (let i = 0; i < count; i++) {
-		const code = Math.random().toString(36).substring(2, 6).toUpperCase() + Math.random().toString(36).substring(2, 6).toUpperCase();
+		// Use crypto.getRandomValues() for cryptographically secure random codes
+		const array = new Uint8Array(4);
+		crypto.getRandomValues(array);
+		const code = Array.from(array, b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
 		codes.push(code);
 	}
 	return codes;
@@ -89,30 +102,43 @@ export async function useBackupCode(hashedCodes: string, code: string): Promise<
 	return codes.join('|');
 }
 
-export function encryptSecret(secret: string, encryptionKey: string): string {
-	const encoder = new TextEncoder();
-	const data = encoder.encode(secret);
-
-	let result = '';
-	const keyBytes = encoder.encode(encryptionKey);
-
-	for (let i = 0; i < data.length; i++) {
-		result += String.fromCharCode(data[i] ^ keyBytes[i % keyBytes.length]);
-	}
-
-	return btoa(result);
+export async function encryptSecret(secret: string, encryptionKey: string): Promise<string> {
+	const password = getEncryptionPassword(encryptionKey);
+	return await seal(secret, password, SEAL_OPTIONS);
 }
 
-export function decryptSecret(encryptedSecret: string, encryptionKey: string): string {
-	const encoder = new TextEncoder();
-	const decoded = atob(encryptedSecret);
-
-	let result = '';
-	const keyBytes = encoder.encode(encryptionKey);
-
-	for (let i = 0; i < decoded.length; i++) {
-		result += String.fromCharCode(decoded.charCodeAt(i) ^ keyBytes[i % keyBytes.length]);
+export async function decryptSecret(encryptedSecret: string, encryptionKey: string): Promise<string | null> {
+	const password = getEncryptionPassword(encryptionKey);
+	
+	try {
+		// First try new iron encryption
+		return await unseal(encryptedSecret, password, SEAL_OPTIONS);
+	} catch (err) {
+		// Fallback: Try old XOR method for backward compatibility with existing users
+		const oldResult = decryptSecretXOR(encryptedSecret, encryptionKey);
+		if (oldResult) {
+			return oldResult;
+		}
+		console.error('Failed to decrypt 2FA secret:', err);
+		return null;
 	}
+}
 
-	return result;
+// Legacy XOR decryption for backward compatibility with existing users
+function decryptSecretXOR(encryptedSecret: string, encryptionKey: string): string | null {
+	try {
+		const encoder = new TextEncoder();
+		const decoded = atob(encryptedSecret);
+		
+		let result = '';
+		const keyBytes = encoder.encode(encryptionKey);
+		
+		for (let i = 0; i < decoded.length; i++) {
+			result += String.fromCharCode(decoded.charCodeAt(i) ^ keyBytes[i % keyBytes.length]);
+		}
+		
+		return result;
+	} catch {
+		return null;
+	}
 }

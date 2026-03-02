@@ -5,6 +5,8 @@ import { stripMarkdown } from '../utils.js';
 
 export default class HomeView extends AbstractView {
 	async getHtml() {
+		this.setTitle('VRCStorage');
+
 		const apiCategories = ['avatars', 'assets', 'clothes'];
 
 		const latest = await DataCache.fetch('/api/resources/latest', 3600000);

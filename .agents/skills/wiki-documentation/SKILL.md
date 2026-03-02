@@ -1,214 +1,381 @@
 ---
-name: VRChat Wiki Documentation
-description: Guidelines for creating and editing wiki articles in the VRCStorage project.
+name: VRCStorage Wiki Documentation
+description: Guidelines for researching, writing, and translating wiki articles for VRCStorage. Covers the full workflow from research to multilingual publishing.
 ---
 
-# VRChat Wiki Documentation
+# VRCStorage Wiki Documentation
 
 > [!IMPORTANT]
-> Follow this guide EXACTLY. Do not deviate from templates or formats.
+> This skill defines a workflow with BLOCKING steps. Each step depends on the previous one being completed. NEVER skip steps. NEVER translate without explicit user confirmation.
 
 ---
 
-## 1. Quick Reference
+## 0. Project Languages
 
-| Task | Action |
-|------|--------|
-| New topic | Create ES first → confirm with user → translate |
-| References | Use `* Author. (Year). Title. Platform. URL` |
-| Internal links | `[text](/wiki?topic=slug)` |
-| Badges | `<span class="badge badge-blue">Category</span>` |
-| Alerts | `> [!NOTE]`, `> [!TIP]`, `> [!WARNING]` |
+| Code | Language | Folder |
+|------|----------|--------|
+| `es` | Spanish | `public/wiki/es/` |
+| `en` | English | `public/wiki/en/` |
+| `pt` | Portuguese | `public/wiki/pt/` |
+| `ru` | Russian | `public/wiki/ru/` |
+| `ja` | Japanese | `public/wiki/ja/` |
+| `zh` | Chinese | `public/wiki/zh/` |
+| `fr` | French | `public/wiki/fr/` |
 
----
-
-## 2. Templates
-
-### 2.1 Guía Paso a Paso (Setup Style)
-
-```markdown
-# Título de la Guía
-Descripción breve de qué trata esta guía.
-
-> [!NOTE]
-> Nota introductoria importante.
-
-### Paso 1: Título del Paso
-Descripción del paso. Incluye enlaces relevantes.
-
-### Paso 2: Título del Paso
-Descripción del paso.
-
-> [!TIP]
-> Consejo útil opcional.
+**Spanish is always the primary language.** Everything starts from the Spanish version.
 
 ---
 
-## Referencias
+## 1. Full Workflow — MANDATORY
 
-* Autor. (Año). Título. Plataforma. URL
 ```
-
-### 2.2 Documento de Referencia (Parameter Style)
-
-```markdown
-# Título del Tema
-Descripción general del tema.
-
-## Sección 1
-Contenido de la sección.
-
-## Sección 2
-Contenido de la sección.
-
-### Subsection
-Más detalles.
-
-> [!IMPORTANT]
-> Información crítica.
-
----
-
-## Referencias
-
-* Autor. (Año). Título. Plataforma. URL
-* Otro Autor. (Año). Título. Plataforma. URL
-```
-
-### 2.3 FAQ
-
-```markdown
-# Preguntas Frecuentes
-
-## Pregunta 1
-Respuesta a la pregunta 1.
-
-## Pregunta 2
-Respuesta a la pregunta 2.
-
-> [!TIP]
-> Consejo relacionado con las preguntas frecuentes.
-
----
-
-## Referencias
-
-* Fuente. (Año). Título. URL
-```
-
----
-
-## 3. Reference Format (CRITICAL)
-
-### CORRECTO ✓
-
-```markdown
-## Referencias
-
-* VRChat Inc. (s.f.). VRChat Creator Companion. VRChat. https://vrchat.com/home/download
-* Poiyomi. (s.f.). Poiyomi Toon Shader. GitHub. https://github.com/poiyomi/PoiyomiToonShader
-```
-
-### INCORRECTO ✗
-
-```markdown
-## Referencias
-
-[1] VRChat Inc. (s.f.). VRChat Creator Companion. https://vrchat.com/home/download
-
-[2] Poiyomi. (s.f.). Poiyomi Toon Shader. https://github.com/poiyomi/PoiyomiToonShader
+NEW TOPIC
+    │
+    ▼
+[STEP 1] Research on the internet
+    │  Search for official sources, documentation, guides
+    │
+    ▼
+[STEP 2] Write draft in SPANISH
+    │  Use the correct template (see Section 3)
+    │  Verify ALL links with WebFetch
+    │  Format references in APA (see Section 4)
+    │
+    ▼
+[STEP 3] ⛔ PAUSE — Show draft to user
+    │  Exact message: "I've created the Spanish draft.
+    │  Please review it and let me know if any changes are needed before continuing."
+    │  WAIT for response. DO NOT continue without it.
+    │
+    ▼
+[STEP 4] Did the user request changes?
+    │  YES → Apply changes → go back to STEP 3
+    │  NO  → Continue
+    │
+    ▼
+[STEP 5] ⛔ PAUSE — Request explicit confirmation
+    │  Exact message: "Do you confirm the Spanish content is correct
+    │  and I can proceed to translate it to the other languages?"
+    │  WAIT for "yes", "confirmed", "go ahead" or equivalent.
+    │  If the user says something ambiguous → ask again.
+    │  DO NOT interpret silence as confirmation.
+    │
+    ▼
+[STEP 6] Translate to the other languages
+    │  Order: en → pt → ru → ja → zh → fr
+    │  Only the languages the user requests (or all if not specified)
+    │
+    ▼
+[STEP 7] Update WikiView.js and i18n.js
+    │
+    ▼
+COMPLETED ✓
 ```
 
 > [!WARNING]
-> NEVER use numbered references like `[1]`, `[2]`. ALWAYS use bullet points `*`.
+> **STEP 3 and STEP 5 are BLOCKING.** The agent MUST stop and wait for the user. Continuing without confirmation is a critical workflow error.
 
 ---
 
-## 4. Workflow: Creating a New Topic
+## 2. Research (Step 1)
 
-### Step 1: Create Spanish Version
-Create `public/wiki/es/[topic-slug].md` using the appropriate template from Section 2.
+Before writing a single line of content, search for:
 
-### Step 2: Verify All Links
-Before finalizing, verify EVERY external URL using WebFetch:
-- VRChat docs: `https://creators.vrchat.com/...`
-- VCC docs: `https://vcc.drc.vrchat.com/...`
-- GitHub/Booth/Gumroad links
+1. **Official VRChat documentation**: `https://creators.vrchat.com/`
+2. **VCC (VRChat Creator Companion)**: `https://vcc.docs.vrchat.com/`
+3. **GitHub repositories** for the relevant tool/shader
+4. **Download pages** (Booth, Gumroad, GitHub Releases)
+
+For each source found:
+- Verify with `WebFetch` that the URL loads correctly (not 404)
+- Note: author, year or "n.d." if no date, title, platform, URL
 
 > [!IMPORTANT]
-> Unverified links are PROHIBITED. Check each URL manually.
+> URLs that return 404 or an error CANNOT be used as references or links in the article.
 
-### Step 3: Request User Confirmation
-Send message to user:
+---
+
+## 3. Content Templates
+
+Choose the template based on the type of article:
+
+### 3.1 Step-by-Step Guide
+
+Use when the article explains how to do something (installation, configuration, process).
+
+```markdown
+# Guide Title
+Brief description of what this guide covers and who it's for.
+
+> [!NOTE]
+> Important introductory note if applicable.
+
+## Requirements
+* Requirement 1
+* Requirement 2
+
+## Step 1: Step Name
+Clear description of the step. Include links if applicable.
+
+## Step 2: Step Name
+Description of the step.
+
+> [!TIP]
+> Useful tip related to this step.
+
+## Step 3: Step Name
+Description of the step.
+
+> [!WARNING]
+> Warning if this step can cause problems.
+
+---
+
+## References
+
+* Author, A. (Year). *Resource Title*. Platform. URL
 ```
-He creado el draft en español. ¿Confirmas que el contenido es correcto antes de traducir a otros idiomas?
+
+### 3.2 Reference Document
+
+Use when the article describes concepts, parameters, or technical information.
+
+```markdown
+# Topic Title
+General description of the topic in 2-3 sentences.
+
+## Main Section
+Section content.
+
+### Subsection
+More details if necessary.
+
+> [!IMPORTANT]
+> Critical information the user must know.
+
+## Another Section
+Content.
+
+---
+
+## References
+
+* Author, A. (Year). *Resource Title*. Platform. URL
+* Author, B. (n.d.). *Resource Title*. Platform. URL
 ```
 
-Wait for explicit user confirmation before proceeding.
+### 3.3 FAQ
 
-### Step 4: Update WikiView.js
-Add topic to `public/js/views/WikiView.js`:
+Use when the article answers frequently asked questions.
+
+```markdown
+# Frequently Asked Questions — Topic
+
+## Question 1?
+Complete answer to the question.
+
+## Question 2?
+Complete answer.
+
+> [!TIP]
+> Related tip.
+
+## Question 3?
+Complete answer.
+
+---
+
+## References
+
+* Author, A. (Year). *Title*. Platform. URL
+```
+
+---
+
+## 4. APA Reference Format — CRITICAL
+
+### Base APA Format
+
+```
+Last Name, N. (Year). *Work Title*. Platform/Publisher Name. URL
+```
+
+If no date is known, use `(n.d.)` (no date).
+If there is no individual author, use the organization name.
+
+### CORRECT Examples ✓
+
+```markdown
+## References
+
+* VRChat Inc. (n.d.). *VRChat Creator Companion*. VRChat. https://vcc.docs.vrchat.com/
+* Poiyomi. (n.d.). *Poiyomi Toon Shader*. GitHub. https://github.com/poiyomi/PoiyomiToonShader
+* Lyuma. (2023). *Av3Emulator - Avatar 3.0 Emulator*. GitHub. https://github.com/lyuma/Av3Emulator
+* VRChat Inc. (2024). *Avatar SDK 3 Overview*. VRChat Creators. https://creators.vrchat.com/avatars/
+```
+
+### INCORRECT Examples ✗
+
+```markdown
+## References
+
+[1] VRChat Inc. VRChat Creator Companion. https://vcc.docs.vrchat.com/    ← no year, no APA format, numbered
+
+[2] https://github.com/poiyomi/PoiyomiToonShader                          ← URL only, no author or title
+
+* Poiyomi Toon Shader - https://github.com/poiyomi/PoiyomiToonShader      ← free format, not APA
+```
+
+### APA Rules for This Project
+
+| Situation | Format |
+|-----------|--------|
+| Organization as author | `VRChat Inc. (n.d.).` |
+| Person as author | `Last Name, N. (Year).` or `Username. (Year).` |
+| No date | `(n.d.)` — never leave blank |
+| Resource title | Always in *italics* using `*asterisks*` |
+| No clear publisher/platform | Omit that field |
+| Long URL | Include it in full, do not shorten |
+
+> [!WARNING]
+> NEVER use `[1]`, `[2]` or numbering. ALWAYS use `*` for each reference. ALWAYS include the title in italics.
+
+---
+
+## 5. Formatting Elements
+
+### Badges
+
+Only use existing colors. Do not create new ones.
+
+```html
+<span class="badge badge-blue">Tool</span>
+<span class="badge badge-purple">Shader</span>
+```
+
+### Alerts (Callouts)
+
+```markdown
+> [!NOTE]
+> Additional useful information that is not critical.
+
+> [!TIP]
+> Practical tip that improves the experience.
+
+> [!IMPORTANT]
+> Information the user MUST read.
+
+> [!WARNING]
+> Warning about something that can go wrong.
+```
+
+### Internal Links
+
+```markdown
+[visible text](/wiki?topic=topic-slug)
+```
+
+Examples:
+```markdown
+[Installation guide](/wiki?topic=installation-guide)
+[VCC](/wiki?topic=vcc-setup)
+```
+
+### External Links
+
+```markdown
+[visible text](https://full-url.com)
+```
+
+> [!IMPORTANT]
+> All external links must be verified with WebFetch before including them.
+
+---
+
+## 6. Files to Create/Modify
+
+When completing a new article, create or modify these files:
+
+### 6.1 Markdown File per Language
+
+```
+public/wiki/es/[topic-slug].md   ← first
+public/wiki/en/[topic-slug].md   ← after confirmation
+public/wiki/pt/[topic-slug].md
+public/wiki/ru/[topic-slug].md
+public/wiki/ja/[topic-slug].md
+public/wiki/zh/[topic-slug].md
+public/wiki/fr/[topic-slug].md
+```
+
+### 6.2 WikiView.js
+
+Add the topic to the topics array:
 
 ```javascript
+// public/js/views/WikiView.js
 {
-    id: 'topic-slug',
+    id: 'topic-slug',         // must match the .md filename exactly
     label: 'wiki.topicSlug.title'
 }
 ```
 
-### Step 5: Update i18n.js
-Add translations in `public/js/i18n.js` for ALL languages you plan to support:
+### 6.3 i18n.js
+
+Add the translated title for ALL project languages:
 
 ```javascript
+// public/js/i18n.js
 wiki: {
-    topicSlug: { title: 'Title in Language' },
-    // ... existing topics
+    topicSlug: {
+        title: 'Title in that language'
+    },
+    // ... rest of existing topics
 }
 ```
 
-### Step 6: Translate (Only After Confirmation)
-After user confirms Spanish version, translate to:
-- `public/wiki/en/[topic-slug].md`
-- Other languages as needed
-
-> [!NOTE]
-> Re-verification of links is NOT required when translating. Links verified in Spanish are valid for all languages.
+Do this for all 7 languages: `es`, `en`, `pt`, `ru`, `ja`, `zh`, `fr`.
 
 ---
 
-## 5. Common Errors (DO NOT DO)
+## 7. Naming Conventions
 
-| Error | Correct Way |
-|-------|-------------|
-| Using `[1]`, `[2]` in references | Use `*` bullet points |
-| Relative links like `./file.md` | Use `/wiki?topic=slug` |
-| Creating new badge colors | Use existing: `badge-blue`, `badge-purple` |
-| Skipping link verification | Always verify with WebFetch |
-| Translating before confirmation | Wait for user OK in Spanish |
-| Missing WikiView.js update | Always update both WikiView.js AND i18n.js |
+| Element | Rule | Example |
+|---------|------|---------|
+| Topic slug | `kebab-case`, lowercase and hyphens only | `avatar-upload`, `vcc-setup` |
+| File name | `[slug].md` | `avatar-upload.md` |
+| Key in i18n.js | `camelCase` of the slug | `avatarUpload`, `vccSetup` |
+| ID in WikiView.js | Same as slug | `avatar-upload` |
 
 ---
 
-## 6. Language Support
+## 8. Final Checklist
 
-- **Primary:** Spanish (es) - Create first, always
-- **Secondary:** English (en) - Translate after confirmation
-- **Others:** ru, pt, fr, jp, cn - Translate as needed
+Before marking the task as complete, verify EVERY point:
 
-> [!TIP]
-> Only Spanish is mandatory. English is recommended. Other languages are optional unless specifically requested.
+- [ ] Research done using official sources
+- [ ] Spanish draft created with the correct template
+- [ ] All external links verified with WebFetch (none return 404)
+- [ ] References in APA format with `*` bullets and titles in italics
+- [ ] No `[1]`, `[2]` numbering in references
+- [ ] User reviewed the Spanish draft
+- [ ] User explicitly confirmed with "yes", "confirmed" or equivalent
+- [ ] Translations created AFTER confirmation
+- [ ] `WikiView.js` updated with the new topic
+- [ ] `i18n.js` updated with titles in all 7 languages
+- [ ] No relative links (`./file.md`) — only `/wiki?topic=slug`
 
 ---
 
-## 7. Verification Checklist
+## 9. Anti-Patterns (DO NOT DO)
 
-Before marking a task complete, verify:
-
-- [ ] Spanish version created with correct template
-- [ ] All external links verified (no 404s)
-- [ ] References use `*` bullets, NOT numbered
-- [ ] Internal links use `/wiki?topic=slug` format
-- [ ] WikiView.js updated with new topic
-- [ ] i18n.js updated with title translations
-- [ ] User confirmed Spanish content (for new topics)
-- [ ] English version created (at minimum)
+| Error | Why it's a problem | Fix |
+|-------|-------------------|-----|
+| Translating before confirmation | User may want changes — redoing 7 files is costly | Wait for explicit confirmation |
+| Reference with `[1]`, `[2]` | Not APA, not the project format | Use `*` bullet per reference |
+| Reference title without italics | Incorrect in APA | Wrap in `*asterisks*` |
+| Unverified link | May be 404, looks bad | Verify with WebFetch |
+| Continuing after user says "it's not right" | Obvious | Apply changes and show draft again |
+| Interpreting silence as "yes" | User may not have seen the message | Ask again explicitly |
+| Creating slug with spaces or uppercase | Breaks routing | Only `kebab-case` lowercase |
+| Forgetting to update `i18n.js` | Title won't appear in wiki selector | Always update alongside `WikiView.js` |

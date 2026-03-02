@@ -4,6 +4,8 @@ import { t } from '../i18n.js';
 
 export default class AdminView extends AbstractView {
     async getHtml() {
+        this.setTitle('VRCStorage - Admin');
+
         if (!window.appState || !window.appState.isAdmin) {
             return `<h1>${t('common.accessDenied')}</h1>`;
         }

@@ -4,6 +4,8 @@ import { renderTurnstile, resizeImage } from '../utils.js';
 
 export default class SettingsView extends AbstractView {
     async getHtml() {
+        this.setTitle('VRCStorage - Settings');
+
         const user = window.appState.user || {};
         const avatarUrl = user.avatar_url || 'https://vrchat-avatarstorage.vicentefelipechile.workers.dev/avatar.png';
 

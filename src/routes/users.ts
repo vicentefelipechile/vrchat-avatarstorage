@@ -206,7 +206,7 @@ users.post('/login/2fa', async (c) => {
 		return c.json({ error: '2FA is not enabled for this user' }, 400);
 	}
 
-	const secret = getDecrypted2FASecret(c, user);
+	const secret = await getDecrypted2FASecret(c, user);
 	if (!secret) {
 		return c.json({ error: 'Failed to decrypt 2FA secret' }, 500);
 	}

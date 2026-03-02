@@ -97,9 +97,9 @@ export async function getUserWith2FA(c: Context<{ Bindings: Env }>, username: st
     return user;
 }
 
-export function getDecrypted2FASecret(c: Context<{ Bindings: Env }>, user: User): string | null {
+export async function getDecrypted2FASecret(c: Context<{ Bindings: Env }>, user: User): Promise<string | null> {
     if (!user.two_factor_secret) return null;
     const secret = c.env.JWT_SECRET;
     if (!secret) return null;
-    return decryptSecret(user.two_factor_secret, secret);
+    return await decryptSecret(user.two_factor_secret, secret);
 }

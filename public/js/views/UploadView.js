@@ -5,6 +5,8 @@ import { DataCache } from '../cache.js';
 
 export default class UploadView extends AbstractView {
 	async getHtml() {
+		this.setTitle('VRCStorage - Upload');
+
 		return `
             <div style="max-width: 1200px; margin: 0 auto;">
                 <h1>${t('upload.title')}</h1>

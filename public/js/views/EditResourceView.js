@@ -124,6 +124,9 @@ export default class EditResourceView extends AbstractView {
             
             originalData = res;
 
+            // Set document title
+            this.setTitle('VRCStorage - Edit ' + res.title);
+
             document.getElementById('title').value = res.title;
             document.getElementById('category').value = res.category;
             

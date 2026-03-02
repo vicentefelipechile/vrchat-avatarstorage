@@ -45,7 +45,7 @@ twoFactorRouter.post('/setup', async (c) => {
 
 	const setup = generateTwoFactorSecret(user.username, 'VRCStorage');
 
-	const encryptedSecret = encryptSecret(setup.secret, c.env.JWT_SECRET);
+	const encryptedSecret = await encryptSecret(setup.secret, c.env.JWT_SECRET);
 
 	await c.env.DB.prepare('UPDATE users SET two_factor_secret = ?, two_factor_backup_codes = ? WHERE uuid = ?')
 		.bind(encryptedSecret, await hashBackupCodes(setup.backupCodes), user.uuid)
@@ -80,7 +80,7 @@ twoFactorRouter.post('/verify', async (c) => {
 		return c.json({ error: '2FA not set up' }, 400);
 	}
 
-	const secret = getDecrypted2FASecret(c, user);
+	const secret = await getDecrypted2FASecret(c, user);
 	if (!secret) {
 		return c.json({ error: 'Failed to decrypt 2FA secret' }, 500);
 	}
@@ -134,7 +134,7 @@ twoFactorRouter.post('/disable', async (c) => {
 	}
 
 	if (code) {
-		const secret = getDecrypted2FASecret(c, user);
+		const secret = await getDecrypted2FASecret(c, user);
 		if (!secret) {
 			return c.json({ error: 'Failed to decrypt 2FA secret' }, 500);
 		}

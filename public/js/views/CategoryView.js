@@ -8,6 +8,8 @@ export default class CategoryView extends AbstractView {
 		const categoryKey = decodeURIComponent(this.params.id);
 		const displayName = t('cats.' + categoryKey) || categoryKey;
 
+		this.setTitle('VRCStorage - ' + displayName);
+
 		this.categoryKey = categoryKey;
 
 		return `

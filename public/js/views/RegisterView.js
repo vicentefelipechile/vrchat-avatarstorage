@@ -4,6 +4,8 @@ import { renderTurnstile } from '../utils.js';
 
 export default class RegisterView extends AbstractView {
     async getHtml() {
+        this.setTitle('VRCStorage - Register');
+
         return `
             <div class="login-box">
                 <h1>${t('register.title')}</h1>

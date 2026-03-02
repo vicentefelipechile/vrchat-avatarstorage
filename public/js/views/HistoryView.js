@@ -5,6 +5,8 @@ import { diffString } from '../diff.js';
 
 export default class HistoryView extends AbstractView {
 	async getHtml() {
+		this.setTitle('VRCStorage - History');
+
 		return `
             <div class="history-container" style="max-width: 1000px; margin: 0 auto;">
                 <div class="header-actions" style="margin-bottom: 20px;">

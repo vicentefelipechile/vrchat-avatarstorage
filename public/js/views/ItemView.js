@@ -12,6 +12,9 @@ export default class ItemView extends AbstractView {
 
 		if (!res) return `<h1>${t('item.notFound')}</h1>`;
 
+		// Store title for postRender to set document title
+		this.resourceTitle = res.title;
+
 		// Auth is already loaded from localStorage, no need to wait
 		const user = window.appState.user;
 		const isAdmin = window.appState.isAdmin;
@@ -421,6 +424,11 @@ export default class ItemView extends AbstractView {
 	async postRender() {
 		const uuid = this.params.id;
 		const commentsContainer = document.getElementById('comments-container');
+
+		// Set document title
+		if (this.resourceTitle) {
+			this.setTitle('VRCStorage - ' + this.resourceTitle);
+		}
 
 		// Set up the image lightbox
 		this.setupLightbox();
