@@ -103,8 +103,8 @@ export default class UploadView extends AbstractView {
                     </div>
 
                     <div class="form-group">
-                        <label><strong>${t('upload.mainFile')} (.rar, .zip, .unitypackage) ${t('upload.required')}</strong></label>
-                        <input type="file" id="file" accept=".rar,.zip,.unitypackage" multiple required>
+                        <label><strong>${t('upload.mainFile')} (.rar, .zip, .unitypackage, .blend) ${t('upload.required')}</strong></label>
+                        <input type="file" id="file" accept=".rar,.zip,.unitypackage,.blend" multiple required>
                         <small style="color: var(--text-muted);">${t('upload.fileTypes')} (Max 3)</small>
                         <div id="file-info" style="margin-top: 10px; color: var(--text-muted);"></div>
                     </div>
@@ -414,7 +414,7 @@ export default class UploadView extends AbstractView {
 				return;
 			}
 
-			const validExtensions = ['.rar', '.zip', '.unitypackage'];
+			const validExtensions = ['.rar', '.zip', '.unitypackage', '.blend'];
 			const MAX_FILE_SIZE = SIZE_LIMITS.file;
 			let allValid = true;
 
@@ -622,7 +622,7 @@ export default class UploadView extends AbstractView {
 			};
 
 			// Validate main file(s)
-			const validExtensions = ['.rar', '.zip', '.unitypackage'];
+			const validExtensions = ['.rar', '.zip', '.unitypackage', '.blend'];
 			let allFilesValid = true;
 
 			if (files.length === 0) {

@@ -89,7 +89,7 @@ export default class EditResourceView extends AbstractView {
                         <p style="font-size: 0.9em; color: var(--text-muted);">${t('edit.addFileDesc')}</p>
                         
                         <label><strong>${t('upload.file')}</strong></label>
-                        <input type="file" id="new-file" accept=".rar,.zip,.unitypackage">
+                        <input type="file" id="new-file" accept=".rar,.zip,.unitypackage,.blend">
                         <div id="new-file-info"></div>
                         
                         <div id="upload-progress" style="display: none; margin-top: 10px;">

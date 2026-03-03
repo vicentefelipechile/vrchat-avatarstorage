@@ -70,11 +70,21 @@ export const FILE_SIGNATURES: FileSignature[] = [
     { signature: '0000001866747970', mediaType: 'video', name: 'MP4' },
     { signature: '1A45DF', mediaType: 'video', name: 'WEBM' },
 
-    // Archives / Unity Packages
+    // Archives / Unity Packages / Blender
     { signature: '504B0304', mediaType: 'file', name: 'ZIP' },
     { signature: '1F8B', mediaType: 'file', name: 'GZIP' },
     { signature: '377ABCAF271C', mediaType: 'file', name: '7Z' },
     { signature: '52617221', mediaType: 'file', name: 'RAR' },
+    {
+        signature: '424C454E444552',
+        mediaType: 'file',
+        name: 'BLEND',
+        customValidator: (buffer: ArrayBuffer) => {
+            const arr = new Uint8Array(buffer);
+            const version = [...arr.slice(8, 12)].map(b => String.fromCharCode(b)).join('');
+            return version.startsWith('v');
+        }
+    },
 ] as const;
 
 export async function isValidFileType(file: File): Promise<ValidFileType> {

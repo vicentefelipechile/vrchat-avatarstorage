@@ -26,7 +26,7 @@ uploads.put('/', async (c) => {
         const validation = await isValidFileType(file);
         if (!validation.isValidFile || validation.mediaType === 'unknown') {
             return c.json({
-                error: 'Invalid file type. Only images (PNG, JPEG, GIF, WEBP, AVIF), videos (MP4, WEBM), and archives (ZIP, RAR, 7Z, GZIP) are allowed.'
+                error: 'Invalid file type. Only images (PNG, JPEG, GIF, WEBP, AVIF), videos (MP4, WEBM), and archives (ZIP, RAR, 7Z, GZIP, BLEND) are allowed.'
             }, 400);
         }
 
