@@ -8,8 +8,7 @@
 		"start": "wrangler dev",
 		"test": "vitest",
 		"cf-typegen": "wrangler types",
-		"seed:generate": "node src/test/fixtures/seed.ts",
-		"seed:poblate-local": "wrangler d1 execute DB --local --file=src/test/fixtures/seed.sql"
+		"seed": "tsx src/test/setup/populate.ts"
 	},
 	"devDependencies": {
 		"@cloudflare/vitest-pool-workers": "^0.12.4",

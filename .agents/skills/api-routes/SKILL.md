@@ -30,7 +30,7 @@ src/
 │   ├── rate-limit.ts           # Rate limiting middleware (see ratelimit SKILL)
 │   └── security.ts             # Security headers, CORS, sanitization
 │
-├── routes/
+└── routes/
 │   ├── 2fa.ts                  # POST /api/auth/2fa/*
 │   ├── admin.ts                # /api/admin/* (protected, admin role only)
 │   ├── comments.ts             # /api/comments/*
@@ -44,9 +44,8 @@ src/
 │   └── wiki.ts                 # /api/wiki/*
 │
 └── test/
-    ├── fixtures/seed.ts        # Test data seeding
+    ├── populate.ts             # Auto-populate local D1
     ├── routes/                 # Integration tests per route
-    ├── setup/                  # Test env and D1 migrations
     └── unit/                   # Unit tests for helpers and validators
 ```
 
@@ -238,7 +237,7 @@ src/helpers/file-validation.ts  →  src/test/unit/file-validation.test.ts
 src/validators.ts               →  src/test/unit/validators.test.ts
 ```
 
-Use `src/test/fixtures/seed.ts` for test data. Use `src/test/setup/apply-migrations.ts` for D1 schema setup.
+Use `src/test/populate.ts` for test data population.
 
 ---
 
