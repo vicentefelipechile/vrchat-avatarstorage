@@ -2,7 +2,7 @@ import { defineWorkersConfig } from '@cloudflare/vitest-pool-workers/config';
 
 export default defineWorkersConfig({
 	test: {
-		setupFiles: ['./src/test/setup/apply-migrations.ts'],
+		setupFiles: ['./src/test/setup/index.ts'],
 		poolOptions: {
 			workers: {
 				wrangler: { configPath: './wrangler.jsonc' },
