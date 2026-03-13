@@ -73,6 +73,18 @@ function makeWebp(): File {
     return new File([buf], 'test.webp', { type: 'image/webp' });
 }
 
+/** Build a minimal MP4 file */
+function makeMp4(): File {
+    const buf = new Uint8Array(24).fill(0);
+    // Box size (e.g. 24)
+    buf[3] = 0x18;
+    // 'ftyp'
+    [0x66, 0x74, 0x79, 0x70].forEach((b, i) => (buf[4 + i] = b));
+    // 'MSNV'
+    [0x4D, 0x53, 0x4E, 0x56].forEach((b, i) => (buf[8 + i] = b));
+    return new File([buf], 'test.mp4', { type: 'video/mp4' });
+}
+
 /** Build a ZIP file header */
 function makeZip(): File {
     return makeFile('504B030400000000', 'test.zip', 'application/zip');
@@ -102,6 +114,13 @@ describe('isValidFileType()', () => {
         expect(result.isValidFile).toBe(true);
         expect(result.mediaType).toBe('image');
         expect(result.mediaName).toBe('WEBP');
+    });
+
+    it('recognises an MP4 by offset magic bytes', async () => {
+        const result = await isValidFileType(makeMp4());
+        expect(result.isValidFile).toBe(true);
+        expect(result.mediaType).toBe('video');
+        expect(result.mediaName).toBe('MP4');
     });
 
     it('recognises a ZIP by magic bytes', async () => {

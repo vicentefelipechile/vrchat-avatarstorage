@@ -36,17 +36,23 @@ export async function makeAuthCookie(username: string, isAdmin: boolean): Promis
 
 /**
  * Dispatches a request to the test worker and returns the Response.
+ *
+ * @param spoofedIp - Optional value for the `CF-Connecting-IP` header. The
+ *   rate limiter uses this header as the key, so passing a unique IP per test
+ *   suite prevents cross-suite rate-limit interference. Defaults to '127.0.0.1'.
  */
 export async function request(
     method: string,
     path: string,
     cookie?: string,
     body?: unknown,
+    spoofedIp?: string,
 ): Promise<Response> {
     const ctx = createExecutionContext();
     const req = new Request(`http://localhost${path}`, {
         method,
         headers: {
+            'CF-Connecting-IP': spoofedIp ?? '127.0.0.1',
             ...(cookie ? { Cookie: cookie } : {}),
             ...(body ? { 'Content-Type': 'application/json' } : {}),
         },
