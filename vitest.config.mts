@@ -7,7 +7,17 @@ export default defineWorkersConfig({
 			workers: {
 				wrangler: { configPath: './wrangler.jsonc' },
 				miniflare: {
-					outboundService: (req: any) => fetch(req),
+					outboundService: async (req: Request) => {
+						// Intercept Turnstile verification calls and return a mocked
+						// always-pass response. This avoids real network calls during
+						// tests and prevents 500 errors when the endpoint is unreachable.
+						if (req.url.includes('challenges.cloudflare.com/turnstile')) {
+							return new Response(JSON.stringify({ success: true }), {
+								headers: { 'Content-Type': 'application/json' },
+							});
+						}
+						return fetch(req);
+					},
 					bindings: {
 						// Fixed secret for JWT signing in tests
 						JWT_SECRET: 'vitest-test-secret-do-not-use-in-prod',

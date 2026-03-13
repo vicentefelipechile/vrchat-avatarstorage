@@ -67,7 +67,20 @@ export const FILE_SIGNATURES: FileSignature[] = [
     },
 
     // Videos
-    { signature: '0000001866747970', mediaType: 'video', name: 'MP4' },
+    // MP4: bytes[0..3] = box size (variable, e.g. 0x00000018), bytes[4..7] = 'ftyp'.
+    // The leading zeros in the box size make a short prefix anchor reliable enough;
+    // the customValidator confirms 'ftyp' at offset 4 and the brand at offset 8.
+    {
+        signature: '000000',
+        mediaType: 'video',
+        name: 'MP4',
+        customValidator: (buffer: ArrayBuffer) => {
+            const arr = new Uint8Array(buffer);
+            const ftyp = [...arr.slice(4, 8)].map(b => String.fromCharCode(b)).join('');
+            const brand = [...arr.slice(8, 12)].map(b => String.fromCharCode(b)).join('');
+            return ftyp === 'ftyp' && brand === 'MSNV';
+        }
+    },
     { signature: '1A45DF', mediaType: 'video', name: 'WEBM' },
 
     // Archives / Unity Packages / Blender
@@ -89,7 +102,7 @@ export const FILE_SIGNATURES: FileSignature[] = [
 
 export async function isValidFileType(file: File): Promise<ValidFileType> {
     const buffer = await file.arrayBuffer();
-    const bytes = new Uint8Array(buffer).slice(0, 12); // Read 12 bytes to check for AVIF signature
+    const bytes = new Uint8Array(buffer).slice(0, 12); // Read 12 bytes
     const hex = [...bytes].map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
 
     // Check each signature

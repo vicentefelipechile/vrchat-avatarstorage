@@ -1906,7 +1906,6 @@ footer p {
 .tos-content {
 	display: flex;
 	flex-direction: column;
-	gap: 2px;
 }
 
 .tos-section {

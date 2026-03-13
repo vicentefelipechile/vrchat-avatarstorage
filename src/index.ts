@@ -26,6 +26,7 @@ import wikiRoutes from './routes/wiki';
 import tagsRoutes from './routes/tags';
 import favoritesRoutes from './routes/favorites';
 import twoFactorRoutes from './routes/2fa';
+import oauthRoutes from './routes/oauth';
 
 // =========================================================================================================
 // Variables
@@ -74,6 +75,9 @@ app.use('/api/admin/*', async (c, next) => rateLimit({ binding: c.env.RL_MEDIUM,
 app.use('/api/favorites/*', async (c, next) => rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'favorites' })(c, next));
 app.use('/api/2fa/*', async (c, next) => rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: '2fa' })(c, next));
 
+// OAuth — medium rate limit (100/min). Callbacks are one-shot, not brute-forceable.
+app.use('/api/auth/*', async (c, next) => rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'oauth' })(c, next));
+
 // Error Handler for Zod
 app.onError((err, c) => {
 	if (err instanceof z.ZodError) {
@@ -112,6 +116,7 @@ app.route('/api/download', downloadRoutes);
 app.route('/api/favorites', favoritesRoutes);
 app.route('/api', utilRoutes);
 app.route('/api/2fa', twoFactorRoutes);
+app.route('/api/auth', oauthRoutes);
 
 // =========================================================================================================
 // SEO routes

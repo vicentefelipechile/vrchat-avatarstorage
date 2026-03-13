@@ -257,3 +257,28 @@ export interface UploadQueueMessage {
 	file_name: string;
 	uploaded_at: number; // Unix ms timestamp
 }
+
+// ----------------------------------------------------------------------------
+// OAUTH PROVIDERS
+// ----------------------------------------------------------------------------
+
+/** Supported OAuth providers. Extend this union to add new ones. */
+export type OAuthProvider = 'google';
+
+/** Row in user_oauth_providers table */
+export interface UserOAuthProvider {
+	id: number;
+	user_uuid: string;
+	provider: OAuthProvider;
+	provider_id: string; // Provider-side user ID (e.g. Google 'sub')
+	email: string | null;
+	created_at: number;
+}
+
+/** Pending OAuth registration stored in KV while user selects a username */
+export interface OAuthPendingRegistration {
+	provider: OAuthProvider;
+	provider_id: string;
+	email: string | null;
+	avatar_url: string | null;
+}

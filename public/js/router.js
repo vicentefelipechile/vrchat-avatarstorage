@@ -12,6 +12,7 @@ import HistoryView from './views/HistoryView.js';
 import FavoritesView from './views/FavoritesView.js';
 import TOSView from './views/TOSView.js';
 import DMCAView from './views/DMCAView.js';
+import OAuthRegisterView from './views/OAuthRegisterView.js';
 import { pathToRegex, getParams } from './utils.js';
 
 export const router = async () => {
@@ -30,6 +31,7 @@ export const router = async () => {
 		{ path: '/wiki', view: WikiView },
 		{ path: '/tos', view: TOSView },
 		{ path: '/dmca', view: DMCAView },
+		{ path: '/register/oauth', view: OAuthRegisterView },
 	];
 
 	const potentialMatches = routes.map((route) => {
