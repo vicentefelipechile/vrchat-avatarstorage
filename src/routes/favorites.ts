@@ -142,8 +142,8 @@ favorites.delete('/:resourceUuid', async (c) => {
 		.bind(user.uuid, resourceUuid)
 		.run();
 
-	if (result.success && result.meta.changes === 0) {
-		return c.json({ error: 'Favorite not found' }, 404);
+	if (!result.success || result.meta.changes === 0) {
+		return c.json({ error: 'Favorite not found or could not be deleted' }, 404);
 	}
 
 	return c.json({ success: true });

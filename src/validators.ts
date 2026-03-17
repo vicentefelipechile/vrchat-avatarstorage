@@ -7,11 +7,9 @@ import { RESOURCE_CATEGORIES } from './types';
 // DOMPurify requires a real `document` object which Cloudflare Workers doesn't
 // provide. Since we strip all tags anyway, a regex-based approach is equivalent
 // and works in any JS environment.
-const sanitizeHtml = (str: string): string => {
-	return str
-		.replace(/<[^>]*>/g, '') // strip all HTML tags
-		.replace(/javascript:/gi, '') // strip javascript: URIs
-		.replace(/on\w+\s*=/gi, ''); // strip inline event handlers (onclick=, etc.)
+const sanitizeHtml = (str: string | undefined | null): string => {
+	if (!str || typeof str !== 'string') return '';
+	return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 };
 
 // ============================================================================
@@ -53,7 +51,7 @@ export const UserUpdateSchema = z.object({
 // ============================================================================
 
 const LinkSchema = z.object({
-	link_url: z.string().transform((val) => sanitizeHtml(val)), // Allow relative URLs
+	link_url: z.string().transform((val) => (val ? sanitizeHtml(val) : val)), // Allow relative URLs
 	link_title: z
 		.string()
 		.optional()
@@ -67,7 +65,7 @@ export const ResourceSchema = z.object({
 		.string()
 		.min(3, 'Title too short')
 		.max(100, 'Title too long')
-		.transform((val) => sanitizeHtml(val)),
+		.transform((val) => (val ? sanitizeHtml(val) : val)),
 	description: z
 		.string()
 		.max(2000, 'Description too long')
@@ -81,6 +79,13 @@ export const ResourceSchema = z.object({
 	tags: z.array(z.string()).optional(),
 	token: z.string().optional(),
 });
+
+export const ResourceSearchSchema = z.object({
+	q: z.string().optional(),
+	category: z.enum(RESOURCE_CATEGORIES),
+	tags: z.string().optional(),
+	page: z.number().int().default(1),
+})
 
 // ============================================================================
 // Comment Schemas

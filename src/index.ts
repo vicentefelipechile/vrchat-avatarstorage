@@ -11,7 +11,7 @@
 
 import { Hono } from 'hono';
 import { getAuthUser } from './auth';
-import { Media, UploadQueueMessage } from './types';
+import { Media, Resource, UploadQueueMessage } from './types';
 import { z } from 'zod';
 import { securityMiddleware } from './middleware/security';
 import { rateLimit } from './middleware/rate-limit';
@@ -27,6 +27,7 @@ import tagsRoutes from './routes/tags';
 import favoritesRoutes from './routes/favorites';
 import twoFactorRoutes from './routes/2fa';
 import oauthRoutes from './routes/oauth';
+import { title } from 'process';
 
 // =========================================================================================================
 // Variables
@@ -34,6 +35,17 @@ import oauthRoutes from './routes/oauth';
 
 const app = new Hono<{ Bindings: Env }>();
 
+/**
+ * Escapes HTML special characters to prevent injection when replacing meta tags.
+ */
+function escapeHtml(str: string): string {
+	return str
+		.replace(/&/g, '&amp;')
+		.replace(/</g, '&lt;')
+		.replace(/>/g, '&gt;')
+		.replace(/"/g, '&quot;')
+		.replace(/'/g, '&#39;');
+}
 
 // Security Headers & CORS
 securityMiddleware(app);
@@ -91,10 +103,19 @@ app.onError((err, c) => {
 // Middleware
 // =========================================================================================================
 // Simple auth check for download links
-// Simple auth check for download links
 app.use('/download/*', async (c, next) => {
 	const user = await getAuthUser(c);
 	if (!user) {
+		const accept = c.req.header('Accept') || '';
+		const secFetchDest = c.req.header('Sec-Fetch-Dest') || '';
+
+		// Si el request es de una imagen/video o no acepta HTML explícitamente, 
+		// devuelve un error en lugar del HTML de /login.
+		if (secFetchDest === 'image' || secFetchDest === 'video' || secFetchDest === 'audio' ||
+			(!accept.includes('text/html') && accept !== '*/*')) {
+			return c.json({ error: 'Unauthorized' }, 401);
+		}
+
 		return c.redirect('/login');
 	}
 	await next();
@@ -122,26 +143,78 @@ app.route('/api/auth', oauthRoutes);
 // SEO routes
 // =========================================================================================================
 
+function injectSEO(html: string, opts: { title: string, description: string, url: string, imageUrl: string }): string {
+	let res = html;
+	res = res.replace(/<title>[^<]*<\/title>/i, `<title>${opts.title}</title>`);
+
+	// Remove the specific markdown block if it exists
+	const cleanDescription = opts.description.replace(
+		/\s*---\s*### Avatar Details\s*\* Platform:.*\s*\* SDK:.*\s*\* Version:.*\s*\* Contains \.blend:.*\s*\* Uses Poiyomi:.*\s*\* Uses VRCFury:.*/gi,
+		''
+	).trim();
+
+	const tags = [
+		{ type: 'name', key: 'description', val: cleanDescription },
+		{ type: 'property', key: 'og:title', val: opts.title },
+		{ type: 'property', key: 'og:description', val: cleanDescription },
+		{ type: 'property', key: 'og:url', val: opts.url },
+		{ type: 'property', key: 'og:image', val: opts.imageUrl },
+		{ type: 'name', key: 'twitter:title', val: opts.title },
+		{ type: 'name', key: 'twitter:description', val: cleanDescription },
+		{ type: 'name', key: 'twitter:url', val: opts.url },
+		{ type: 'name', key: 'twitter:image', val: opts.imageUrl },
+	];
+
+	for (const tag of tags) {
+		const regex = new RegExp(`<meta\\s+${tag.type}="${tag.key}"\\s+content="[^"]*"\\s*\\/?>`, 'i');
+		if (regex.test(res)) {
+			res = res.replace(regex, `<meta ${tag.type}="${tag.key}" content="${tag.val}" />`);
+		} else {
+			res = res.replace('</head>', `\t<meta ${tag.type}="${tag.key}" content="${tag.val}" />\n</head>`);
+		}
+	}
+	return res;
+}
+
 app.get('/wiki', async (c) => {
 	try {
+		const topic = c.req.query('topic');
+		const lang = c.req.query('lang') || 'es';
+
 		// Fetch original index.html
 		const indexResponse = await c.env.ASSETS.fetch(new URL('/index.html', c.req.url));
 		let html = await indexResponse.text();
 
-		// Replace Meta Tags
-		const title = 'VRCStorage - Wiki';
+		let title = 'VRCStorage - Wiki';
+		let description = 'VRCStorage & Asset Storage - Guides and technical documentation.';
 		const imageUrl = `${new URL(c.req.url).origin}/wiki.png`;
-		const url = `${new URL(c.req.url).origin}/wiki`;
+		const url = c.req.url;
 
-		// Simple replacements
-		html = html.replace(/<meta property="og:title" content="[^"]*">/, `<meta property="og:title" content="${title}">`);
-		html = html.replace(/<meta property="og:url" content="[^"]*">/, `<meta property="og:url" content="${url}">`);
-		html = html.replace(/<meta property="og:image" content="[^"]*">/, `<meta property="og:image" content="${imageUrl}">`);
-		html = html.replace(/<title>[^<]*<\/title>/, `<title>${title}</title>`);
+		if (topic) {
+			// Try to fetch the MD file to extract title
+			const mdRes = await c.env.ASSETS.fetch(new URL(`/wiki/${lang}/${topic}.md`, c.req.url));
+			if (mdRes.ok) {
+				const text = await mdRes.text();
+				const match = text.match(/^#\s+(.*)/m);
+				if (match) {
+					title = `${match[1]} - ${title}`;
+					description = `VRCStorage Wiki Documentation: ${match[1]}`;
+				} else {
+					title = `${topic} - ${title}`;
+					description = `VRCStorage Technical Guide: ${topic}`;
+				}
+			} else {
+				title = `${topic} - ${title}`;
+				description = `VRCStorage Technical Guide: ${topic}`;
+			}
+		}
 
-		// Twitter Card specific (optional but good for Discord/Twitter)
-		html = html.replace(/<meta name="twitter:card" content="[^"]*">/, '<meta name="twitter:card" content="summary_large_image">');
-		html = html.replace(/<meta name="twitter:image" content="[^"]*">/, `<meta name="twitter:image" content="${imageUrl}">`);
+		html = injectSEO(html, {
+			title: escapeHtml(title),
+			description: escapeHtml(description),
+			url,
+			imageUrl
+		});
 
 		return c.html(html);
 	} catch (e) {
@@ -156,7 +229,7 @@ app.get('/item/:uuid', async (c) => {
 	if (!uuid) return c.json({ error: 'UUID is required' }, 400);
 
 	try {
-		const resource = await c.env.DB.prepare('SELECT * FROM resources WHERE uuid = ?').bind(uuid).first();
+		const resource = await c.env.DB.prepare('SELECT * FROM resources WHERE uuid = ?').bind(uuid).first<Resource>();
 
 		if (resource && resource.is_active) {
 			// Get thumbnail
@@ -165,21 +238,17 @@ app.get('/item/:uuid', async (c) => {
 			// Fetch original index.html
 			const indexResponse = await c.env.ASSETS.fetch(new URL('/index.html', c.req.url));
 			let html = await indexResponse.text();
+			const urlOrigin = new URL(c.req.url).origin;
 
-			// Replace Meta Tags
-			const title = resource.title;
-			const description = resource.description || 'VRCStorage & Asset Storage';
+			// Meta values
+			const title = escapeHtml(resource.title);
+			const description = escapeHtml(resource.description || 'VRCStorage & Asset Storage');
 			const imageUrl = thumbnail
-				? `${new URL(c.req.url).origin}/api/download/${thumbnail.r2_key}`
-				: `${new URL(c.req.url).origin}/favicon.svg`;
-			const url = `${new URL(c.req.url).origin}/item/${uuid}`;
+				? `${urlOrigin}/api/download/${thumbnail.r2_key}`
+				: `${urlOrigin}/favicon.svg`;
+			const url = `${urlOrigin}/item/${uuid}`;
 
-			// Simple replacements
-			html = html.replace(/<meta property="og:title" content="[^"]*">/, `<meta property="og:title" content="${title}">`);
-			html = html.replace(/<meta property="og:description" content="[^"]*">/, `<meta property="og:description" content="${description}">`);
-			html = html.replace(/<meta property="og:url" content="[^"]*">/, `<meta property="og:url" content="${url}">`);
-			html = html.replace(/<meta property="og:image" content="[^"]*">/, `<meta property="og:image" content="${imageUrl}">`);
-			html = html.replace(/<title>[^<]*<\/title>/, `<title>${title} - VRCStorage</title>`);
+			html = injectSEO(html, { title, description, url, imageUrl });
 
 			return c.html(html);
 		}

@@ -6,6 +6,7 @@ export default defineWorkersConfig({
 		poolOptions: {
 			workers: {
 				wrangler: { configPath: './wrangler.jsonc' },
+				singleWorker: true,
 				miniflare: {
 					outboundService: async (req: Request) => {
 						// Intercept Turnstile verification calls and return a mocked
@@ -25,6 +26,7 @@ export default defineWorkersConfig({
 						// https://developers.cloudflare.com/turnstile/troubleshooting/testing/
 						TURNSTILE_SECRET_KEY: '1x0000000000000000000000000000000AA',
 					},
+					cachePath: "./node_modules/.cache/miniflare"
 				},
 			},
 		},

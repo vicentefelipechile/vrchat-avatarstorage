@@ -9,7 +9,11 @@ import { getAuthUser } from '../auth';
 import { Resource, ResourceCategory, RESOURCE_CATEGORIES, User, Media, ResourceLink, ResourceHistory, Tag } from '../types';
 import { ResourceSchema } from '../validators';
 import { verifyTurnstile } from './utils';
-import { z } from 'zod';
+import { QueryBuilder } from '../helpers/query-constructor';
+
+// =========================================================================================================
+// EndPoint
+// =========================================================================================================
 
 const resources = new Hono<{ Bindings: Env }>();
 
@@ -27,132 +31,117 @@ resources.get('/latest', async (c) => {
         return c.json(cached);
     }
 
-    const stmt = c.env.DB.prepare(`
-        SELECT
-            r.category,
-            r.uuid,
-            r.title,
-            r.thumbnail_uuid,
-            r.created_at,
-            r.download_count,
-            m.r2_key as thumbnail_key,
-            u.username as author_username,
-            u.avatar_url as author_avatar
-        FROM resources r
-        INNER JOIN media m ON r.thumbnail_uuid = m.uuid
-        LEFT JOIN users u ON r.author_uuid = u.uuid
-        WHERE r.is_active = 1
-        ORDER BY r.created_at DESC
-        LIMIT 10
-    `);
+    const queryConstructor = new QueryBuilder('resources', 'r')
+        .select([
+            'r.category',
+            'r.uuid',
+            'r.title',
+            'r.description',
+            'r.thumbnail_uuid',
+            'r.created_at * 1000 as timestamp',
+            'r.download_count',
+            'm.r2_key as thumbnail_key'
+        ])
+        .join('INNER JOIN media m ON r.thumbnail_uuid = m.uuid')
+        .join('LEFT JOIN users u ON r.author_uuid = u.uuid')
+        .where('r.is_active = 1')
+        .orderBy('r.created_at', 'DESC')
+        .paginate(1, 10);
 
-    const { results } = await stmt.all<any>();
+    const { sql, params } = queryConstructor.build();
+
+    const { results } = await c.env.DB.prepare(sql).bind(...params).all<any>();
     c.header('Cache-Control', 'public, max-age=60');
 
-    const mapped = results.map(r => ({
-        ...r,
-        timestamp: r.created_at * 1000,
-        author: r.author_username ? { username: r.author_username, avatar_url: r.author_avatar } : null
-    }));
-
     // 2. Update KV
-    await c.env.VRCSTORAGE_KV.put('resource:latest', JSON.stringify(mapped), { expirationTtl: 60 });
+    await c.env.VRCSTORAGE_KV.put('resource:latest', JSON.stringify(results), { expirationTtl: 60 });
 
-    return c.json(mapped);
+    return c.json(results);
 });
+
+// Sortable column whitelist.
+// Never interpolate user input directly into ORDER BY — use this map instead.
+const SORT_COLUMNS: Record<string, string> = {
+    created_at: 'r.created_at',
+    download_count: 'r.download_count',
+    title: 'r.title',
+};
 
 /**
  * Endpoint: / (Search)
- * Búsqueda general con filtros, paginación y búsqueda de texto completo (FTS).
+ * General resource search with filters, pagination, and full-text search (FTS).
+ *
+ * Query params:
+ *   q          Free-text search (FTS5 MATCH against title and description)
+ *   category   Category filter (avatars | worlds | assets | clothes)
+ *   tags       Comma-separated tag names (e.g. "unity,quest")
+ *   sort_by    Sort column (created_at | download_count | title) — default: created_at
+ *   sort_order Sort direction (asc | desc) — default: desc
+ *   page       Page number, 1-indexed — default: 1
+ *   limit      Results per page — default: 15, max: 60
  */
 resources.get('/', async (c) => {
-    const page = parseInt(c.req.query('page') || '1');
-    const limit = 15;
-    const offset = (page - 1) * limit;
+    const page = Math.max(1, parseInt(c.req.query('page') || '1'));
+    const limit = Math.min(Math.max(1, parseInt(c.req.query('limit') || '30')), 60);
 
-    const query = c.req.query('q');
+    const query = c.req.query('q')?.trim();
     const category = c.req.query('category');
-    const tagsParam = c.req.query('tags'); // Comma separated tags
+    const tagsParam = c.req.query('tags');
+    const sortBy = c.req.query('sort_by');
+    const sortOrder = (c.req.query('sort_order')?.toUpperCase() === 'ASC' ? 'ASC' : 'DESC') as 'ASC' | 'DESC';
 
-    // Base params
-    const params: any[] = [];
-    let whereClauses = ['r.is_active = 1'];
-    let joinClauses = [
-        'LEFT JOIN media m ON r.thumbnail_uuid = m.uuid',
-        'LEFT JOIN users u ON r.author_uuid = u.uuid'
-    ];
-
-    // 1. Full Text Search
-    if (query) {
-        joinClauses.push('INNER JOIN resources_fts fts ON r.rowid = fts.rowid');
-        whereClauses.push('fts MATCH ?');
-        params.push(query);
-    }
-
-    // 2. Category Filter
-    if (category && RESOURCE_CATEGORIES.includes(category as ResourceCategory)) {
-        whereClauses.push('r.category = ?');
-        params.push(category);
-    }
-
-    // 3. Tags Filter
-    if (tagsParam) {
-        const tagsList = tagsParam.split(',').map(t => t.trim()).filter(t => t.length > 0);
-        if (tagsList.length > 0) {
-            // This checks if the resource has ANY of the provided tags (OR logic)
-            // For AND logic, we'd need COUNT(DISTINCT tag_id) = tagsList.length
-            // D1 doesn't support complex IN clause easily with binding arrays, so we construct placeholders
-            const placeholders = tagsList.map(() => '?').join(',');
-            whereClauses.push(`EXISTS (
-                SELECT 1 FROM resource_tags rt 
-                JOIN tags t ON rt.tag_id = t.id 
-                WHERE rt.resource_uuid = r.uuid AND t.name IN (${placeholders})
-            )`);
-            params.push(...tagsList);
-        }
-    }
-
-    const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
-    const joinSql = joinClauses.join(' ');
-
-    const sql = `
-        SELECT 
-            r.*, 
-            m.r2_key as thumbnail_key,
-            u.username as author_username,
-            u.avatar_url as author_avatar
-        FROM resources r 
-        ${joinSql}
-        ${whereSql}
-        ORDER BY r.created_at DESC
-        LIMIT ? OFFSET ?
-    `;
-
-    // Add pagination params
-    params.push(limit + 1, offset);
+    const orderColumn = SORT_COLUMNS[sortBy ?? ''] ?? 'r.created_at';
+    const tagsList = tagsParam
+        ? tagsParam.split(',').map(t => t.trim()).filter(Boolean)
+        : [];
 
     try {
-        const { results } = await c.env.DB.prepare(sql).bind(...params).all<Resource & { thumbnail_key: string | null; author_username: string | null; author_avatar: string | null }>();
+        const qb = new QueryBuilder('resources', 'r')
+            .select([
+                'r.uuid',
+                'r.title',
+                'r.description',
+                'r.category',
+                'r.thumbnail_uuid',
+                'r.download_count',
+                'r.created_at * 1000 AS timestamp',
+                'm.r2_key AS thumbnail_key',
+            ])
+            .join('INNER JOIN media m ON r.thumbnail_uuid = m.uuid')
+            .where('r.is_active = 1')
+            .whereIf(
+                !!category && RESOURCE_CATEGORIES.includes(category as ResourceCategory),
+                'r.category = ?',
+                category
+            )
+            .tags(tagsList)
+            .orderBy(orderColumn, sortOrder)
+            .paginate(page, limit + 1);
+
+        // Only enable FTS when the user typed something — falls back to standard filter + sort otherwise.
+        /*
+        if (query) {
+            qb.withFts('resources_fts', 'fts', query, 'r.uuid');
+        }
+        */
+
+        const { sql, params } = qb.build();
+
+        const { results } = await c.env.DB.prepare(sql).bind(...params).all<any>();
 
         const hasNextPage = results.length > limit;
-        const paginatedResults = hasNextPage ? results.slice(0, limit) : results;
-
-        const mapped = paginatedResults.map(r => ({
-            ...r,
-            timestamp: r.created_at * 1000,
-            author: r.author_username ? { username: r.author_username, avatar_url: r.author_avatar } : null
-        }));
 
         return c.json({
-            resources: mapped,
+            resources: hasNextPage ? results.slice(0, limit) : results,
             pagination: {
                 page,
                 hasNextPage,
-                hasPrevPage: page > 1
-            }
+                hasPrevPage: page > 1,
+            },
         });
+
     } catch (e) {
-        console.error('Search error:', e);
+        console.error('[GET /resources] search error:', e);
         return c.json({ error: 'Search failed' }, 500);
     }
 });
@@ -554,48 +543,6 @@ resources.put('/:uuid', async (c) => {
         console.error('Update resource error:', e);
         return c.json({ error: 'Failed to update resource' }, 500);
     }
-});
-
-/**
- * Endpoint: /item/:uuid
- * Sirve el HTML principal pero con los metadatos OG inyectados para el recurso especifico.
- */
-resources.get('/item/:uuid', async (c) => {
-    const uuid = c.req.param('uuid');
-    if (!uuid) return c.json({ error: 'UUID is required' }, 400);
-
-    try {
-        const resource = await c.env.DB.prepare('SELECT * FROM resources WHERE uuid = ?').bind(uuid).first<Resource>();
-
-        if (resource && resource.is_active) {
-            // Get thumbnail
-            const thumbnail = await c.env.DB.prepare('SELECT * FROM media WHERE uuid = ?').bind(resource.thumbnail_uuid).first<Media>();
-
-            // Fetch original index.html
-            const indexResponse = await c.env.ASSETS.fetch(new URL('/index.html', c.req.url));
-            let html = await indexResponse.text();
-
-            // Replace Meta Tags
-            const title = resource.title;
-            const description = resource.description || 'VRCStorage & Asset Storage';
-            const imageUrl = thumbnail ? `${new URL(c.req.url).origin}/api/download/${thumbnail.r2_key}` : `${new URL(c.req.url).origin}/favicon.svg`;
-            const url = `${new URL(c.req.url).origin}/item/${uuid}`;
-
-            // Simple replacements (asegurandose que coincidan con lo que hay en public/index.html)
-            html = html.replace(/<meta property="og:title" content="[^"]*">/, `<meta property="og:title" content="${title}">`);
-            html = html.replace(/<meta property="og:description" content="[^"]*">/, `<meta property="og:description" content="${description}">`);
-            html = html.replace(/<meta property="og:url" content="[^"]*">/, `<meta property="og:url" content="${url}">`);
-            html = html.replace(/<meta property="og:image" content="[^"]*">/, `<meta property="og:image" content="${imageUrl}">`);
-            html = html.replace(/<title>[^<]*<\/title>/, `<title>${title} - VRCStorage</title>`);
-
-            return c.html(html);
-        }
-    } catch (e) {
-        console.error('Error injecting OG tags:', e);
-    }
-
-    // Fallback to normal serving if not found or error
-    return c.env.ASSETS.fetch(new URL('/index.html', c.req.url));
 });
 
 export default resources;

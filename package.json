@@ -5,6 +5,7 @@
 	"private": true,
 	"scripts": {
 		"deploy": "wrangler deploy",
+		"deploy:test": "wrangler deploy --preview-alias testing",
 		"dev": "wrangler dev",
 		"start": "wrangler dev",
 		"test": "vitest",
@@ -12,19 +13,17 @@
 		"seed": "tsx src/test/setup/populate.ts"
 	},
 	"devDependencies": {
-		"@cloudflare/vitest-pool-workers": "^0.12.4",
+		"@cloudflare/vitest-pool-workers": "^0.8.71",
 		"@faker-js/faker": "^10.3.0",
-		"@types/bcryptjs": "^2.4.6",
-		"@types/node": "^25.2.3",
-		"typescript": "^5.5.2",
-		"undici": "^7.22.0",
-		"vitest": "~3.2.0",
-		"wrangler": "^4.65.0"
+		"@types/node": "^25.5.0",
+		"typescript": "^5.9.3",
+		"vitest": "~3.2",
+		"wrangler": "^4.73.0"
 	},
 	"dependencies": {
 		"@hapi/iron": "^7.0.1",
 		"bcryptjs": "^3.0.3",
-		"hono": "^4.11.9",
+		"hono": "^4.12.7",
 		"otpauth": "^9.5.0",
 		"qrcode": "^1.5.4",
 		"tsx": "^4.21.0",

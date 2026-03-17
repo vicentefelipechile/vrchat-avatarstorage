@@ -102,6 +102,14 @@ export const FILE_SIGNATURES: FileSignature[] = [
 
 export async function isValidFileType(file: File): Promise<ValidFileType> {
     const buffer = await file.arrayBuffer();
+    return isValidSignature(buffer);
+}
+
+/**
+ * Validates file signature (magic bytes) from an ArrayBuffer.
+ * This is memory efficient for multipart uploads as it only needs the first few bytes.
+ */
+export function isValidSignature(buffer: ArrayBuffer): ValidFileType {
     const bytes = new Uint8Array(buffer).slice(0, 12); // Read 12 bytes
     const hex = [...bytes].map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
 
