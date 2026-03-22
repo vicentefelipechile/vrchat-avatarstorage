@@ -139,3 +139,42 @@ export const TwoFactorLoginSchema = z.object({
 	username: z.string(),
 	code: z.string().length(6, 'Code must be 6 digits').regex(/^\d+$/, 'Code must be numeric'),
 });
+
+// ============================================================================
+// Blog Schemas
+// ============================================================================
+
+export const BlogPostSchema = z.object({
+	title: z
+		.string()
+		.min(3, 'Title too short')
+		.max(200, 'Title too long')
+		.transform((val) => (val ? sanitizeHtml(val) : val)),
+	content: z.string().min(1, 'Content is required').max(100000, 'Content too long'),
+	excerpt: z
+		.string()
+		.max(500, 'Excerpt too long')
+		.optional()
+		.nullable()
+		.transform((val) => (val ? sanitizeHtml(val) : val)),
+	cover_image_uuid: z.uuid('Invalid cover image UUID').optional().nullable(),
+	author_display: z.enum(['personal', 'team']).default('personal'),
+});
+
+export const BlogPostUpdateSchema = BlogPostSchema.partial().extend({
+	title: z
+		.string()
+		.min(3, 'Title too short')
+		.max(200, 'Title too long')
+		.transform((val) => (val ? sanitizeHtml(val) : val))
+		.optional(),
+});
+
+export const BlogCommentSchema = z.object({
+	text: z
+		.string()
+		.min(3, 'Comment must be at least 3 characters')
+		.max(1000, 'Comment too long')
+		.transform((val) => sanitizeHtml(val.trim().replace(/\n{3,}/g, '\n\n'))),
+	token: z.string().optional(),
+});

@@ -27,6 +27,7 @@ import tagsRoutes from './routes/tags';
 import favoritesRoutes from './routes/favorites';
 import twoFactorRoutes from './routes/2fa';
 import oauthRoutes from './routes/oauth';
+import blogRoutes from './routes/blog';
 import { title } from 'process';
 
 // =========================================================================================================
@@ -75,6 +76,12 @@ app.use('/api/wiki/comments', async (c, next) => {
 		return rateLimit({ binding: c.env.RL_STRICT, keyPrefix: 'wiki_comments_post' })(c, next);
 	}
 	return rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'wiki_comments_get' })(c, next);
+});
+app.use('/api/blog/:uuid/comments', async (c, next) => {
+	if (c.req.method === 'POST') {
+		return rateLimit({ binding: c.env.RL_STRICT, keyPrefix: 'blog_comments_post' })(c, next);
+	}
+	return rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'blog_comments_get' })(c, next);
 });
 
 // Global catch-all (500 req / 60s)
@@ -138,6 +145,7 @@ app.route('/api/favorites', favoritesRoutes);
 app.route('/api', utilRoutes);
 app.route('/api/2fa', twoFactorRoutes);
 app.route('/api/auth', oauthRoutes);
+app.route('/api/blog', blogRoutes);
 
 // =========================================================================================================
 // SEO routes
@@ -221,6 +229,45 @@ app.get('/wiki', async (c) => {
 		console.error('Error injecting Wiki OG tags:', e);
 		return c.env.ASSETS.fetch(new URL('/index.html', c.req.url));
 	}
+});
+
+// SEO route: /blog/:slug (served as SPA but with injected OG meta tags)
+app.get('/blog/:slug', async (c) => {
+	const slug = c.req.param('slug');
+	if (slug === 'create') {
+		// Don't try to SEO-inject the create page, serve as SPA
+		return c.env.ASSETS.fetch(new URL('/index.html', c.req.url));
+	}
+
+	try {
+		const post = await c.env.DB.prepare(
+			`SELECT bp.uuid, bp.title, bp.excerpt, m.r2_key as cover_image_key
+			FROM blog_posts bp
+			LEFT JOIN media m ON bp.cover_image_uuid = m.uuid
+			WHERE bp.uuid = ?`
+		).bind(slug).first<{ uuid: string; title: string; excerpt: string | null; cover_image_key: string | null }>();
+
+		if (post) {
+			const indexResponse = await c.env.ASSETS.fetch(new URL('/index.html', c.req.url));
+			let html = await indexResponse.text();
+			const urlOrigin = new URL(c.req.url).origin;
+
+			const postTitle = escapeHtml(`${post.title} - VRCStorage Blog`);
+			const postDesc = escapeHtml(post.excerpt || 'Read this article on the VRCStorage Blog.');
+			const imageUrl = post.cover_image_key
+				? `${urlOrigin}/api/download/${post.cover_image_key}`
+				: `${urlOrigin}/favicon.svg`;
+			const postUrl = `${urlOrigin}/blog/${post.uuid}`;
+
+			html = injectSEO(html, { title: postTitle, description: postDesc, url: postUrl, imageUrl });
+			return c.html(html);
+		}
+	} catch (e) {
+		console.error('Error injecting Blog OG tags:', e);
+	}
+
+	// Fallback: serve SPA shell
+	return c.env.ASSETS.fetch(new URL('/index.html', c.req.url));
 });
 
 // SEO route: /item/:uuid (served from resources module, needs to be mounted at root)

@@ -282,3 +282,52 @@ export interface OAuthPendingRegistration {
 	email: string | null;
 	avatar_url: string | null;
 }
+
+// ----------------------------------------------------------------------------
+// BLOG
+// ----------------------------------------------------------------------------
+
+export type BlogAuthorDisplay = 'personal' | 'team';
+
+export interface BlogPost {
+	uuid: string;
+	slug: string;
+	title: string;
+	content: string;
+	excerpt: string | null;
+	cover_image_uuid: string | null;
+	author_uuid: string;
+	author_display: BlogAuthorDisplay;
+	created_at: number; // Unix timestamp
+	updated_at: number; // Unix timestamp
+}
+
+export interface CreateBlogPost {
+	uuid: string;
+	slug: string;
+	title: string;
+	content: string;
+	excerpt?: string | null;
+	cover_image_uuid?: string | null;
+	author_uuid: string;
+	author_display: BlogAuthorDisplay;
+}
+
+export interface BlogPostWithAuthor extends BlogPost {
+	author_username: string;
+	author_avatar: string | null;
+	cover_image_key: string | null; // R2 key of the cover image
+}
+
+export interface BlogComment {
+	uuid: string;
+	post_uuid: string;
+	author_uuid: string;
+	text: string;
+	created_at: number;
+}
+
+export interface BlogCommentWithAuthor extends BlogComment {
+	author_username: string;
+	author_avatar: string | null;
+}

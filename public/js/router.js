@@ -13,6 +13,9 @@ import FavoritesView from './views/FavoritesView.js';
 import TOSView from './views/TOSView.js';
 import DMCAView from './views/DMCAView.js';
 import OAuthRegisterView from './views/OAuthRegisterView.js';
+import BlogListView from './views/BlogListView.js';
+import BlogPostView from './views/BlogPostView.js';
+import BlogCreateView from './views/BlogCreateView.js';
 import { pathToRegex, getParams } from './utils.js';
 
 export const router = async () => {
@@ -32,6 +35,10 @@ export const router = async () => {
 		{ path: '/tos', view: TOSView },
 		{ path: '/dmca', view: DMCAView },
 		{ path: '/register/oauth', view: OAuthRegisterView },
+		{ path: '/blog/create', view: BlogCreateView },
+		{ path: '/blog/:id/edit', view: BlogCreateView },
+		{ path: '/blog/:id', view: BlogPostView },
+		{ path: '/blog', view: BlogListView },
 	];
 
 	const potentialMatches = routes.map((route) => {
