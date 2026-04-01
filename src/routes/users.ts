@@ -4,23 +4,37 @@
 // User authentication and profile management endpoints
 // =========================================================================================================
 
-import { Hono } from 'hono';
-import { hashPassword, verifyPassword, createSession, getAuthUser, deleteSession, getUserWith2FA, getDecrypted2FASecret } from '../auth';
-import { User } from '../types';
+// =========================================================================================================
+// Imports
+// =========================================================================================================
+
+import {
+	hashPassword,
+	verifyPassword,
+	createSession,
+	getAuthUser,
+	deleteSession,
+	getUserWith2FA,
+	getDecrypted2FASecret
+} from '../auth';
 import { RegisterSchema, LoginSchema, UserUpdateSchema, TwoFactorLoginSchema } from '../validators';
-import { verifyTurnstile } from './utils';
 import { verifyTwoFactorCode, verifyBackupCode, useBackupCode } from '../auth/2fa';
+import { verifyTurnstile } from '../helpers/turnstile';
+import { User } from '../types';
+import { Hono } from 'hono';
+
+// =========================================================================================================
+// Endpoint
+// =========================================================================================================
 
 const users = new Hono<{ Bindings: Env }>();
 
-/**
- * Endpoint: /register
- * Registra un nuevo usuario.
- */
-users.post('/register', async (c) => {
-	// Rate limiting is handled by the native Cloudflare ratelimit binding (RL_STRICT)
-	// applied as middleware in index.ts — no KV-based tracking needed here.
+// =========================================================================================================
+// POST /api/auth/register
+// Register a new user
+// =========================================================================================================
 
+users.post('/register', async (c) => {
 	const body = await c.req.json();
 
 	// Validation
@@ -52,10 +66,11 @@ users.post('/register', async (c) => {
 	}
 });
 
-/**
- * Endpoint: /login
- * Inicia sesion de un usuario.
- */
+// =========================================================================================================
+// POST /api/auth/login
+// Login a user
+// =========================================================================================================
+
 users.post('/login', async (c) => {
 	// Rate limiting is handled by the native Cloudflare ratelimit binding (RL_STRICT)
 	// applied as middleware in index.ts — no KV-based tracking needed here.
@@ -104,22 +119,21 @@ users.post('/login', async (c) => {
 	return c.json({ error: 'Invalid credentials' }, 401);
 });
 
-/**
- * Endpoint: /user
- * Actualiza el perfil del usuario (username, avatar).
- */
-users.put('/user', async (c) => {
+// =========================================================================================================
+// PUT /api/users/me
+// Update user profile (username, avatar)
+// =========================================================================================================
+
+users.put('/me', async (c) => {
 	const authUser = await getAuthUser(c);
 	if (!authUser) return c.json({ error: 'Unauthorized' }, 401);
 
 	const body = await c.req.json();
 	const { username, avatar_url, token } = UserUpdateSchema.parse(body); // Use UserUpdateSchema (needs import)
 
-	// Turnstile check if provided (optional for updates but good for security)
-	if (token) {
-		const isValid = await verifyTurnstile(token, c.env.TURNSTILE_SECRET_KEY);
-		if (!isValid) return c.json({ error: 'Invalid CAPTCHA' }, 403);
-	}
+	// Turnstile is required for profile updates to prevent bot abuse
+	const isValid = await verifyTurnstile(token || '', c.env.TURNSTILE_SECRET_KEY);
+	if (!isValid) return c.json({ error: 'Invalid CAPTCHA' }, 403);
 
 	const user = await c.env.DB.prepare('SELECT * FROM users WHERE username = ?').bind(authUser.username).first<User>();
 	if (!user) return c.json({ error: 'User not found' }, 404);
@@ -160,11 +174,12 @@ users.put('/user', async (c) => {
 	}
 });
 
-/**
- * Endpoint: /auth/status
- * Verifica si el usuario esta logueado.
- */
-users.get('/auth/status', async (c) => {
+// =========================================================================================================
+// GET /api/auth/status
+// Check if user is logged in
+// =========================================================================================================
+
+users.get('/status', async (c) => {
 	const authUser = await getAuthUser(c);
 	if (!authUser) {
 		return c.json({ loggedIn: false, username: null, is_admin: false, avatar_url: null });
@@ -180,33 +195,25 @@ users.get('/auth/status', async (c) => {
 	});
 });
 
-/**
- * Endpoint: /logout
- * Cierra sesion de un usuario.
- */
-users.post('/logout', (c) => {
-	deleteSession(c);
+// =========================================================================================================
+// POST /api/auth/logout
+// Logout a user
+// =========================================================================================================
+
+users.post('/logout', async (c) => {
+	await deleteSession(c);
 	return c.json({ success: true });
 });
 
-/**
- * Endpoint: /login/2fa
- * Verifica el código 2FA y crea la sesión
- */
-users.post('/login/2fa', async (c) => {
-	// Rate limiting is handled by the native Cloudflare ratelimit binding (RL_STRICT)
-	// applied as middleware in index.ts — no KV-based tracking needed here.
+// =========================================================================================================
+// POST /api/auth/login/2fa
+// Verify 2FA code and create session
+// =========================================================================================================
 
+users.post('/login/2fa', async (c) => {
 	const body = await c.req.json();
 	const { username, code } = TwoFactorLoginSchema.parse(body);
-
-	// CSRF / Pre-auth check: verify token in KV
-	/*
-	const storedUsername = await c.env.VRCSTORAGE_KV.get(`pre_auth:${pre_auth_token}`);
-	if (!storedUsername || storedUsername !== username) {
-		return c.json({ error: 'Invalid or expired login session' }, 401);
-	}
-	*/
+	const pre_auth_token: string | undefined = typeof body.pre_auth_token === 'string' ? body.pre_auth_token : undefined;
 
 	const user = await getUserWith2FA(c, username);
 	if (!user) {
@@ -258,7 +265,9 @@ users.post('/login/2fa', async (c) => {
 	await createSession(c, { username: user.username, is_admin: user.is_admin });
 
 	// Invalidate pre-auth token
-	// await c.env.VRCSTORAGE_KV.delete(`pre_auth:${pre_auth_token}`);
+	if (body.pre_auth_token) {
+		await c.env.VRCSTORAGE_KV.delete(`pre_auth:${body.pre_auth_token}`);
+	}
 
 	// Cache user in KV
 	const sessionUser = { username: user.username, is_admin: user.is_admin === 1 };
@@ -266,5 +275,9 @@ users.post('/login/2fa', async (c) => {
 
 	return c.json({ success: true });
 });
+
+// =========================================================================================================
+// Export
+// =========================================================================================================
 
 export default users;

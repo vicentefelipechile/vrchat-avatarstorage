@@ -150,7 +150,11 @@ export const BlogPostSchema = z.object({
 		.min(3, 'Title too short')
 		.max(200, 'Title too long')
 		.transform((val) => (val ? sanitizeHtml(val) : val)),
-	content: z.string().min(1, 'Content is required').max(100000, 'Content too long'),
+	content: z
+		.string()
+		.min(1, 'Content is required')
+		.max(100000, 'Content too long')
+		.transform((val) => sanitizeHtml(val)),
 	excerpt: z
 		.string()
 		.max(500, 'Excerpt too long')

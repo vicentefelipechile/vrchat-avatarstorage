@@ -267,7 +267,6 @@ export default {
         comments: { title: 'Комментарии Вики' },
         desktopPuppeteer: { title: 'Desktop Puppeteer' },
         unityhubError: { title: 'Ошибка Unity Hub' },
-        modularAvatar: { title: 'Modular Avatar' },
         justkisssfx: { title: 'JustKissSFX' },
         categories: { vrchat: 'VRChat', dependencies: 'Зависимости', erp: 'ERP', informative: 'Информационный' },
     },

@@ -26,13 +26,11 @@
 
 	<link rel="stylesheet" href="/style.css" />
 	<script>
-		(function () {
-			const storedTheme = localStorage.getItem('theme');
-			const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-			if (storedTheme === 'dark' || (!storedTheme && systemPrefersDark)) {
-				document.documentElement.setAttribute('data-theme', 'dark');
-			}
-		})();
+		const storedTheme = localStorage.getItem('theme');
+		const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+		if (storedTheme === 'dark' || (!storedTheme && systemPrefersDark)) {
+			document.documentElement.setAttribute('data-theme', 'dark');
+		};
 	</script>
 	<div id="turnstile-widget" style="display: none"></div>
 	<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
@@ -47,29 +45,35 @@
 	<nav>
 		<div class="container">
 			<div class="logo"><strong>VRCStorage</strong></div>
+			<div class="container-vh"></div>
+
 			<button class="menu-toggle" id="mobile-menu-btn">☰</button>
+
 			<div class="nav-links">
-				<select id="lang-selector" style="margin-right: 5px; padding: 5px">
-					<option value="es">Español</option>
-					<option value="en">English</option>
-					<option value="pt">Português</option>
-					<option value="ru">Русский</option>
-					<option value="jp">日本語</option>
-					<option value="cn">中文</option>
-					<option value="fr">Français</option>
-				</select>
-				<button id="theme-toggle" class="btn" style="margin-right: 15px; padding: 5px 10px"
-					aria-label="Toggle Dark Mode">☀️</button>
 				<a href="/" data-link data-i18n="nav.home">Home</a>
 				<a href="/category/avatars" data-link data-i18n="nav.avatars">Avatares</a>
 				<a href="/category/assets" data-link data-i18n="nav.assets">Assets</a>
 				<a href="/category/clothes" data-link data-i18n="nav.clothes">Ropa</a>
+				<div class="container-vh"></div>
 				<a href="/wiki" data-link data-i18n="nav.wiki">Wiki</a>
-				<!-- <a href="/blog" data-link data-i18n="nav.blog">Blog</a> -->
+				<a href="/blog" data-link data-i18n="nav.blog">Blog</a>
+			</div>
+
+			<div class="nav-utils">
+				<select id="lang-selector" aria-label="Language">
+					<option value="es">🇪🇸 ES</option>
+					<option value="en">🇺🇸 EN</option>
+					<option value="pt">🇧🇷 PT</option>
+					<option value="ru">🇷🇺 RU</option>
+					<option value="jp">🇯🇵 JP</option>
+					<option value="cn">🇨🇳 CN</option>
+					<option value="fr">🇫🇷 FR</option>
+				</select>
+				<button id="theme-toggle" class="btn nav-icon-btn" aria-label="Toggle Dark Mode">🌙</button>
 				<!-- User Menu Dropdown -->
-				<div class="user-menu" style="display: none; position: relative">
+				<div class="user-menu" style="display: none">
 					<button class="user-menu-btn" id="user-menu-btn">
-						<span data-i18n="nav.menu">Menu</span>
+						<span data-i18n="nav.menu">Menú</span>
 					</button>
 					<div class="user-menu-dropdown" id="user-menu-dropdown">
 						<a href="/upload" data-link data-i18n="nav.upload">Subir</a>
@@ -79,7 +83,7 @@
 						<a href="#" id="logout-btn" data-i18n="settings.logout">Cerrar Sesión</a>
 					</div>
 				</div>
-				<a href="/login" data-link class="login-link" style="margin-left: 20px" data-i18n="nav.login">Login</a>
+				<a href="/login" data-link class="login-link" data-i18n="nav.login">Login</a>
 			</div>
 		</div>
 	</nav>
@@ -151,11 +155,7 @@
 						<td><code id="vi-runtime">-</code></td>
 					</tr>
 					<tr>
-						<td>Node Version</td>
-						<td><code id="vi-node">-</code></td>
-					</tr>
-					<tr>
-						<th colspan="2" style="text-align: center;">Environment</th>
+						<th colspan="2" style="text-align: center;">Request</th>
 					</tr>
 					<tr>
 						<td>Country</td>
@@ -174,9 +174,6 @@
 						<td><code id="vi-req-id">-</code></td>
 					</tr>
 				</table>
-				<p style="text-align: center; margin-top: 10px; font-size: 12px; color: #888;">
-					Generated: <span id="vi-generated">-</span>
-				</p>
 			</div>
 			<div id="version-info-error" class="version-info-error" style="display: none;">
 				<p>Failed to load version info</p>
@@ -184,7 +181,9 @@
 		</div>
 	</div>
 
-	<script type="module" src="/js/app.js"></script>
+	<!-- Frontend bundle (compiled from src/frontend/app.ts via esbuild) -->
+	<!-- Run `npm run build-frontend` to rebuild after changes -->
+	<script src="/js/bundle.js"></script>
 </body>
 
 </html>

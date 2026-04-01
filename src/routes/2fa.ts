@@ -1,3 +1,13 @@
+// =========================================================================================================
+// 2FA ROUTES
+// =========================================================================================================
+// Two-factor authentication endpoints for user security
+// =========================================================================================================
+
+// =========================================================================================================
+// Imports
+// =========================================================================================================
+
 import { Hono } from 'hono';
 import { getAuthUser, verifyPassword, getUserWith2FA, getDecrypted2FASecret, createSession, deleteSession } from '../auth';
 import { TwoFactorSetupSchema, TwoFactorVerifySchema, TwoFactorDisableSchema } from '../validators';
@@ -7,13 +17,25 @@ import {
 	encryptSecret,
 	hashBackupCodes,
 	verifyBackupCode,
-	useBackupCode,
 	generateBackupCodes,
 } from '../auth/2fa';
 
-const twoFactorRouter = new Hono<{ Bindings: Env }>();
+// =========================================================================================================
+// Constants
+// =========================================================================================================
 
 const SETUP_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
+
+// =========================================================================================================
+// Endpoint
+// =========================================================================================================
+
+const twoFactorRouter = new Hono<{ Bindings: Env }>();
+
+// =========================================================================================================
+// POST /api/2fa/setup
+// Setup two-factor authentication for the authenticated user
+// =========================================================================================================
 
 twoFactorRouter.post('/setup', async (c) => {
 	const authUser = await getAuthUser(c);
@@ -34,7 +56,7 @@ twoFactorRouter.post('/setup', async (c) => {
 		return c.json({ error: 'User not found' }, 404);
 	}
 
-	const isValidPassword = verifyPassword(password, user.password_hash);
+	const isValidPassword = await verifyPassword(password, user.password_hash);
 	if (!isValidPassword) {
 		return c.json({ error: 'Invalid password' }, 401);
 	}
@@ -56,6 +78,11 @@ twoFactorRouter.post('/setup', async (c) => {
 		otpauthUrl: setup.otpauthUrl,
 	});
 });
+
+// =========================================================================================================
+// POST /api/2fa/verify
+// Verify two-factor authentication code for the authenticated user
+// =========================================================================================================
 
 twoFactorRouter.post('/verify', async (c) => {
 	const authUser = await getAuthUser(c);
@@ -105,6 +132,11 @@ twoFactorRouter.post('/verify', async (c) => {
 	});
 });
 
+// =========================================================================================================
+// POST /api/2fa/disable
+// Disable two-factor authentication for the authenticated user
+// =========================================================================================================
+
 twoFactorRouter.post('/disable', async (c) => {
 	const authUser = await getAuthUser(c);
 	if (!authUser) {
@@ -128,27 +160,30 @@ twoFactorRouter.post('/disable', async (c) => {
 		return c.json({ error: '2FA is not enabled' }, 400);
 	}
 
-	const isValidPassword = verifyPassword(password, user.password_hash);
+	const isValidPassword = await verifyPassword(password, user.password_hash);
 	if (!isValidPassword) {
 		return c.json({ error: 'Invalid password' }, 401);
 	}
 
-	if (code) {
-		const secret = await getDecrypted2FASecret(c, user);
-		if (!secret) {
-			return c.json({ error: 'Failed to decrypt 2FA secret' }, 500);
-		}
+	// TOTP code is required to disable 2FA
+	if (!code) {
+		return c.json({ error: '2FA code is required to disable 2FA' }, 400);
+	}
 
-		const isValidCode = verifyTwoFactorCode(secret, code);
-		if (!isValidCode) {
-			if (user.two_factor_backup_codes) {
-				const isBackupCode = await verifyBackupCode(user.two_factor_backup_codes, code);
-				if (!isBackupCode) {
-					return c.json({ error: 'Invalid code' }, 401);
-				}
-			} else {
+	const secret = await getDecrypted2FASecret(c, user);
+	if (!secret) {
+		return c.json({ error: 'Failed to decrypt 2FA secret' }, 500);
+	}
+
+	const isValidCode = verifyTwoFactorCode(secret, code);
+	if (!isValidCode) {
+		if (user.two_factor_backup_codes) {
+			const isBackupCode = await verifyBackupCode(user.two_factor_backup_codes, code);
+			if (!isBackupCode) {
 				return c.json({ error: 'Invalid code' }, 401);
 			}
+		} else {
+			return c.json({ error: 'Invalid code' }, 401);
 		}
 	}
 
@@ -160,6 +195,11 @@ twoFactorRouter.post('/disable', async (c) => {
 
 	return c.json({ message: '2FA disabled successfully' });
 });
+
+// =========================================================================================================
+// GET /api/2fa/status
+// Get the two-factor authentication status for the authenticated user
+// =========================================================================================================
 
 twoFactorRouter.get('/status', async (c) => {
 	const authUser = await getAuthUser(c);
@@ -176,5 +216,9 @@ twoFactorRouter.get('/status', async (c) => {
 		enabled: user.two_factor_enabled === 1,
 	});
 });
+
+// =========================================================================================================
+// Export
+// =========================================================================================================
 
 export default twoFactorRouter;

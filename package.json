@@ -4,18 +4,23 @@
 	"type": "module",
 	"private": true,
 	"scripts": {
-		"deploy": "wrangler deploy",
-		"deploy:test": "wrangler deploy --preview-alias testing",
-		"dev": "wrangler dev",
+		"deploy": "node src/frontend/build-frontend.mjs && wrangler deploy",
+		"deploy:test": "node src/frontend/build-frontend.mjs && wrangler versions upload",
+		"dev": "concurrently --kill-others --names \"esbuild,wrangler\" --prefix-colors \"cyan,yellow\" --delay \"0,3000\" \"node src/frontend/build-frontend.mjs --watch --dev\" \"wrangler dev\"",
 		"start": "wrangler dev",
-		"test": "vitest",
 		"cf-typegen": "wrangler types",
-		"seed": "tsx src/test/setup/populate.ts"
+		"seed": "tsx src/test/setup/populate.ts",
+		"check-i18n": "tsx src/check-i18n.ts",
+		"build-frontend": "node src/frontend/build-frontend.mjs",
+		"build-frontend:dev": "node src/frontend/build-frontend.mjs --dev",
+		"build-frontend:watch": "node src/frontend/build-frontend.mjs --watch --dev"
 	},
 	"devDependencies": {
 		"@cloudflare/vitest-pool-workers": "^0.8.71",
 		"@faker-js/faker": "^10.3.0",
 		"@types/node": "^25.5.0",
+		"concurrently": "^9.2.1",
+		"esbuild": "^0.27.4",
 		"typescript": "^5.9.3",
 		"vitest": "~3.2",
 		"wrangler": "^4.73.0"
@@ -24,6 +29,7 @@
 		"@hapi/iron": "^7.0.1",
 		"bcryptjs": "^3.0.3",
 		"hono": "^4.12.7",
+		"lucide": "^1.7.0",
 		"otpauth": "^9.5.0",
 		"qrcode": "^1.5.4",
 		"tsx": "^4.21.0",

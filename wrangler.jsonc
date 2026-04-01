@@ -12,7 +12,7 @@
 	},
 	"assets": {
 		"directory": "./public",
-		"binding": "ASSETS"
+		"binding": "ASSETS",
 	},
 	"observability": {
 		"enabled": true

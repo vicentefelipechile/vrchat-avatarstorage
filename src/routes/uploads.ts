@@ -4,18 +4,27 @@
 // File upload endpoints (single and multipart)
 // =========================================================================================================
 
+// =========================================================================================================
+// Imports
+// =========================================================================================================
+
 import { Hono } from 'hono';
 import { getAuthUser } from '../auth';
 import { isValidFileType, isValidSignature, validateFileSize } from '../helpers/file-validation';
 import { validateImageDimensions } from '../helpers/image-validator';
 
-const uploads = new Hono<{ Bindings: Env }>();
+// =========================================================================================================
+// Endpoint
+// =========================================================================================================
 
-/**
- * Endpoint: /
- * Sube un nuevo archivo y crea un registro en la tabla media.
- */
-uploads.put('/', async (c) => {
+const upload = new Hono<{ Bindings: Env }>();
+
+// =========================================================================================================
+// PUT /api/upload
+// Upload a new file and create a media record
+// =========================================================================================================
+
+upload.put('/', async (c) => {
 	const user = await getAuthUser(c);
 	if (!user) return c.json({ error: 'Unauthorized' }, 401);
 
@@ -107,11 +116,12 @@ uploads.put('/', async (c) => {
 	return c.json({ error: 'No file uploaded' }, 400);
 });
 
-/**
- * Endpoint: /init
- * Inicia una carga multiparte para archivos grandes.
- */
-uploads.post('/init', async (c) => {
+// =========================================================================================================
+// POST /api/upload/init
+// Inicia una carga multiparte para archivos grandes.
+// =========================================================================================================
+
+upload.post('/init', async (c) => {
 	const user = await getAuthUser(c);
 	if (!user) return c.json({ error: 'Unauthorized' }, 401);
 
@@ -120,6 +130,12 @@ uploads.post('/init', async (c) => {
 
 	if (!filename || !media_type) {
 		return c.json({ error: 'Missing filename or media_type' }, 400);
+	}
+
+	// Validate media_type against a strict allowlist
+	const ALLOWED_INIT_TYPES = ['image', 'video', 'file'] as const;
+	if (!ALLOWED_INIT_TYPES.includes(media_type as (typeof ALLOWED_INIT_TYPES)[number])) {
+		return c.json({ error: 'Invalid media_type. Must be one of: image, video, file' }, 400);
 	}
 
 	const r2Key = crypto.randomUUID();
@@ -146,11 +162,12 @@ uploads.post('/init', async (c) => {
 	}
 });
 
-/**
- * Endpoint: /part
- * Sube una parte de un archivo grande.
- */
-uploads.put('/part', async (c) => {
+// =========================================================================================================
+// PUT /api/upload/part
+// Sube una parte de un archivo grande.
+// =========================================================================================================
+
+upload.put('/part', async (c) => {
 	const user = await getAuthUser(c);
 	if (!user) return c.json({ error: 'Unauthorized' }, 401);
 
@@ -209,28 +226,44 @@ uploads.put('/part', async (c) => {
 	}
 });
 
-/**
- * Endpoint: /complete
- * Completa una carga multiparte.
- */
-uploads.post('/complete', async (c) => {
+// =========================================================================================================
+// POST /api/upload/complete
+// Completa una carga multiparte.
+// =========================================================================================================
+
+upload.post('/complete', async (c) => {
 	const user = await getAuthUser(c);
 	if (!user) return c.json({ error: 'Unauthorized' }, 401);
 
 	const body = await c.req.json();
-	const { key, uploadId, parts, filename, media_type } = body;
+	const { key, uploadId, parts, filename } = body;
 
-	if (!key || !uploadId || !parts || !Array.isArray(parts) || !filename || !media_type) {
+	if (!key || !uploadId || !parts || !Array.isArray(parts) || !filename) {
 		return c.json({ error: 'Missing required fields' }, 400);
+	}
+
+	// Use the media_type stored in KV during /init (validated against magic bytes in /part)
+	// instead of trusting the client-supplied value.
+	const media_type = await c.env.VRCSTORAGE_KV.get(`upload_meta:${uploadId}`);
+	if (!media_type) {
+		return c.json({ error: 'Upload session expired or invalid' }, 400);
+	}
+
+	const ALLOWED_MEDIA_TYPES = ['image', 'video', 'file'] as const;
+	if (!ALLOWED_MEDIA_TYPES.includes(media_type as (typeof ALLOWED_MEDIA_TYPES)[number])) {
+		return c.json({ error: 'Invalid media type' }, 400);
 	}
 
 	try {
 		const multipartUpload = c.env.BUCKET.resumeMultipartUpload(key, uploadId);
 		await multipartUpload.complete(parts);
 
+		// Clean up KV entry
+		await c.env.VRCSTORAGE_KV.delete(`upload_meta:${uploadId}`);
+
 		const mediaUuid = crypto.randomUUID();
 
-		// Create media record
+		// Create media record using the server-authoritative media_type from KV
 		await c.env.DB.prepare('INSERT INTO media (uuid, r2_key, media_type, file_name) VALUES (?, ?, ?, ?)')
 			.bind(mediaUuid, key, media_type, filename)
 			.run();
@@ -247,4 +280,8 @@ uploads.post('/complete', async (c) => {
 	}
 });
 
-export default uploads;
+// =========================================================================================================
+// Export
+// =========================================================================================================
+
+export default upload;

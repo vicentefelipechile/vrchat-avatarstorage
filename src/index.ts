@@ -10,7 +10,6 @@
 // =========================================================================================================
 
 import { Hono } from 'hono';
-import { getAuthUser } from './auth';
 import { Media, Resource, UploadQueueMessage } from './types';
 import { z } from 'zod';
 import { securityMiddleware } from './middleware/security';
@@ -21,14 +20,13 @@ import adminRoutes from './routes/admin';
 import commentRoutes from './routes/comments';
 import uploadRoutes from './routes/uploads';
 import downloadRoutes from './routes/downloads';
-import utilRoutes from './routes/utils';
+import systemRoutes from './routes/system';
 import wikiRoutes from './routes/wiki';
 import tagsRoutes from './routes/tags';
 import favoritesRoutes from './routes/favorites';
 import twoFactorRoutes from './routes/2fa';
 import oauthRoutes from './routes/oauth';
 import blogRoutes from './routes/blog';
-import { title } from 'process';
 
 // =========================================================================================================
 // Variables
@@ -60,9 +58,9 @@ securityMiddleware(app);
 // =========================================================================================================
 
 // Auth — strict (1 req / 60s per IP)
-app.use('/api/login', async (c, next) => rateLimit({ binding: c.env.RL_STRICT, keyPrefix: 'login' })(c, next));
-app.use('/api/register', async (c, next) => rateLimit({ binding: c.env.RL_STRICT, keyPrefix: 'register' })(c, next));
-app.use('/api/login/2fa', async (c, next) => rateLimit({ binding: c.env.RL_STRICT, keyPrefix: 'login_2fa' })(c, next));
+app.use('/api/auth/register', async (c, next) => rateLimit({ binding: c.env.RL_STRICT, keyPrefix: 'register' })(c, next));
+app.use('/api/auth/login', async (c, next) => rateLimit({ binding: c.env.RL_STRICT, keyPrefix: 'login' })(c, next));
+app.use('/api/auth/login/2fa', async (c, next) => rateLimit({ binding: c.env.RL_STRICT, keyPrefix: 'login_2fa' })(c, next));
 
 // Comments — differentiate POST (strict) from GET (medium)
 app.use('/api/comments/*', async (c, next) => {
@@ -89,13 +87,16 @@ app.use('*', async (c, next) => rateLimit({ binding: c.env.RL_GLOBAL })(c, next)
 
 // Sensitive endpoint overrides — medium binding, route-specific key prefix
 app.use('/api/upload/*', async (c, next) => rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'upload' })(c, next));
-app.use('/api/user', async (c, next) => rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'user_update' })(c, next));
+app.use('/api/auth/me', async (c, next) => rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'user_update' })(c, next));
 app.use('/api/admin/*', async (c, next) => rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'admin' })(c, next));
 app.use('/api/favorites/*', async (c, next) => rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'favorites' })(c, next));
 app.use('/api/2fa/*', async (c, next) => rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: '2fa' })(c, next));
 
 // OAuth — medium rate limit (100/min). Callbacks are one-shot, not brute-forceable.
 app.use('/api/auth/*', async (c, next) => rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'oauth' })(c, next));
+
+// OAuth registration completion — strict rate limit to prevent username enumeration
+app.use('/api/auth/complete', async (c, next) => rateLimit({ binding: c.env.RL_STRICT, keyPrefix: 'oauth_complete' })(c, next));
 
 // Error Handler for Zod
 app.onError((err, c) => {
@@ -107,45 +108,22 @@ app.onError((err, c) => {
 });
 
 // =========================================================================================================
-// Middleware
-// =========================================================================================================
-// Simple auth check for download links
-app.use('/download/*', async (c, next) => {
-	const user = await getAuthUser(c);
-	if (!user) {
-		const accept = c.req.header('Accept') || '';
-		const secFetchDest = c.req.header('Sec-Fetch-Dest') || '';
-
-		// Si el request es de una imagen/video o no acepta HTML explícitamente, 
-		// devuelve un error en lugar del HTML de /login.
-		if (secFetchDest === 'image' || secFetchDest === 'video' || secFetchDest === 'audio' ||
-			(!accept.includes('text/html') && accept !== '*/*')) {
-			return c.json({ error: 'Unauthorized' }, 401);
-		}
-
-		return c.redirect('/login');
-	}
-	await next();
-});
-
-// =========================================================================================================
 // Mount Routes
 // =========================================================================================================
 
+app.route('/api/auth', userRoutes);
+app.route('/api/auth', oauthRoutes);
+app.route('/api/2fa', twoFactorRoutes);
 app.route('/api/resources', resourceRoutes);
-app.route('/api', userRoutes);
-app.route('/api/admin', adminRoutes);
-app.route('/api/resources', commentRoutes);
 app.route('/api/comments', commentRoutes);
+app.route('/api/blog', blogRoutes);
 app.route('/api/wiki', wikiRoutes);
-app.route('/api/tags', tagsRoutes);
 app.route('/api/upload', uploadRoutes);
 app.route('/api/download', downloadRoutes);
+app.route('/api/tags', tagsRoutes);
 app.route('/api/favorites', favoritesRoutes);
-app.route('/api', utilRoutes);
-app.route('/api/2fa', twoFactorRoutes);
-app.route('/api/auth', oauthRoutes);
-app.route('/api/blog', blogRoutes);
+app.route('/api/admin', adminRoutes);
+app.route('/api', systemRoutes);
 
 // =========================================================================================================
 // SEO routes
@@ -188,6 +166,17 @@ app.get('/wiki', async (c) => {
 	try {
 		const topic = c.req.query('topic');
 		const lang = c.req.query('lang') || 'es';
+
+		// Validate lang against the supported locales only
+		const VALID_LANGS = ['es', 'en', 'pt', 'fr', 'jp', 'ru', 'cn'];
+		if (!VALID_LANGS.includes(lang)) {
+			return c.json({ error: 'Invalid language' }, 400);
+		}
+
+		// Validate topic: only lowercase alphanumeric, hyphens, and underscores allowed
+		if (topic && !/^[a-z0-9_-]{1,100}$/.test(topic)) {
+			return c.json({ error: 'Invalid topic' }, 400);
+		}
 
 		// Fetch original index.html
 		const indexResponse = await c.env.ASSETS.fetch(new URL('/index.html', c.req.url));

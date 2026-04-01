@@ -1,3 +1,12 @@
+// =========================================================================================================
+// AUTHENTICATION
+// =========================================================================================================
+// This file handles authentication and session management
+// =========================================================================================================
+
+// =========================================================================================================
+// Imports
+// =========================================================================================================
 
 import { hashSync, compareSync } from 'bcryptjs';
 import { Context } from 'hono';
@@ -5,6 +14,10 @@ import { sign, verify } from 'hono/jwt';
 import { getCookie, setCookie } from 'hono/cookie';
 import { User } from './types';
 import { decryptSecret } from './auth/2fa';
+
+// =========================================================================================================
+// Password Hashing
+// =========================================================================================================
 
 export async function hashPassword(password: string): Promise<{ hash: string; salt?: string }> {
     const hash = hashSync(password, 10);
@@ -15,13 +28,17 @@ export async function verifyPassword(password: string, storedHash: string, _stor
     return compareSync(password, storedHash);
 }
 
-// ----------------------------------------------------------------------------
-// JWT SESSION MANAGEMENT
-// ----------------------------------------------------------------------------
+// =========================================================================================================
+// JWT Session Management
+// =========================================================================================================
 
 const COOKIE_NAME = 'auth_token';
-// 7 days in seconds
-const MAX_AGE = 60 * 60 * 24 * 7;
+const MAX_AGE = 60 * 60 * 24 * 7; // 7 days in seconds
+
+// =========================================================================================================
+// Create Session
+// This function creates a new session for a user 
+// =========================================================================================================
 
 export async function createSession(c: Context<{ Bindings: Env }>, user: { username: string; is_admin: number }) {
     const secret = c.env.JWT_SECRET;
@@ -43,6 +60,11 @@ export async function createSession(c: Context<{ Bindings: Env }>, user: { usern
         maxAge: MAX_AGE,
     });
 }
+
+// =========================================================================================================
+// Get Authenticated User
+// This function gets the authenticated user from the session
+// =========================================================================================================
 
 export async function getAuthUser(c: Context<{ Bindings: Env }>): Promise<{ username: string; is_admin: boolean } | null> {
     const token = getCookie(c, COOKIE_NAME);
@@ -79,18 +101,34 @@ export async function getAuthUser(c: Context<{ Bindings: Env }>): Promise<{ user
     }
 }
 
-export function deleteSession(c: Context) {
-    setCookie(c, COOKIE_NAME, '', {
-        httpOnly: true,
-        secure: true,
-        path: '/',
-        maxAge: 0,
-    });
+export async function deleteSession(c: Context<{ Bindings: Env }>) {
+	// Read token before clearing the cookie so we can invalidate the KV session cache.
+	const token = getCookie(c, COOKIE_NAME);
+
+	// Clear cookie
+	setCookie(c, COOKIE_NAME, '', {
+		httpOnly: true,
+		secure: true,
+		path: '/',
+		maxAge: 0,
+	});
+
+	// Invalidate the KV session cache so the JWT cannot be replayed after logout.
+	if (token && c.env?.JWT_SECRET) {
+		try {
+			const payload = await verify(token, c.env.JWT_SECRET, 'HS256');
+			if (payload?.sub) {
+				await c.env.VRCSTORAGE_KV.delete(`user:${payload.sub as string}`);
+			}
+		} catch {
+			// Token already invalid — nothing to revoke
+		}
+	}
 }
 
-// ----------------------------------------------------------------------------
-// 2FA HELPERS
-// ----------------------------------------------------------------------------
+// =========================================================================================================
+// 2FA Helpers
+// =========================================================================================================
 
 export async function getUserWith2FA(c: Context<{ Bindings: Env }>, username: string): Promise<User | null> {
     const user = await c.env.DB.prepare('SELECT * FROM users WHERE username = ?').bind(username).first<User>();

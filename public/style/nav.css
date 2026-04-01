@@ -1,0 +1,237 @@
+/* =============================================================================
+   nav.css — Navbar, user menu dropdown, mobile hamburger
+   ============================================================================= */
+
+nav {
+	background-color: var(--bg-nav);
+	border-bottom: 2px solid var(--border-color);
+	padding: 8px 0;
+	margin-bottom: 20px;
+}
+
+nav .container {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding-top: 0;
+	padding-bottom: 0;
+}
+
+/* ---- Logo ---- */
+.logo {
+	flex-shrink: 0;
+	font-weight: bold;
+}
+
+/* ---- Nav links (center, grows to fill space) ---- */
+.nav-links {
+	display: flex;
+	align-items: center;
+	gap: 7px;
+	flex: 1;
+	flex-wrap: wrap;
+}
+
+.nav-links a {
+	text-decoration: none;
+	font-weight: bold;
+	padding: 9px 10px;
+	border: 1px solid transparent;
+	white-space: nowrap;
+}
+
+.nav-links a:hover {
+	border: 1px solid var(--border-color);
+	background-color: var(--bg-card);
+}
+
+/* ---- Nav utils (right, fixed controls) ---- */
+.nav-utils {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-shrink: 0;
+}
+
+#lang-selector {
+	padding: 7px 8px;
+	font-family: monospace;
+	font-size: 0.85rem;
+	background: var(--bg-input);
+	color: var(--text-main);
+	border: 2px solid var(--border-color);
+	cursor: pointer;
+}
+
+.nav-icon-btn {
+	padding: 7px 10px;
+	font-size: 1rem;
+	line-height: 1;
+	border: 2px solid var(--border-color);
+	background: var(--bg-hover);
+	cursor: pointer;
+}
+
+.nav-icon-btn:hover {
+	background: var(--bg-card);
+}
+
+/* ---- User Menu Dropdown ---- */
+.user-menu {
+	position: relative;
+	display: inline-block;
+}
+
+.user-menu-btn {
+	background: var(--bg-hover);
+	color: var(--text-main);
+	border: 2px solid var(--border-color);
+	padding: 7px 10px;
+	font-family: inherit;
+	font-weight: bold;
+	cursor: pointer;
+}
+
+.user-menu-btn:hover {
+	border: 2px solid var(--text-main);
+	background-color: var(--bg-card);
+}
+
+.user-menu-dropdown {
+	display: none;
+	position: absolute;
+	right: 0;
+	top: 100%;
+	background-color: var(--bg-dropdown);
+	border: 2px solid var(--border-color);
+	min-width: 150px;
+	z-index: 1000;
+	margin-top: 5px;
+}
+
+.user-menu-dropdown.active {
+	display: block;
+}
+
+.user-menu-dropdown a {
+	display: block;
+	padding: 10px 15px;
+	text-decoration: none;
+	font-weight: bold;
+	border: none;
+	color: var(--text-main);
+	border-bottom: 1px solid var(--border-color);
+}
+
+.user-menu-dropdown a:last-child {
+	border-bottom: none;
+}
+
+.user-menu-dropdown a:hover {
+	background-color: var(--bg-card);
+	border: none;
+	border-bottom: 1px solid var(--border-color);
+}
+
+.user-menu-dropdown a:last-child:hover {
+	background-color: var(--bg-card);
+	border: none;
+}
+
+/* ---- Login link (nav-utils) ---- */
+.login-link {
+	text-decoration: none;
+	font-weight: bold;
+	padding: 7px 10px;
+	border: 2px solid var(--border-color);
+	color: var(--text-main);
+	white-space: nowrap;
+}
+
+.login-link:hover {
+	border-color: var(--text-main);
+	background-color: var(--bg-card);
+}
+
+/* ---- Hamburger (mobile) ---- */
+.menu-toggle {
+	display: none;
+	background: none;
+	border: 2px solid var(--border-color);
+	font-size: 1.2rem;
+	cursor: pointer;
+	padding: 4px 8px;
+	color: var(--text-main);
+}
+
+/* ---- Mobile nav ---- */
+@media (max-width: 768px) {
+	nav .container {
+		flex-wrap: wrap;
+	}
+
+	.logo {
+		flex: 1;
+	}
+
+	.menu-toggle {
+		display: block;
+		order: 2;
+	}
+
+	.nav-utils {
+		order: 3;
+	}
+
+	.nav-links {
+		display: none;
+		order: 4;
+		width: 100%;
+		flex-direction: column;
+		align-items: stretch;
+		padding-top: 10px;
+		gap: 4px;
+	}
+
+	.nav-links.active {
+		display: flex;
+	}
+
+	.nav-links a {
+		text-align: center;
+		width: 100%;
+		padding: 8px;
+		border: 1px solid var(--border-light);
+	}
+
+	.nav-utils {
+		gap: 6px;
+	}
+
+	#lang-selector {
+		width: auto;
+	}
+
+	.user-menu {
+		position: relative;
+	}
+
+	.user-menu-btn {
+		width: 100%;
+		text-align: center;
+	}
+
+	.user-menu-dropdown {
+		position: absolute;
+		width: max-content;
+		min-width: 150px;
+	}
+
+	.user-menu-dropdown a {
+		text-align: center;
+	}
+
+	.login-link {
+		margin: 0 !important;
+	}
+}

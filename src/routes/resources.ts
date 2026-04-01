@@ -4,23 +4,28 @@
 // Resource browsing, creation, and SEO endpoints
 // =========================================================================================================
 
+// =========================================================================================================
+// Imports
+// =========================================================================================================
+
 import { Hono } from 'hono';
 import { getAuthUser } from '../auth';
 import { Resource, ResourceCategory, RESOURCE_CATEGORIES, User, Media, ResourceLink, ResourceHistory, Tag } from '../types';
 import { ResourceSchema } from '../validators';
-import { verifyTurnstile } from './utils';
+import { verifyTurnstile } from '../helpers/turnstile';
 import { QueryBuilder } from '../helpers/query-constructor';
 
 // =========================================================================================================
-// EndPoint
+// Endpoints
 // =========================================================================================================
 
 const resources = new Hono<{ Bindings: Env }>();
 
-/**
- * Endpoint: /latest
- * Este endpoint existe para que la pagina principal "/" pueda mostrar los ultimos 6 recursos subidos.
- */
+// =========================================================================================================
+// GET /api/resources/latest
+// Returns the latest resources uploaded.
+// =========================================================================================================
+
 resources.get('/latest', async (c) => {
     // Always declare CDN caching intent regardless of cache source
     c.header('Cache-Control', 'public, max-age=60');
@@ -38,7 +43,7 @@ resources.get('/latest', async (c) => {
             'r.title',
             'r.description',
             'r.thumbnail_uuid',
-            'r.created_at * 1000 as timestamp',
+            'r.created_at * 1000 as created_at',
             'r.download_count',
             'm.r2_key as thumbnail_key'
         ])
@@ -59,6 +64,19 @@ resources.get('/latest', async (c) => {
     return c.json(results);
 });
 
+// =========================================================================================================
+// GET /api/resources/ (Search)
+// Returns all resources.
+// Query params:
+//   q          Free-text search (FTS5 MATCH against title and description)
+//   category   Category filter (avatars | worlds | assets | clothes)
+//   tags       Comma-separated tag names (e.g. "unity,quest")
+//   sort_by    Sort column (created_at | download_count | title) — default: created_at
+//   sort_order Sort direction (asc | desc) — default: desc
+//   page       Page number, 1-indexed — default: 1
+//   limit      Results per page — default: 15, max: 60
+// =========================================================================================================
+
 // Sortable column whitelist.
 // Never interpolate user input directly into ORDER BY — use this map instead.
 const SORT_COLUMNS: Record<string, string> = {
@@ -67,22 +85,9 @@ const SORT_COLUMNS: Record<string, string> = {
     title: 'r.title',
 };
 
-/**
- * Endpoint: / (Search)
- * General resource search with filters, pagination, and full-text search (FTS).
- *
- * Query params:
- *   q          Free-text search (FTS5 MATCH against title and description)
- *   category   Category filter (avatars | worlds | assets | clothes)
- *   tags       Comma-separated tag names (e.g. "unity,quest")
- *   sort_by    Sort column (created_at | download_count | title) — default: created_at
- *   sort_order Sort direction (asc | desc) — default: desc
- *   page       Page number, 1-indexed — default: 1
- *   limit      Results per page — default: 15, max: 60
- */
 resources.get('/', async (c) => {
-    const page = Math.max(1, parseInt(c.req.query('page') || '1'));
-    const limit = Math.min(Math.max(1, parseInt(c.req.query('limit') || '30')), 60);
+    const page = Math.max(1, parseInt(c.req.query('page') || '1', 10) || 1);
+    const limit = Math.min(Math.max(1, parseInt(c.req.query('limit') || '30', 10) || 30), 60);
 
     const query = c.req.query('q')?.trim();
     const category = c.req.query('category');
@@ -104,7 +109,7 @@ resources.get('/', async (c) => {
                 'r.category',
                 'r.thumbnail_uuid',
                 'r.download_count',
-                'r.created_at * 1000 AS timestamp',
+                'r.created_at * 1000 as created_at',
                 'm.r2_key AS thumbnail_key',
             ])
             .join('INNER JOIN media m ON r.thumbnail_uuid = m.uuid')
@@ -146,94 +151,110 @@ resources.get('/', async (c) => {
     }
 });
 
-/**
- * Endpoint: /category/:category
- * Deprecated but kept for compatibility - redirect logic or reuse search?
- * Keeping it simple as alias to search with category param.
- */
-resources.get('/category/:category', async (c) => {
-    const category = c.req.param('category');
-    const page = c.req.query('page') || '1';
-    return c.redirect(`/api/resources?category=${category}&page=${page}`);
-});
+// =========================================================================================================
+// GET /api/resources/:uuid
+// Returns the details of a specific resource.
+// =========================================================================================================
 
-/**
- * Endpoint: /:uuid
- * Muestra en detalle la informacion de un recurso.
- */
 resources.get('/:uuid', async (c) => {
     const uuid = c.req.param('uuid');
     if (!uuid) return c.json({ error: 'Missing uuid' }, 400);
 
-    // Try KV? Maybe skip for now to ensure tags are fresh, or handle cache invalidation carefully.
+    const row = await c.env.DB.prepare(`
+        SELECT
+            r.uuid,
+            r.title,
+            r.description,
+            r.category,
+            r.download_count,
+            r.is_active,
+            r.created_at,
+            r.updated_at,
+            u.username        AS author_username,
+            tm.r2_key         AS thumbnail_key,
+            rm_ref.r2_key     AS reference_image_key,
+            COALESCE((
+                SELECT json_group_array(json_object(
+                    'uuid',       m.uuid,
+                    'r2_key',     m.r2_key,
+                    'media_type', m.media_type
+                ))
+                FROM media m
+                JOIN resource_n_media rnm ON m.uuid = rnm.media_uuid
+                WHERE rnm.resource_uuid = r.uuid
+            ), '[]') AS media_files_json,
+            COALESCE((
+                SELECT json_group_array(json_object(
+                    'uuid',          rl.uuid,
+                    'link_url',      rl.link_url,
+                    'link_title',    rl.link_title,
+                    'link_type',     rl.link_type,
+                    'display_order', rl.display_order
+                ))
+                FROM resource_links rl
+                WHERE rl.resource_uuid = r.uuid
+                ORDER BY rl.display_order ASC
+            ), '[]') AS links_json,
+            COALESCE((
+                SELECT json_group_array(json_object('id', t.id, 'name', t.name))
+                FROM tags t
+                JOIN resource_tags rt ON t.id = rt.tag_id
+                WHERE rt.resource_uuid = r.uuid
+            ), '[]') AS tags_json
+        FROM resources r
+        LEFT JOIN users  u      ON r.author_uuid          = u.uuid
+        LEFT JOIN media  tm     ON r.thumbnail_uuid        = tm.uuid
+        LEFT JOIN media  rm_ref ON r.reference_image_uuid  = rm_ref.uuid
+        WHERE r.uuid = ?
+    `).bind(uuid).first<Record<string, unknown>>();
 
-    const resource = await c.env.DB.prepare('SELECT * FROM resources WHERE uuid = ?').bind(uuid).first<Resource>();
-    if (!resource) return c.json({ error: 'Not found' }, 404);
-
-    // Get author
-    const author = await c.env.DB.prepare('SELECT uuid, username, avatar_url FROM users WHERE uuid = ?')
-        .bind(resource.author_uuid).first<User>();
-
-    // Get thumbnail media
-    const thumbnail = await c.env.DB.prepare('SELECT * FROM media WHERE uuid = ?')
-        .bind(resource.thumbnail_uuid).first<Media>();
-
-    // Get reference image if exists
-    let referenceImage: Media | null = null;
-    if (resource.reference_image_uuid) {
-        referenceImage = await c.env.DB.prepare('SELECT * FROM media WHERE uuid = ?')
-            .bind(resource.reference_image_uuid).first<Media>();
-    }
-
-    // Get all associated media files
-    const mediaFiles = await c.env.DB.prepare(
-        `SELECT m.* FROM media m
-		 JOIN resource_n_media rm ON m.uuid = rm.media_uuid
-		 WHERE rm.resource_uuid = ?`
-    ).bind(uuid).all<Media>();
-
-    // Get all resource links
-    const links = await c.env.DB.prepare(
-        'SELECT * FROM resource_links WHERE resource_uuid = ? ORDER BY display_order ASC'
-    ).bind(uuid).all<ResourceLink>();
-
-    // Get Tags
-    const tags = await c.env.DB.prepare(`
-        SELECT t.id, t.name 
-        FROM tags t
-        JOIN resource_tags rt ON t.id = rt.tag_id
-        WHERE rt.resource_uuid = ?
-    `).bind(uuid).all<Tag>();
+    if (!row) return c.json({ error: 'Not found' }, 404);
 
     const isLoggedIn = !!(await getAuthUser(c));
 
-    // Construct download URLs from links
-    const downloadLinks = links.results.filter(l => l.link_type === 'download');
-    const downloadUrl = downloadLinks.length > 0 ? downloadLinks[0].link_url : null;
-    const backupUrls = downloadLinks.slice(1).map(l => l.link_url);
+    const mediaFiles = JSON.parse(row.media_files_json as string) as Pick<Media, 'uuid' | 'r2_key' | 'media_type'>[];
+    const allLinks = JSON.parse(row.links_json as string) as Omit<ResourceLink, 'resource_uuid' | 'created_at'>[];
+    const tags = JSON.parse(row.tags_json as string) as Tag[];
+
+    const downloadLinks = allLinks.filter((l) => l.link_type === 'download');
+    const publicLinks = allLinks.filter((l) => l.link_type !== 'download');
 
     return c.json({
-        ...resource,
-        resourceUuid: resource.uuid,
-        timestamp: resource.created_at * 1000,
-        author: author ? { uuid: author.uuid, username: author.username, avatar_url: author.avatar_url } : null,
-        thumbnail: thumbnail ? { uuid: thumbnail.uuid, r2_key: thumbnail.r2_key, media_type: thumbnail.media_type } : null,
-        referenceImage: referenceImage,
-        mediaFiles: mediaFiles.results,
-        links: links.results,
-        tags: tags.results, // Added tags
+        uuid: row.uuid,
+        title: row.title,
+        description: row.description,
+        category: row.category,
+        download_count: row.download_count,
+        is_active: row.is_active,
+        created_at: row.created_at,
+        updated_at: row.updated_at,
+        // Author: only username, never UUID or avatar
+        author: row.author_username ? { username: row.author_username } : null,
+        // Gallery
+        thumbnail_key: row.thumbnail_key ?? null,
+        reference_image_key: row.reference_image_key ?? null,
+        mediaFiles,
+        // Tags always public
+        tags,
+        // Download access — gated behind auth
         canDownload: isLoggedIn,
-        downloadUrl,
-        backupUrls
+        links: isLoggedIn ? allLinks : publicLinks,
+        downloadUrl: isLoggedIn ? (downloadLinks[0]?.link_url ?? null) : null,
+        backupUrls: isLoggedIn ? downloadLinks.slice(1).map((l) => l.link_url) : [],
     });
 });
 
-/**
- * Endpoint: /:uuid/history
- * Muestra el historial de cambios de un recurso (Git-like view)
- */
+// =========================================================================================================
+// GET /api/resources/:uuid/history
+// Returns the history of changes for a specific resource.
+// =========================================================================================================
+
 resources.get('/:uuid/history', async (c) => {
     const uuid = c.req.param('uuid');
+
+    // Edit history is only available to authenticated users
+    const authUser = await getAuthUser(c);
+    if (!authUser) return c.json({ error: 'Unauthorized' }, 401);
 
     try {
         const history = await c.env.DB.prepare(`
@@ -260,10 +281,11 @@ resources.get('/:uuid/history', async (c) => {
     }
 });
 
-/**
- * Endpoint: /
- * Sube un nuevo recurso.
- */
+// =========================================================================================================
+// POST /api/resources/
+// Uploads a new resource.
+// =========================================================================================================
+
 resources.post('/', async (c) => {
     const authUser = await getAuthUser(c);
     if (!authUser) return c.json({ error: 'Unauthorized' }, 401);
@@ -288,9 +310,10 @@ resources.post('/', async (c) => {
             'INSERT INTO resources (uuid, title, description, category, thumbnail_uuid, reference_image_uuid, author_uuid) VALUES (?, ?, ?, ?, ?, ?, ?)'
         ).bind(resourceUuid, title, description || null, category, thumbnail_uuid, reference_image_uuid || null, user.uuid).run();
 
-        // Insert Tags
+        // Insert Tags (max 10 to prevent DoS)
         if (tags && Array.isArray(tags)) {
-            for (const tagName of tags) {
+            const limitedTags = tags.slice(0, 10);
+            for (const tagName of limitedTags) {
                 // Try to find tag
                 let tag = await c.env.DB.prepare('SELECT id FROM tags WHERE name = ?').bind(tagName).first<{ id: number }>();
                 if (!tag) {
@@ -344,10 +367,11 @@ resources.post('/', async (c) => {
     }
 });
 
-/**
- * Endpoint: /:uuid
- * PUT - Actualiza un recurso (con historial si es admin)
- */
+// =========================================================================================================
+// PUT /api/resources/:uuid
+// Updates a specific resource.
+// =========================================================================================================
+
 resources.put('/:uuid', async (c) => {
     const uuid = c.req.param('uuid');
     const authUser = await getAuthUser(c);
@@ -367,25 +391,31 @@ resources.put('/:uuid', async (c) => {
         return c.json({ error: 'Forbidden' }, 403);
     }
 
-    // Parse body
     const body = await c.req.json();
-    // Validate only partial fields? Or full schema? 
-    // Using partial validation for flexibility or full? Let's assume updates allow changing standard fields.
-    // Also Admin can send 'tags' (array of strings) and 'is_active'
 
-    const title = body.title !== undefined ? body.title : resource.title;
-    const description = body.description !== undefined ? body.description : resource.description;
-    const category = body.category !== undefined ? body.category : resource.category;
+    // Validate and sanitize all user-supplied fields with Zod before touching the DB
+    const ResourceUpdateSchema = ResourceSchema.partial().omit({ token: true, thumbnail_uuid: true, reference_image_uuid: true, links: true, media_files: true });
+    const parsed = ResourceUpdateSchema.safeParse(body);
+    if (!parsed.success) {
+        return c.json({ error: 'Invalid input', details: parsed.error.issues }, 400);
+    }
+
+    const title = parsed.data.title ?? resource.title;
+    const description = parsed.data.description ?? resource.description;
+    const category = parsed.data.category ?? resource.category;
     const isActive = isAdmin && body.is_active !== undefined ? body.is_active : resource.is_active;
-    const tags: string[] = body.tags || []; // Array of tag names
+    const tags: string[] = parsed.data.tags ?? [];
 
-    // If resource is approved (is_active=1) and user is NOT admin -> Forbidden (Only admin can edit approved posts)
+    if (isAdmin && tags.length > 20) {
+        return c.json({ error: 'Too many tags (max 20)' }, 400);
+    }
+
     if (resource.is_active === 1 && !isAdmin) {
         return c.json({ error: 'Only admins can edit approved resources' }, 403);
     }
 
     try {
-        const batch = [];
+        const operations = [];
 
         // 1. Create History Snapshot if Admin is editing
         if (isAdmin) {
@@ -400,108 +430,35 @@ resources.put('/:uuid', async (c) => {
                 title: resource.title,
                 description: resource.description,
                 category: resource.category,
-                tags: currentTags.results.map(t => t.name)
+                tags: currentTags.results.map((t: { name: string }) => t.name),
             };
 
             const historyUuid = crypto.randomUUID();
-            batch.push(c.env.DB.prepare(`
-                INSERT INTO resource_history (uuid, resource_uuid, actor_uuid, change_type, previous_data)
-                VALUES (?, ?, ?, ?, ?)
-            `).bind(historyUuid, uuid, currentUser.uuid, 'content_edit', JSON.stringify(previousData)));
+            operations.push(
+                c.env.DB.prepare(`
+                    INSERT INTO resource_history (uuid, resource_uuid, actor_uuid, change_type, previous_data)
+                    VALUES (?, ?, ?, ?, ?)
+                `).bind(historyUuid, uuid, currentUser.uuid, 'content_edit', JSON.stringify(previousData)),
+            );
         }
 
         // 2. Update Resource
-        batch.push(c.env.DB.prepare(`
-            UPDATE resources 
-            SET title = ?, description = ?, category = ?, is_active = ?, updated_at = unixepoch()
-            WHERE uuid = ?
-        `).bind(title, description, category, isActive, uuid));
+        operations.push(
+            c.env.DB.prepare(`
+                UPDATE resources 
+                SET title = ?, description = ?, category = ?, is_active = ?, updated_at = unixepoch()
+                WHERE uuid = ?
+            `).bind(title, description, category, isActive, uuid),
+        );
 
-        // 3. Update Tags (Admin Only usually, or if allowed for users?)
-        // Let's allow admins to set tags.
-        if (isAdmin && body.tags !== undefined) {
-            // Delete old tags
-            batch.push(c.env.DB.prepare('DELETE FROM resource_tags WHERE resource_uuid = ?').bind(uuid));
-
-            // Insert new tags (ensure they exist first or create them?)
-            // For simplicity, we assume tags must be created/exist? Or create on fly?
-            // "el administrador puede agregar los tags que sean necesarios" -> create on fly implies better UX.
-            // But doing logic inside batch is hard. We need to resolve tag IDs first.
-        }
-
-        // Execute batch so far? No, we need tag IDs.
-        // Let's do tag logic before batch or separate.
-
-        if (isAdmin && body.tags !== undefined) {
-            // Resolve IDs
-            for (const tagName of tags) {
-                // Try to find tag
-                let tag = await c.env.DB.prepare('SELECT id FROM tags WHERE name = ?').bind(tagName).first<{ id: number }>();
-                if (!tag) {
-                    // Create tag
-                    const res = await c.env.DB.prepare('INSERT INTO tags (name) VALUES (?) RETURNING id').bind(tagName).first<{ id: number }>();
-                    if (res) tag = res;
-                }
-
-                if (tag) {
-                    batch.push(c.env.DB.prepare('INSERT INTO resource_tags (resource_uuid, tag_id) VALUES (?, ?)').bind(uuid, tag.id));
-                }
-            }
-        }
-
-        // Note: We cannot put async logic (finding/creating tags) inside the batch array directly if we want a single atomic transaction easily with D1 batch() 
-        // because we need the IDs.
-        // So we will run the batch update/history/delete_tags first, then insert new tags?
-        // Or run everything sequentially. D1 isn't strict SQL transaction in batch() same as `BEGIN TRANSACTION`.
-        // `db.batch()` executes them in order.
-
-        // Let's restructure:
-        // 1. Prepare history insert (if admin)
-        // 2. Prepare resource update
-        // 3. Prepare tag delete (if admin)
-        // 4. Resolve tag IDs (async)
-        // 5. Prepare tag inserts
-        // 6. Execute all in one batch
-
-        const operations = [];
-
-        if (isAdmin) {
-            const currentTags = await c.env.DB.prepare(`
-                SELECT t.name FROM tags t 
-                JOIN resource_tags rt ON t.id = rt.tag_id 
-                WHERE rt.resource_uuid = ?
-            `).bind(uuid).all<{ name: string }>();
-
-            const previousData = {
-                title: resource.title,
-                description: resource.description,
-                category: resource.category,
-                tags: currentTags.results.map(t => t.name)
-            };
-
-            const historyUuid = crypto.randomUUID();
-            operations.push(c.env.DB.prepare(`
-                INSERT INTO resource_history (uuid, resource_uuid, actor_uuid, change_type, previous_data)
-                VALUES (?, ?, ?, ?, ?)
-            `).bind(historyUuid, uuid, currentUser.uuid, 'content_edit', JSON.stringify(previousData)));
-        }
-
-        operations.push(c.env.DB.prepare(`
-            UPDATE resources 
-            SET title = ?, description = ?, category = ?, is_active = ?, updated_at = unixepoch()
-            WHERE uuid = ?
-        `).bind(title, description, category, isActive, uuid));
-
-        if (isAdmin && body.tags !== undefined) {
+        // 3. Update Tags (admin only)
+        if (isAdmin && parsed.data.tags !== undefined) {
             operations.push(c.env.DB.prepare('DELETE FROM resource_tags WHERE resource_uuid = ?').bind(uuid));
 
             for (const tagName of tags) {
                 let tagId: number;
                 let tag = await c.env.DB.prepare('SELECT id FROM tags WHERE name = ?').bind(tagName).first<{ id: number }>();
                 if (!tag) {
-                    // We must await this, so we can't be in a sync batch builder loop if we want true atomicity?
-                    // D1 doesn't support "INSERT OR IGNORE returning ID" easily across all SQLite versions seamlessly or valid syntax for D1's specific quirks sometimes.
-                    // But we can just run this separate.
                     const newTag = await c.env.DB.prepare('INSERT INTO tags (name) VALUES (?) RETURNING id').bind(tagName).first<{ id: number }>();
                     tagId = newTag!.id;
                 } else {
@@ -518,16 +475,11 @@ resources.put('/:uuid', async (c) => {
 
             for (const link of body.new_links) {
                 const linkUuid = crypto.randomUUID();
-                operations.push(c.env.DB.prepare(
-                    'INSERT INTO resource_links (uuid, resource_uuid, link_url, link_title, link_type, display_order) VALUES (?, ?, ?, ?, ?, ?)'
-                ).bind(
-                    linkUuid,
-                    uuid,
-                    link.link_url,
-                    link.link_title || null,
-                    link.link_type || 'general',
-                    nextOrder++
-                ));
+                operations.push(
+                    c.env.DB.prepare(
+                        'INSERT INTO resource_links (uuid, resource_uuid, link_url, link_title, link_type, display_order) VALUES (?, ?, ?, ?, ?, ?)',
+                    ).bind(linkUuid, uuid, link.link_url, link.link_title || null, link.link_type || 'general', nextOrder++),
+                );
             }
         }
 
@@ -538,11 +490,42 @@ resources.put('/:uuid', async (c) => {
         await c.env.VRCSTORAGE_KV.delete('resource:latest');
 
         return c.json({ success: true });
-
     } catch (e) {
         console.error('Update resource error:', e);
         return c.json({ error: 'Failed to update resource' }, 500);
     }
 });
+
+// =========================================================================================================
+// DELETE /api/resources/:uuid
+// Deletes a specific resource.
+// =========================================================================================================
+
+resources.delete('/:uuid', async (c) => {
+    const uuid = c.req.param('uuid');
+    const authUser = await getAuthUser(c);
+    if (!authUser) return c.json({ error: 'Unauthorized' }, 401);
+    if (!authUser.is_admin) return c.json({ error: 'Unauthorized' }, 403);
+
+    try {
+        const resource = await c.env.DB.prepare('SELECT author_uuid, is_active FROM resources WHERE uuid = ?').bind(uuid).first<Resource>();
+        if (!resource) return c.json({ error: 'Resource not found' }, 404);
+
+        await c.env.DB.prepare('DELETE FROM resources WHERE uuid = ?').bind(uuid).run();
+
+        // Invalidate Cache
+        await c.env.VRCSTORAGE_KV.delete(`resource:${uuid}`);
+        await c.env.VRCSTORAGE_KV.delete('resource:latest');
+
+        return c.json({ success: true });
+    } catch (e) {
+        console.error('Delete resource error:', e);
+        return c.json({ error: 'Failed to delete resource' }, 500);
+    }
+});
+
+// =========================================================================================================
+// Export
+// =========================================================================================================
 
 export default resources;

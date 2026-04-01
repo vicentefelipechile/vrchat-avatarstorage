@@ -4,15 +4,25 @@
 // Tag management and retrieval
 // =========================================================================================================
 
+// =========================================================================================================
+// Imports
+// =========================================================================================================
+
 import { Hono } from 'hono';
 import { Tag } from '../types';
+import { getAuthUser } from '../auth';
+
+// =========================================================================================================
+// Endpoint
+// =========================================================================================================
 
 const tags = new Hono<{ Bindings: Env }>();
 
-/**
- * Endpoint: /
- * Get all tags or search for tags
- */
+// =========================================================================================================
+// GET /api/tags
+// Get all tags or search for tags
+// =========================================================================================================
+
 tags.get('/', async (c) => {
     const query = c.req.query('q');
 
@@ -33,21 +43,20 @@ tags.get('/', async (c) => {
     }
 });
 
-/**
- * Endpoint: /
- * Create a new tag (Admin only - handled by middleware in index or here?)
- * For now, assuming only admins will use a specific UI that might call this, 
- * or tags are created on the fly during resource update if they don't exist.
- * But let's add a create endpoint just in case.
- */
+// =========================================================================================================
+// POST /api/tags
+// Create a new tag
+// =========================================================================================================
+
 tags.post('/', async (c) => {
-    // TODO: Add admin check here or in middleware
+    const authUser = await getAuthUser(c);
+    if (!authUser) { return c.json({ error: 'Unauthorized' }, 401) };
+    if (!authUser.is_admin) { return c.json({ error: 'Unauthorized' }, 401) };
+
     const body = await c.req.json();
     const name = body.name;
 
-    if (!name || typeof name !== 'string') {
-        return c.json({ error: 'Invalid tag name' }, 400);
-    }
+    if (!name || typeof name !== 'string') { return c.json({ error: 'Invalid tag name' }, 400) };
 
     try {
         const existing = await c.env.DB.prepare('SELECT * FROM tags WHERE name = ?').bind(name).first();
@@ -57,12 +66,16 @@ tags.post('/', async (c) => {
 
         const result = await c.env.DB.prepare('INSERT INTO tags (name) VALUES (?) RETURNING *')
             .bind(name).first<Tag>();
-        
+
         return c.json(result);
     } catch (e) {
         console.error('Error creating tag:', e);
         return c.json({ error: 'Failed to create tag' }, 500);
     }
 });
+
+// =========================================================================================================
+// Export
+// =========================================================================================================
 
 export default tags;

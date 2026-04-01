@@ -1,113 +1,143 @@
 // =========================================================================================================
 // COMMENT ROUTES
 // =========================================================================================================
-// Comment CRUD operations
+// All comment endpoints live exclusively under /api/comments.
+// No double-mounting with /api/resources.
+// =========================================================================================================
+
+// =========================================================================================================
+// Imports
 // =========================================================================================================
 
 import { Hono } from 'hono';
 import { getAuthUser } from '../auth';
 import { CommentSchema } from '../validators';
-import { verifyTurnstile } from './utils';
+import { verifyTurnstile } from '../helpers/turnstile';
+
+// =========================================================================================================
+// Endpoints
+// =========================================================================================================
 
 const comments = new Hono<{ Bindings: Env }>();
 
-/**
- * Endpoint: /:uuid/comments
- * Obtiene los comentarios de un recurso.
- */
-comments.get('/:uuid/comments', async (c) => {
-    const uuid = c.req.param('uuid');
-    // Join with users to get username
-    const { results } = await c.env.DB.prepare(
-        `SELECT
+// =========================================================================================================
+// GET /api/comments/:resourceId
+// Returns all comments for a given resource.
+// =========================================================================================================
+
+comments.get('/:resourceId', async (c) => {
+	const resourceId = c.req.param('resourceId');
+
+	// Basic UUID format guard — prepared statements prevent SQL injection but avoid unnecessary queries
+	if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(resourceId)) {
+		return c.json({ error: 'Invalid resource ID' }, 400);
+	}
+
+	const { results } = await c.env.DB.prepare(
+		`SELECT
 			c.uuid,
 			c.text,
 			(c.created_at * 1000) as timestamp,
 			u.username as author,
 			u.avatar_url as author_avatar
-         FROM comments c 
-         JOIN users u ON c.author_uuid = u.uuid 
-         WHERE c.resource_uuid = ? 
-         ORDER BY c.created_at ASC`
-    ).bind(uuid).all<any>(); // any because of join
+		FROM comments c
+		JOIN users u ON c.author_uuid = u.uuid
+		WHERE c.resource_uuid = ?
+		ORDER BY c.created_at ASC`,
+	)
+		.bind(resourceId)
+		.all<any>();
 
-    return c.json(results);
+	return c.json(results);
 });
 
-/**
- * Endpoint: /:uuid/comments
- * Crea un nuevo comentario.
- */
-comments.post('/:uuid/comments', async (c) => {
-    const authUser = await getAuthUser(c);
-    if (!authUser) return c.json({ error: 'Unauthorized' }, 401);
+// =========================================================================================================
+// POST /api/comments/:resourceId
+// Creates a new comment on a resource.
+// =========================================================================================================
 
-    // Get author
-    const user = await c.env.DB.prepare('SELECT uuid FROM users WHERE username = ?').bind(authUser.username).first<any>();
-    if (!user) return c.json({ error: 'User not found' }, 404);
+comments.post('/:resourceId', async (c) => {
+	const authUser = await getAuthUser(c);
+	if (!authUser) return c.json({ error: 'Unauthorized' }, 401);
 
-    const uuid = c.req.param('uuid');
-    const body = await c.req.json();
+	const user = await c.env.DB.prepare('SELECT uuid, avatar_url FROM users WHERE username = ?')
+		.bind(authUser.username)
+		.first<{ uuid: string; avatar_url: string }>();
+	if (!user) return c.json({ error: 'User not found' }, 404);
 
-    // Validation
-    const { text, token } = CommentSchema.parse(body);
+	const resourceId = c.req.param('resourceId');
 
-    // Turnstile Verification for Comments (Optional but requested)
-    const isValid = await verifyTurnstile(token || '', c.env.TURNSTILE_SECRET_KEY);
-    if (!isValid) return c.json({ error: 'Invalid CAPTCHA' }, 403);
+	// UUID format guard
+	if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(resourceId)) {
+		return c.json({ error: 'Invalid resource ID' }, 400);
+	}
 
-    const commentUuid = crypto.randomUUID();
+	// Verify resource exists
+	const resource = await c.env.DB.prepare('SELECT 1 FROM resources WHERE uuid = ? AND is_active = 1').bind(resourceId).first();
+	if (!resource) return c.json({ error: 'Resource not found' }, 404);
 
-    try {
-        await c.env.DB.prepare(
-            'INSERT INTO comments (uuid, resource_uuid, author_uuid, text) VALUES (?, ?, ?, ?)'
-        ).bind(commentUuid, uuid, user.uuid, text).run();
+	const body = await c.req.json();
+	const { text, token } = CommentSchema.parse(body);
 
-        const newComment = {
-            commentUuid,
-            resourceUuid: uuid,
-            author: authUser.username,
-            author_avatar: user.avatar_url,
-            text: text,
-            created_at: new Date().toISOString()
-        };
+	const isValid = await verifyTurnstile(token || '', c.env.TURNSTILE_SECRET_KEY);
+	if (!isValid) return c.json({ error: 'Invalid CAPTCHA' }, 403);
 
-        return c.json(newComment);
-    } catch (e) {
-        console.error('Comment error:', e);
-        return c.json({ error: 'Failed to post comment' }, 500);
-    }
+	const commentUuid = crypto.randomUUID();
+
+	try {
+		await c.env.DB.prepare('INSERT INTO comments (uuid, resource_uuid, author_uuid, text) VALUES (?, ?, ?, ?)')
+			.bind(commentUuid, resourceId, user.uuid, text)
+			.run();
+
+		return c.json({
+			uuid: commentUuid,
+			resourceUuid: resourceId,
+			author: authUser.username,
+			author_avatar: user.avatar_url,
+			text,
+			timestamp: Date.now(),
+		});
+	} catch (e) {
+		console.error('Comment create error:', e);
+		return c.json({ error: 'Failed to post comment' }, 500);
+	}
 });
 
-/**
- * Endpoint: /:commentId
- * Elimina un comentario específico (solo el autor o un admin).
- */
+// =========================================================================================================
+// DELETE /api/comments/:commentId
+// Deletes a comment. Only the author or an admin may do this.
+// =========================================================================================================
+
 comments.delete('/:commentId', async (c) => {
-    const authUser = await getAuthUser(c);
-    if (!authUser) return c.json({ error: 'Unauthorized' }, 401);
+	const authUser = await getAuthUser(c);
+	if (!authUser) return c.json({ error: 'Unauthorized' }, 401);
 
-    const commentId = c.req.param('commentId');
+	const commentId = c.req.param('commentId');
 
-    // Obtener el comentario
-    const comment = await c.env.DB.prepare('SELECT author_uuid FROM comments WHERE uuid = ?').bind(commentId).first<any>();
-    if (!comment) return c.json({ error: 'Comment not found' }, 404);
+	const comment = await c.env.DB.prepare('SELECT author_uuid FROM comments WHERE uuid = ?')
+		.bind(commentId)
+		.first<{ author_uuid: string }>();
+	if (!comment) return c.json({ error: 'Comment not found' }, 404);
 
-    // Obtener usuario actual
-    const user = await c.env.DB.prepare('SELECT uuid FROM users WHERE username = ?').bind(authUser.username).first<any>();
+	const user = await c.env.DB.prepare('SELECT uuid FROM users WHERE username = ?')
+		.bind(authUser.username)
+		.first<{ uuid: string }>();
 
-    // Verificar: es admin O es el autor del comentario
-    if (!authUser.is_admin && user.uuid !== comment.author_uuid) {
-        return c.json({ error: 'Forbidden' }, 403);
-    }
+	if (!authUser.is_admin && user?.uuid !== comment.author_uuid) {
+		return c.json({ error: 'Forbidden' }, 403);
+	}
 
-    try {
-        await c.env.DB.prepare('DELETE FROM comments WHERE uuid = ?').bind(commentId).run();
-        return c.json({ success: true });
-    } catch (e) {
-        console.error('Comment error:', e);
-        return c.json({ error: 'Failed to delete comment' }, 500);
-    }
+	try {
+		await c.env.DB.prepare('DELETE FROM comments WHERE uuid = ?').bind(commentId).run();
+		return c.json({ success: true });
+	} catch (e) {
+		console.error('Comment delete error:', e);
+		return c.json({ error: 'Failed to delete comment' }, 500);
+	}
 });
+
+// =========================================================================================================
+// Export
+// =========================================================================================================
 
 export default comments;

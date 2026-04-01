@@ -4,16 +4,25 @@
 // Administrative endpoints for resource management and cleanup
 // =========================================================================================================
 
+// =========================================================================================================
+// Imports
+// =========================================================================================================
+
 import { Hono } from 'hono';
 import { getAuthUser } from '../auth';
 import { Resource, Media } from '../types';
 
+// =========================================================================================================
+// Endpoints
+// =========================================================================================================
+
 const admin = new Hono<{ Bindings: Env }>();
 
-/**
- * Endpoint: /pending
- * Obtiene todos los recursos pendientes de aprobación.
- */
+// =========================================================================================================
+// GET /api/admin/pending
+// Get all pending resources
+// =========================================================================================================
+
 admin.get('/pending', async (c) => {
     const user = await getAuthUser(c);
     if (!user) return c.json({ error: 'Unauthorized' }, 401);
@@ -46,10 +55,11 @@ admin.get('/pending', async (c) => {
     }
 });
 
-/**
- * Endpoint: /resource/:uuid/approve
- * Aprueba un recurso pendiente.
- */
+// =========================================================================================================
+// POST /api/admin/resource/:uuid/approve
+// Approve a pending resource
+// =========================================================================================================
+
 admin.post('/resource/:uuid/approve', async (c) => {
     const user = await getAuthUser(c);
     if (!user) return c.json({ error: 'Unauthorized' }, 401);
@@ -65,8 +75,8 @@ admin.post('/resource/:uuid/approve', async (c) => {
         await c.env.DB.prepare('UPDATE resources SET is_active = 1 WHERE uuid = ?').bind(uuid).run();
 
         // Invalidate KV Caches to refresh the lists immediately
-        c.env.VRCSTORAGE_KV.delete('resource:latest');
-        c.env.VRCSTORAGE_KV.delete(`resource:category:${resource.category}`);
+        await c.env.VRCSTORAGE_KV.delete('resource:latest');
+        await c.env.VRCSTORAGE_KV.delete(`resource:category:${resource.category}`);
 
         return c.json({ success: true });
     } catch (e) {
@@ -75,10 +85,11 @@ admin.post('/resource/:uuid/approve', async (c) => {
     }
 });
 
-/**
- * Endpoint: /resource/:uuid/reject
- * Rechaza y elimina un recurso pendiente.
- */
+// =========================================================================================================
+// POST /api/admin/resource/:uuid/reject
+// Reject and delete a pending resource
+// =========================================================================================================
+
 admin.post('/resource/:uuid/reject', async (c) => {
     const user = await getAuthUser(c);
     if (!user) return c.json({ error: 'Unauthorized' }, 401);
@@ -109,10 +120,11 @@ admin.post('/resource/:uuid/reject', async (c) => {
     }
 });
 
-/**
- * Endpoint: /resource/:uuid/deactivate
- * Desactiva un recurso aprobado (lo oculta).
- */
+// =========================================================================================================
+// POST /api/admin/resource/:uuid/deactivate
+// Deactivate an approved resource
+// =========================================================================================================
+
 admin.post('/resource/:uuid/deactivate', async (c) => {
     const user = await getAuthUser(c);
     if (!user) return c.json({ error: 'Unauthorized' }, 401);
@@ -138,10 +150,11 @@ admin.post('/resource/:uuid/deactivate', async (c) => {
     }
 });
 
-/**
- * Endpoint: /stats/orphaned-media
- * Muestra estadísticas de archivos huérfanos sin eliminarlos
- */
+// =========================================================================================================
+// GET /api/admin/stats/orphaned-media
+// Get statistics of orphaned media files without deleting them
+// =========================================================================================================
+
 admin.get('/stats/orphaned-media', async (c) => {
     const user = await getAuthUser(c);
     if (!user) return c.json({ error: 'Unauthorized' }, 401);
@@ -190,11 +203,11 @@ admin.get('/stats/orphaned-media', async (c) => {
     }
 });
 
-/**
- * Endpoint: /cleanup/orphaned-media
- * Limpia archivos media que no están asociados a ningún recurso
- * y tienen más de 24 horas de antigüedad
- */
+// =========================================================================================================
+// POST /api/admin/cleanup/orphaned-media
+// Clean up orphaned media files that are not associated with any resource and are older than 24 hours
+// =========================================================================================================
+
 admin.post('/cleanup/orphaned-media', async (c) => {
     const user = await getAuthUser(c);
     if (!user) return c.json({ error: 'Unauthorized' }, 401);
@@ -245,10 +258,11 @@ admin.post('/cleanup/orphaned-media', async (c) => {
     }
 });
 
-/**
- * Endpoint: /cache/clear/:username
- * Limpia la cache de un usuario especifico. Util para refrescar permisos de admin.
- */
+// =========================================================================================================
+// POST /api/admin/cache/clear/:username
+// Clear the cache for a specific user. Useful for refreshing admin permissions.
+// =========================================================================================================
+
 admin.post('/cache/clear/:username', async (c) => {
     const user = await getAuthUser(c);
     if (!user) return c.json({ error: 'Unauthorized' }, 401);
@@ -263,5 +277,9 @@ admin.post('/cache/clear/:username', async (c) => {
         return c.json({ error: 'Failed to clear cache' }, 500);
     }
 });
+
+// =========================================================================================================
+// Export
+// =========================================================================================================
 
 export default admin;

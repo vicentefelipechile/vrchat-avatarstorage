@@ -5,11 +5,19 @@
 // Only admins can create/edit/delete posts. All users can read and comment.
 // =========================================================================================================
 
+// =========================================================================================================
+// Imports
+// =========================================================================================================
+
 import { Hono } from 'hono';
 import { getAuthUser } from '../auth';
 import { BlogPost, BlogPostWithAuthor } from '../types';
 import { BlogPostSchema, BlogPostUpdateSchema, BlogCommentSchema } from '../validators';
-import { verifyTurnstile } from './utils';
+import { verifyTurnstile } from '../helpers/turnstile';
+
+// =========================================================================================================
+// Endpoints
+// =========================================================================================================
 
 const blog = new Hono<{ Bindings: Env }>();
 
@@ -51,6 +59,22 @@ async function uniqueSlug(db: D1Database, base: string, excludeUuid?: string): P
 		attempts++;
 		candidate = `${base}-${attempts + 1}`;
 	}
+}
+
+/**
+ * Invalidates the blog list cache.
+ */
+async function invalidateBlogListCache(kv: KVNamespace): Promise<void> {
+	// We can't enumerate all page/limit combinations, so we use a suffix pattern approach:
+	// Delete the most common pages. For production, a cache key version bump could be used.
+	const keys = [
+		'blog:list:1:10',
+		'blog:list:1:20',
+		'blog:list:2:10',
+		'blog:list:2:20',
+		'blog:list:3:10',
+	];
+	await Promise.all(keys.map((k) => kv.delete(k)));
 }
 
 // =========================================================================================================
@@ -234,7 +258,7 @@ blog.put('/:uuid', async (c) => {
 				title = COALESCE(?, title),
 				content = COALESCE(?, content),
 				excerpt = COALESCE(?, excerpt),
-				cover_image_uuid = CASE WHEN ? IS NOT NULL THEN ? ELSE cover_image_uuid END,
+				cover_image_uuid = CASE WHEN ? = 1 THEN ? ELSE cover_image_uuid END,
 				author_display = COALESCE(?, author_display),
 				updated_at = ?
 			WHERE uuid = ?`
@@ -244,8 +268,8 @@ blog.put('/:uuid', async (c) => {
 				updates.title ?? null,
 				updates.content ?? null,
 				updates.excerpt ?? null,
-				updates.cover_image_uuid !== undefined ? updates.cover_image_uuid : null,
-				updates.cover_image_uuid !== undefined ? updates.cover_image_uuid : null,
+				updates.cover_image_uuid !== undefined ? 1 : 0,
+				updates.cover_image_uuid ?? null,
 				updates.author_display ?? null,
 				now,
 				uuid
@@ -293,6 +317,8 @@ blog.delete('/:uuid', async (c) => {
 
 blog.get('/:uuid/comments', async (c) => {
 	const postUuid = c.req.param('uuid');
+	const limit = Math.min(50, Math.max(1, parseInt(c.req.query('limit') || '50', 10) || 50));
+	const offset = Math.max(0, parseInt(c.req.query('offset') || '0', 10) || 0);
 
 	try {
 		const { results } = await c.env.DB.prepare(
@@ -305,9 +331,10 @@ blog.get('/:uuid/comments', async (c) => {
 			FROM blog_comments bc
 			JOIN users u ON bc.author_uuid = u.uuid
 			WHERE bc.post_uuid = ?
-			ORDER BY bc.created_at ASC`
+			ORDER BY bc.created_at ASC
+			LIMIT ? OFFSET ?`
 		)
-			.bind(postUuid)
+			.bind(postUuid, limit, offset)
 			.all<any>();
 
 		return c.json(results);
@@ -401,20 +428,7 @@ blog.delete('/comments/:commentId', async (c) => {
 });
 
 // =========================================================================================================
-// Helpers
+// Export
 // =========================================================================================================
-
-async function invalidateBlogListCache(kv: KVNamespace): Promise<void> {
-	// We can't enumerate all page/limit combinations, so we use a suffix pattern approach:
-	// Delete the most common pages. For production, a cache key version bump could be used.
-	const keys = [
-		'blog:list:1:10',
-		'blog:list:1:20',
-		'blog:list:2:10',
-		'blog:list:2:20',
-		'blog:list:3:10',
-	];
-	await Promise.all(keys.map((k) => kv.delete(k)));
-}
 
 export default blog;

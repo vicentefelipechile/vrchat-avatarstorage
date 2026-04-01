@@ -1,0 +1,111 @@
+/* =============================================================================
+   admin.css — Admin panel: stats cards, cleanup cards, file list
+   ============================================================================= */
+
+/* ---- Stats grid ---- */
+.admin-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+	gap: 15px;
+	margin-bottom: 30px;
+}
+
+.stat-card {
+	background: var(--bg-card);
+	padding: 20px;
+	text-align: center;
+	border: 1px solid var(--border-color);
+}
+
+.stat-value {
+	font-size: 2em;
+	font-weight: bold;
+	color: var(--text-main);
+}
+
+.stat-label {
+	color: var(--text-muted);
+	margin-top: 5px;
+}
+
+/* ---- Cleanup cards ---- */
+.cleanup-card {
+	padding: 20px;
+	margin-bottom: 20px;
+	border: 1px solid transparent;
+}
+
+.cleanup-card.loading {
+	background: var(--bg-card);
+	text-align: center;
+	border-color: var(--border-color);
+}
+
+.cleanup-card.warning {
+	background: var(--alert-warning-bg, #fff3cd);
+	border-color: #ffc107;
+	color: var(--alert-warning-text, #856404);
+}
+
+.cleanup-card.success {
+	background: var(--alert-tip-bg, #d4edda);
+	border-color: #c3e6cb;
+	color: var(--alert-tip-text, #155724);
+}
+
+[data-theme='dark'] .cleanup-card.warning {
+	--alert-warning-bg: #3a2a1a;
+	--alert-warning-text: #d29922;
+	border-color: #9a6700;
+}
+
+[data-theme='dark'] .cleanup-card.success {
+	--alert-tip-bg: #1a3a2a;
+	--alert-tip-text: #3fb950;
+	border-color: #1a7f37;
+}
+
+.cleanup-title {
+	margin-top: 0;
+	color: inherit;
+}
+
+.cleanup-desc {
+	color: inherit;
+	margin-bottom: 15px;
+}
+
+.cleanup-details summary {
+	cursor: pointer;
+	font-weight: bold;
+	color: inherit;
+	margin-bottom: 24px;
+}
+
+/* ---- File list ---- */
+.file-list {
+	margin-top: 10px;
+	max-height: 200px;
+	overflow-y: auto;
+	background: var(--bg-body);
+	padding: 15px;
+	border: 1px solid var(--border-color);
+}
+
+.file-list li {
+	margin: 5px 0;
+	font-family: monospace;
+	font-size: 0.9em;
+	color: var(--text-main);
+}
+
+.file-list li span {
+	color: var(--text-muted);
+}
+
+/* ---- Pending state ---- */
+.pending-loading {
+	text-align: center;
+	padding: 40px;
+	color: var(--text-muted);
+}

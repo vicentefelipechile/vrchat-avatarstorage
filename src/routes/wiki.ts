@@ -4,17 +4,26 @@
 // Global Wiki Comment operations
 // =========================================================================================================
 
+// =========================================================================================================
+// Imports
+// =========================================================================================================
+
 import { Hono } from 'hono';
 import { getAuthUser } from '../auth';
 import { CommentSchema } from '../validators';
-import { verifyTurnstile } from './utils';
+import { verifyTurnstile } from '../helpers/turnstile';
+
+// =========================================================================================================
+// Endpoint
+// =========================================================================================================
 
 const wiki = new Hono<{ Bindings: Env }>();
 
-/**
- * Endpoint: /api/wiki/comments
- * GET: Obtiene los comentarios globales de la wiki.
- */
+// =========================================================================================================
+// GET /api/wiki/comments
+// Get global wiki comments
+// =========================================================================================================
+
 wiki.get('/comments', async (c) => {
     // Join with users to get username and avatar
     const { results } = await c.env.DB.prepare(
@@ -33,10 +42,11 @@ wiki.get('/comments', async (c) => {
     return c.json(results);
 });
 
-/**
- * Endpoint: /api/wiki/comments
- * POST: Crea un nuevo comentario global en la wiki.
- */
+// =========================================================================================================
+// POST /api/wiki/comments
+// Create a new global wiki comment
+// =========================================================================================================
+
 wiki.post('/comments', async (c) => {
     const authUser = await getAuthUser(c);
     if (!authUser) return c.json({ error: 'Unauthorized' }, 401);
@@ -80,10 +90,11 @@ wiki.post('/comments', async (c) => {
     }
 });
 
-/**
- * Endpoint: /api/wiki/comments/:uuid
- * DELETE: Elimina un comentario específico.
- */
+// =========================================================================================================
+// DELETE /api/wiki/comments/:uuid
+// Delete a specific comment
+// =========================================================================================================
+
 wiki.delete('/comments/:uuid', async (c) => {
     const authUser = await getAuthUser(c);
     if (!authUser) return c.json({ error: 'Unauthorized' }, 401);
@@ -110,5 +121,9 @@ wiki.delete('/comments/:uuid', async (c) => {
         return c.json({ error: 'Failed to delete comment' }, 500);
     }
 });
+
+// =========================================================================================================
+// Export
+// =========================================================================================================
 
 export default wiki;
