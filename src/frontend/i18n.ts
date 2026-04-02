@@ -13,10 +13,15 @@ import jp from '../../public/js/i18n/jp.js';
 import cn from '../../public/js/i18n/cn.js';
 import fr from '../../public/js/i18n/fr.js';
 import pt from '../../public/js/i18n/pt.js';
+import de from '../../public/js/i18n/de.js';
+import it from '../../public/js/i18n/it.js';
+import pl from '../../public/js/i18n/pl.js';
+import nl from '../../public/js/i18n/nl.js';
+import tr from '../../public/js/i18n/tr.js';
 
 type Translations = Record<string, unknown>;
 
-const translations: Record<string, Translations> = { es, en, ru, jp, cn, fr, pt };
+const translations: Record<string, Translations> = { es, en, ru, jp, cn, fr, pt, de, it, pl, nl, tr };
 
 let currentLang: string = localStorage.getItem('lang') || 'es';
 
