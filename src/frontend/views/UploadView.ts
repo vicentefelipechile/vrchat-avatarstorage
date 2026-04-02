@@ -4,7 +4,7 @@
 
 import { t } from '../i18n';
 import { DataCache } from '../cache';
-import { renderMarkdown } from '../utils';
+import { renderMarkdown, showToast } from '../utils';
 import { navigateTo } from '../router';
 import type { RouteContext } from '../types';
 
@@ -315,8 +315,8 @@ export async function uploadAfter(_ctx: RouteContext): Promise<void> {
 		if (!file) return;
 		const isVideo = file.type.startsWith('video/');
 		const maxSize = isVideo ? SIZE_LIMITS.video : SIZE_LIMITS.image;
-		if (file.size > maxSize) { alert(`File too large. Max: ${(maxSize / 1024 / 1024).toFixed(0)}MB`); thumbnailInput.value = ''; thumbnailPreview.innerHTML = ''; return; }
-		if (!isVideo) { const c = await validateImageDimensions(file); if (!c.valid) { alert(c.error); thumbnailInput.value = ''; thumbnailPreview.innerHTML = ''; return; } }
+		if (file.size > maxSize) { showToast(`File too large. Max: ${(maxSize / 1024 / 1024).toFixed(0)}MB`, 'warning'); thumbnailInput.value = ''; thumbnailPreview.innerHTML = ''; return; }
+		if (!isVideo) { const c = await validateImageDimensions(file); if (!c.valid) { showToast(c.error || 'Invalid dimensions', 'error'); thumbnailInput.value = ''; thumbnailPreview.innerHTML = ''; return; } }
 		const url = URL.createObjectURL(file);
 		const item = createPreviewItem(isVideo ? 'video' : 'img', url, file.name, () => { thumbnailInput.value = ''; thumbnailPreview.innerHTML = ''; URL.revokeObjectURL(url); });
 		thumbnailPreview.innerHTML = '';
@@ -346,11 +346,11 @@ export async function uploadAfter(_ctx: RouteContext): Promise<void> {
 
 	referenceInput.addEventListener('change', async (e) => {
 		const files = Array.from((e.target as HTMLInputElement).files ?? []);
-		if (files.length > 8) { alert(t('upload.maxFiles')); referenceInput.value = ''; selectedRefFiles = []; renderRefPreview(); return; }
+		if (files.length > 8) { showToast(t('upload.maxFiles') || 'Max 8 files', 'warning'); referenceInput.value = ''; selectedRefFiles = []; renderRefPreview(); return; }
 		for (const f of files) {
 			const maxSize = f.type.startsWith('video/') ? SIZE_LIMITS.video : SIZE_LIMITS.image;
-			if (f.size > maxSize) { alert(`File "${f.name}" too large.`); referenceInput.value = ''; selectedRefFiles = []; renderRefPreview(); return; }
-			if (f.type.startsWith('image/')) { const c = await validateImageDimensions(f); if (!c.valid) { alert(`Image "${f.name}": ${c.error}`); referenceInput.value = ''; selectedRefFiles = []; renderRefPreview(); return; } }
+			if (f.size > maxSize) { showToast(`File "${f.name}" too large.`, 'warning'); referenceInput.value = ''; selectedRefFiles = []; renderRefPreview(); return; }
+			if (f.type.startsWith('image/')) { const c = await validateImageDimensions(f); if (!c.valid) { showToast(`Image "${f.name}": ${c.error}`, 'error'); referenceInput.value = ''; selectedRefFiles = []; renderRefPreview(); return; } }
 		}
 		selectedRefFiles = files;
 		renderRefPreview();

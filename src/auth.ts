@@ -55,7 +55,8 @@ export async function createSession(c: Context<{ Bindings: Env }>, user: { usern
     setCookie(c, COOKIE_NAME, token, {
         httpOnly: true,
         secure: true, // Always true for production/Cloudflare
-        sameSite: 'Lax',
+        sameSite: 'Strict', // Upgraded from Lax: cookie never sent on cross-site requests,
+        // even top-level navigations. Eliminates CSRF vector in XSS chain attacks.
         path: '/',
         maxAge: MAX_AGE,
     });

@@ -1,5 +1,6 @@
 import { DataCache } from './cache';
 import { t } from './i18n';
+import { showToast } from './utils';
 
 export async function deleteComment(uuid: string): Promise<void> {
 	if (!confirm(t('admin.deleteConfirm'))) return;
@@ -12,11 +13,11 @@ export async function deleteComment(uuid: string): Promise<void> {
 			const el = document.getElementById(`comment-${uuid}`);
 			if (el) el.remove();
 		} else {
-			alert('Failed to delete comment: ' + (data.error || 'Unknown error'));
+			showToast('Failed to delete comment: ' + (data.error || 'Unknown error'), 'error');
 		}
 	} catch (e) {
 		console.error('Delete error:', e);
-		alert('Error deleting comment');
+		showToast('Error deleting comment', 'error');
 	}
 }
 
@@ -27,11 +28,11 @@ export async function approveResource(uuid: string): Promise<void> {
 			DataCache.clear(`/api/resources/${uuid}`);
 			location.reload();
 		} else {
-			alert('Error approving resource');
+			showToast('Error approving resource', 'error');
 		}
 	} catch (e) {
 		console.error(e);
-		alert('Error approving resource');
+		showToast('Error approving resource', 'error');
 	}
 }
 
@@ -43,11 +44,11 @@ export async function rejectResource(uuid: string): Promise<void> {
 			DataCache.clear(`/api/resources/${uuid}`);
 			window.location.href = '/';
 		} else {
-			alert('Error rejecting resource');
+			showToast('Error rejecting resource', 'error');
 		}
 	} catch (e) {
 		console.error(e);
-		alert('Error rejecting resource');
+		showToast('Error rejecting resource', 'error');
 	}
 }
 
@@ -59,10 +60,10 @@ export async function deactivateResource(uuid: string): Promise<void> {
 			DataCache.clear(`/api/resources/${uuid}`);
 			location.reload();
 		} else {
-			alert('Error deactivating resource');
+			showToast('Error deactivating resource', 'error');
 		}
 	} catch (e) {
 		console.error(e);
-		alert('Error deactivating resource');
+		showToast('Error deactivating resource', 'error');
 	}
 }

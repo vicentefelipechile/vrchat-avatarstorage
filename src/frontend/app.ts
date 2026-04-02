@@ -5,6 +5,7 @@
 import { route, notFound, navigateTo, initRouter } from './router';
 import { setLanguage, getCurrentLang, t } from './i18n';
 import { DataCache } from './cache';
+import { showToast } from './utils';
 import type { AuthUser } from './types';
 
 // Views
@@ -112,6 +113,7 @@ function updateNavDOM(): void {
 	});
 
 	document.querySelector<HTMLElement>('.nav-links')?.classList.remove('active');
+	document.querySelector<HTMLElement>('.nav-utils')?.classList.remove('active');
 	document.getElementById('user-menu-dropdown')?.classList.remove('active');
 }
 
@@ -257,6 +259,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 	// Mobile menu
 	document.getElementById('mobile-menu-btn')?.addEventListener('click', () => {
 		document.querySelector<HTMLElement>('.nav-links')?.classList.toggle('active');
+		document.querySelector<HTMLElement>('.nav-utils')?.classList.toggle('active');
 	});
 
 	// User menu dropdown
@@ -285,8 +288,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 			window.appState = { isLoggedIn: false, isAdmin: false, user: null };
 			await updateNav();
 			navigateTo('/login');
+			// SPA navigation keeps the DOM alive — toast is visible on the login page
+			showToast(t('login.logout_success') || 'Sesión cerrada correctamente', 'success');
 		} catch {
-			// ignore
+			showToast(t('common.networkError') || 'Error de red', 'error');
 		}
 	});
 
@@ -338,6 +343,27 @@ document.addEventListener('DOMContentLoaded', async () => {
 	// Boot
 	updateNavDOM();
 	initRouter();
+
+	// Flash toast — shown after a full-page redirect (e.g. after standard login)
+	const flashRaw = sessionStorage.getItem('flash_toast');
+	if (flashRaw) {
+		sessionStorage.removeItem('flash_toast');
+		try {
+			const flash = JSON.parse(flashRaw) as { message: string; type?: string };
+			// Slight delay so the page content renders first
+			setTimeout(() => showToast(flash.message, (flash.type as 'info' | 'success' | 'error' | 'warning') ?? 'info', 4000), 300);
+		} catch { /* ignore */ }
+	}
+
+	// OAuth login toast — shown after Google redirects to /?login=google
+	const urlParams = new URLSearchParams(window.location.search);
+	if (urlParams.get('login') === 'google') {
+		// Clean the URL so the param doesn't persist on manual reload
+		history.replaceState(null, '', '/');
+		// Pre-populate auth_state so the nav renders correctly without waiting for the async fetch
+		localStorage.setItem('auth_state', JSON.stringify({ isLoggedIn: true, isAdmin: false, user: null }));
+		setTimeout(() => showToast(t('login.success'), 'success', 4000), 300);
+	}
 
 	// Background auth refresh (non-blocking)
 	updateNav().catch(console.error);

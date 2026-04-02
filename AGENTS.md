@@ -288,6 +288,7 @@ Icons are managed via a centralized registry in `src/frontend/icons.ts`, built o
 Locale files live in `public/js/i18n/` as ES modules (`export default { ... }`).
 - **Supported locales:** `cn`, `en`, `es`, `fr`, `jp`, `pt`, `ru`.
 - **Loader:** `src/frontend/i18n.ts` handles dynamic locale loading.
+- **No Fallbacks:** NEVER use fallback strings with the `t()` function (e.g., avoid `t('key') || 'Fallback'`). Just use `t('key')`. Fallbacks make it harder to detect missing translations.
 - **Consistency check:** Run `npm run check-i18n` to detect missing keys, orphan keys, or missing categories across all locale files. The script exits with code `1` if issues are found (CI-safe).
 
 ### R2 Media Lifecycle & Orphan Cleanup

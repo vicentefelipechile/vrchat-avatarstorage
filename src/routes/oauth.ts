@@ -102,7 +102,7 @@ oauth.get('/google/callback', async (c) => {
 				JSON.stringify({ username: result.username, is_admin: result.is_admin === 1 }),
 				{ expirationTtl: 60 * 60 * 24 * 7 },
 			);
-			return c.redirect('/', 302);
+			return c.redirect('/?login=google', 302);
 		}
 
 		// New user — redirect to username selection page

@@ -7,8 +7,13 @@ import { RESOURCE_CATEGORIES } from './types';
 // DOMPurify requires a real `document` object which Cloudflare Workers doesn't
 // provide. Since we strip all tags anyway, a regex-based approach is equivalent
 // and works in any JS environment.
+// Hard limit applied BEFORE any regex to prevent ReDoS via catastrophic backtracking.
+// A well-formed user input should never exceed this; anything larger is rejected outright.
+const MAX_SANITIZE_LENGTH = 100_000;
+
 const sanitizeHtml = (str: string | undefined | null): string => {
 	if (!str || typeof str !== 'string') return '';
+	if (str.length > MAX_SANITIZE_LENGTH) throw new Error('Input exceeds maximum allowed length');
 	return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 };
 
@@ -27,8 +32,10 @@ export const RegisterSchema = z.object({
 });
 
 export const LoginSchema = z.object({
-	username: z.string(),
-	password: z.string(),
+	// Max lengths prevent bcrypt DoS — bcrypt silently truncates at 72 bytes but hashing
+	// a 1 MB string still wastes significant CPU. Cap early at the schema layer.
+	username: z.string().min(1).max(32),
+	password: z.string().min(1).max(200),
 	token: z.string().optional(),
 });
 
@@ -138,6 +145,7 @@ export const TwoFactorDisableSchema = z.object({
 export const TwoFactorLoginSchema = z.object({
 	username: z.string(),
 	code: z.string().length(6, 'Code must be 6 digits').regex(/^\d+$/, 'Code must be numeric'),
+	pre_auth_token: z.string().uuid('Invalid pre-auth token'),
 });
 
 // ============================================================================
@@ -180,5 +188,25 @@ export const BlogCommentSchema = z.object({
 		.min(3, 'Comment must be at least 3 characters')
 		.max(1000, 'Comment too long')
 		.transform((val) => sanitizeHtml(val.trim().replace(/\n{3,}/g, '\n\n'))),
+	token: z.string().optional(),
+});
+
+// ============================================================================
+// Password Change Schema
+// ============================================================================
+
+/**
+ * Used by PUT /api/users/me/password.
+ * Requires the current password as a re-authentication step before allowing
+ * the password to be changed — protects against XSS-driven CSRF chain attacks.
+ */
+export const ChangePasswordSchema = z.object({
+	current_password: z.string().min(1, 'Current password is required').max(200),
+	new_password: z
+		.string()
+		.min(8, 'New password must be at least 8 characters')
+		.max(200, 'New password is too long'),
+	// Optional: required only when the user has 2FA enabled. Can be a TOTP code or a backup code.
+	two_factor_code: z.string().optional(),
 	token: z.string().optional(),
 });

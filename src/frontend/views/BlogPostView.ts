@@ -4,7 +4,7 @@
 
 import { t } from '../i18n';
 import { navigateTo } from '../router';
-import { renderMarkdown } from '../utils';
+import { renderMarkdown, showToast } from '../utils';
 import { commentEditorHtml, initCommentEditor } from '../comment-editor';
 import type { RouteContext } from '../types';
 
@@ -73,7 +73,7 @@ async function loadComments(postId: string): Promise<void> {
 				if (!confirm(t('admin.deleteConfirm'))) return;
 				const res = await fetch(`/api/blog/comments/${btn.dataset.uuid}`, { method: 'DELETE' });
 				if (res.ok) await loadComments(postId);
-				else alert(t('common.error'));
+				else showToast(t('common.error'), 'error');
 			});
 		});
 	} catch {
@@ -164,7 +164,7 @@ export async function blogPostAfter(ctx: RouteContext): Promise<void> {
 		if (!confirm(t('blog.deleteConfirm'))) return;
 		const res = await fetch(`/api/blog/${id}`, { method: 'DELETE' });
 		if (res.ok) navigateTo('/blog');
-		else alert(t('common.error'));
+		else showToast(t('common.error'), 'error');
 	});
 
 	// Load comments

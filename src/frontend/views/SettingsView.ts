@@ -1,9 +1,9 @@
 // =========================================================================
-// views/SettingsView.ts — User settings: profile, avatar, and 2FA
+// views/SettingsView.ts — User settings: profile, avatar, password and 2FA
 // =========================================================================
 
 import { t } from '../i18n';
-import { renderTurnstile, resizeImage } from '../utils';
+import { renderTurnstile, resizeImage, showToast, loadingBtn } from '../utils';
 import type { RouteContext } from '../types';
 
 // =========================================================================
@@ -13,20 +13,20 @@ import type { RouteContext } from '../types';
 export async function settingsView(_ctx: RouteContext): Promise<string> {
 	document.title = `VRCStorage — ${t('settings.title')}`;
 
-	const user = window.appState.user ?? {};
+	const user      = window.appState.user ?? {};
 	const avatarUrl = (user as { avatar_url?: string }).avatar_url ?? 'https://vrchat-avatarstorage.vicentefelipechile.workers.dev/avatar.png';
-	const username = (user as { username?: string }).username ?? '';
+	const username  = (user as { username?: string }).username ?? '';
 
 	return `
 		<div class="login-box" style="max-width:500px">
 			<h1>${t('settings.title')}</h1>
-			<div id="settings-error" class="danger"></div>
-			<div id="settings-success" class="success" style="color:green;margin-bottom:20px;text-align:center"></div>
 
+			<!-- Avatar preview -->
 			<div style="text-align:center;margin-bottom:30px">
 				<img id="current-avatar" src="${avatarUrl}" style="width:120px;height:120px;border-radius:50%;object-fit:cover;border:3px solid #ddd">
 			</div>
 
+			<!-- Profile form -->
 			<form id="settings-form">
 				<div class="form-group">
 					<label for="username">${t('login.username')}</label>
@@ -43,6 +43,44 @@ export async function settingsView(_ctx: RouteContext): Promise<string> {
 
 			<hr style="margin:30px 0">
 
+			<!-- Password change -->
+			<details id="password-details">
+				<summary style="cursor:pointer;padding:10px;background:#f5f5f5;border-radius:5px">
+					<h2 style="margin:0;display:inline">${t('settings.change_password') || 'Change Password'}</h2>
+				</summary>
+				<div style="padding:20px 0">
+					<div class="form-group">
+						<label for="current-password">${t('settings.current_password') || 'Current Password'}</label>
+						<input type="password" id="current-password" autocomplete="current-password" style="width:100%">
+					</div>
+					<div class="form-group">
+						<label for="new-password">${t('settings.new_password') || 'New Password'}</label>
+						<input type="password" id="new-password" autocomplete="new-password" minlength="8" maxlength="200" style="width:100%">
+					</div>
+					<div class="form-group">
+						<label for="confirm-password">${t('settings.confirm_password') || 'Confirm New Password'}</label>
+						<input type="password" id="confirm-password" autocomplete="new-password" style="width:100%">
+					</div>
+					<!-- Shown only when user has 2FA enabled -->
+					<div id="pw-2fa-section" style="display:none">
+						<div class="form-group">
+							<label for="pw-2fa-code">${t('settings.2fa_code') || '2FA Code'}</label>
+							<input type="text" id="pw-2fa-code" maxlength="6" placeholder="000000"
+							       autocomplete="one-time-code" inputmode="numeric" style="width:100%;letter-spacing:0.3em;text-align:center">
+							<small style="color:#666;display:block;margin-top:4px">
+								${t('settings.2fa_code_hint') || 'Required because your account has 2FA enabled. Enter a TOTP code or a backup code.'}
+							</small>
+						</div>
+					</div>
+					<button id="change-password-btn" class="btn" style="width:100%">
+						${t('settings.change_password') || 'Change Password'}
+					</button>
+				</div>
+			</details>
+
+			<hr style="margin:30px 0">
+
+			<!-- 2FA -->
 			<details id="two-factor-details">
 				<summary style="cursor:pointer;padding:10px;background:#f5f5f5;border-radius:5px">
 					<h2 style="margin:0;display:inline">${t('settings.2fa_title') || 'Two-Factor Authentication'}</h2>
@@ -59,7 +97,6 @@ export async function settingsView(_ctx: RouteContext): Promise<string> {
 							<label>${t('settings.2fa_password') || 'Password'}</label>
 							<input type="password" id="2fa-setup-password" style="width:100%">
 						</div>
-						<div id="2fa-password-error" class="danger"></div>
 						<button id="2fa-confirm-password-btn" class="btn" style="width:100%">${t('settings.2fa_continue') || 'Continue'}</button>
 						<button type="button" id="2fa-cancel-password-btn" class="btn" style="width:100%;margin-top:10px;background:#666">${t('settings.2fa_cancel') || 'Cancel'}</button>
 					</div>
@@ -75,7 +112,6 @@ export async function settingsView(_ctx: RouteContext): Promise<string> {
 							<label>${t('settings.2fa_verify') || 'Enter Code'}</label>
 							<input type="text" id="2fa-code" maxlength="6" placeholder="000000" style="width:100%">
 						</div>
-						<div id="2fa-setup-error" class="danger"></div>
 						<button id="2fa-verify-btn" class="btn" style="width:100%">${t('settings.2fa_enable') || 'Enable 2FA'}</button>
 						<button type="button" id="2fa-cancel-setup-btn" class="btn" style="width:100%;margin-top:10px;background:#666">${t('settings.2fa_cancel') || 'Cancel'}</button>
 					</div>
@@ -100,7 +136,6 @@ export async function settingsView(_ctx: RouteContext): Promise<string> {
 							<label>${t('settings.2fa_code') || '2FA Code'}</label>
 							<input type="text" id="2fa-disable-code" maxlength="6" placeholder="000000" style="width:100%">
 						</div>
-						<div id="2fa-disable-error" class="danger"></div>
 						<button id="2fa-confirm-disable-btn" class="btn" style="width:100%;background:#dc3545">${t('settings.2fa_confirm_disable') || 'Confirm Disable'}</button>
 						<button type="button" id="2fa-disable-cancel-btn" class="btn" style="width:100%;margin-top:10px;background:#666">${t('settings.2fa_cancel') || 'Cancel'}</button>
 					</div>
@@ -116,9 +151,7 @@ export async function settingsView(_ctx: RouteContext): Promise<string> {
 export async function settingsAfter(_ctx: RouteContext): Promise<void> {
 	renderTurnstile('#turnstile-settings');
 
-	const form = document.getElementById('settings-form') as HTMLFormElement;
-	const errorDiv = document.getElementById('settings-error')!;
-	const successDiv = document.getElementById('settings-success')!;
+	const form       = document.getElementById('settings-form') as HTMLFormElement;
 	const avatarInput = document.getElementById('avatar') as HTMLInputElement;
 	const imgPreview = document.getElementById('current-avatar') as HTMLImageElement;
 
@@ -131,57 +164,111 @@ export async function settingsAfter(_ctx: RouteContext): Promise<void> {
 	// Profile form
 	form.addEventListener('submit', async (e) => {
 		e.preventDefault();
-		const btn = form.querySelector<HTMLButtonElement>('button[type="submit"]')!;
-		const restore = () => { btn.disabled = false; btn.textContent = t('settings.save'); };
+		const btn     = form.querySelector<HTMLButtonElement>('button[type="submit"]')!;
+		const restore = loadingBtn(btn, 'Saving…');
 
-		btn.disabled = true;
-		btn.textContent = 'Saving…';
-		errorDiv.textContent = '';
-		successDiv.textContent = '';
-
-		const username = (document.getElementById('username') as HTMLInputElement).value;
+		const username  = (document.getElementById('username') as HTMLInputElement).value;
 		const avatarFile = avatarInput.files?.[0];
-		const token = (new FormData(form)).get('cf-turnstile-response') as string;
+		const token     = (new FormData(form)).get('cf-turnstile-response') as string;
 
 		try {
 			let avatarUrl: string | null = null;
 			if (avatarFile) {
-				const resized = await resizeImage(avatarFile, 128, 128);
-				const fd = new FormData();
+				const resized    = await resizeImage(avatarFile, 128, 128);
+				const fd         = new FormData();
 				fd.append('file', resized);
 				fd.append('media_type', 'image');
-				const uploadRes = await fetch('/api/upload', { method: 'PUT', body: fd });
+				const uploadRes  = await fetch('/api/upload', { method: 'PUT', body: fd });
 				if (!uploadRes.ok) throw new Error('Error uploading avatar');
 				const uploadData = await uploadRes.json() as { r2_key: string };
-				avatarUrl = `/api/download/${uploadData.r2_key}`;
+				avatarUrl        = `/api/download/${uploadData.r2_key}`;
 			}
 
 			const body: Record<string, string> = { username, token };
 			if (avatarUrl) body.avatar_url = avatarUrl;
 
 			const res = await fetch('/api/auth/me', {
-				method: 'PUT',
+				method:  'PUT',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify(body),
+				body:    JSON.stringify(body),
 			});
 
 			if (res.ok) {
-				successDiv.textContent = t('settings.success');
+				showToast(t('settings.success'), 'success');
 				window.turnstile?.reset();
-				setTimeout(() => location.reload(), 1000);
+				setTimeout(() => location.reload(), 1200);
 			} else {
 				const data = await res.json() as { error?: string };
 				throw new Error(data.error ?? 'Update failed');
 			}
 		} catch (err) {
-			errorDiv.textContent = (err as Error).message;
+			showToast((err as Error).message, 'error');
 			window.turnstile?.reset();
+		} finally {
 			restore();
 		}
 	});
 
+	// Password change
+	await loadPasswordSection();
+
 	// 2FA
 	await loadTwoFactorStatus();
+}
+
+// =========================================================================
+// Password change section
+// =========================================================================
+
+async function loadPasswordSection(): Promise<void> {
+	// Detect if user has 2FA enabled to show/hide the code field
+	let has2FA = false;
+	try {
+		const res  = await fetch('/api/2fa/status');
+		const data = await res.json() as { enabled: boolean };
+		has2FA     = data.enabled;
+	} catch { /* ignore */ }
+
+	const pw2faSection = document.getElementById('pw-2fa-section') as HTMLElement;
+	if (has2FA) pw2faSection.style.display = 'block';
+
+	document.getElementById('change-password-btn')?.addEventListener('click', async () => {
+		const btn            = document.getElementById('change-password-btn') as HTMLButtonElement;
+		const restore        = loadingBtn(btn, '…');
+		const currentPw      = (document.getElementById('current-password') as HTMLInputElement).value;
+		const newPw          = (document.getElementById('new-password') as HTMLInputElement).value;
+		const confirmPw      = (document.getElementById('confirm-password') as HTMLInputElement).value;
+		const twoFactorCode  = (document.getElementById('pw-2fa-code') as HTMLInputElement | null)?.value?.trim();
+
+		if (!currentPw) { showToast(t('settings.current_password_required') || 'Enter your current password', 'warning'); restore(); return; }
+		if (newPw.length < 8) { showToast(t('settings.password_too_short') || 'New password must be at least 8 characters', 'warning'); restore(); return; }
+		if (newPw !== confirmPw) { showToast(t('settings.password_mismatch') || 'Passwords do not match', 'warning'); restore(); return; }
+		if (has2FA && !twoFactorCode) { showToast(t('settings.2fa_code_required') || '2FA code is required', 'warning'); restore(); return; }
+
+		const body: Record<string, string> = { current_password: currentPw, new_password: newPw };
+		if (has2FA && twoFactorCode) body.two_factor_code = twoFactorCode;
+
+		try {
+			const res  = await fetch('/api/auth/me/password', {
+				method:  'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body:    JSON.stringify(body),
+			});
+			const data = await res.json() as { success?: boolean; error?: string };
+
+			if (res.ok) {
+				showToast(t('settings.password_changed') || 'Password changed! Please log in again.', 'success', 4000);
+				// All sessions invalidated by the backend — reload to trigger re-auth
+				setTimeout(() => { window.location.href = '/'; }, 2500);
+			} else {
+				showToast(data.error ?? 'Failed to change password', 'error');
+			}
+		} catch {
+			showToast(t('common.networkError') || 'Network error', 'error');
+		} finally {
+			restore();
+		}
+	});
 }
 
 // =========================================================================
@@ -190,17 +277,17 @@ export async function settingsAfter(_ctx: RouteContext): Promise<void> {
 
 async function loadTwoFactorStatus(): Promise<void> {
 	const els = {
-		status: document.getElementById('2fa-status')!,
-		enable: document.getElementById('2fa-enable-section')!,
+		status:   document.getElementById('2fa-status')!,
+		enable:   document.getElementById('2fa-enable-section')!,
 		password: document.getElementById('2fa-password-section')!,
-		setup: document.getElementById('2fa-setup')!,
-		enabled: document.getElementById('2fa-enabled-section')!,
-		disable: document.getElementById('2fa-disable-section')!,
-		backup: document.getElementById('2fa-backup-codes')!,
+		setup:    document.getElementById('2fa-setup')!,
+		enabled:  document.getElementById('2fa-enabled-section')!,
+		disable:  document.getElementById('2fa-disable-section')!,
+		backup:   document.getElementById('2fa-backup-codes')!,
 	};
 
 	try {
-		const res = await fetch('/api/2fa/status');
+		const res  = await fetch('/api/2fa/status');
 		const data = await res.json() as { enabled: boolean };
 
 		Object.values(els).forEach((el) => (el.style.display = 'none'));
@@ -220,8 +307,8 @@ async function loadTwoFactorStatus(): Promise<void> {
 type TwoFAEls = { status: HTMLElement; enable: HTMLElement; password: HTMLElement; setup: HTMLElement; enabled: HTMLElement; disable: HTMLElement; backup: HTMLElement };
 
 function setup2FAHandlers(els: TwoFAEls): void {
-	const qrContainer = document.getElementById('2fa-qr-container')!;
-	const secretText = document.getElementById('2fa-secret')!;
+	const qrContainer    = document.getElementById('2fa-qr-container')!;
+	const secretText     = document.getElementById('2fa-secret')!;
 	const backupCodesList = document.getElementById('backup-codes-list')!;
 
 	// Enable → show password step
@@ -238,23 +325,28 @@ function setup2FAHandlers(els: TwoFAEls): void {
 
 	// Confirm password → fetch QR
 	document.getElementById('2fa-confirm-password-btn')?.addEventListener('click', async () => {
+		const btn      = document.getElementById('2fa-confirm-password-btn') as HTMLButtonElement;
+		const restore  = loadingBtn(btn, '…');
 		const password = (document.getElementById('2fa-setup-password') as HTMLInputElement).value;
-		const errEl = document.getElementById('2fa-password-error')!;
-		if (!password) { errEl.textContent = 'Password is required'; return; }
+		if (!password) { showToast(t('settings.2fa_password_required') || 'Password is required', 'warning'); restore(); return; }
+
 		try {
-			const res = await fetch('/api/2fa/setup', {
-				method: 'POST',
+			const res  = await fetch('/api/2fa/setup', {
+				method:  'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ password }),
+				body:    JSON.stringify({ password }),
 			});
 			const data = await res.json() as { otpauthUrl?: string; secret?: string; error?: string };
-			if (!res.ok) { errEl.textContent = data.error ?? 'Error setting up 2FA'; return; }
+			if (!res.ok) { showToast(data.error ?? 'Error setting up 2FA', 'error'); restore(); return; }
+
 			els.password.style.display = 'none';
-			els.setup.style.display = 'block';
-			qrContainer.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(data.otpauthUrl ?? '')}" alt="QR Code">`;
-			secretText.textContent = data.secret ?? '';
+			els.setup.style.display    = 'block';
+			qrContainer.innerHTML      = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(data.otpauthUrl ?? '')}" alt="QR Code">`;
+			secretText.textContent     = data.secret ?? '';
 		} catch {
-			(document.getElementById('2fa-password-error') as HTMLElement).textContent = 'Error setting up 2FA';
+			showToast(t('common.networkError') || 'Network error', 'error');
+		} finally {
+			restore();
 		}
 	});
 
@@ -266,24 +358,29 @@ function setup2FAHandlers(els: TwoFAEls): void {
 
 	// Verify TOTP code
 	document.getElementById('2fa-verify-btn')?.addEventListener('click', async () => {
-		const code = (document.getElementById('2fa-code') as HTMLInputElement).value;
-		const errEl = document.getElementById('2fa-setup-error')!;
+		const btn     = document.getElementById('2fa-verify-btn') as HTMLButtonElement;
+		const restore = loadingBtn(btn, '…');
+		const code    = (document.getElementById('2fa-code') as HTMLInputElement).value.trim();
+
 		try {
-			const res = await fetch('/api/2fa/verify', {
-				method: 'POST',
+			const res  = await fetch('/api/2fa/verify', {
+				method:  'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ code }),
+				body:    JSON.stringify({ code }),
 			});
 			const data = await res.json() as { backupCodes?: string[]; error?: string };
 			if (res.ok) {
-				els.setup.style.display = 'none';
+				els.setup.style.display  = 'none';
 				els.backup.style.display = 'block';
 				backupCodesList.textContent = data.backupCodes?.join('\n') ?? '';
+				showToast(t('settings.2fa_enabled_success') || '2FA enabled successfully!', 'success');
 			} else {
-				errEl.textContent = data.error ?? 'Invalid code';
+				showToast(data.error ?? 'Invalid code', 'error');
 			}
 		} catch {
-			(document.getElementById('2fa-setup-error') as HTMLElement).textContent = 'Error verifying code';
+			showToast(t('common.networkError') || 'Network error', 'error');
+		} finally {
+			restore();
 		}
 	});
 
@@ -307,25 +404,32 @@ function setup2FAHandlers(els: TwoFAEls): void {
 
 	// Confirm disable
 	document.getElementById('2fa-confirm-disable-btn')?.addEventListener('click', async () => {
+		const btn      = document.getElementById('2fa-confirm-disable-btn') as HTMLButtonElement;
+		const restore  = loadingBtn(btn, '…');
 		const password = (document.getElementById('2fa-disable-password') as HTMLInputElement).value;
-		const code = (document.getElementById('2fa-disable-code') as HTMLInputElement).value;
-		const errEl = document.getElementById('2fa-disable-error')!;
+		const code     = (document.getElementById('2fa-disable-code') as HTMLInputElement).value;
+
 		try {
-			const res = await fetch('/api/2fa/disable', {
-				method: 'POST',
+			const res  = await fetch('/api/2fa/disable', {
+				method:  'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ password, code: code || '' }),
+				body:    JSON.stringify({ password, code: code || '' }),
 			});
 			const data = await res.json() as { error?: string };
 			if (res.ok) {
-				alert(t('settings.2fa_disabled_success') || '2FA disabled successfully!');
+				showToast(t('settings.2fa_disabled_success'), 'success');
 				els.disable.style.display = 'none';
 				await loadTwoFactorStatus();
+				// Also hide the 2FA code field in the password section
+				const pw2faSection = document.getElementById('pw-2fa-section') as HTMLElement;
+				if (pw2faSection) pw2faSection.style.display = 'none';
 			} else {
-				errEl.textContent = data.error ?? 'Error disabling 2FA';
+				showToast(data.error ?? 'Error disabling 2FA', 'error');
 			}
 		} catch {
-			(document.getElementById('2fa-disable-error') as HTMLElement).textContent = 'Error disabling 2FA';
+			showToast(t('common.networkError'), 'error');
+		} finally {
+			restore();
 		}
 	});
 }

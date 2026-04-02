@@ -3,7 +3,7 @@
 // =========================================================================
 
 import { t } from '../i18n';
-import { stripMarkdown } from '../utils';
+import { stripMarkdown, showToast } from '../utils';
 import { navigateTo } from '../router';
 import type { RouteContext, Resource } from '../types';
 
@@ -174,13 +174,14 @@ export async function adminAfter(_ctx: RouteContext): Promise<void> {
 			const res = await fetch('/api/admin/cleanup/orphaned-media', { method: 'POST' });
 			const data = await res.json() as { deleted?: number; error?: string };
 			if (res.ok) {
-				alert(t('admin.cleanupSuccess').replace('{count}', String(data.deleted)));
-				location.reload();
+				showToast(t('admin.cleanupSuccess').replace('{count}', String(data.deleted)), 'success');
+				// reload handled gracefully if we need to? Or just simple setTimeout
+				setTimeout(() => location.reload(), 1500);
 			} else {
-				alert(`${t('admin.error')}: ${data.error}`);
+				showToast(`${t('admin.error')}: ${data.error}`, 'error');
 			}
 		} catch {
-			alert(t('admin.networkError'));
+			showToast(t('admin.networkError'), 'error');
 		} finally {
 			btn.disabled = false;
 			btn.innerHTML = `🗑️ ${t('admin.cleanupOrphaned')}`;
@@ -202,13 +203,13 @@ export async function adminAfter(_ctx: RouteContext): Promise<void> {
 			const res = await fetch(`/api/admin/cache/clear/${encodeURIComponent(username)}`, { method: 'POST' });
 			const data = await res.json() as { error?: string };
 			if (res.ok) {
-				alert(t('admin.cacheClearSuccess').replace('{user}', username));
+				showToast(t('admin.cacheClearSuccess').replace('{user}', username), 'success');
 				input.value = '';
 			} else {
-				alert(`${t('admin.error')}: ${data.error ?? t('admin.cacheClearError')}`);
+				showToast(`${t('admin.error')}: ${data.error ?? t('admin.cacheClearError')}`, 'error');
 			}
 		} catch {
-			alert(t('admin.networkError'));
+			showToast(t('admin.networkError'), 'error');
 		} finally {
 			restore();
 		}

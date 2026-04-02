@@ -278,12 +278,12 @@ export async function itemView(ctx: RouteContext): Promise<string> {
 	const headerTools = `
 		<div style="display:flex;gap:10px;flex-shrink:0;margin-top:5px;align-items:center">
 			${user ? `
-				<button type="button" class="btn-favorite" id="btn-favorite" data-uuid="${uuid}" style="background:transparent;border:1px solid var(--border-color);padding:5px 10px;cursor:pointer">
+				<button type="button" class="btn-favorite" id="btn-favorite" data-uuid="${uuid}" style="display:flex;align-items:center;gap:5px;background:transparent;border:1px solid var(--border-color);padding:5px 12px;cursor:pointer">
 					${icons.heart(18, 'class="favorite-icon"')}
-					<span class="favorite-text" style="margin-left:5px">${t('nav.favorites')}</span>
+					<span class="hide-mobile">${t('nav.favorites')}</span>
 				</button>` : ''}
-			${canEdit ? `<a href="/resource/${uuid}/edit" data-link class="btn" style="background:#17a2b8;padding:5px 15px">${t('item.edit')}</a>` : ''}
-			<a href="/resource/${uuid}/history" data-link class="btn" style="background:#6c757d;padding:5px 15px">${t('item.history')}</a>
+			${canEdit ? `<a href="/resource/${uuid}/edit" data-link class="btn" style="display:flex;align-items:center;gap:5px;background:#17a2b8;padding:5px 15px">${icons.edit(18)}<span class="hide-mobile">${t('item.edit')}</span></a>` : ''}
+			<a href="/resource/${uuid}/history" data-link class="btn" style="display:flex;align-items:center;gap:5px;background:#6c757d;padding:5px 15px">${icons.history(18)}<span class="hide-mobile">${t('item.history')}</span></a>
 		</div>`;
 
 	// Store lightbox images in a data attribute for after()
@@ -291,7 +291,7 @@ export async function itemView(ctx: RouteContext): Promise<string> {
 
 	return `
 		<div class="details-box" data-lightbox="${lightboxData}">
-			<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:15px;margin-bottom:15px">
+			<div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:15px;margin-bottom:15px">
 				<h1 style="margin:0;line-height:1.2;word-break:break-word">${res.title}</h1>
 				${headerTools}
 			</div>

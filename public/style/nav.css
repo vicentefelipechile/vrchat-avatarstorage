@@ -41,7 +41,7 @@ nav .container {
 }
 
 .nav-links a:hover {
-	border: 1px solid var(--border-color);
+	border: 2px solid var(--border-color);
 	background-color: var(--bg-card);
 }
 
@@ -168,6 +168,11 @@ nav .container {
 @media (max-width: 768px) {
 	nav .container {
 		flex-wrap: wrap;
+		gap: 8px;
+	}
+
+	.container-vh {
+		display: none;
 	}
 
 	.logo {
@@ -176,36 +181,45 @@ nav .container {
 
 	.menu-toggle {
 		display: block;
-		order: 2;
-	}
-
-	.nav-utils {
-		order: 3;
+		order: 1;
 	}
 
 	.nav-links {
 		display: none;
-		order: 4;
-		width: 100%;
+		order: 3;
+		flex-basis: 100%;
 		flex-direction: column;
 		align-items: stretch;
 		padding-top: 10px;
-		gap: 4px;
+		gap: 6px;
 	}
 
 	.nav-links.active {
 		display: flex;
 	}
 
+	.nav-utils {
+		display: none;
+		order: 4;
+		flex-basis: 100%;
+		flex-wrap: wrap;
+		justify-content: center;
+		padding-top: 15px;
+		padding-bottom: 5px;
+		gap: 12px;
+		border-top: 2px solid var(--text-main);
+		margin-top: 10px;
+	}
+
+	.nav-utils.active {
+		display: flex;
+	}
+
 	.nav-links a {
 		text-align: center;
 		width: 100%;
-		padding: 8px;
-		border: 1px solid var(--border-light);
-	}
-
-	.nav-utils {
-		gap: 6px;
+		padding: 14px;
+		border: 2px solid var(--text-main);
 	}
 
 	#lang-selector {
@@ -213,22 +227,41 @@ nav .container {
 	}
 
 	.user-menu {
-		position: relative;
+		position: static;
+		flex-basis: 100%;
+		display: flex;
+		flex-direction: column;
 	}
 
 	.user-menu-btn {
 		width: 100%;
-		text-align: center;
+		padding: 12px;
+		background: var(--bg-hover);
+		border: 2px solid var(--border-color);
 	}
 
 	.user-menu-dropdown {
-		position: absolute;
-		width: max-content;
-		min-width: 150px;
+		position: static;
+		width: 100%;
+		transform: none;
+		min-width: unset;
+		border: 2px solid var(--border-color);
+		box-shadow: none;
+		margin-top: 6px;
 	}
 
 	.user-menu-dropdown a {
 		text-align: center;
+		padding: 12px;
+		background: var(--bg-card);
+		border-bottom: 1px solid var(--border-light);
+		border-left: none;
+		border-right: none;
+		border-top: none;
+	}
+
+	.user-menu-dropdown a:last-child {
+		border-bottom: none;
 	}
 
 	.login-link {

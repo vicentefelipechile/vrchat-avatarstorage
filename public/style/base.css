@@ -109,6 +109,9 @@ main {
 	.container {
 		padding: 15px;
 	}
+	.hide-mobile {
+		display: none !important;
+	}
 }
 
 /* ---- Toast notifications ---- */

@@ -298,6 +298,50 @@ admin.post('/cache/clear/:username', async (c) => {
 });
 
 // =========================================================================================================
+// POST /api/admin/users/:username/role
+// Update the is_admin flag for a target user and immediately invalidate their KV session cache.
+// Without KV invalidation, a demoted admin could retain elevated access for up to 7 days.
+// =========================================================================================================
+
+admin.post('/users/:username/role', async (c) => {
+	const user = await getAuthUser(c);
+	if (!user) return c.json({ error: 'Unauthorized' }, 401);
+	if (!user.is_admin) return c.json({ error: 'Forbidden' }, 403);
+
+	const targetUsername = c.req.param('username');
+
+	let body: { is_admin?: unknown };
+	try {
+		body = await c.req.json();
+	} catch {
+		return c.json({ error: 'Invalid JSON body' }, 400);
+	}
+
+	if (typeof body.is_admin !== 'boolean') return c.json({ error: 'is_admin must be a boolean' }, 400);
+
+	// An admin cannot demote themselves — prevents accidental lockout.
+	if (targetUsername === user.username) return c.json({ error: 'Cannot change your own role' }, 400);
+
+	try {
+		const targetUser = await c.env.DB.prepare('SELECT uuid FROM users WHERE username = ?').bind(targetUsername).first<{ uuid: string }>();
+		if (!targetUser) return c.json({ error: 'User not found' }, 404);
+
+		await c.env.DB.prepare('UPDATE users SET is_admin = ? WHERE uuid = ?')
+			.bind(body.is_admin ? 1 : 0, targetUser.uuid)
+			.run();
+
+		// Critical: invalidate KV cache so the role change takes effect immediately.
+		// Without this, the user would retain their old role for up to 7 days.
+		await c.env.VRCSTORAGE_KV.delete(`user:${targetUsername}`);
+
+		return c.json({ success: true, username: targetUsername, is_admin: body.is_admin });
+	} catch (e) {
+		console.error('Role change error:', e);
+		return c.json({ error: 'Failed to update role' }, 500);
+	}
+});
+
+// =========================================================================================================
 // Export
 // =========================================================================================================
 

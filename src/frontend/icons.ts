@@ -13,11 +13,13 @@ import {
 	Code,
 	Code2,
 	Heart,
+	History,
 	Image,
 	Italic,
 	Link,
 	List,
 	Monitor,
+	Pencil,
 	Quote,
 	Strikethrough,
 } from 'lucide';
@@ -68,4 +70,6 @@ export const icons = {
 
 	// UI elements
 	heart: (size = 16, extraAttrs = '') => icon(Heart as unknown as LucideIconData, size, extraAttrs),
+	edit: (size = 16, extraAttrs = '') => icon(Pencil as unknown as LucideIconData, size, extraAttrs),
+	history: (size = 16, extraAttrs = '') => icon(History as unknown as LucideIconData, size, extraAttrs),
 } as const;

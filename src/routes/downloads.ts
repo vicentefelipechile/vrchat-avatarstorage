@@ -15,6 +15,27 @@ import { getAuthUser } from '../auth';
 import { Media } from '../types';
 
 // =========================================================================================================
+// Helpers
+// =========================================================================================================
+
+/**
+ * Enforces a strict Content-Type allowlist for files served from R2.
+ *
+ * Only MIME types in the safe prefix list are returned as-is. Everything else
+ * (including text/html, text/javascript, image/svg+xml, etc.) is coerced to
+ * `application/octet-stream` so the browser will never execute the content.
+ *
+ * This prevents the attack chain: upload malicious .html/.svg → share R2 link
+ * → victim opens link → XSS via R2 content.
+ */
+const SAFE_CONTENT_TYPE_PREFIXES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif', 'video/mp4', 'video/webm', 'video/ogg'];
+
+function safeContentType(raw: string | undefined | null): string {
+	const ct = (raw ?? '').toLowerCase().split(';')[0].trim();
+	return SAFE_CONTENT_TYPE_PREFIXES.some((prefix) => ct === prefix) ? ct : 'application/octet-stream';
+}
+
+// =========================================================================================================
 // Endpoints
 // =========================================================================================================
 
@@ -50,7 +71,11 @@ downloads.get('/:key', async (c) => {
 
 	const headers = new Headers();
 	object.writeHttpMetadata(headers);
-	headers.set('etag', object.httpEtag);
+	headers.set('ETag', object.httpEtag);
+	// Always enforce safe Content-Type to prevent R2-hosted HTML/SVG/JS execution
+	headers.set('Content-Type', safeContentType(headers.get('Content-Type')));
+	// Prevent MIME-type sniffing by the browser — must respect our Content-Type declaration
+	headers.set('X-Content-Type-Options', 'nosniff');
 
 	if (isMedia) {
 		// Public media: inline disposition, long-lived cache

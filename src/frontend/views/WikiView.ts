@@ -4,7 +4,7 @@
 
 import { t, getCurrentLang } from '../i18n';
 import { DataCache } from '../cache';
-import { renderTurnstile, renderMarkdown } from '../utils';
+import { renderTurnstile, renderMarkdown, showToast } from '../utils';
 import type { RouteContext } from '../types';
 
 // =========================================================================
@@ -254,9 +254,9 @@ export async function wikiAfter(ctx: RouteContext): Promise<void> {
 						await loadComments();
 					} else {
 						const data = await res.json() as { error?: string };
-						alert('Error: ' + (data.error ?? 'Unknown'));
+						showToast('Error: ' + (data.error ?? 'Unknown'), 'error');
 					}
-				} catch { alert('Error submitting comment'); }
+				} catch { showToast('Error submitting comment', 'error'); }
 				finally { restore(); }
 			});
 		}
@@ -277,8 +277,8 @@ export async function wikiAfter(ctx: RouteContext): Promise<void> {
 			try {
 				const res = await fetch(`/api/wiki/comments/${uuid}`, { method: 'DELETE' });
 				if (res.ok) document.getElementById(`comment-${uuid}`)?.remove();
-				else { const d = await res.json() as { error?: string }; alert('Error: ' + (d.error ?? 'Unknown')); }
-			} catch { alert('Error deleting comment'); }
+				else { const d = await res.json() as { error?: string }; showToast('Error: ' + (d.error ?? 'Unknown'), 'error'); }
+			} catch { showToast('Error deleting comment', 'error'); }
 			finally { target.removeAttribute('disabled'); target.textContent = t('admin.delete'); }
 			return;
 		}
