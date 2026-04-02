@@ -31,9 +31,9 @@ const CATEGORIES: WikiCategory[] = [
 	{
 		id: 'vrchat', title: 'wiki.categories.vrchat',
 		topics: [
+			{ id: 'setup', label: 'wiki.setup.title' },
 			{ id: 'parameter', label: 'wiki.parameter.title' },
 			{ id: 'action-menu', label: 'wiki.actionMenu.title' },
-			{ id: 'setup', label: 'wiki.setup.title' },
 			{ id: 'unityhub-error', label: 'wiki.unityhubError.title' },
 		],
 	},

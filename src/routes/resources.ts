@@ -100,9 +100,9 @@ resources.get('/', async (c) => {
 	const orderColumn = SORT_COLUMNS[sortBy ?? ''] ?? 'r.created_at';
 	const tagsList = tagsParam
 		? tagsParam
-				.split(',')
-				.map((t) => t.trim())
-				.filter(Boolean)
+			.split(',')
+			.map((t) => t.trim())
+			.filter(Boolean)
 		: [];
 
 	try {
@@ -126,10 +126,10 @@ resources.get('/', async (c) => {
 
 		// Only enable FTS when the user typed something — falls back to standard filter + sort otherwise.
 		/*
-        if (query) {
-            qb.withFts('resources_fts', 'fts', query, 'r.uuid');
-        }
-        */
+		if (query) {
+			qb.withFts('resources_fts', 'fts', query, 'r.uuid');
+		}
+		*/
 
 		const { sql, params } = qb.build();
 
