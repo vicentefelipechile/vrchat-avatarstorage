@@ -54,8 +54,8 @@ securityMiddleware(app);
 
 // Auth — strict (1 req / 60s per IP)
 app.use('/api/auth/register', async (c, next) => rateLimit({ binding: c.env.RL_STRICT, keyPrefix: 'register' })(c, next));
-app.use('/api/auth/login', async (c, next) => rateLimit({ binding: c.env.RL_STRICT, keyPrefix: 'login' })(c, next));
-app.use('/api/auth/login/2fa', async (c, next) => rateLimit({ binding: c.env.RL_STRICT, keyPrefix: 'login_2fa' })(c, next));
+app.use('/api/auth/login', async (c, next) => rateLimit({ binding: c.env.RL_LOGIN, keyPrefix: 'login' })(c, next));
+app.use('/api/auth/login/2fa', async (c, next) => rateLimit({ binding: c.env.RL_LOGIN, keyPrefix: 'login_2fa' })(c, next));
 
 // Comments — differentiate POST (strict) from GET (medium)
 app.use('/api/comments/*', async (c, next) => {

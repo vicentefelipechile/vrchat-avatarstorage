@@ -62,6 +62,14 @@
 				"limit": 500,
 				"period": 60
 			}
+		},
+		{
+			"name": "RL_LOGIN",
+			"namespace_id": "1004",
+			"simple": {
+				"limit": 10,
+				"period": 60
+			}
 		}
 	],
 	"triggers": {
