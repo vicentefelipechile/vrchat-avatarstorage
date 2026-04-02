@@ -171,13 +171,26 @@ export async function wikiAfter(ctx: RouteContext): Promise<void> {
 		}
 
 		const lang = getCurrentLang();
+
+		async function fetchWikiContent(langCode: string): Promise<string> {
+			const text = (await DataCache.fetch(`/wiki/${langCode}/${topicId}.md`, { type: 'text', ttl: 300_000 })) as string;
+			// Cloudflare returns the SPA shell (index.html) with 200 when a static file doesn't exist.
+			// Detect this by checking if the response is HTML instead of Markdown.
+			const trimmed = text.trimStart().toLowerCase();
+			if (trimmed.startsWith('<!doctype') || trimmed.startsWith('<html')) {
+				DataCache.clear(`/wiki/${langCode}/${topicId}.md`);
+				throw new Error('Not a markdown file');
+			}
+			return text;
+		}
+
 		try {
-			const text = (await DataCache.fetch(`/wiki/${lang}/${topicId}.md`, { type: 'text', ttl: 300_000 })) as string;
+			const text = await fetchWikiContent(lang);
 			renderMarkdown(contentEl, text);
 		} catch {
 			if (lang !== 'en') {
 				try {
-					const textEn = (await DataCache.fetch(`/wiki/en/${topicId}.md`, { type: 'text', ttl: 300_000 })) as string;
+					const textEn = await fetchWikiContent('en');
 					renderMarkdown(contentEl, textEn);
 					return;
 				} catch { /* fall through to error */ }

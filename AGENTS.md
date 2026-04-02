@@ -210,8 +210,11 @@ public/
   js/
     bundle.js             # Compiled frontend bundle (output of esbuild, DO NOT EDIT)
     i18n/                 # Locale files (ES module, `export default { ... }`)
-      cn.js  en.js  es.js  fr.js  jp.js  pt.js  ru.js
+      cn.js  de.js  en.js  es.js  fr.js  it.js
+      jp.js  nl.js  pl.js  pt.js  ru.js  tr.js
   wiki/                   # Markdown wiki articles (multi-language)
+    cn/ de/ en/ es/ fr/ it/ jp/ nl/ pl/ pt/ ru/ tr/
+    └── <topic>.md        # 23 articles per language (home, faq, setup, poiyomi, ...)
 
 sql/                      # D1 schema files
   SCHEMA_INIT.sql         # Initial schema
@@ -286,7 +289,7 @@ Icons are managed via a centralized registry in `src/frontend/icons.ts`, built o
 
 ### i18n (Frontend)
 Locale files live in `public/js/i18n/` as ES modules (`export default { ... }`).
-- **Supported locales:** `cn`, `en`, `es`, `fr`, `jp`, `pt`, `ru`.
+- **Supported locales:** `cn`, `de`, `en`, `es`, `fr`, `it`, `jp`, `nl`, `pl`, `pt`, `ru`, `tr`.
 - **Loader:** `src/frontend/i18n.ts` handles dynamic locale loading.
 - **No Fallbacks:** NEVER use fallback strings with the `t()` function (e.g., avoid `t('key') || 'Fallback'`). Just use `t('key')`. Fallbacks make it harder to detect missing translations.
 - **Consistency check:** Run `npm run check-i18n` to detect missing keys, orphan keys, or missing categories across all locale files. The script exits with code `1` if issues are found (CI-safe).
@@ -333,9 +336,9 @@ The stylesheet is modular. `public/style.css` is the **import manifest only** �
 
 ### Wiki Documentation
 The repository contains a multi-language wiki in `public/wiki/`.
-- **Languages:** `pt`, `fr`, `jp`, `ru`.
+- **Languages:** `cn`, `de`, `en`, `es`, `fr`, `it`, `jp`, `nl`, `pl`, `pt`, `ru`, `tr`.
 - **Drafting:** Always draft in Spanish first (if applicable) or verify content thoroughly.
-- **Routing:** Handled in `src/routes/wiki.ts`, serving Markdown via `[text](/wiki?topic=slug)`.
+- **Routing:** The frontend (`WikiView.ts`) fetches `/wiki/{lang}/{topic}.md` based on `getCurrentLang()`. If the file does not exist, it **falls back to the English version**. If neither exists, an error message is shown. The view detects non-existent files by checking if Cloudflare returned the SPA shell (HTML) instead of Markdown.
 - **Formatting:**
     - Use badges: `<span class="badge badge-blue">Logic</span>`.
     - Use GitHub alerts: `> [!NOTE]`, `> [!TIP]`, etc.
@@ -343,6 +346,51 @@ The repository contains a multi-language wiki in `public/wiki/`.
 - **References:** Use a single `## References` section. Format: `* Author. (Date). Title. Site. URL`.
 - **Verification:** Prohibited to include unverified links. Verify URLs before adding them.
 - **Translations:** Request user confirmation before translating to all supported languages.
+- **Article list (23 topics):** `home`, `faq`, `setup`, `poiyomi`, `vrcfury`, `modular-avatar`, `physbones`, `syncdances`, `vrcquesttools`, `gogoloco`, `gogoloco-nsfw`, `desktop-puppeteer`, `gesture-manager-emulator`, `action-menu`, `parameter`, `unityhub-error`, `nsfw-essentials`, `sps`, `inside-view`, `pcs`, `haptics`, `dps`, `justkisssfx`.
+
+### Adding a New Language (Complete Checklist)
+
+When adding a new language to the project, follow **ALL** of these steps in order:
+
+#### Step 1: Create the locale file (`public/js/i18n/<code>.js`)
+1. Copy `public/js/i18n/en.js` as the template (it is the reference locale and always has the complete set of keys).
+2. Translate **every** value to the target language. Keep all keys in English.
+3. The file format is an ES module: `export default { ... }`.
+4. DO NOT add or remove keys — maintain exact structural parity with `en.js`.
+
+#### Step 2: Register the locale in the frontend loader
+1. Open `src/frontend/i18n.ts`.
+2. Add an `import` for the new locale file (e.g., `import xx from '../../public/js/i18n/xx.js';`).
+3. Add the new code to the `translations` object (e.g., `{ ..., xx }`).
+
+#### Step 3: Add the language to the HTML selector
+1. Open `public/index.html`.
+2. Find the `<select id="lang-selector">` element.
+3. Add an `<option value="xx">🇽🇽 XX</option>` entry with the appropriate flag emoji and uppercase code.
+
+#### Step 4: Validate i18n sync
+```bash
+npm run check-i18n
+```
+This must report **0 missing keys** and **0 orphan keys**. Fix any issues before proceeding.
+
+#### Step 5: Create the wiki directory (`public/wiki/<code>/`)
+1. Create the directory `public/wiki/<code>/`.
+2. You must create **all 23 `.md` files** (listed above) translated to the target language.
+3. Use the English (`public/wiki/en/`) articles as the reference source.
+4. Preserve all Markdown formatting: badges, `> [!NOTE]` alerts, tables, internal links (`/wiki?topic=slug`), and the `## References` section.
+5. **Do not translate**: tool names (Poiyomi, VRCFury, etc.), URLs, code snippets, or Unity menu paths (keep them in English for discoverability).
+
+#### Step 6: Build the frontend
+```bash
+npm run build-frontend
+```
+This bundles the new locale import into `public/js/bundle.js`.
+
+#### Step 7: Update this file (AGENTS.md)
+- Update the **Supported locales** list in the `i18n (Frontend)` section.
+- Update the **Languages** list in the `Wiki Documentation` section.
+- Update the locale file listing in the `Project Structure` section.
 
 ## Implementation Checklist for Agents
 
