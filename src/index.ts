@@ -38,12 +38,7 @@ const app = new Hono<{ Bindings: Env }>();
  * Escapes HTML special characters to prevent injection when replacing meta tags.
  */
 function escapeHtml(str: string): string {
-	return str
-		.replace(/&/g, '&amp;')
-		.replace(/</g, '&lt;')
-		.replace(/>/g, '&gt;')
-		.replace(/"/g, '&quot;')
-		.replace(/'/g, '&#39;');
+	return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
 // Security Headers & CORS
@@ -129,15 +124,17 @@ app.route('/api', systemRoutes);
 // SEO routes
 // =========================================================================================================
 
-function injectSEO(html: string, opts: { title: string, description: string, url: string, imageUrl: string }): string {
+function injectSEO(html: string, opts: { title: string; description: string; url: string; imageUrl: string }): string {
 	let res = html;
 	res = res.replace(/<title>[^<]*<\/title>/i, `<title>${opts.title}</title>`);
 
 	// Remove the specific markdown block if it exists
-	const cleanDescription = opts.description.replace(
-		/\s*---\s*### Avatar Details\s*\* Platform:.*\s*\* SDK:.*\s*\* Version:.*\s*\* Contains \.blend:.*\s*\* Uses Poiyomi:.*\s*\* Uses VRCFury:.*/gi,
-		''
-	).trim();
+	const cleanDescription = opts.description
+		.replace(
+			/\s*---\s*### Avatar Details\s*\* Platform:.*\s*\* SDK:.*\s*\* Version:.*\s*\* Contains \.blend:.*\s*\* Uses Poiyomi:.*\s*\* Uses VRCFury:.*/gi,
+			'',
+		)
+		.trim();
 
 	const tags = [
 		{ type: 'name', key: 'description', val: cleanDescription },
@@ -210,7 +207,7 @@ app.get('/wiki', async (c) => {
 			title: escapeHtml(title),
 			description: escapeHtml(description),
 			url,
-			imageUrl
+			imageUrl,
 		});
 
 		return c.html(html);
@@ -233,8 +230,10 @@ app.get('/blog/:slug', async (c) => {
 			`SELECT bp.uuid, bp.title, bp.excerpt, m.r2_key as cover_image_key
 			FROM blog_posts bp
 			LEFT JOIN media m ON bp.cover_image_uuid = m.uuid
-			WHERE bp.uuid = ?`
-		).bind(slug).first<{ uuid: string; title: string; excerpt: string | null; cover_image_key: string | null }>();
+			WHERE bp.uuid = ?`,
+		)
+			.bind(slug)
+			.first<{ uuid: string; title: string; excerpt: string | null; cover_image_key: string | null }>();
 
 		if (post) {
 			const indexResponse = await c.env.ASSETS.fetch(new URL('/index.html', c.req.url));
@@ -243,9 +242,7 @@ app.get('/blog/:slug', async (c) => {
 
 			const postTitle = escapeHtml(`${post.title} - VRCStorage Blog`);
 			const postDesc = escapeHtml(post.excerpt || 'Read this article on the VRCStorage Blog.');
-			const imageUrl = post.cover_image_key
-				? `${urlOrigin}/api/download/${post.cover_image_key}`
-				: `${urlOrigin}/favicon.svg`;
+			const imageUrl = post.cover_image_key ? `${urlOrigin}/api/download/${post.cover_image_key}` : `${urlOrigin}/favicon.svg`;
 			const postUrl = `${urlOrigin}/blog/${post.uuid}`;
 
 			html = injectSEO(html, { title: postTitle, description: postDesc, url: postUrl, imageUrl });
@@ -279,9 +276,7 @@ app.get('/item/:uuid', async (c) => {
 			// Meta values
 			const title = escapeHtml(resource.title);
 			const description = escapeHtml(resource.description || 'VRCStorage & Asset Storage');
-			const imageUrl = thumbnail
-				? `${urlOrigin}/api/download/${thumbnail.r2_key}`
-				: `${urlOrigin}/favicon.svg`;
+			const imageUrl = thumbnail ? `${urlOrigin}/api/download/${thumbnail.r2_key}` : `${urlOrigin}/favicon.svg`;
 			const url = `${urlOrigin}/item/${uuid}`;
 
 			html = injectSEO(html, { title, description, url, imageUrl });
@@ -332,10 +327,13 @@ async function cleanupOrphanedMedia(env: Env) {
 				SELECT reference_image_uuid FROM resources WHERE reference_image_uuid IS NOT NULL
 				UNION
 				SELECT media_uuid FROM resource_n_media
+				UNION
+				SELECT cover_image_uuid FROM blog_posts WHERE cover_image_uuid IS NOT NULL
 			)
-			AND NOT EXISTS (
-				SELECT 1 FROM users WHERE INSTR(users.avatar_url, m.r2_key) > 0
-			)
+			AND NOT EXISTS (SELECT 1 FROM users         WHERE INSTR(users.avatar_url,     m.r2_key) > 0)
+			AND NOT EXISTS (SELECT 1 FROM comments      WHERE INSTR(comments.text,        m.r2_key) > 0)
+			AND NOT EXISTS (SELECT 1 FROM blog_comments WHERE INSTR(blog_comments.text,   m.r2_key) > 0)
+			AND NOT EXISTS (SELECT 1 FROM blog_posts    WHERE INSTR(blog_posts.content,   m.r2_key) > 0)
 		`,
 		)
 			.bind(cutoffTime)

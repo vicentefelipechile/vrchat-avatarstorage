@@ -115,7 +115,9 @@ favorites.post('/', async (c) => {
 	const body = await c.req.json();
 	const { resource_uuid } = AddFavoriteSchema.parse(body);
 
-	const resource = await c.env.DB.prepare('SELECT uuid, is_active FROM resources WHERE uuid = ?').bind(resource_uuid).first<{ uuid: string; is_active: number }>();
+	const resource = await c.env.DB.prepare('SELECT uuid, is_active FROM resources WHERE uuid = ?')
+		.bind(resource_uuid)
+		.first<{ uuid: string; is_active: number }>();
 	if (!resource) return c.json({ error: 'Resource not found' }, 404);
 	if (resource.is_active !== 1) return c.json({ error: 'Resource is not available' }, 403);
 
@@ -215,9 +217,15 @@ favorites.get('/ids', async (c) => {
 	const user = await c.env.DB.prepare('SELECT uuid FROM users WHERE username = ?').bind(authUser.username).first<any>();
 	if (!user) return c.json({ favorites: [] });
 
-	const { results } = await c.env.DB.prepare('SELECT resource_uuid FROM user_favorites WHERE user_uuid = ?').bind(user.uuid).all<{ resource_uuid: string }>();
+	const { results } = await c.env.DB.prepare('SELECT resource_uuid FROM user_favorites WHERE user_uuid = ?')
+		.bind(user.uuid)
+		.all<{ resource_uuid: string }>();
 
 	return c.json({ favorites: results.map((r) => r.resource_uuid) });
 });
+
+// =========================================================================================================
+// Export
+// =========================================================================================================
 
 export default favorites;

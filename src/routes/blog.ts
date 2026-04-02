@@ -67,13 +67,7 @@ async function uniqueSlug(db: D1Database, base: string, excludeUuid?: string): P
 async function invalidateBlogListCache(kv: KVNamespace): Promise<void> {
 	// We can't enumerate all page/limit combinations, so we use a suffix pattern approach:
 	// Delete the most common pages. For production, a cache key version bump could be used.
-	const keys = [
-		'blog:list:1:10',
-		'blog:list:1:20',
-		'blog:list:2:10',
-		'blog:list:2:20',
-		'blog:list:3:10',
-	];
+	const keys = ['blog:list:1:10', 'blog:list:1:20', 'blog:list:2:10', 'blog:list:2:20', 'blog:list:3:10'];
 	await Promise.all(keys.map((k) => kv.delete(k)));
 }
 
@@ -90,7 +84,7 @@ blog.get('/', async (c) => {
 	const cacheKey = `blog:list:${page}:${limit}`;
 
 	// Check KV cache
-	const cached = await c.env.VRCSTORAGE_KV.get(cacheKey, 'json') as { data: BlogPostWithAuthor[]; total: number } | null;
+	const cached = (await c.env.VRCSTORAGE_KV.get(cacheKey, 'json')) as { data: BlogPostWithAuthor[]; total: number } | null;
 	if (cached) {
 		return c.json({
 			data: cached.data,
@@ -115,7 +109,7 @@ blog.get('/', async (c) => {
 				JOIN users u ON bp.author_uuid = u.uuid
 				LEFT JOIN media m ON bp.cover_image_uuid = m.uuid
 				ORDER BY bp.created_at DESC
-				LIMIT ? OFFSET ?`
+				LIMIT ? OFFSET ?`,
 			)
 				.bind(limit, offset)
 				.all<BlogPostWithAuthor>(),
@@ -161,7 +155,7 @@ blog.get('/:uuid', async (c) => {
 			FROM blog_posts bp
 			JOIN users u ON bp.author_uuid = u.uuid
 			LEFT JOIN media m ON bp.cover_image_uuid = m.uuid
-			WHERE bp.uuid = ?`
+			WHERE bp.uuid = ?`,
 		)
 			.bind(uuid)
 			.first<BlogPostWithAuthor>();
@@ -205,7 +199,7 @@ blog.post('/', async (c) => {
 	try {
 		await c.env.DB.prepare(
 			`INSERT INTO blog_posts (uuid, slug, title, content, excerpt, cover_image_uuid, author_uuid, author_display, created_at, updated_at)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		)
 			.bind(uuid, slug, title, content, excerpt ?? null, cover_image_uuid ?? null, author.uuid, author_display, now, now)
 			.run();
@@ -261,7 +255,7 @@ blog.put('/:uuid', async (c) => {
 				cover_image_uuid = CASE WHEN ? = 1 THEN ? ELSE cover_image_uuid END,
 				author_display = COALESCE(?, author_display),
 				updated_at = ?
-			WHERE uuid = ?`
+			WHERE uuid = ?`,
 		)
 			.bind(
 				updates.title ? slug : null,
@@ -272,7 +266,7 @@ blog.put('/:uuid', async (c) => {
 				updates.cover_image_uuid ?? null,
 				updates.author_display ?? null,
 				now,
-				uuid
+				uuid,
 			)
 			.run();
 
@@ -301,6 +295,24 @@ blog.delete('/:uuid', async (c) => {
 	if (!existing) return c.json({ error: 'Post not found' }, 404);
 
 	try {
+		// Clean up cover image from R2 and media table before deleting the post.
+		// The blog_posts FK uses ON DELETE SET NULL (post → media direction doesn't cascade),
+		// so the media record would become orphaned without this explicit cleanup.
+		const postToDelete = await c.env.DB.prepare('SELECT cover_image_uuid FROM blog_posts WHERE uuid = ?')
+			.bind(uuid)
+			.first<{ cover_image_uuid: string | null }>();
+
+		if (postToDelete?.cover_image_uuid) {
+			const coverMedia = await c.env.DB.prepare('SELECT r2_key FROM media WHERE uuid = ?')
+				.bind(postToDelete.cover_image_uuid)
+				.first<{ r2_key: string }>();
+
+			if (coverMedia) {
+				await c.env.BUCKET.delete(coverMedia.r2_key);
+				await c.env.DB.prepare('DELETE FROM media WHERE uuid = ?').bind(postToDelete.cover_image_uuid).run();
+			}
+		}
+
 		await c.env.DB.prepare('DELETE FROM blog_posts WHERE uuid = ?').bind(uuid).run();
 		await invalidateBlogListCache(c.env.VRCSTORAGE_KV);
 		return c.json({ success: true });
@@ -332,7 +344,7 @@ blog.get('/:uuid/comments', async (c) => {
 			JOIN users u ON bc.author_uuid = u.uuid
 			WHERE bc.post_uuid = ?
 			ORDER BY bc.created_at ASC
-			LIMIT ? OFFSET ?`
+			LIMIT ? OFFSET ?`,
 		)
 			.bind(postUuid, limit, offset)
 			.all<any>();
@@ -378,9 +390,7 @@ blog.post('/:uuid/comments', async (c) => {
 	const now = Math.floor(Date.now() / 1000);
 
 	try {
-		await c.env.DB.prepare(
-			'INSERT INTO blog_comments (uuid, post_uuid, author_uuid, text, created_at) VALUES (?, ?, ?, ?, ?)'
-		)
+		await c.env.DB.prepare('INSERT INTO blog_comments (uuid, post_uuid, author_uuid, text, created_at) VALUES (?, ?, ?, ?, ?)')
 			.bind(commentUuid, postUuid, user.uuid, text, now)
 			.run();
 

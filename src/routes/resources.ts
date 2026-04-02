@@ -27,41 +27,43 @@ const resources = new Hono<{ Bindings: Env }>();
 // =========================================================================================================
 
 resources.get('/latest', async (c) => {
-    // Always declare CDN caching intent regardless of cache source
-    c.header('Cache-Control', 'public, max-age=60');
+	// Always declare CDN caching intent regardless of cache source
+	c.header('Cache-Control', 'public, max-age=60');
 
-    // 1. Try KV
-    const cached = await c.env.VRCSTORAGE_KV.get('resource:latest', 'json');
-    if (cached) {
-        return c.json(cached);
-    }
+	// 1. Try KV
+	const cached = await c.env.VRCSTORAGE_KV.get('resource:latest', 'json');
+	if (cached) {
+		return c.json(cached);
+	}
 
-    const queryConstructor = new QueryBuilder('resources', 'r')
-        .select([
-            'r.category',
-            'r.uuid',
-            'r.title',
-            'r.description',
-            'r.thumbnail_uuid',
-            'r.created_at * 1000 as created_at',
-            'r.download_count',
-            'm.r2_key as thumbnail_key'
-        ])
-        .join('INNER JOIN media m ON r.thumbnail_uuid = m.uuid')
-        .join('LEFT JOIN users u ON r.author_uuid = u.uuid')
-        .where('r.is_active = 1')
-        .orderBy('r.created_at', 'DESC')
-        .paginate(1, 10);
+	const queryConstructor = new QueryBuilder('resources', 'r')
+		.select([
+			'r.category',
+			'r.uuid',
+			'r.title',
+			'r.description',
+			'r.thumbnail_uuid',
+			'r.created_at * 1000 as created_at',
+			'r.download_count',
+			'm.r2_key as thumbnail_key',
+		])
+		.join('INNER JOIN media m ON r.thumbnail_uuid = m.uuid')
+		.join('LEFT JOIN users u ON r.author_uuid = u.uuid')
+		.where('r.is_active = 1')
+		.orderBy('r.created_at', 'DESC')
+		.paginate(1, 10);
 
-    const { sql, params } = queryConstructor.build();
+	const { sql, params } = queryConstructor.build();
 
-    const { results } = await c.env.DB.prepare(sql).bind(...params).all<any>();
-    c.header('Cache-Control', 'public, max-age=60');
+	const { results } = await c.env.DB.prepare(sql)
+		.bind(...params)
+		.all<any>();
+	c.header('Cache-Control', 'public, max-age=60');
 
-    // 2. Update KV
-    await c.env.VRCSTORAGE_KV.put('resource:latest', JSON.stringify(results), { expirationTtl: 60 });
+	// 2. Update KV
+	await c.env.VRCSTORAGE_KV.put('resource:latest', JSON.stringify(results), { expirationTtl: 60 });
 
-    return c.json(results);
+	return c.json(results);
 });
 
 // =========================================================================================================
@@ -80,75 +82,75 @@ resources.get('/latest', async (c) => {
 // Sortable column whitelist.
 // Never interpolate user input directly into ORDER BY — use this map instead.
 const SORT_COLUMNS: Record<string, string> = {
-    created_at: 'r.created_at',
-    download_count: 'r.download_count',
-    title: 'r.title',
+	created_at: 'r.created_at',
+	download_count: 'r.download_count',
+	title: 'r.title',
 };
 
 resources.get('/', async (c) => {
-    const page = Math.max(1, parseInt(c.req.query('page') || '1', 10) || 1);
-    const limit = Math.min(Math.max(1, parseInt(c.req.query('limit') || '30', 10) || 30), 60);
+	const page = Math.max(1, parseInt(c.req.query('page') || '1', 10) || 1);
+	const limit = Math.min(Math.max(1, parseInt(c.req.query('limit') || '30', 10) || 30), 60);
 
-    const query = c.req.query('q')?.trim();
-    const category = c.req.query('category');
-    const tagsParam = c.req.query('tags');
-    const sortBy = c.req.query('sort_by');
-    const sortOrder = (c.req.query('sort_order')?.toUpperCase() === 'ASC' ? 'ASC' : 'DESC') as 'ASC' | 'DESC';
+	const query = c.req.query('q')?.trim();
+	const category = c.req.query('category');
+	const tagsParam = c.req.query('tags');
+	const sortBy = c.req.query('sort_by');
+	const sortOrder = (c.req.query('sort_order')?.toUpperCase() === 'ASC' ? 'ASC' : 'DESC') as 'ASC' | 'DESC';
 
-    const orderColumn = SORT_COLUMNS[sortBy ?? ''] ?? 'r.created_at';
-    const tagsList = tagsParam
-        ? tagsParam.split(',').map(t => t.trim()).filter(Boolean)
-        : [];
+	const orderColumn = SORT_COLUMNS[sortBy ?? ''] ?? 'r.created_at';
+	const tagsList = tagsParam
+		? tagsParam
+				.split(',')
+				.map((t) => t.trim())
+				.filter(Boolean)
+		: [];
 
-    try {
-        const qb = new QueryBuilder('resources', 'r')
-            .select([
-                'r.uuid',
-                'r.title',
-                'r.description',
-                'r.category',
-                'r.thumbnail_uuid',
-                'r.download_count',
-                'r.created_at * 1000 as created_at',
-                'm.r2_key AS thumbnail_key',
-            ])
-            .join('INNER JOIN media m ON r.thumbnail_uuid = m.uuid')
-            .where('r.is_active = 1')
-            .whereIf(
-                !!category && RESOURCE_CATEGORIES.includes(category as ResourceCategory),
-                'r.category = ?',
-                category
-            )
-            .tags(tagsList)
-            .orderBy(orderColumn, sortOrder)
-            .paginate(page, limit + 1);
+	try {
+		const qb = new QueryBuilder('resources', 'r')
+			.select([
+				'r.uuid',
+				'r.title',
+				'r.description',
+				'r.category',
+				'r.thumbnail_uuid',
+				'r.download_count',
+				'r.created_at * 1000 as created_at',
+				'm.r2_key AS thumbnail_key',
+			])
+			.join('INNER JOIN media m ON r.thumbnail_uuid = m.uuid')
+			.where('r.is_active = 1')
+			.whereIf(!!category && RESOURCE_CATEGORIES.includes(category as ResourceCategory), 'r.category = ?', category)
+			.tags(tagsList)
+			.orderBy(orderColumn, sortOrder)
+			.paginate(page, limit + 1);
 
-        // Only enable FTS when the user typed something — falls back to standard filter + sort otherwise.
-        /*
+		// Only enable FTS when the user typed something — falls back to standard filter + sort otherwise.
+		/*
         if (query) {
             qb.withFts('resources_fts', 'fts', query, 'r.uuid');
         }
         */
 
-        const { sql, params } = qb.build();
+		const { sql, params } = qb.build();
 
-        const { results } = await c.env.DB.prepare(sql).bind(...params).all<any>();
+		const { results } = await c.env.DB.prepare(sql)
+			.bind(...params)
+			.all<any>();
 
-        const hasNextPage = results.length > limit;
+		const hasNextPage = results.length > limit;
 
-        return c.json({
-            resources: hasNextPage ? results.slice(0, limit) : results,
-            pagination: {
-                page,
-                hasNextPage,
-                hasPrevPage: page > 1,
-            },
-        });
-
-    } catch (e) {
-        console.error('[GET /resources] search error:', e);
-        return c.json({ error: 'Search failed' }, 500);
-    }
+		return c.json({
+			resources: hasNextPage ? results.slice(0, limit) : results,
+			pagination: {
+				page,
+				hasNextPage,
+				hasPrevPage: page > 1,
+			},
+		});
+	} catch (e) {
+		console.error('[GET /resources] search error:', e);
+		return c.json({ error: 'Search failed' }, 500);
+	}
 });
 
 // =========================================================================================================
@@ -157,10 +159,11 @@ resources.get('/', async (c) => {
 // =========================================================================================================
 
 resources.get('/:uuid', async (c) => {
-    const uuid = c.req.param('uuid');
-    if (!uuid) return c.json({ error: 'Missing uuid' }, 400);
+	const uuid = c.req.param('uuid');
+	if (!uuid) return c.json({ error: 'Missing uuid' }, 400);
 
-    const row = await c.env.DB.prepare(`
+	const row = await c.env.DB.prepare(
+		`
         SELECT
             r.uuid,
             r.title,
@@ -206,42 +209,45 @@ resources.get('/:uuid', async (c) => {
         LEFT JOIN media  tm     ON r.thumbnail_uuid        = tm.uuid
         LEFT JOIN media  rm_ref ON r.reference_image_uuid  = rm_ref.uuid
         WHERE r.uuid = ?
-    `).bind(uuid).first<Record<string, unknown>>();
+    `,
+	)
+		.bind(uuid)
+		.first<Record<string, unknown>>();
 
-    if (!row) return c.json({ error: 'Not found' }, 404);
+	if (!row) return c.json({ error: 'Not found' }, 404);
 
-    const isLoggedIn = !!(await getAuthUser(c));
+	const isLoggedIn = !!(await getAuthUser(c));
 
-    const mediaFiles = JSON.parse(row.media_files_json as string) as Pick<Media, 'uuid' | 'r2_key' | 'media_type'>[];
-    const allLinks = JSON.parse(row.links_json as string) as Omit<ResourceLink, 'resource_uuid' | 'created_at'>[];
-    const tags = JSON.parse(row.tags_json as string) as Tag[];
+	const mediaFiles = JSON.parse(row.media_files_json as string) as Pick<Media, 'uuid' | 'r2_key' | 'media_type'>[];
+	const allLinks = JSON.parse(row.links_json as string) as Omit<ResourceLink, 'resource_uuid' | 'created_at'>[];
+	const tags = JSON.parse(row.tags_json as string) as Tag[];
 
-    const downloadLinks = allLinks.filter((l) => l.link_type === 'download');
-    const publicLinks = allLinks.filter((l) => l.link_type !== 'download');
+	const downloadLinks = allLinks.filter((l) => l.link_type === 'download');
+	const publicLinks = allLinks.filter((l) => l.link_type !== 'download');
 
-    return c.json({
-        uuid: row.uuid,
-        title: row.title,
-        description: row.description,
-        category: row.category,
-        download_count: row.download_count,
-        is_active: row.is_active,
-        created_at: row.created_at,
-        updated_at: row.updated_at,
-        // Author: only username, never UUID or avatar
-        author: row.author_username ? { username: row.author_username } : null,
-        // Gallery
-        thumbnail_key: row.thumbnail_key ?? null,
-        reference_image_key: row.reference_image_key ?? null,
-        mediaFiles,
-        // Tags always public
-        tags,
-        // Download access — gated behind auth
-        canDownload: isLoggedIn,
-        links: isLoggedIn ? allLinks : publicLinks,
-        downloadUrl: isLoggedIn ? (downloadLinks[0]?.link_url ?? null) : null,
-        backupUrls: isLoggedIn ? downloadLinks.slice(1).map((l) => l.link_url) : [],
-    });
+	return c.json({
+		uuid: row.uuid,
+		title: row.title,
+		description: row.description,
+		category: row.category,
+		download_count: row.download_count,
+		is_active: row.is_active,
+		created_at: row.created_at,
+		updated_at: row.updated_at,
+		// Author: only username, never UUID or avatar
+		author: row.author_username ? { username: row.author_username } : null,
+		// Gallery
+		thumbnail_key: row.thumbnail_key ?? null,
+		reference_image_key: row.reference_image_key ?? null,
+		mediaFiles,
+		// Tags always public
+		tags,
+		// Download access — gated behind auth
+		canDownload: isLoggedIn,
+		links: isLoggedIn ? allLinks : publicLinks,
+		downloadUrl: isLoggedIn ? (downloadLinks[0]?.link_url ?? null) : null,
+		backupUrls: isLoggedIn ? downloadLinks.slice(1).map((l) => l.link_url) : [],
+	});
 });
 
 // =========================================================================================================
@@ -250,35 +256,39 @@ resources.get('/:uuid', async (c) => {
 // =========================================================================================================
 
 resources.get('/:uuid/history', async (c) => {
-    const uuid = c.req.param('uuid');
+	const uuid = c.req.param('uuid');
 
-    // Edit history is only available to authenticated users
-    const authUser = await getAuthUser(c);
-    if (!authUser) return c.json({ error: 'Unauthorized' }, 401);
+	// Edit history is only available to authenticated users
+	const authUser = await getAuthUser(c);
+	if (!authUser) return c.json({ error: 'Unauthorized' }, 401);
 
-    try {
-        const history = await c.env.DB.prepare(`
+	try {
+		const history = await c.env.DB.prepare(
+			`
             SELECT h.*, u.username, u.avatar_url 
             FROM resource_history h
             LEFT JOIN users u ON h.actor_uuid = u.uuid
             WHERE h.resource_uuid = ?
             ORDER BY h.created_at DESC
-        `).bind(uuid).all<ResourceHistory & { username: string, avatar_url: string }>();
+        `,
+		)
+			.bind(uuid)
+			.all<ResourceHistory & { username: string; avatar_url: string }>();
 
-        const mapped = history.results.map(h => ({
-            ...h,
-            actor: {
-                username: h.username,
-                avatar_url: h.avatar_url
-            },
-            previous_data: JSON.parse(h.previous_data)
-        }));
+		const mapped = history.results.map((h) => ({
+			...h,
+			actor: {
+				username: h.username,
+				avatar_url: h.avatar_url,
+			},
+			previous_data: JSON.parse(h.previous_data),
+		}));
 
-        return c.json(mapped);
-    } catch (e) {
-        console.error('History error:', e);
-        return c.json({ error: 'Failed to fetch history' }, 500);
-    }
+		return c.json(mapped);
+	} catch (e) {
+		console.error('History error:', e);
+		return c.json({ error: 'Failed to fetch history' }, 500);
+	}
 });
 
 // =========================================================================================================
@@ -287,84 +297,82 @@ resources.get('/:uuid/history', async (c) => {
 // =========================================================================================================
 
 resources.post('/', async (c) => {
-    const authUser = await getAuthUser(c);
-    if (!authUser) return c.json({ error: 'Unauthorized' }, 401);
+	const authUser = await getAuthUser(c);
+	if (!authUser) return c.json({ error: 'Unauthorized' }, 401);
 
-    // Get author
-    const user = await c.env.DB.prepare('SELECT uuid FROM users WHERE username = ?').bind(authUser.username).first<User>();
-    if (!user) return c.json({ error: 'User not found' }, 404);
+	// Get author
+	const user = await c.env.DB.prepare('SELECT uuid FROM users WHERE username = ?').bind(authUser.username).first<User>();
+	if (!user) return c.json({ error: 'User not found' }, 404);
 
-    const body = await c.req.json();
+	const body = await c.req.json();
 
-    // Validation
-    const { title, description, category, thumbnail_uuid, reference_image_uuid, links, media_files, tags, token } = ResourceSchema.parse(body);
+	// Validation
+	const { title, description, category, thumbnail_uuid, reference_image_uuid, links, media_files, tags, token } =
+		ResourceSchema.parse(body);
 
-    // Turnstile Verification
-    const isValid = await verifyTurnstile(token || '', c.env.TURNSTILE_SECRET_KEY);
-    if (!isValid) return c.json({ error: 'Invalid CAPTCHA' }, 403);
+	// Turnstile Verification
+	const isValid = await verifyTurnstile(token || '', c.env.TURNSTILE_SECRET_KEY);
+	if (!isValid) return c.json({ error: 'Invalid CAPTCHA' }, 403);
 
-    const resourceUuid = crypto.randomUUID();
-    try {
-        // Insert resource
-        await c.env.DB.prepare(
-            'INSERT INTO resources (uuid, title, description, category, thumbnail_uuid, reference_image_uuid, author_uuid) VALUES (?, ?, ?, ?, ?, ?, ?)'
-        ).bind(resourceUuid, title, description || null, category, thumbnail_uuid, reference_image_uuid || null, user.uuid).run();
+	const resourceUuid = crypto.randomUUID();
+	try {
+		// Insert resource
+		await c.env.DB.prepare(
+			'INSERT INTO resources (uuid, title, description, category, thumbnail_uuid, reference_image_uuid, author_uuid) VALUES (?, ?, ?, ?, ?, ?, ?)',
+		)
+			.bind(resourceUuid, title, description || null, category, thumbnail_uuid, reference_image_uuid || null, user.uuid)
+			.run();
 
-        // Insert Tags (max 10 to prevent DoS)
-        if (tags && Array.isArray(tags)) {
-            const limitedTags = tags.slice(0, 10);
-            for (const tagName of limitedTags) {
-                // Try to find tag
-                let tag = await c.env.DB.prepare('SELECT id FROM tags WHERE name = ?').bind(tagName).first<{ id: number }>();
-                if (!tag) {
-                    // Create tag
-                    const newTag = await c.env.DB.prepare('INSERT INTO tags (name) VALUES (?) RETURNING id').bind(tagName).first<{ id: number }>();
-                    if (newTag) tag = newTag;
-                }
+		// Insert Tags (max 10 to prevent DoS)
+		if (tags && Array.isArray(tags)) {
+			const limitedTags = tags.slice(0, 10);
+			for (const tagName of limitedTags) {
+				// Try to find tag
+				let tag = await c.env.DB.prepare('SELECT id FROM tags WHERE name = ?').bind(tagName).first<{ id: number }>();
+				if (!tag) {
+					// Create tag
+					const newTag = await c.env.DB.prepare('INSERT INTO tags (name) VALUES (?) RETURNING id').bind(tagName).first<{ id: number }>();
+					if (newTag) tag = newTag;
+				}
 
-                if (tag) {
-                    await c.env.DB.prepare('INSERT INTO resource_tags (resource_uuid, tag_id) VALUES (?, ?)').bind(resourceUuid, tag.id).run();
-                }
-            }
-        }
+				if (tag) {
+					await c.env.DB.prepare('INSERT INTO resource_tags (resource_uuid, tag_id) VALUES (?, ?)').bind(resourceUuid, tag.id).run();
+				}
+			}
+		}
 
-        // Insert resource links if provided
-        if (links && Array.isArray(links)) {
-            for (let i = 0; i < links.length; i++) {
-                const link = links[i];
-                const linkUuid = crypto.randomUUID();
-                await c.env.DB.prepare(
-                    'INSERT INTO resource_links (uuid, resource_uuid, link_url, link_title, link_type, display_order) VALUES (?, ?, ?, ?, ?, ?)'
-                ).bind(
-                    linkUuid,
-                    resourceUuid,
-                    link.link_url,
-                    link.link_title || null,
-                    link.link_type || 'general',
-                    link.display_order ?? i
-                ).run();
-            }
-        }
+		// Insert resource links if provided
+		if (links && Array.isArray(links)) {
+			for (let i = 0; i < links.length; i++) {
+				const link = links[i];
+				const linkUuid = crypto.randomUUID();
+				await c.env.DB.prepare(
+					'INSERT INTO resource_links (uuid, resource_uuid, link_url, link_title, link_type, display_order) VALUES (?, ?, ?, ?, ?, ?)',
+				)
+					.bind(linkUuid, resourceUuid, link.link_url, link.link_title || null, link.link_type || 'general', link.display_order ?? i)
+					.run();
+			}
+		}
 
-        // Insert media file associations if provided
-        if (media_files && Array.isArray(media_files)) {
-            for (const mediaUuid of media_files) {
-                const relationUuid = crypto.randomUUID();
-                await c.env.DB.prepare(
-                    'INSERT INTO resource_n_media (uuid, resource_uuid, media_uuid) VALUES (?, ?, ?)'
-                ).bind(relationUuid, resourceUuid, mediaUuid).run();
-            }
-        }
+		// Insert media file associations if provided
+		if (media_files && Array.isArray(media_files)) {
+			for (const mediaUuid of media_files) {
+				const relationUuid = crypto.randomUUID();
+				await c.env.DB.prepare('INSERT INTO resource_n_media (uuid, resource_uuid, media_uuid) VALUES (?, ?, ?)')
+					.bind(relationUuid, resourceUuid, mediaUuid)
+					.run();
+			}
+		}
 
-        // Invalidate KV Caches
-        await c.env.VRCSTORAGE_KV.delete('resource:latest');
-        await c.env.VRCSTORAGE_KV.delete(`resource:category:${category}`);
+		// Invalidate KV Caches
+		await c.env.VRCSTORAGE_KV.delete('resource:latest');
+		await c.env.VRCSTORAGE_KV.delete(`resource:category:${category}`);
 
-        return c.json({ success: true, uuid: resourceUuid });
-    } catch (e) {
-        console.error('Create resource error:', e);
-        return c.json({ error: 'Failed to create resource' }, 500);
-    }
+		return c.json({ success: true, uuid: resourceUuid });
+	} catch (e) {
+		console.error('Create resource error:', e);
+		return c.json({ error: 'Failed to create resource' }, 500);
+	}
 });
 
 // =========================================================================================================
@@ -373,127 +381,145 @@ resources.post('/', async (c) => {
 // =========================================================================================================
 
 resources.put('/:uuid', async (c) => {
-    const uuid = c.req.param('uuid');
-    const authUser = await getAuthUser(c);
-    if (!authUser) return c.json({ error: 'Unauthorized' }, 401);
+	const uuid = c.req.param('uuid');
+	const authUser = await getAuthUser(c);
+	if (!authUser) return c.json({ error: 'Unauthorized' }, 401);
 
-    const currentUser = await c.env.DB.prepare('SELECT * FROM users WHERE username = ?').bind(authUser.username).first<User>();
-    if (!currentUser) return c.json({ error: 'User not found' }, 404);
+	const currentUser = await c.env.DB.prepare('SELECT * FROM users WHERE username = ?').bind(authUser.username).first<User>();
+	if (!currentUser) return c.json({ error: 'User not found' }, 404);
 
-    const resource = await c.env.DB.prepare('SELECT * FROM resources WHERE uuid = ?').bind(uuid).first<Resource>();
-    if (!resource) return c.json({ error: 'Resource not found' }, 404);
+	const resource = await c.env.DB.prepare('SELECT * FROM resources WHERE uuid = ?').bind(uuid).first<Resource>();
+	if (!resource) return c.json({ error: 'Resource not found' }, 404);
 
-    // Permission check
-    const isOwner = resource.author_uuid === currentUser.uuid;
-    const isAdmin = currentUser.is_admin === 1;
+	// Permission check
+	const isOwner = resource.author_uuid === currentUser.uuid;
+	const isAdmin = currentUser.is_admin === 1;
 
-    if (!isOwner && !isAdmin) {
-        return c.json({ error: 'Forbidden' }, 403);
-    }
+	if (!isOwner && !isAdmin) {
+		return c.json({ error: 'Forbidden' }, 403);
+	}
 
-    const body = await c.req.json();
+	const body = await c.req.json();
 
-    // Validate and sanitize all user-supplied fields with Zod before touching the DB
-    const ResourceUpdateSchema = ResourceSchema.partial().omit({ token: true, thumbnail_uuid: true, reference_image_uuid: true, links: true, media_files: true });
-    const parsed = ResourceUpdateSchema.safeParse(body);
-    if (!parsed.success) {
-        return c.json({ error: 'Invalid input', details: parsed.error.issues }, 400);
-    }
+	// Validate and sanitize all user-supplied fields with Zod before touching the DB
+	const ResourceUpdateSchema = ResourceSchema.partial().omit({
+		token: true,
+		thumbnail_uuid: true,
+		reference_image_uuid: true,
+		links: true,
+		media_files: true,
+	});
+	const parsed = ResourceUpdateSchema.safeParse(body);
+	if (!parsed.success) {
+		return c.json({ error: 'Invalid input', details: parsed.error.issues }, 400);
+	}
 
-    const title = parsed.data.title ?? resource.title;
-    const description = parsed.data.description ?? resource.description;
-    const category = parsed.data.category ?? resource.category;
-    const isActive = isAdmin && body.is_active !== undefined ? body.is_active : resource.is_active;
-    const tags: string[] = parsed.data.tags ?? [];
+	const title = parsed.data.title ?? resource.title;
+	const description = parsed.data.description ?? resource.description;
+	const category = parsed.data.category ?? resource.category;
+	const isActive = isAdmin && body.is_active !== undefined ? body.is_active : resource.is_active;
+	const tags: string[] = parsed.data.tags ?? [];
 
-    if (isAdmin && tags.length > 20) {
-        return c.json({ error: 'Too many tags (max 20)' }, 400);
-    }
+	if (isAdmin && tags.length > 20) {
+		return c.json({ error: 'Too many tags (max 20)' }, 400);
+	}
 
-    if (resource.is_active === 1 && !isAdmin) {
-        return c.json({ error: 'Only admins can edit approved resources' }, 403);
-    }
+	if (resource.is_active === 1 && !isAdmin) {
+		return c.json({ error: 'Only admins can edit approved resources' }, 403);
+	}
 
-    try {
-        const operations = [];
+	try {
+		const operations = [];
 
-        // 1. Create History Snapshot if Admin is editing
-        if (isAdmin) {
-            // Fetch current tags for snapshot
-            const currentTags = await c.env.DB.prepare(`
+		// 1. Create History Snapshot if Admin is editing
+		if (isAdmin) {
+			// Fetch current tags for snapshot
+			const currentTags = await c.env.DB.prepare(
+				`
                 SELECT t.name FROM tags t 
                 JOIN resource_tags rt ON t.id = rt.tag_id 
                 WHERE rt.resource_uuid = ?
-            `).bind(uuid).all<{ name: string }>();
+            `,
+			)
+				.bind(uuid)
+				.all<{ name: string }>();
 
-            const previousData = {
-                title: resource.title,
-                description: resource.description,
-                category: resource.category,
-                tags: currentTags.results.map((t: { name: string }) => t.name),
-            };
+			const previousData = {
+				title: resource.title,
+				description: resource.description,
+				category: resource.category,
+				tags: currentTags.results.map((t: { name: string }) => t.name),
+			};
 
-            const historyUuid = crypto.randomUUID();
-            operations.push(
-                c.env.DB.prepare(`
+			const historyUuid = crypto.randomUUID();
+			operations.push(
+				c.env.DB.prepare(
+					`
                     INSERT INTO resource_history (uuid, resource_uuid, actor_uuid, change_type, previous_data)
                     VALUES (?, ?, ?, ?, ?)
-                `).bind(historyUuid, uuid, currentUser.uuid, 'content_edit', JSON.stringify(previousData)),
-            );
-        }
+                `,
+				).bind(historyUuid, uuid, currentUser.uuid, 'content_edit', JSON.stringify(previousData)),
+			);
+		}
 
-        // 2. Update Resource
-        operations.push(
-            c.env.DB.prepare(`
+		// 2. Update Resource
+		operations.push(
+			c.env.DB.prepare(
+				`
                 UPDATE resources 
                 SET title = ?, description = ?, category = ?, is_active = ?, updated_at = unixepoch()
                 WHERE uuid = ?
-            `).bind(title, description, category, isActive, uuid),
-        );
+            `,
+			).bind(title, description, category, isActive, uuid),
+		);
 
-        // 3. Update Tags (admin only)
-        if (isAdmin && parsed.data.tags !== undefined) {
-            operations.push(c.env.DB.prepare('DELETE FROM resource_tags WHERE resource_uuid = ?').bind(uuid));
+		// 3. Update Tags (admin only)
+		if (isAdmin && parsed.data.tags !== undefined) {
+			operations.push(c.env.DB.prepare('DELETE FROM resource_tags WHERE resource_uuid = ?').bind(uuid));
 
-            for (const tagName of tags) {
-                let tagId: number;
-                let tag = await c.env.DB.prepare('SELECT id FROM tags WHERE name = ?').bind(tagName).first<{ id: number }>();
-                if (!tag) {
-                    const newTag = await c.env.DB.prepare('INSERT INTO tags (name) VALUES (?) RETURNING id').bind(tagName).first<{ id: number }>();
-                    tagId = newTag!.id;
-                } else {
-                    tagId = tag.id;
-                }
-                operations.push(c.env.DB.prepare('INSERT INTO resource_tags (resource_uuid, tag_id) VALUES (?, ?)').bind(uuid, tagId));
-            }
-        }
+			for (const tagName of tags) {
+				let tagId: number;
+				let tag = await c.env.DB.prepare('SELECT id FROM tags WHERE name = ?').bind(tagName).first<{ id: number }>();
+				if (!tag) {
+					const newTag = await c.env.DB.prepare('INSERT INTO tags (name) VALUES (?) RETURNING id').bind(tagName).first<{ id: number }>();
+					tagId = newTag!.id;
+				} else {
+					tagId = tag.id;
+				}
+				operations.push(c.env.DB.prepare('INSERT INTO resource_tags (resource_uuid, tag_id) VALUES (?, ?)').bind(uuid, tagId));
+			}
+		}
 
-        // 4. Update Links (New Files)
-        if (body.new_links && Array.isArray(body.new_links)) {
-            const lastLink = await c.env.DB.prepare('SELECT display_order FROM resource_links WHERE resource_uuid = ? ORDER BY display_order DESC LIMIT 1').bind(uuid).first<{ display_order: number }>();
-            let nextOrder = (lastLink?.display_order || 0) + 1;
+		// 4. Update Links (New Files)
+		if (body.new_links && Array.isArray(body.new_links)) {
+			const lastLink = await c.env.DB.prepare(
+				'SELECT display_order FROM resource_links WHERE resource_uuid = ? ORDER BY display_order DESC LIMIT 1',
+			)
+				.bind(uuid)
+				.first<{ display_order: number }>();
+			let nextOrder = (lastLink?.display_order || 0) + 1;
 
-            for (const link of body.new_links) {
-                const linkUuid = crypto.randomUUID();
-                operations.push(
-                    c.env.DB.prepare(
-                        'INSERT INTO resource_links (uuid, resource_uuid, link_url, link_title, link_type, display_order) VALUES (?, ?, ?, ?, ?, ?)',
-                    ).bind(linkUuid, uuid, link.link_url, link.link_title || null, link.link_type || 'general', nextOrder++),
-                );
-            }
-        }
+			for (const link of body.new_links) {
+				const linkUuid = crypto.randomUUID();
+				operations.push(
+					c.env.DB.prepare(
+						'INSERT INTO resource_links (uuid, resource_uuid, link_url, link_title, link_type, display_order) VALUES (?, ?, ?, ?, ?, ?)',
+					).bind(linkUuid, uuid, link.link_url, link.link_title || null, link.link_type || 'general', nextOrder++),
+				);
+			}
+		}
 
-        await c.env.DB.batch(operations);
+		await c.env.DB.batch(operations);
 
-        // Invalidate Cache
-        await c.env.VRCSTORAGE_KV.delete(`resource:${uuid}`);
-        await c.env.VRCSTORAGE_KV.delete('resource:latest');
+		// Invalidate Cache
+		await c.env.VRCSTORAGE_KV.delete(`resource:${uuid}`);
+		await c.env.VRCSTORAGE_KV.delete('resource:latest');
 
-        return c.json({ success: true });
-    } catch (e) {
-        console.error('Update resource error:', e);
-        return c.json({ error: 'Failed to update resource' }, 500);
-    }
+		return c.json({ success: true });
+	} catch (e) {
+		console.error('Update resource error:', e);
+		return c.json({ error: 'Failed to update resource' }, 500);
+	}
 });
 
 // =========================================================================================================
@@ -502,26 +528,26 @@ resources.put('/:uuid', async (c) => {
 // =========================================================================================================
 
 resources.delete('/:uuid', async (c) => {
-    const uuid = c.req.param('uuid');
-    const authUser = await getAuthUser(c);
-    if (!authUser) return c.json({ error: 'Unauthorized' }, 401);
-    if (!authUser.is_admin) return c.json({ error: 'Unauthorized' }, 403);
+	const uuid = c.req.param('uuid');
+	const authUser = await getAuthUser(c);
+	if (!authUser) return c.json({ error: 'Unauthorized' }, 401);
+	if (!authUser.is_admin) return c.json({ error: 'Unauthorized' }, 403);
 
-    try {
-        const resource = await c.env.DB.prepare('SELECT author_uuid, is_active FROM resources WHERE uuid = ?').bind(uuid).first<Resource>();
-        if (!resource) return c.json({ error: 'Resource not found' }, 404);
+	try {
+		const resource = await c.env.DB.prepare('SELECT author_uuid, is_active FROM resources WHERE uuid = ?').bind(uuid).first<Resource>();
+		if (!resource) return c.json({ error: 'Resource not found' }, 404);
 
-        await c.env.DB.prepare('DELETE FROM resources WHERE uuid = ?').bind(uuid).run();
+		await c.env.DB.prepare('DELETE FROM resources WHERE uuid = ?').bind(uuid).run();
 
-        // Invalidate Cache
-        await c.env.VRCSTORAGE_KV.delete(`resource:${uuid}`);
-        await c.env.VRCSTORAGE_KV.delete('resource:latest');
+		// Invalidate Cache
+		await c.env.VRCSTORAGE_KV.delete(`resource:${uuid}`);
+		await c.env.VRCSTORAGE_KV.delete('resource:latest');
 
-        return c.json({ success: true });
-    } catch (e) {
-        console.error('Delete resource error:', e);
-        return c.json({ error: 'Failed to delete resource' }, 500);
-    }
+		return c.json({ success: true });
+	} catch (e) {
+		console.error('Delete resource error:', e);
+		return c.json({ error: 'Failed to delete resource' }, 500);
+	}
 });
 
 // =========================================================================================================

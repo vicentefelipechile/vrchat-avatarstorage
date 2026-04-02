@@ -132,11 +132,9 @@ oauth.post('/complete', async (c) => {
 
 		// Create session for the newly registered user
 		await createSession(c, { username: user.username, is_admin: user.is_admin });
-		await c.env.VRCSTORAGE_KV.put(
-			`user:${user.username}`,
-			JSON.stringify({ username: user.username, is_admin: false }),
-			{ expirationTtl: 60 * 60 * 24 * 7 },
-		);
+		await c.env.VRCSTORAGE_KV.put(`user:${user.username}`, JSON.stringify({ username: user.username, is_admin: false }), {
+			expirationTtl: 60 * 60 * 24 * 7,
+		});
 
 		return c.json({ success: true });
 	} catch (err) {

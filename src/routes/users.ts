@@ -8,15 +8,7 @@
 // Imports
 // =========================================================================================================
 
-import {
-	hashPassword,
-	verifyPassword,
-	createSession,
-	getAuthUser,
-	deleteSession,
-	getUserWith2FA,
-	getDecrypted2FASecret
-} from '../auth';
+import { hashPassword, verifyPassword, createSession, getAuthUser, deleteSession, getUserWith2FA, getDecrypted2FASecret } from '../auth';
 import { RegisterSchema, LoginSchema, UserUpdateSchema, TwoFactorLoginSchema } from '../validators';
 import { verifyTwoFactorCode, verifyBackupCode, useBackupCode } from '../auth/2fa';
 import { verifyTurnstile } from '../helpers/turnstile';
@@ -102,7 +94,7 @@ users.post('/login', async (c) => {
 			return c.json({
 				requires_2fa: true,
 				username: user.username,
-				pre_auth_token: preAuthToken
+				pre_auth_token: preAuthToken,
 			});
 		}
 
@@ -230,8 +222,11 @@ users.post('/login/2fa', async (c) => {
 	}
 
 	// Anti-Replay: Check if the code has been used recently
-	const codeHash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(code))
-		.then(buf => Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join(''));
+	const codeHash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(code)).then((buf) =>
+		Array.from(new Uint8Array(buf))
+			.map((b) => b.toString(16).padStart(2, '0'))
+			.join(''),
+	);
 	const usedCodeKey = `used_2fa_code:${user.uuid}:${codeHash}`;
 	const isUsed = await c.env.VRCSTORAGE_KV.get(usedCodeKey);
 	if (isUsed) {
