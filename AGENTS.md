@@ -54,6 +54,59 @@ This guide is for agentic coding agents (like yourself) operating in the VRCStor
 - **Database Queries:** Use prepared statements for safety. Use `.first<T>()` for single rows and `.all<T>()` for results lists.
 - **Error Handling:** Centralized in `src/index.ts` via `app.onError`. Return consistent JSON: `{ "error": "Human readable message", "details": ... }`.
 
+### Route File Structure
+
+Every file in `src/routes/` follows a strict structural pattern using 105-`=` section banners. Deviating from this pattern is not allowed.
+
+```typescript
+// =========================================================================================================
+// MODULE NAME ROUTES
+// =========================================================================================================
+// Brief description of what this module handles.
+// =========================================================================================================
+
+// =========================================================================================================
+// Imports
+// =========================================================================================================
+
+import { Hono } from 'hono';
+import ...
+
+// =========================================================================================================
+// Helpers                          ← only present if helper functions exist
+// =========================================================================================================
+
+function helperFn() { ... }
+
+// =========================================================================================================
+// Endpoints
+// =========================================================================================================
+
+const routerName = new Hono<{ Bindings: Env }>();
+
+// =========================================================================================================
+// GET /api/route/:param
+// One-line description of what this endpoint does.
+// =========================================================================================================
+
+routerName.get('/:param', async (c) => {
+    // implementation
+});
+
+// =========================================================================================================
+// Export
+// =========================================================================================================
+
+export default routerName;
+```
+
+**Rules:**
+- The 105-`=` banner is **mandatory** before every section and every endpoint handler.
+- Auth guards use the **early-return pattern** (no curly braces): `if (!authUser) return c.json({ error: 'Unauthorized' }, 401);`
+- The `// Helpers` section is only added when helper functions exist; router initialization (`const x = new Hono(...)`) always goes inside `// Endpoints`.
+- The `// Export` section banner is **always** present, even for simple modules.
+
+
 ### Frontend View Pattern
 The frontend uses a **functional view pattern** — no class-based views. Every view module exports:
 - `viewFn` (named `<name>View`): `(ctx: RouteContext) => string | Promise<string>` — returns the HTML string for the route.
@@ -158,7 +211,6 @@ public/
     bundle.js             # Compiled frontend bundle (output of esbuild, DO NOT EDIT)
     i18n/                 # Locale files (ES module, `export default { ... }`)
       cn.js  en.js  es.js  fr.js  jp.js  pt.js  ru.js
-  test/                   # Static test assets (avatar images for seeding)
   wiki/                   # Markdown wiki articles (multi-language)
 
 sql/                      # D1 schema files
@@ -189,7 +241,8 @@ STOP. Your knowledge of Cloudflare Workers APIs and limits may be outdated. Alwa
 
 ### R2 Storage
 - **Public URL:** R2 buckets are not public by default. Use `src/routes/downloads.ts` or `src/routes/uploads.ts` for access.
-- **Keys:** Use consistent key naming for R2 (e.g., `media/{uuid}`).
+- **Keys:** R2 keys are random UUIDs generated at upload time (e.g. `crypto.randomUUID()`). The key is stored in `media.r2_key` and forms part of all download URLs: `/api/download/<r2_key>`.
+- **Never delete R2 objects directly** without also deleting the corresponding `media` row. Always pair `BUCKET.delete(r2_key)` + `DELETE FROM media WHERE uuid = ?`.
 
 ### Middleware Details
 - `securityMiddleware`: Sets `HSTS`, `Content-Security-Policy`, `X-Content-Type-Options`, `X-Frame-Options`, and `CORS`.
@@ -237,6 +290,41 @@ Locale files live in `public/js/i18n/` as ES modules (`export default { ... }`).
 - **Loader:** `src/frontend/i18n.ts` handles dynamic locale loading.
 - **Consistency check:** Run `npm run check-i18n` to detect missing keys, orphan keys, or missing categories across all locale files. The script exits with code `1` if issues are found (CI-safe).
 
+### R2 Media Lifecycle & Orphan Cleanup
+
+Every file uploaded via `PUT /api/upload` (or the multipart flow) creates:
+1. An object in **R2** (`BUCKET.put(r2Key, file)`)
+2. A row in **`media`** (`uuid`, `r2_key`, `media_type`, `file_name`)
+
+The `r2_key` is a random UUID and appears in all download URLs: `/api/download/<r2_key>`.
+
+#### Orphan Cleanup
+
+A scheduled cron job (`cleanupOrphanedMedia` in `src/index.ts`) runs daily and deletes any `media` record (+ its R2 object) that is not referenced anywhere. The same logic is exposed manually via `POST /api/admin/cleanup/orphaned-media`.
+
+A media record is considered **in use** if its `uuid` or `r2_key` appears in any of the following:
+
+| Reference type | How tracked |
+|---|---|
+| Resource thumbnail | `resources.thumbnail_uuid` |
+| Resource reference image | `resources.reference_image_uuid` |
+| Resource gallery file | `resource_n_media.media_uuid` |
+| Blog post cover image | `blog_posts.cover_image_uuid` |
+| User avatar | `INSTR(users.avatar_url, m.r2_key)` |
+| Image embedded in resource comment | `INSTR(comments.text, m.r2_key)` |
+| Image embedded in blog comment | `INSTR(blog_comments.text, m.r2_key)` |
+| Image embedded in blog post body | `INSTR(blog_posts.content, m.r2_key)` |
+
+> **Important:** Comments embed images as Markdown (`![alt](/api/download/<r2_key>)`). Because there is no FK between `media` and `comments`, the cleanup uses `INSTR` to scan comment text for the `r2_key`. This means:
+> - Images in **active** comments are protected from deletion.
+> - Once a comment is deleted, the image becomes orphaned and will be removed by the **next** cron run (within 24 hours).
+
+#### Rules for modifying this system
+
+- **Adding a new place where media can be referenced** (e.g. a new table with a text field that embeds images): add a corresponding `AND NOT EXISTS (SELECT 1 FROM <table> WHERE INSTR(<table>.<column>, m.r2_key) > 0)` clause to **both** the cron query in `src/index.ts` and the admin endpoint queries in `src/routes/admin.ts`.
+- **Adding a new FK reference to `media`** (e.g. a new table with a `media_uuid` column): add it to the `AND m.uuid NOT IN (...)` subquery in the same two files.
+- **Deleting a record that owns a media file** (e.g. a blog post with a cover image): always explicitly delete the R2 object and the `media` row **before** deleting the parent record. Do not rely on the orphan cron for immediate cleanup of explicitly owned assets.
+
 ### CSS Architecture
 The stylesheet is modular. `public/style.css` is the **import manifest only** — it `@import`s from `public/style/`:
 - Edit the appropriate module file (e.g., `public/style/wiki.css`) for targeted changes.
@@ -270,6 +358,7 @@ When implementing a new feature or fixing a bug, verify the following:
 9. [ ] **i18n:** If new translatable strings were added to the frontend, did you update all locale files in `public/js/i18n/` and run `npm run check-i18n`?
 10. [ ] **Frontend Build:** After editing anything in `src/frontend/`, did you rebuild with `npm run build-frontend`?
 11. [ ] **Typegen:** Did you run `npm run cf-typegen` if you changed `wrangler.jsonc`?
+12. [ ] **R2 Media Cleanup:** If your change deletes a record that directly owns a media file (e.g. a blog post with a cover image), did you explicitly delete the R2 object and `media` row **before** the parent DELETE? If you added a new table or column that can embed media via Markdown, did you add the corresponding `INSTR` guard to **both** `src/index.ts` (cron) and `src/routes/admin.ts` (manual cleanup)?
 
 ## Troubleshooting
 
@@ -279,3 +368,4 @@ When implementing a new feature or fixing a bug, verify the following:
 - **i18n out of sync:** Run `npm run check-i18n` to identify which keys or locales are missing.
 - **Bundle not updating:** Remember to run `npm run build-frontend` after editing files in `src/frontend/`. In dev mode, use `npm run dev` which runs esbuild in watch mode automatically.
 - **Source maps in production:** The `src/frontend/build-frontend.mjs` only emits source maps when the `--dev` flag is passed. Production deploys via `npm run deploy` never include `.map` files.
+- **Orphaned media not cleaned up:** The cron only deletes files older than 24 hours. Check that the new reference type is covered in both the `src/index.ts` cron query and the `src/routes/admin.ts` endpoint. If a new text column embeds images, add `AND NOT EXISTS (SELECT 1 FROM <table> WHERE INSTR(<table>.<column>, m.r2_key) > 0)` to both queries.
