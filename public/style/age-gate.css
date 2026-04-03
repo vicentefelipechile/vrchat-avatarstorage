@@ -1,0 +1,110 @@
+/* =============================================================================
+   age-gate.css — Age verification overlay modal
+   ============================================================================= */
+
+.age-gate-overlay {
+	position: fixed;
+	inset: 0;
+	background: rgba(0, 0, 0, 0.85);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 99999;
+	padding: 20px;
+}
+
+.age-gate-modal {
+	background: var(--bg-card);
+	border: 2px solid var(--border-color);
+	max-width: 480px;
+	width: 100%;
+	padding: 40px 36px 32px;
+	text-align: center;
+	box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
+}
+
+.age-gate-icon {
+	font-size: 2.8rem;
+	margin-bottom: 16px;
+	line-height: 1;
+}
+
+.age-gate-title {
+	margin: 0 0 16px 0;
+	font-size: 1.4rem;
+	color: var(--text-main);
+}
+
+.age-gate-body {
+	color: var(--text-muted);
+	line-height: 1.6;
+	margin: 0 0 20px 0;
+	font-size: 0.95rem;
+}
+
+.age-gate-question {
+	font-weight: bold;
+	font-size: 1.05rem;
+	color: var(--text-main);
+	margin: 0 0 24px 0;
+}
+
+.age-gate-actions {
+	display: flex;
+	gap: 12px;
+	justify-content: center;
+	flex-wrap: wrap;
+	margin-bottom: 20px;
+}
+
+.age-gate-btn-yes {
+	padding: 11px 28px;
+	font-size: 0.95rem;
+	min-width: 180px;
+}
+
+.age-gate-btn-no {
+	padding: 11px 28px;
+	font-size: 0.95rem;
+	min-width: 180px;
+	background: transparent;
+	border: 2px solid var(--border-color);
+	color: var(--text-muted);
+}
+
+.age-gate-btn-no:hover {
+	background: var(--bg-hover);
+	color: var(--text-main);
+	border-color: var(--text-muted);
+}
+
+.age-gate-legal {
+	font-size: 0.78rem;
+	color: var(--text-muted);
+	margin: 0;
+	line-height: 1.5;
+}
+
+.age-gate-legal a {
+	color: var(--text-muted);
+	text-decoration: underline;
+}
+
+.age-gate-legal a:hover {
+	color: var(--text-main);
+}
+
+@media (max-width: 480px) {
+	.age-gate-modal {
+		padding: 28px 20px 24px;
+	}
+
+	.age-gate-actions {
+		flex-direction: column;
+	}
+
+	.age-gate-btn-yes,
+	.age-gate-btn-no {
+		width: 100%;
+	}
+}

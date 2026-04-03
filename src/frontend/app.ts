@@ -256,6 +256,31 @@ function initPrefetch(): void {
 // =========================================================================
 
 document.addEventListener('DOMContentLoaded', async () => {
+	// =========================================================================
+	// Age Gate
+	// =========================================================================
+	const ageGateOverlay = document.getElementById('age-gate-overlay');
+	if (ageGateOverlay && !localStorage.getItem('age_verified')) {
+		ageGateOverlay.style.display = 'flex';
+
+		document.getElementById('age-gate-yes')?.addEventListener('click', () => {
+			localStorage.setItem('age_verified', '1');
+			ageGateOverlay.style.display = 'none';
+		});
+
+		document.getElementById('age-gate-no')?.addEventListener('click', () => {
+			window.location.href = 'https://youtu.be/XqZsoesa55w?t=29';
+		});
+
+		// Block Escape key and backdrop clicks while gate is visible
+		document.addEventListener('keydown', (e) => {
+			if (ageGateOverlay.style.display !== 'none' && e.key === 'Escape') {
+				e.preventDefault();
+				e.stopPropagation();
+			}
+		}, true);
+	}
+
 	// Mobile menu
 	document.getElementById('mobile-menu-btn')?.addEventListener('click', () => {
 		document.querySelector<HTMLElement>('.nav-links')?.classList.toggle('active');
