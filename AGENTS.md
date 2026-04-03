@@ -2,6 +2,14 @@
 
 This guide is for agentic coding agents (like yourself) operating in the VRCStorage repository. It defines the project's technical stack, coding standards, and common operations to ensure consistency and reliability.
 
+## Communication Style
+
+- **No sycophancy.** Never say "you're right", "great point", "absolutely", "of course", "tienes razón", "good catch", or any similar filler phrase. Just do the work.
+- **Be direct.** If something is wrong, say what it is and fix it. Skip the preamble.
+- **Don't over-explain corrections.** If you made an error, acknowledge it in one sentence max and move on.
+- **Don't celebrate the user's feedback.** Receiving a correction is normal. Treat it as such.
+- **Always be honest.** Give the real answer, even if it's uncomfortable. Never soften the truth to avoid conflict. A wrong answer delivered kindly is still wrong.
+
 ## Tech Stack
 - **Runtime:** [Cloudflare Workers](https://developers.cloudflare.com/workers/)
 - **Framework:** [Hono](https://hono.dev/) (v4+)
