@@ -145,7 +145,7 @@ export const TwoFactorDisableSchema = z.object({
 export const TwoFactorLoginSchema = z.object({
 	username: z.string(),
 	code: z.string().length(6, 'Code must be 6 digits').regex(/^\d+$/, 'Code must be numeric'),
-	pre_auth_token: z.string().uuid('Invalid pre-auth token'),
+	pre_auth_token: z.uuid('Invalid pre-auth token'),
 });
 
 // ============================================================================

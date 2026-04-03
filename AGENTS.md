@@ -366,9 +366,9 @@ The stylesheet is modular. `public/style.css` is the **import manifest only** �
 VRCStorage uses a **flat, monochromatic, brutalist-adjacent** design language:
 - No gradients.
 - No rounded corners (`border-radius: 0` everywhere — not even `2px`, `4px`, or `8px`).
-- No box shadows for layout elements (only allowed for overlays like modals).
+- Box shadows are highly restricted: **only square, solid-color shadows are allowed** (e.g., `box-shadow: 4px 4px 0 var(--shadow-hover);`). Soft, blurry shadows are forbidden.
 - No Google Fonts or external typefaces. The font is **`monospace`** (system monospace stack), set globally on `body`.
-- Flat, high-contrast borders define structure instead of shadows or depth effects.
+- Flat, high-contrast borders define structure instead of soft depth effects.
 
 #### Color Tokens
 
@@ -409,12 +409,25 @@ VRCStorage uses a **flat, monochromatic, brutalist-adjacent** design language:
 - **Sizes:** Use `rem` units. Common scale: `0.78rem` (fine print), `0.8rem` (small labels), `0.85rem` (secondary), `0.9rem` (form labels), `0.95rem`–`1rem` (body), `1.05rem`–`1.1rem` (section headings), `1.4rem`–`1.8rem` (page titles).
 - **Line height:** `1.6`–`1.7` for paragraph text. `1` for single-line UI elements.
 
-#### Borders
+#### Border & Shadows
 
 - **Thickness:** Always `2px solid var(--border-color)` for structural borders (cards, inputs, buttons, nav).
 - **Light dividers:** `1px solid var(--border-color)` or `1px solid var(--border-light)` for internal row separators.
 - **Border radius:** **`0` always.** No exceptions. Never write `border-radius`.
 - Hover states on bordered elements must **not change the border width** — only the color. Changing thickness shifts layout. Use `border-color` on hover, not the `border` shorthand.
+
+**Box-Shadow Rules:**
+`box-shadow` is strictly controlled. Soft, blurry drop-shadows (e.g., `0 4px 10px rgba(0,0,0,0.1)`) are strictly forbidden. 
+You may ONLY use a **solid, square shadow** under the following precise conditions:
+- **Allowed on:** Small cards and notes.
+- **Forbidden on:** Buttons, large layout containers, and form inputs.
+- **Usage example (Hover):**
+```css
+.card:hover {
+	transform: translateY(-4px);
+	box-shadow: 4px 4px 0 var(--shadow-hover);
+}
+```
 
 #### Buttons
 
@@ -474,7 +487,7 @@ border-radius: 50%;         /* even for circular elements — use square icon bu
 font-family: 'Inter', ...;  /* no external fonts */
 font-family: sans-serif;    /* unless inside code/pre blocks */
 background: linear-gradient(...);  /* no gradients */
-box-shadow: 0 2px 8px ...;  /* no shadows on cards or layout elements */
+box-shadow: 0 2px 8px ...;  /* no soft, blurry shadows! Only square, solid shadows (4px 4px 0 ...) are allowed, and never on layout containers */
 color: #1a73e8;             /* no hardcoded blues, greens, purples outside the allowed exceptions */
 font-weight: 600;           /* use bold or normal only */
 border: 1px solid ...;      /* structural borders must be 2px */
