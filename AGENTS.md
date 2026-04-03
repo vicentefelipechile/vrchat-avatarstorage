@@ -162,7 +162,7 @@ src/
     comment-editor.ts     # Shared Markdown editor component (toolbar, image upload, Turnstile)
     diff.ts               # Content diff utilities
     icons.ts              # Centralized Lucide icon registry
-    utils.ts              # General frontend utilities
+    utils.ts              # General frontend utilities (incl. showToast)
     admin.ts              # Admin-specific frontend logic
     types.ts              # Frontend-only TypeScript types (RouteContext, ViewFn, etc.)
     views/                # Functional view modules (viewFn + optional afterFn)
@@ -210,7 +210,8 @@ public/
     cards.css             # Card components
     forms.css             # Form inputs and layouts
     item.css              # Resource item page styles
-    pages.css             # Misc page-level styles
+    pages.css             # Footer, TOS, DMCA, version info modal styles
+    age-gate.css          # Age verification overlay modal styles
     blog.css              # Blog-specific styles
     wiki.css              # Wiki page styles
     admin.css             # Admin panel styles
@@ -224,9 +225,15 @@ public/
     cn/ de/ en/ es/ fr/ it/ jp/ nl/ pl/ pt/ ru/ tr/
     └── <topic>.md        # 23 articles per language (home, faq, setup, poiyomi, ...)
 
-sql/                      # D1 schema files
-  SCHEMA_INIT.sql         # Initial schema
-  SCHEMA_EDIT_*.sql       # Incremental migrations (timestamped)
+migrations/               # D1 schema & migration files
+  0001_initial.sql        # Initial schema
+  0002_index_resources.sql
+  0003_tags.sql
+  0004_favorites.sql
+  0005_2fa.sql
+  0006_google.sql
+  0007_blogs.sql
+                          # New migrations follow the pattern: NNNN_description.sql
 
 wrangler.jsonc            # Cloudflare Worker configuration & bindings
 tsconfig.json             # Backend TypeScript config
@@ -244,7 +251,7 @@ STOP. Your knowledge of Cloudflare Workers APIs and limits may be outdated. Alwa
 - R2: https://developers.cloudflare.com/r2/
 
 ### Database Management
-- **Schema:** The initial schema is in `sql/SCHEMA_INIT.sql`. Incremental migrations follow the `sql/SCHEMA_EDIT_<date>.sql` naming convention. Never edit `SCHEMA_INIT.sql` after it has been applied; always create a new migration file.
+- **Schema:** All migration files live in `migrations/`. The initial schema is `migrations/0001_initial.sql`. New migrations follow the sequential naming pattern `migrations/NNNN_description.sql` (e.g. `0008_new_feature.sql`). Never edit an already-applied migration; always create a new file.
 - **D1 API:** Use `c.env.DB.prepare(query)`.
 - **Transactions:** Cloudflare D1 supports transactions via `db.batch()`.
 - **Primary Keys:** Most tables use UUIDs (v4) as primary keys.
@@ -295,6 +302,13 @@ Icons are managed via a centralized registry in `src/frontend/icons.ts`, built o
 - Cloudflare Turnstile integration.
 - Used by `ItemView`, `BlogCreateView`, and `BlogPostView` — do not duplicate this logic in individual views.
 
+### Frontend Utilities & Feedback
+All visual feedback or ephemeral messages to the user (success, error, loading states) MUST use the integrated `showToast` utility from `src/frontend/utils.ts`. 
+- **Do not** use `alert()`, `confirm()`, or custom floating divs for ephemeral feedback.
+- **Import:** `import { showToast } from './utils';`
+- **Usage:** `showToast('Message', 'success' | 'error' | 'warning' | 'info', durationMs)`
+- The function returns a `dismiss` callback which is useful for hiding indefinite toasts (duration `0`) after a background async task finishes.
+
 ### i18n (Frontend)
 Locale files live in `public/js/i18n/` as ES modules (`export default { ... }`).
 - **Supported locales:** `cn`, `de`, `en`, `es`, `fr`, `it`, `jp`, `nl`, `pl`, `pt`, `ru`, `tr`.
@@ -341,6 +355,141 @@ A media record is considered **in use** if its `uuid` or `r2_key` appears in any
 The stylesheet is modular. `public/style.css` is the **import manifest only** — it `@import`s from `public/style/`:
 - Edit the appropriate module file (e.g., `public/style/wiki.css`) for targeted changes.
 - Do not put new styles directly in `public/style.css`.
+- When adding a new CSS file, register it in `public/style.css` and document it in the Project Structure above.
+
+### Design System & Visual Style
+
+> **This is the law.** Every UI element you create must follow these rules. Do not introduce your own colors, fonts, border-radius values, shadows, or spacing that deviate from what is described here. Consistency is non-negotiable.
+
+#### Identity
+
+VRCStorage uses a **flat, monochromatic, brutalist-adjacent** design language:
+- No gradients.
+- No rounded corners (`border-radius: 0` everywhere — not even `2px`, `4px`, or `8px`).
+- No box shadows for layout elements (only allowed for overlays like modals).
+- No Google Fonts or external typefaces. The font is **`monospace`** (system monospace stack), set globally on `body`.
+- Flat, high-contrast borders define structure instead of shadows or depth effects.
+
+#### Color Tokens
+
+**Never hardcode colors.** All colors must come from the CSS variables defined in `public/style/base.css`. The full token set:
+
+| Token | Light | Dark | Purpose |
+|---|---|---|---|
+| `--bg-body` | `#f0f0f0` | `#121212` | Page background |
+| `--bg-nav` | `#ddd` | `#1e1e1e` | Navbar background |
+| `--bg-card` | `#fff` | `#242424` | Cards, panels, modal bodies |
+| `--bg-input` | `#fff` | `#2d2d2d` | Form inputs, textareas |
+| `--bg-hover` | `#eee` | `#333` | Hover state backgrounds |
+| `--bg-dropdown` | `#ddd` | `#2d2d2d` | Dropdown menus |
+| `--bg-sidebar` | `#e0e0e0` | `#1e1e1e` | Sidebar panels |
+| `--bg-code` | `#f4f4f4` | `#2d2d2d` | Code blocks |
+| `--bg-quote` | `#f9f9f9` | `#242424` | Blockquotes |
+| `--text-main` | `#333` | `#e0e0e0` | Primary text |
+| `--text-muted` | `#666` | `#aaa` | Secondary/helper text |
+| `--text-inverse` | `#fff` | `#121212` | Text on dark backgrounds |
+| `--text-link` | `#000` | `#4a90e2` | Hyperlinks |
+| `--border-color` | `#333` | `#bbb` | Primary borders |
+| `--border-light` | `#eee` | `#444` | Subtle dividers |
+| `--btn-bg` | `#333` | `#eeeeee88` | Default button background |
+| `--btn-text` | `#fff` | `#121212` | Default button text |
+| `--btn-hover` | `#555` | `#ccc` | Button hover background |
+
+**Exceptions allowed** (these specific hard-coded values exist in the codebase and are acceptable):
+- `#dc3545` / `#c82333` — `.btn-danger` (destructive actions only).
+- `#e74c3c` / `rgba(231, 76, 60, 0.1)` — `.btn-favorite.is-favorite` (heart/favorite active state).
+- `#6c757d` / `#5a6268` — `.btn-square`, `.favorite-remove` (secondary muted actions).
+- Toast semantic colors: green for success, red for error, amber for warning (see `base.css`).
+- Any **accent color** used in admin stats (currently orange `#f5a623` or similar) must remain isolated to `admin.css`.
+
+#### Typography
+
+- **Font:** `monospace` (inherited from `body`, never override with `font-family` unless strictly necessary for code blocks).
+- **Weights:** `normal` for body copy, `bold` for headings and nav labels. Do not use `font-weight: 500`, `600`, or `700` — only `bold`.
+- **Sizes:** Use `rem` units. Common scale: `0.78rem` (fine print), `0.8rem` (small labels), `0.85rem` (secondary), `0.9rem` (form labels), `0.95rem`–`1rem` (body), `1.05rem`–`1.1rem` (section headings), `1.4rem`–`1.8rem` (page titles).
+- **Line height:** `1.6`–`1.7` for paragraph text. `1` for single-line UI elements.
+
+#### Borders
+
+- **Thickness:** Always `2px solid var(--border-color)` for structural borders (cards, inputs, buttons, nav).
+- **Light dividers:** `1px solid var(--border-color)` or `1px solid var(--border-light)` for internal row separators.
+- **Border radius:** **`0` always.** No exceptions. Never write `border-radius`.
+- Hover states on bordered elements must **not change the border width** — only the color. Changing thickness shifts layout. Use `border-color` on hover, not the `border` shorthand.
+
+#### Buttons
+
+Use the existing button classes from `public/style/buttons.css`. Do not create new button variants without a strong reason.
+
+| Class | Use case |
+|---|---|
+| `.btn` | Default filled button (dark bg, white text) |
+| `.btn-outline` | Secondary action (transparent bg, border) |
+| `.btn-favorite` | Inline toggle (transparent, with border) |
+| `.btn-danger` | Destructive action (red) |
+| `.btn-sm` | Compact button for inline/table use |
+| `.btn-icon` | Icon-only button (square, transparent) |
+| `.btn-square` | Full-width block button (muted gray) |
+
+Rules:
+- `font-family: inherit` is **mandatory** on every `<button>` or `.btn` — otherwise the browser overrides to its default sans-serif, breaking consistency.
+- Never set a `border-radius` on buttons.
+- Never change `font-size` beyond the documented scale.
+
+#### Layout & Spacing
+
+- **Max content width:** `950px` via `.container`.
+- **Container padding:** `20px` desktop, `15px` mobile.
+- **Standard gaps:** `8px`–`12px` for flex/grid gaps within components, `20px`–`30px` for section spacing.
+- **Section spacing between cards:** `20px` margin.
+- Use `padding: 24px 30px` for card/panel content areas (mobile: `18px 16px`).
+
+#### Separators & Dividers
+
+- The `<hr>` element renders as `2px solid var(--border-color)` with `20px` vertical margin — use it freely for section breaks.
+- Within card stacks, use `border-bottom: none` on all but the last item to avoid double borders.
+
+#### Interactive States
+
+- **Hover backgrounds:** Always `var(--bg-hover)` — never a fixed hex.
+- **Border hover:** Change `border-color` only, never the `border` shorthand (to avoid layout shift).
+- **Focus:** Do not remove focus outlines without replacement. If you suppress `outline`, add a visible `border-color` change instead.
+- **Transitions:** Keep them short — `0.2s ease` is the standard. Do not use `0.3s` or longer for hover effects on nav or buttons.
+
+#### Overlays & Modals
+
+Modals (e.g., version info, age gate) follow this pattern:
+- Overlay: `position: fixed; inset: 0; background: rgba(0,0,0,0.7–0.85); z-index: 10000+`
+- Modal box: `background: var(--bg-card); border: 2px solid var(--border-color);` — no `border-radius`, no excessive `box-shadow`.
+- Header/footer separated by `1px solid var(--border-color)`.
+
+#### What Is Strictly Forbidden
+
+The following patterns have been introduced by external agents and must never appear again:
+
+```css
+/* ❌ FORBIDDEN */
+border-radius: 4px;         /* any border-radius value */
+border-radius: 8px;
+border-radius: 50%;         /* even for circular elements — use square icon buttons */
+font-family: 'Inter', ...;  /* no external fonts */
+font-family: sans-serif;    /* unless inside code/pre blocks */
+background: linear-gradient(...);  /* no gradients */
+box-shadow: 0 2px 8px ...;  /* no shadows on cards or layout elements */
+color: #1a73e8;             /* no hardcoded blues, greens, purples outside the allowed exceptions */
+font-weight: 600;           /* use bold or normal only */
+border: 1px solid ...;      /* structural borders must be 2px */
+border: 2px solid ...;      /* on hover, only change border-color, never re-declare border */
+```
+
+#### Quick Reference: Adding a New UI Component
+
+1. Check if an existing class covers the need (`.btn`, `.btn-outline`, `.card`, etc.).
+2. If a new CSS file is needed, create it in `public/style/` and register it in `public/style.css`.
+3. Use only CSS variables from `base.css` for colors.
+4. `border-radius: 0`, `font-family: inherit`, `border: 2px solid var(--border-color)`.
+5. Hover states: change `background` to `var(--bg-hover)` and/or `border-color` — never border width.
+6. Test in both light and dark mode (toggle via the 🌙 button in the nav).
+
 
 ### Wiki Documentation
 The repository contains a multi-language wiki in `public/wiki/`.
@@ -411,7 +560,7 @@ When implementing a new feature or fixing a bug, verify the following:
 5. [ ] **Rate Limiting:** Is a `rateLimit` middleware applied if the endpoint is public?
 6. [ ] **Caching:** Does the KV cache need to be cleared/updated after this change (e.g., `VRCSTORAGE_KV.delete(...)`)?
 7. [ ] **Database:** Are queries using prepared statements and `.bind(...)`?
-8. [ ] **Schema Migration:** If the DB schema changed, did you create a new `sql/SCHEMA_EDIT_<date>.sql` file?
+8. [ ] **Schema Migration:** If the DB schema changed, did you create a new `migrations/NNNN_description.sql` file following the sequential numbering convention?
 9. [ ] **i18n:** If new translatable strings were added to the frontend, did you update all locale files in `public/js/i18n/` and run `npm run check-i18n`?
 10. [ ] **Frontend Build:** After editing anything in `src/frontend/`, did you rebuild with `npm run build-frontend`?
 11. [ ] **Typegen:** Did you run `npm run cf-typegen` if you changed `wrangler.jsonc`?

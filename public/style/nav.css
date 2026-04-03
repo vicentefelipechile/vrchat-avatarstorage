@@ -36,12 +36,12 @@ nav .container {
 	text-decoration: none;
 	font-weight: bold;
 	padding: 9px 10px;
-	border: 1px solid transparent;
+	border: 2px solid transparent;
 	white-space: nowrap;
 }
 
 .nav-links a:hover {
-	border: 2px solid var(--border-color);
+	border-color: var(--border-color);
 	background-color: var(--bg-card);
 }
 
