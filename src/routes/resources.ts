@@ -9,9 +9,10 @@
 // =========================================================================================================
 
 import { Hono } from 'hono';
+import { z } from 'zod';
 import { getAuthUser } from '../auth';
 import { Resource, ResourceCategory, RESOURCE_CATEGORIES, User, Media, ResourceLink, ResourceHistory, Tag } from '../types';
-import { ResourceSchema } from '../validators';
+import { ResourceSchema, LinkSchema } from '../validators';
 import { verifyTurnstile } from '../helpers/turnstile';
 import { QueryBuilder } from '../helpers/query-constructor';
 
@@ -417,7 +418,10 @@ resources.put('/:uuid', async (c) => {
 	const title = parsed.data.title ?? resource.title;
 	const description = parsed.data.description ?? resource.description;
 	const category = parsed.data.category ?? resource.category;
-	const isActive = isAdmin && body.is_active !== undefined ? body.is_active : resource.is_active;
+	const isActive =
+		isAdmin && typeof body.is_active === 'number' && (body.is_active === 0 || body.is_active === 1)
+			? body.is_active
+			: resource.is_active;
 	const tags: string[] = parsed.data.tags ?? [];
 
 	if (isAdmin && tags.length > 20) {
@@ -490,8 +494,10 @@ resources.put('/:uuid', async (c) => {
 			}
 		}
 
-		// 4. Update Links (New Files)
-		if (body.new_links && Array.isArray(body.new_links)) {
+		// 4. Update Links (New Files) — validated through Zod to prevent injection
+		const NewLinksSchema = z.array(LinkSchema).optional();
+		const validatedNewLinks = NewLinksSchema.parse(body.new_links);
+		if (validatedNewLinks && validatedNewLinks.length > 0) {
 			const lastLink = await c.env.DB.prepare(
 				'SELECT display_order FROM resource_links WHERE resource_uuid = ? ORDER BY display_order DESC LIMIT 1',
 			)
@@ -499,7 +505,7 @@ resources.put('/:uuid', async (c) => {
 				.first<{ display_order: number }>();
 			let nextOrder = (lastLink?.display_order || 0) + 1;
 
-			for (const link of body.new_links) {
+			for (const link of validatedNewLinks) {
 				const linkUuid = crypto.randomUUID();
 				operations.push(
 					c.env.DB.prepare(

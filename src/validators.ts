@@ -57,7 +57,7 @@ export const UserUpdateSchema = z.object({
 // Resource Schemas
 // ============================================================================
 
-const LinkSchema = z.object({
+export const LinkSchema = z.object({
 	link_url: z.string().transform((val) => (val ? sanitizeHtml(val) : val)), // Allow relative URLs
 	link_title: z
 		.string()
@@ -128,7 +128,7 @@ export const FavoriteOrderSchema = z.object({
 // ============================================================================
 
 export const TwoFactorSetupSchema = z.object({
-	password: z.string().min(1, 'Password is required'),
+	password: z.string().min(1, 'Password is required').optional(),
 	token: z.string().optional(),
 });
 
@@ -137,7 +137,7 @@ export const TwoFactorVerifySchema = z.object({
 });
 
 export const TwoFactorDisableSchema = z.object({
-	password: z.string().min(1, 'Password is required'),
+	password: z.string().min(1, 'Password is required').optional(),
 	code: z.string().optional(),
 	token: z.string().optional(),
 });
@@ -201,7 +201,7 @@ export const BlogCommentSchema = z.object({
  * the password to be changed — protects against XSS-driven CSRF chain attacks.
  */
 export const ChangePasswordSchema = z.object({
-	current_password: z.string().min(1, 'Current password is required').max(200),
+	current_password: z.string().min(1, 'Current password is required').max(200).optional(),
 	new_password: z
 		.string()
 		.min(8, 'New password must be at least 8 characters')

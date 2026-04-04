@@ -5,6 +5,8 @@
 import { t, getCurrentLang } from '../i18n';
 import { DataCache } from '../cache';
 import { renderTurnstile, renderMarkdown, showToast } from '../utils';
+import { marked } from 'marked';
+import DOMPurify from 'dompurify';
 import type { RouteContext } from '../types';
 
 // =========================================================================
@@ -93,14 +95,7 @@ function sidebarHtml(currentTopic: string): string {
 }
 
 function commentRow(c: WikiComment, canDelete: boolean): string {
-	let content: string;
-	if (window.marked && window.DOMPurify) {
-		content = window.DOMPurify.sanitize(window.marked.parse(c.text));
-	} else if (window.marked) {
-		content = window.marked.parse(c.text).replace(/<script\b[^>]*>[\s\S]*?<\/script>/gm, '');
-	} else {
-		content = c.text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-	}
+	const content = DOMPurify.sanitize(marked.parse(c.text) as string);
 
 	return `
 		<div id="comment-${c.uuid}" class="wiki-comment">

@@ -56,9 +56,14 @@ twoFactorRouter.post('/setup', async (c) => {
 		return c.json({ error: 'User not found' }, 404);
 	}
 
-	const isValidPassword = await verifyPassword(password, user.password_hash);
-	if (!isValidPassword) {
-		return c.json({ error: 'Invalid password' }, 401);
+	// OAuth-only accounts have an empty password_hash — skip password verification.
+	// Password-based accounts must prove identity before modifying 2FA.
+	if (user.password_hash) {
+		if (!password) return c.json({ error: 'Password is required' }, 400);
+		const isValidPassword = await verifyPassword(password, user.password_hash);
+		if (!isValidPassword) {
+			return c.json({ error: 'Invalid password' }, 401);
+		}
 	}
 
 	if (user.two_factor_enabled === 1) {
@@ -160,9 +165,13 @@ twoFactorRouter.post('/disable', async (c) => {
 		return c.json({ error: '2FA is not enabled' }, 400);
 	}
 
-	const isValidPassword = await verifyPassword(password, user.password_hash);
-	if (!isValidPassword) {
-		return c.json({ error: 'Invalid password' }, 401);
+	// OAuth-only accounts have an empty password_hash — skip password verification.
+	if (user.password_hash) {
+		if (!password) return c.json({ error: 'Password is required' }, 400);
+		const isValidPassword = await verifyPassword(password, user.password_hash);
+		if (!isValidPassword) {
+			return c.json({ error: 'Invalid password' }, 401);
+		}
 	}
 
 	// TOTP code is required to disable 2FA

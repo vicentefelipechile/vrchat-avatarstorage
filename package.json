@@ -16,7 +16,9 @@
 		"build-frontend:watch": "node src/frontend/build-frontend.mjs --watch --dev"
 	},
 	"devDependencies": {
+		"@types/dompurify": "^3.0.5",
 		"@types/node": "^25.5.0",
+		"@types/qrcode": "^1.5.6",
 		"concurrently": "^9.2.1",
 		"esbuild": "^0.27.4",
 		"typescript": "^5.9.3",
@@ -26,8 +28,10 @@
 	"dependencies": {
 		"@hapi/iron": "7.0.1",
 		"bcryptjs": "3.0.3",
+		"dompurify": "^3.3.3",
 		"hono": "4.12.7",
 		"lucide": "1.7.0",
+		"marked": "^17.0.5",
 		"otpauth": "9.5.0",
 		"qrcode": "1.5.4",
 		"tsx": "4.21.0",

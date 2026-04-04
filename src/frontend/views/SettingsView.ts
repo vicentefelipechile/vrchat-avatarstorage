@@ -2,6 +2,7 @@
 // views/SettingsView.ts — User settings: profile, avatar, password and 2FA
 // =========================================================================
 
+import QRCode from 'qrcode';
 import { t } from '../i18n';
 import { renderTurnstile, resizeImage, showToast, loadingBtn } from '../utils';
 import type { RouteContext } from '../types';
@@ -13,9 +14,10 @@ import type { RouteContext } from '../types';
 export async function settingsView(_ctx: RouteContext): Promise<string> {
 	document.title = `VRCStorage — ${t('settings.title')}`;
 
-	const user      = window.appState.user ?? {};
-	const avatarUrl = (user as { avatar_url?: string }).avatar_url ?? 'https://vrchat-avatarstorage.vicentefelipechile.workers.dev/avatar.png';
-	const username  = (user as { username?: string }).username ?? '';
+	const user        = window.appState.user ?? {};
+	const avatarUrl   = (user as { avatar_url?: string }).avatar_url ?? 'https://vrchat-avatarstorage.vicentefelipechile.workers.dev/avatar.png';
+	const username    = (user as { username?: string }).username ?? '';
+	const hasPassword = (user as { has_password?: boolean }).has_password !== false;
 
 	return `
 		<div class="login-box" style="max-width:500px">
@@ -49,10 +51,11 @@ export async function settingsView(_ctx: RouteContext): Promise<string> {
 					<h2 style="margin:0;display:inline">${t('settings.change_password') || 'Change Password'}</h2>
 				</summary>
 				<div style="padding:20px 0">
-					<div class="form-group">
+					<div class="form-group" id="current-password-group" style="${hasPassword ? '' : 'display:none'}">
 						<label for="current-password">${t('settings.current_password') || 'Current Password'}</label>
 						<input type="password" id="current-password" autocomplete="current-password" style="width:100%">
 					</div>
+					${!hasPassword ? `<p style="color:var(--text-muted);margin-bottom:15px">${t('settings.no_password_hint') || 'Your account uses OAuth login. Set a password here to also allow password-based login.'}</p>` : ''}
 					<div class="form-group">
 						<label for="new-password">${t('settings.new_password') || 'New Password'}</label>
 						<input type="password" id="new-password" autocomplete="new-password" minlength="8" maxlength="200" style="width:100%">
@@ -93,7 +96,7 @@ export async function settingsView(_ctx: RouteContext): Promise<string> {
 					</div>
 
 					<div id="2fa-password-section" style="display:none;margin-top:20px">
-						<div class="form-group">
+						<div class="form-group" id="2fa-password-group">
 							<label>${t('settings.2fa_password') || 'Password'}</label>
 							<input type="password" id="2fa-setup-password" style="width:100%">
 						</div>
@@ -128,7 +131,7 @@ export async function settingsView(_ctx: RouteContext): Promise<string> {
 					</div>
 
 					<div id="2fa-disable-section" style="display:none;margin-top:20px">
-						<div class="form-group">
+						<div class="form-group" id="2fa-disable-password-group">
 							<label>${t('settings.2fa_password') || 'Password'}</label>
 							<input type="password" id="2fa-disable-password" style="width:100%">
 						</div>
@@ -232,6 +235,8 @@ async function loadPasswordSection(): Promise<void> {
 	const pw2faSection = document.getElementById('pw-2fa-section') as HTMLElement;
 	if (has2FA) pw2faSection.style.display = 'block';
 
+	const hasPassword = window.appState.user?.has_password !== false;
+
 	document.getElementById('change-password-btn')?.addEventListener('click', async () => {
 		const btn            = document.getElementById('change-password-btn') as HTMLButtonElement;
 		const restore        = loadingBtn(btn, '…');
@@ -240,12 +245,13 @@ async function loadPasswordSection(): Promise<void> {
 		const confirmPw      = (document.getElementById('confirm-password') as HTMLInputElement).value;
 		const twoFactorCode  = (document.getElementById('pw-2fa-code') as HTMLInputElement | null)?.value?.trim();
 
-		if (!currentPw) { showToast(t('settings.current_password_required') || 'Enter your current password', 'warning'); restore(); return; }
+		if (hasPassword && !currentPw) { showToast(t('settings.current_password_required') || 'Enter your current password', 'warning'); restore(); return; }
 		if (newPw.length < 8) { showToast(t('settings.password_too_short') || 'New password must be at least 8 characters', 'warning'); restore(); return; }
 		if (newPw !== confirmPw) { showToast(t('settings.password_mismatch') || 'Passwords do not match', 'warning'); restore(); return; }
 		if (has2FA && !twoFactorCode) { showToast(t('settings.2fa_code_required') || '2FA code is required', 'warning'); restore(); return; }
 
-		const body: Record<string, string> = { current_password: currentPw, new_password: newPw };
+		const body: Record<string, string> = { new_password: newPw };
+		if (hasPassword) body.current_password = currentPw;
 		if (has2FA && twoFactorCode) body.two_factor_code = twoFactorCode;
 
 		try {
@@ -311,10 +317,43 @@ function setup2FAHandlers(els: TwoFAEls): void {
 	const secretText     = document.getElementById('2fa-secret')!;
 	const backupCodesList = document.getElementById('backup-codes-list')!;
 
-	// Enable → show password step
-	document.getElementById('2fa-enable-btn')?.addEventListener('click', () => {
+	const hasPassword = window.appState.user?.has_password !== false;
+
+	const fetchQR = async (password?: string, restore?: () => void) => {
+		try {
+			const res  = await fetch('/api/2fa/setup', {
+				method:  'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body:    JSON.stringify(password ? { password } : {}),
+			});
+			const data = await res.json() as { otpauthUrl?: string; secret?: string; error?: string };
+			if (!res.ok) { showToast(data.error ?? 'Error setting up 2FA', 'error'); if (restore) restore(); return; }
+
+			els.password.style.display = 'none';
+			els.enable.style.display   = 'none';
+			els.setup.style.display    = 'block';
+			const canvas = document.createElement('canvas');
+			await QRCode.toCanvas(canvas, data.otpauthUrl ?? '', { width: 200, margin: 2 });
+			qrContainer.innerHTML = '';
+			qrContainer.appendChild(canvas);
+			secretText.textContent     = data.secret ?? '';
+		} catch {
+			showToast(t('common.networkError') || 'Network error', 'error');
+		} finally {
+			if (restore) restore();
+		}
+	};
+
+	// Enable → show password step (or skip for OAuth)
+	document.getElementById('2fa-enable-btn')?.addEventListener('click', async () => {
 		els.enable.style.display = 'none';
-		els.password.style.display = 'block';
+		if (hasPassword) {
+			els.password.style.display = 'block';
+		} else {
+			const btn     = document.getElementById('2fa-enable-btn') as HTMLButtonElement;
+			const restore = loadingBtn(btn, '…');
+			await fetchQR(undefined, restore);
+		}
 	});
 
 	// Cancel password step
@@ -330,24 +369,7 @@ function setup2FAHandlers(els: TwoFAEls): void {
 		const password = (document.getElementById('2fa-setup-password') as HTMLInputElement).value;
 		if (!password) { showToast(t('settings.2fa_password_required') || 'Password is required', 'warning'); restore(); return; }
 
-		try {
-			const res  = await fetch('/api/2fa/setup', {
-				method:  'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body:    JSON.stringify({ password }),
-			});
-			const data = await res.json() as { otpauthUrl?: string; secret?: string; error?: string };
-			if (!res.ok) { showToast(data.error ?? 'Error setting up 2FA', 'error'); restore(); return; }
-
-			els.password.style.display = 'none';
-			els.setup.style.display    = 'block';
-			qrContainer.innerHTML      = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(data.otpauthUrl ?? '')}" alt="QR Code">`;
-			secretText.textContent     = data.secret ?? '';
-		} catch {
-			showToast(t('common.networkError') || 'Network error', 'error');
-		} finally {
-			restore();
-		}
+		await fetchQR(password, restore);
 	});
 
 	// Cancel setup
@@ -409,11 +431,14 @@ function setup2FAHandlers(els: TwoFAEls): void {
 		const password = (document.getElementById('2fa-disable-password') as HTMLInputElement).value;
 		const code     = (document.getElementById('2fa-disable-code') as HTMLInputElement).value;
 
+		const body: Record<string, string> = { code: code || '' };
+		if (hasPassword) body.password = password;
+
 		try {
 			const res  = await fetch('/api/2fa/disable', {
 				method:  'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body:    JSON.stringify({ password, code: code || '' }),
+				body:    JSON.stringify(body),
 			});
 			const data = await res.json() as { error?: string };
 			if (res.ok) {

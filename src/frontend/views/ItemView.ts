@@ -8,6 +8,8 @@ import { showToast } from '../utils';
 import { deleteComment, approveResource, rejectResource, deactivateResource } from '../admin';
 import { icons } from '../icons';
 import { commentEditorHtml, initCommentEditor } from '../comment-editor';
+import { marked } from 'marked';
+import DOMPurify from 'dompurify';
 import type { RouteContext, Resource, Comment, ResourceLink } from '../types';
 
 // =========================================================================
@@ -139,9 +141,7 @@ function renderCommentsList(comments: Comment[], isAdmin: boolean): string {
 	if (!comments?.length) return `<p>${t('item.noComments')}</p>`;
 
 	return comments.map((c) => {
-		const content = window.marked && window.DOMPurify
-			? window.DOMPurify.sanitize(window.marked.parse(c.text))
-			: c.text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+		const content = DOMPurify.sanitize(marked.parse(c.text) as string);
 
 		return `
 			<div id="comment-${c.uuid}" class="comment" style="display:flex;gap:10px">
@@ -265,13 +265,7 @@ export async function itemView(ctx: RouteContext): Promise<string> {
 	// Render description
 	const descEl = document.createElement('div');
 	const rawDesc = res.description ?? '';
-	if (window.marked && window.DOMPurify) {
-		descEl.innerHTML = window.DOMPurify.sanitize(window.marked.parse(rawDesc));
-	} else if (window.marked) {
-		descEl.innerHTML = window.marked.parse(rawDesc);
-	} else {
-		descEl.textContent = rawDesc;
-	}
+	descEl.innerHTML = DOMPurify.sanitize(marked.parse(rawDesc) as string);
 	const descriptionHtml = descEl.innerHTML;
 
 	// Header tools

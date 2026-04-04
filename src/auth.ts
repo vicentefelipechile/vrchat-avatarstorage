@@ -45,12 +45,13 @@ export async function createSession(c: Context<{ Bindings: Env }>, user: { usern
     if (!secret) throw new Error('JWT_SECRET is not defined');
 
     const payload = {
-        sub: user.username,
-        role: user.is_admin ? 'admin' : 'user',
-        exp: Math.floor(Date.now() / 1000) + MAX_AGE, // Token expiration
-    };
+		sub: user.username,
+		role: user.is_admin ? 'admin' : 'user',
+		jti: crypto.randomUUID(),
+		exp: Math.floor(Date.now() / 1000) + MAX_AGE, // Token expiration
+	};
 
-    const token = await sign(payload, secret, 'HS256');
+	const token = await sign(payload, secret, 'HS256');
 
     setCookie(c, COOKIE_NAME, token, {
         httpOnly: true,
@@ -75,31 +76,38 @@ export async function getAuthUser(c: Context<{ Bindings: Env }>): Promise<{ user
     if (!secret) return null;
 
     try {
-        const payload = await verify(token, secret, 'HS256');
-        const username = payload.sub as string;
+		const payload = await verify(token, secret, 'HS256');
+		const username = payload.sub as string;
 
-        const cachedUser = await c.env.VRCSTORAGE_KV.get(`user:${username}`, 'json') as { username: string; is_admin: boolean } | null;
-        if (cachedUser) {
-            return cachedUser;
-        }
+		// 1. JWT denylist — reject tokens that were explicitly revoked (logout / password change)
+		if (payload.jti) {
+			const denied = await c.env.VRCSTORAGE_KV.get(`deny:${payload.jti}`);
+			if (denied) return null;
+		}
 
-        // 2. Query DB
-        const user = await c.env.DB.prepare('SELECT * FROM users WHERE username = ?').bind(username).first<User>();
-        if (!user) return null;
+		// 2. KV session cache
+		const cachedUser = await c.env.VRCSTORAGE_KV.get(`user:${username}`, 'json') as { username: string; is_admin: boolean } | null;
+		if (cachedUser) {
+			return cachedUser;
+		}
 
-        const sessionUser = {
-            username: user.username,
-            is_admin: user.is_admin === 1,
-        };
+		// 3. Query DB
+		const user = await c.env.DB.prepare('SELECT * FROM users WHERE username = ?').bind(username).first<User>();
+		if (!user) return null;
 
-        // 3. Update KV
-        await c.env.VRCSTORAGE_KV.put(`user:${username}`, JSON.stringify(sessionUser), { expirationTtl: 60 * 60 * 24 * 7 }); // 7 Days
+		const sessionUser = {
+			username: user.username,
+			is_admin: user.is_admin === 1,
+		};
 
-        return sessionUser;
-    } catch (e) {
-        // Invalid token
-        return null;
-    }
+		// 4. Update KV
+		await c.env.VRCSTORAGE_KV.put(`user:${username}`, JSON.stringify(sessionUser), { expirationTtl: 60 * 60 * 24 * 7 }); // 7 Days
+
+		return sessionUser;
+	} catch (e) {
+		// Invalid token
+		return null;
+	}
 }
 
 export async function deleteSession(c: Context<{ Bindings: Env }>) {
@@ -114,12 +122,20 @@ export async function deleteSession(c: Context<{ Bindings: Env }>) {
 		maxAge: 0,
 	});
 
-	// Invalidate the KV session cache so the JWT cannot be replayed after logout.
+	// Invalidate the KV session cache AND add the JWT to the denylist so it
+	// cannot be replayed after logout — even if the attacker still holds the raw token.
 	if (token && c.env?.JWT_SECRET) {
 		try {
 			const payload = await verify(token, c.env.JWT_SECRET, 'HS256');
 			if (payload?.sub) {
 				await c.env.VRCSTORAGE_KV.delete(`user:${payload.sub as string}`);
+			}
+			// Denylist the specific token ID for its remaining lifetime
+			if (payload?.jti) {
+				const remainingTtl = Math.max(0, (payload.exp as number) - Math.floor(Date.now() / 1000));
+				if (remainingTtl > 0) {
+					await c.env.VRCSTORAGE_KV.put(`deny:${payload.jti}`, '1', { expirationTtl: remainingTtl });
+				}
 			}
 		} catch {
 			// Token already invalid — nothing to revoke

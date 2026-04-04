@@ -243,6 +243,7 @@ users.get('/status', async (c) => {
 		username: user ? user.username : null,
 		is_admin: user ? !!user.is_admin : false,
 		avatar_url: user ? user.avatar_url : null,
+		has_password: user ? !!user.password_hash : false,
 	});
 });
 
@@ -353,9 +354,15 @@ users.post('/me/password', async (c) => {
 	const user = await c.env.DB.prepare('SELECT * FROM users WHERE username = ?').bind(authUser.username).first<User>();
 	if (!user) return c.json({ error: 'User not found' }, 404);
 
-	// Re-authentication: verify current password before accepting the new one.
-	const isMatch = await verifyPassword(current_password, user.password_hash);
-	if (!isMatch) return c.json({ error: 'Current password is incorrect' }, 403);
+	// OAuth-only accounts have an empty password_hash. They are allowed to set an initial
+	// password without providing current_password. Password-based accounts always require
+	// current_password as a re-authentication step to prevent XSS → CSRF chains.
+	const hasPassword = !!user.password_hash;
+	if (hasPassword) {
+		if (!current_password) return c.json({ error: 'Current password is required' }, 400);
+		const isMatch = await verifyPassword(current_password, user.password_hash);
+		if (!isMatch) return c.json({ error: 'Current password is incorrect' }, 403);
+	}
 
 	// 2FA verification: if the user has 2FA enabled, a valid code must be provided.
 	if (user.two_factor_enabled === 1) {

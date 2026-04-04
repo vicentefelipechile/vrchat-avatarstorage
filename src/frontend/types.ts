@@ -12,6 +12,7 @@ export interface AuthUser {
 	is_admin?: boolean;
 	loggedIn?: boolean;
 	avatar_url?: string;
+	has_password?: boolean;
 }
 
 export interface AppState {
@@ -125,8 +126,10 @@ export interface CacheEntry {
 	timestamp: number;
 }
 
+
+
 // -------------------------------------------------------------------------
-// Third-party globals (CDN)
+// Third-party globals (CDN — Turnstile only)
 // -------------------------------------------------------------------------
 
 export interface TurnstileOptions {
@@ -142,15 +145,6 @@ export interface TurnstileInstance {
 	getResponse(widgetId?: string): string;
 }
 
-export interface MarkedInstance {
-	parse(src: string): string;
-	use(options: Record<string, unknown>): void;
-}
-
-export interface DOMPurifyInstance {
-	sanitize(dirty: string, config?: Record<string, unknown>): string;
-}
-
 // -------------------------------------------------------------------------
 // Window augmentation
 // -------------------------------------------------------------------------
@@ -161,8 +155,6 @@ declare global {
 		navigateTo: (url: string) => void;
 		setLanguage: (lang: string) => void;
 		turnstile?: TurnstileInstance;
-		marked?: MarkedInstance;
-		DOMPurify?: DOMPurifyInstance;
 	}
 }
 

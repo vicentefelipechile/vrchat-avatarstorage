@@ -2,6 +2,9 @@
 // utils.ts — Shared frontend utilities
 // =========================================================================
 
+import { marked } from 'marked';
+import DOMPurify from 'dompurify';
+
 // -------------------------------------------------------------------------
 // Image resizing
 // -------------------------------------------------------------------------
@@ -62,9 +65,7 @@ export function stripMarkdown(md: string): string {
 // -------------------------------------------------------------------------
 
 export function renderMarkdown(container: HTMLElement, raw: string): void {
-	if (!window.marked) { container.textContent = raw; return; }
-
-	const html = window.DOMPurify ? window.DOMPurify.sanitize(window.marked.parse(raw)) : window.marked.parse(raw);
+	const html = DOMPurify.sanitize(marked.parse(raw) as string);
 	container.innerHTML = html;
 
 	// Post-process > [!NOTE / TIP / WARNING / …] blockquotes

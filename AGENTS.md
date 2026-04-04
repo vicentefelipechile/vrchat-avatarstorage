@@ -267,6 +267,8 @@ STOP. Your knowledge of Cloudflare Workers APIs and limits may be outdated. Alwa
 - `rateLimit`: Uses KV to store counts. Key format: `rate_limit:{prefix}:{key}`.
 - `getAuthUser`: Helper in `src/auth.ts` to retrieve user from session/cookie.
 
+> **Note:** `GET /api/version` (in `src/routes/system.ts`) is **intentionally public and unauthenticated**. It exposes deployment metadata (version ID, commit hash, compatibility date, Cloudflare Ray ID, colo, country) for debugging and monitoring purposes. This is a deliberate design decision — do not gate it behind auth or flag it as information disclosure.
+
 ## Core Logic & Helpers
 
 ### Sanitization
