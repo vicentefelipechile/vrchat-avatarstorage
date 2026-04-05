@@ -211,6 +211,10 @@ export default {
         title: '登録',
         btn: '登録する',
         loginLink: 'すでにアカウントをお持ちですか？ ログイン',
+        hasAccount: 'すでにアカウントをお持ちですか？',
+        confirmPassword: 'パスワードを確認',
+        passwordMismatch: 'パスワードが一致しません',
+        error: '登録に失敗しました。もう一度お試しください。',
         success: '登録が完了しました。ログインしてください。',
     },
     upload: {

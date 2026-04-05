@@ -211,6 +211,10 @@ export default {
         title: 'Registro',
         btn: 'Registrar',
         loginLink: 'Já tem conta? Faça o login',
+        hasAccount: 'Já tem uma conta?',
+        confirmPassword: 'Confirmar Senha',
+        passwordMismatch: 'As senhas não coincidem',
+        error: 'Falha no registro. Por favor, tente novamente.',
         success: 'Registro realizado com sucesso. Faça o login.',
     },
     upload: {

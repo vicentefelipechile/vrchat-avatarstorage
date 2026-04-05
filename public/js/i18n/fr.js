@@ -212,6 +212,10 @@ export default {
         title: 'Inscription',
         btn: "S'inscrire",
         loginLink: 'Déjà un compte ? Se connecter',
+        hasAccount: 'Vous avez déjà un compte ?',
+        confirmPassword: 'Confirmer le mot de passe',
+        passwordMismatch: 'Les mots de passe ne correspondent pas',
+        error: "L'inscription a échoué. Veuillez réessayer.",
         success: 'Inscription réussie. Veuillez vous connecter.',
     },
     upload: {

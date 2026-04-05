@@ -206,7 +206,16 @@ export default {
         errorTaken: '该用户名已被使用。',
         errorInvalid: '用户名必须为3到32个字符，只能包含字母、数字和下划线。',
     },
-    register: { title: '注册', btn: '注册', loginLink: '已有账号？登录', success: '注册成功。请登录。' },
+    register: {
+        title: '注册',
+        btn: '注册',
+        loginLink: '已有账号？登录',
+        hasAccount: '已有账号？',
+        confirmPassword: '确认密码',
+        passwordMismatch: '两次输入的密码不一致',
+        error: '注册失败，请重试。',
+        success: '注册成功。请登录。',
+    },
     upload: {
         title: '上传资源',
         name: '标题',

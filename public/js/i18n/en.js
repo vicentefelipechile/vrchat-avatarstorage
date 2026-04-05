@@ -210,6 +210,10 @@ export default {
 		title: 'Register',
 		btn: 'Sign Up',
 		loginLink: 'Already have an account? Login',
+		hasAccount: 'Already have an account?',
+		confirmPassword: 'Confirm Password',
+		passwordMismatch: 'Passwords do not match',
+		error: 'Registration failed. Please try again.',
 		success: 'Registration successful. Please login.',
 	},
 	upload: {
