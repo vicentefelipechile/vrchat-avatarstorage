@@ -3,7 +3,7 @@
 // =========================================================================
 
 import { t } from '../i18n';
-import { renderTurnstile } from '../utils';
+import { renderTurnstile, showToast } from '../utils';
 import { navigateTo } from '../router';
 import type { RouteContext } from '../types';
 
@@ -22,7 +22,7 @@ export async function registerView(_ctx: RouteContext): Promise<string> {
 	return `
 		<div class="login-box">
 			<h1>${t('register.title')}</h1>
-			<div id="register-error" class="danger"></div>
+
 			<form id="register-form">
 				<div class="form-group">
 					<label for="username">${t('login.username')}</label>
@@ -53,7 +53,6 @@ export function registerAfter(_ctx: RouteContext): void {
 	renderTurnstile('#turnstile-register');
 
 	const form = document.getElementById('register-form') as HTMLFormElement | null;
-	const errorDiv = document.getElementById('register-error')!;
 
 	form?.addEventListener('submit', async (e) => {
 		e.preventDefault();
@@ -65,13 +64,12 @@ export function registerAfter(_ctx: RouteContext): void {
 		const confirm = (document.getElementById('confirm-password') as HTMLInputElement).value;
 
 		if (password !== confirm) {
-			errorDiv.textContent = t('register.passwordMismatch');
+			showToast(t('register.passwordMismatch'), 'error');
 			return;
 		}
 
 		btn.disabled = true;
 		btn.textContent = t('common.loading');
-		errorDiv.textContent = '';
 
 		const token = (new FormData(form)).get('cf-turnstile-response') as string;
 
@@ -85,14 +83,15 @@ export function registerAfter(_ctx: RouteContext): void {
 
 			if (res.ok) {
 				localStorage.removeItem('auth_state');
-				window.location.href = '/';
+				navigateTo('/login');
+				showToast(t('register.success'), 'success');
 			} else {
-				errorDiv.textContent = data.error ?? t('register.error');
+				showToast(data.error ?? t('register.error'), 'error');
 				window.turnstile?.reset();
 				restore();
 			}
 		} catch {
-			errorDiv.textContent = t('common.networkError') || 'Network error';
+			showToast(t('common.networkError'), 'error');
 			restore();
 		}
 	});

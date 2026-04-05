@@ -10,10 +10,10 @@
 		"start": "wrangler dev",
 		"cf-typegen": "wrangler types",
 		"seed": "tsx src/test/setup/populate.ts",
-		"check-i18n": "tsx src/check-i18n.ts",
 		"build-frontend": "node src/frontend/build-frontend.mjs",
 		"build-frontend:dev": "node src/frontend/build-frontend.mjs --dev",
-		"build-frontend:watch": "node src/frontend/build-frontend.mjs --watch --dev"
+		"build-frontend:watch": "node src/frontend/build-frontend.mjs --watch --dev",
+		"i18n-manager": "node src/tools/i18n-manager.mjs"
 	},
 	"devDependencies": {
 		"@types/dompurify": "^3.0.5",

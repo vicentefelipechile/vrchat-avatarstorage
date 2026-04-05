@@ -32,7 +32,7 @@ This guide is for agentic coding agents (like yourself) operating in the VRCStor
 | **Build Frontend (Dev)** | `npm run build-frontend:dev` (development bundle with source maps) |
 | **Watch Frontend** | `npm run build-frontend:watch` (esbuild watch mode, dev bundle) |
 | **Generate Types** | `npm run cf-typegen` (updates `worker-configuration.d.ts` from `wrangler.jsonc`) |
-| **Check i18n** | `npm run check-i18n` (validates translation file consistency) |
+| **Manage i18n** | `npm run i18n-manager [ADD\|LIST\|CHECK] ...` (see [i18n section](#i18n-frontend)) |
 | **Seed DB** | `npm run seed` (populates local D1 with test data via `src/test/setup/populate.ts`) |
 | **Linting** | `npx prettier --check .` (Formatting check) |
 
@@ -151,7 +151,8 @@ src/
     2fa.ts                # TOTP / two-factor logic
     google.ts             # Google OAuth helpers
   auth.ts                 # getAuthUser helper (session/cookie resolution)
-  check-i18n.ts           # CLI script: validates i18n locale consistency
+  tools/
+    i18n-manager.mjs      # CLI script: add/inspect translation keys (npm run i18n-manager)
   frontend/               # TypeScript SPA source (compiled by esbuild)
     build-frontend.mjs    # esbuild script: bundles src/frontend/ → public/js/bundle.js
                           # --dev flag enables source maps; --watch flag enables watch mode
@@ -316,7 +317,97 @@ Locale files live in `public/js/i18n/` as ES modules (`export default { ... }`).
 - **Supported locales:** `cn`, `de`, `en`, `es`, `fr`, `it`, `jp`, `nl`, `pl`, `pt`, `ru`, `tr`.
 - **Loader:** `src/frontend/i18n.ts` handles dynamic locale loading.
 - **No Fallbacks:** NEVER use fallback strings with the `t()` function (e.g., avoid `t('key') || 'Fallback'`). Just use `t('key')`. Fallbacks make it harder to detect missing translations.
-- **Consistency check:** Run `npm run check-i18n` to detect missing keys, orphan keys, or missing categories across all locale files. The script exits with code `1` if issues are found (CI-safe).
+- **Consistency check:** Run `npm run i18n-manager CHECK` to detect missing keys across all locale files (compact one-line-per-key output). Exits with code `1` if issues are found (CI-safe).
+
+#### Adding keys to locale files
+
+Use the `npm run i18n-manager` tool instead of editing files by hand.
+
+```bash
+# Add one key to one locale
+npm run i18n-manager ADD ES register.confirmPassword="Confirmar contraseña"
+
+# Add a nested key (subsection)
+npm run i18n-manager ADD ES dmca.advanced.claimLabel="Reclamación"
+
+# Add multiple keys to one locale at once
+npm run i18n-manager ADD ES register.confirmPassword="Confirmar contraseña" register.hasAccount="¿Ya tienes cuenta?"
+
+# Dry run — previews changes without writing
+npm run i18n-manager ADD DRY ES register.confirmPassword="Confirmar contraseña"
+```
+
+**Rules:**
+- Locale codes are case-insensitive: `EN`, `ES`, `DE`, `FR`, `IT`, `JP`, `CN`, `NL`, `PL`, `PT`, `RU`, `TR`.
+- Key format is dot-notation at any depth: `section.leaf` or `section.subsection.leaf`.
+- If the key already exists in the target locale, it is skipped silently.
+- After running, always verify with `npm run i18n-manager CHECK`.
+
+**For agents:** When adding keys to multiple locales, **run one command per locale** — do not chain all locales in a single command. This keeps output readable and makes it easier to spot failures per locale.
+
+```bash
+# Preferred: one command per locale
+npm run i18n-manager ADD ES register.confirmPassword="Confirmar contraseña"
+npm run i18n-manager ADD DE register.confirmPassword="Passwort bestätigen"
+npm run i18n-manager ADD FR register.confirmPassword="Confirmer le mot de passe"
+```
+
+#### Inspecting keys before editing (LIST mode)
+
+Before adding keys, use `LIST` to see what already exists in a section. This avoids duplicate work and confirms the structure.
+
+```bash
+# Show all keys in a section for one locale
+npm run i18n-manager LIST ES register
+
+# Show specific leaf keys
+npm run i18n-manager LIST ES register.confirmPassword register.success
+
+# Show a nested subsection across ALL locales (useful to spot which locales are missing it)
+npm run i18n-manager LIST dmca.advanced
+
+# Show all top-level section names for a locale
+npm run i18n-manager LIST ES
+```
+
+LIST mode never writes files — it is always safe to run.
+
+#### Workflow: filling missing translations
+
+Use this exact sequence when tasked with fixing missing i18n keys.
+
+**Step 1 — Find what is missing**
+```bash
+npm run i18n-manager CHECK
+```
+Output is one line per missing key: `section.key: locale1, locale2, ...`
+
+**Step 2 — Read the English reference value**
+```bash
+npm run i18n-manager LIST EN section.key
+# Example:
+npm run i18n-manager LIST EN dmca.modeSimple
+```
+
+**Step 3 — Add the translation to each missing locale (one command per locale)**
+```bash
+npm run i18n-manager ADD DE dmca.modeSimple="Einfach"
+npm run i18n-manager ADD IT dmca.modeSimple="Semplice"
+npm run i18n-manager ADD NL dmca.modeSimple="Eenvoudig"
+```
+
+**Step 4 — Verify and repeat**
+```bash
+npm run i18n-manager CHECK
+```
+Repeat from Step 2 until output is `✔ All keys present in all locales.`
+
+> [!TIP]
+> When multiple keys share the same missing locales (e.g. all `dmca.simple.*` missing in `de, it, nl, pl, tr`), batch them in one command per locale:
+> ```bash
+> npm run i18n-manager ADD DE dmca.simple.intro="..." dmca.simple.reporterName="..."
+> npm run i18n-manager ADD IT dmca.simple.intro="..." dmca.simple.reporterName="..."
+> ```
 
 ### R2 Media Lifecycle & Orphan Cleanup
 
@@ -542,7 +633,7 @@ When adding a new language to the project, follow **ALL** of these steps in orde
 
 #### Step 4: Validate i18n sync
 ```bash
-npm run check-i18n
+npm run i18n-manager CHECK
 ```
 This must report **0 missing keys** and **0 orphan keys**. Fix any issues before proceeding.
 
@@ -576,7 +667,7 @@ When implementing a new feature or fixing a bug, verify the following:
 6. [ ] **Caching:** Does the KV cache need to be cleared/updated after this change (e.g., `VRCSTORAGE_KV.delete(...)`)?
 7. [ ] **Database:** Are queries using prepared statements and `.bind(...)`?
 8. [ ] **Schema Migration:** If the DB schema changed, did you create a new `migrations/NNNN_description.sql` file following the sequential numbering convention?
-9. [ ] **i18n:** If new translatable strings were added to the frontend, did you update all locale files in `public/js/i18n/` and run `npm run check-i18n`?
+9. [ ] **i18n:** If new translatable strings were added to the frontend, did you update all locale files in `public/js/i18n/` and run `npm run i18n-manager CHECK`?
 10. [ ] **Frontend Build:** After editing anything in `src/frontend/`, did you rebuild with `npm run build-frontend`?
 11. [ ] **Typegen:** Did you run `npm run cf-typegen` if you changed `wrangler.jsonc`?
 12. [ ] **R2 Media Cleanup:** If your change deletes a record that directly owns a media file (e.g. a blog post with a cover image), did you explicitly delete the R2 object and `media` row **before** the parent DELETE? If you added a new table or column that can embed media via Markdown, did you add the corresponding `INSTR` guard to **both** `src/index.ts` (cron) and `src/routes/admin.ts` (manual cleanup)?
@@ -586,7 +677,7 @@ When implementing a new feature or fixing a bug, verify the following:
 - **Memory/CPU Limits (1102):** Worker execution exceeded limits. Optimize D1 queries or R2 stream handling.
 - **Binding Errors:** Check `wrangler.jsonc` and ensure the variable name in code matches the binding name.
 - **D1 Deadlocks:** SQLite in D1 is single-writer. Keep transactions short.
-- **i18n out of sync:** Run `npm run check-i18n` to identify which keys or locales are missing.
+- **i18n out of sync:** Run `npm run i18n-manager CHECK` to identify which keys or locales are missing.
 - **Bundle not updating:** Remember to run `npm run build-frontend` after editing files in `src/frontend/`. In dev mode, use `npm run dev` which runs esbuild in watch mode automatically.
 - **Source maps in production:** The `src/frontend/build-frontend.mjs` only emits source maps when the `--dev` flag is passed. Production deploys via `npm run deploy` never include `.map` files.
 - **Orphaned media not cleaned up:** The cron only deletes files older than 24 hours. Check that the new reference type is covered in both the `src/index.ts` cron query and the `src/routes/admin.ts` endpoint. If a new text column embeds images, add `AND NOT EXISTS (SELECT 1 FROM <table> WHERE INSTR(<table>.<column>, m.r2_key) > 0)` to both queries.
