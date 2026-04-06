@@ -4,13 +4,19 @@
 // =============================================================================
 // Usage:
 //   npm run i18n-manager ADD [DRY] <LOCALE> key=value [key2=value2 ...]
+//   npm run i18n-manager FILL [DRY] <path-to-json>
 //   npm run i18n-manager LIST [LOCALE] path1 [path2 ...]
+//   npm run i18n-manager CHECK [JSON]
 //
 // Subcommands:
-//   ADD    Insert one or more keys into a locale file.
+//   ADD    Insert one or more keys into a locale file (for 1-2 keys).
+//   FILL   Batch-insert keys from a JSON file (for large batches).
+//          JSON format: { "locale": { "section.key": "value", ... }, ... }
 //   LIST   Inspect existing keys. Multiple paths accepted.
 //          If path resolves to a section, all keys in it are printed.
 //          If path resolves to a leaf key, its value is printed.
+//   CHECK  Report missing keys. Add JSON for machine-readable output
+//          that writes to node_modules/.tmp/i18n-check.json.
 //
 // Key format:
 //   section.leaf              e.g. register.confirmPassword
@@ -20,10 +26,14 @@
 //   npm run i18n-manager ADD ES register.confirmPassword="Confirmar contraseña"
 //   npm run i18n-manager ADD ES dmca.advanced.claimLabel="Reclamación"
 //   npm run i18n-manager ADD DRY ES register.confirmPassword="Confirmar contraseña"
+//   npm run i18n-manager FILL node_modules/.tmp/i18n-fill.json
+//   npm run i18n-manager FILL DRY node_modules/.tmp/i18n-fill.json
 //   npm run i18n-manager LIST ES register
 //   npm run i18n-manager LIST ES register.confirmPassword register.success
 //   npm run i18n-manager LIST ES dmca.advanced
 //   npm run i18n-manager LIST dmca.advanced
+//   npm run i18n-manager CHECK
+//   npm run i18n-manager CHECK JSON
 //
 // Notes:
 //   - Locale codes are case-insensitive: EN, ES, DE, FR, IT, JP, CN, NL, PL, PT, RU, TR
@@ -31,7 +41,7 @@
 //   - After adding, always verify with: npm run i18n-manager CHECK
 // =============================================================================
 
-import { readFileSync, writeFileSync } from 'fs';
+import { readFileSync, writeFileSync, mkdirSync, unlinkSync, existsSync } from 'fs';
 import { join, dirname, resolve } from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 
@@ -41,9 +51,9 @@ const I18N_DIR = join(__dirname, '../../public/js/i18n');
 const KNOWN_LOCALES = new Set(['en', 'es', 'de', 'fr', 'it', 'jp', 'cn', 'nl', 'pl', 'pt', 'ru', 'tr']);
 const ALL_LOCALES = [...KNOWN_LOCALES];
 
-// ---------------------------------------------------------------------------
+// =============================================================================
 // Section navigation
-// ---------------------------------------------------------------------------
+// =============================================================================
 
 /**
  * Find the content bounds of a named section starting at searchFrom,
@@ -131,9 +141,9 @@ function readLeafValue(sectionContent, leafKey) {
 	return m[1].slice(1, -1).replace(/\\'/g, "'").replace(/\\"/g, '"');
 }
 
-// ---------------------------------------------------------------------------
+// =============================================================================
 // LIST mode
-// ---------------------------------------------------------------------------
+// =============================================================================
 
 function runList(locale, paths) {
 	const targetLocales = locale ? [locale] : ALL_LOCALES;
@@ -212,9 +222,71 @@ function runList(locale, paths) {
 	}
 }
 
-// ---------------------------------------------------------------------------
+// =============================================================================
 // ADD mode
-// ---------------------------------------------------------------------------
+// =============================================================================
+
+/**
+ * Find the bounds of the top-level `export default { ... }` object.
+ * Returns { contentStart, contentEnd } or null.
+ */
+function findExportBounds(source) {
+	const match = source.match(/export\s+default\s*\{/);
+	if (!match) return null;
+	const contentStart = match.index + match[0].length;
+	let depth = 1;
+	let pos = contentStart;
+	while (pos < source.length && depth > 0) {
+		if (source[pos] === '{') depth++;
+		else if (source[pos] === '}') depth--;
+		pos++;
+	}
+	return { contentStart, contentEnd: pos - 1 };
+}
+
+/**
+ * Ensure all sections in the given path exist, creating empty ones as needed.
+ * Returns the (possibly modified) source string, or null on fatal error.
+ */
+function ensureSectionPath(source, sectionParts) {
+	const eol = source.includes('\r\n') ? '\r\n' : '\n';
+
+	for (let i = 0; i < sectionParts.length; i++) {
+		const pathSoFar = sectionParts.slice(0, i + 1);
+		if (navigatePath(source, pathSoFar)) continue;
+
+		// Parent bounds: either the previous section or the export default
+		const parentPath = sectionParts.slice(0, i);
+		const parentBounds = parentPath.length ? navigatePath(source, parentPath) : findExportBounds(source);
+		if (!parentBounds) {
+			console.error(`  ✘ Cannot create section "${sectionParts[i]}": parent not found.`);
+			return null;
+		}
+
+		let { contentStart, contentEnd } = parentBounds;
+		const parentContent = source.slice(contentStart, contentEnd);
+
+		// Detect indent from parent content
+		const indentMatch = parentContent.match(/\n([ \t]+)\w/);
+		const indent = indentMatch ? indentMatch[1] : '\t'.repeat(i + 1);
+
+		// Find the last non-whitespace character before the parent's closing }
+		let lastNonWS = contentEnd - 1;
+		while (lastNonWS >= contentStart && /\s/.test(source[lastNonWS])) lastNonWS--;
+
+		// Ensure trailing comma on the previous sibling's closing }
+		if (lastNonWS >= contentStart && source[lastNonWS] === '}' && source[lastNonWS + 1] !== ',') {
+			source = source.slice(0, lastNonWS + 1) + ',' + source.slice(lastNonWS + 1);
+			contentEnd++;
+			lastNonWS++; // now points to the comma
+		}
+
+		// Build new section and splice it in, replacing any trailing whitespace
+		const newSection = `${eol}${indent}${sectionParts[i]}: {${eol}${indent}},${eol}`;
+		source = source.slice(0, lastNonWS + 1) + newSection + source.slice(contentEnd);
+	}
+	return source;
+}
 
 function insertKey(source, dotPath, value) {
 	const parts = dotPath.split('.');
@@ -225,6 +297,10 @@ function insertKey(source, dotPath, value) {
 		console.error(`  ✘ "${dotPath}" has no section prefix. Use "section.key" format.`);
 		return null;
 	}
+
+	// Auto-create missing sections
+	source = ensureSectionPath(source, sectionParts);
+	if (source === null) return null;
 
 	const bounds = navigatePath(source, sectionParts);
 	if (!bounds) {
@@ -237,7 +313,7 @@ function insertKey(source, dotPath, value) {
 
 	// Detect indentation from the section itself
 	const firstPropMatch = sectionContent.match(/\n([ \t]+)\w/);
-	const leafIndent = firstPropMatch ? firstPropMatch[1] : (source.includes('\t') ? '\t\t' : '        ');
+	const leafIndent = firstPropMatch ? firstPropMatch[1] : (source.includes('\t') ? '\t'.repeat(sectionParts.length + 1) : '        ');
 
 	if (new RegExp(`['"]?${leafKey}['"]?\\s*:`).test(sectionContent)) {
 		console.log(`  ↷ "${dotPath}" already exists — skipped.`);
@@ -250,8 +326,10 @@ function insertKey(source, dotPath, value) {
 	const allMatches = [...sectionContent.matchAll(propRe)];
 
 	if (!allMatches.length) {
-		console.error(`  ✘ No string properties found in "${sectionParts.join('.')}" to insert after.`);
-		return null;
+		// Empty section — insert as the first property right after the opening {
+		const escaped = value.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+		const newLine = `\n${leafIndent}${leafKey}: '${escaped}',`;
+		return source.slice(0, contentStart) + newLine + source.slice(contentStart);
 	}
 
 	const lastMatch = allMatches[allMatches.length - 1];
@@ -294,9 +372,66 @@ function runAdd(map, dryRun) {
 	if (!dryRun && totalWritten > 0) console.log('\nVerify with: npm run i18n-manager CHECK');
 }
 
-// ---------------------------------------------------------------------------
+// =============================================================================
+// FILL mode — batch-insert from JSON file
+// =============================================================================
+
+function runFill(filePath, dryRun) {
+	const absPath = resolve(filePath);
+	if (!existsSync(absPath)) {
+		console.error(`✘ File not found: ${absPath}`);
+		process.exit(1);
+	}
+
+	let json;
+	try {
+		json = JSON.parse(readFileSync(absPath, 'utf-8'));
+	} catch (e) {
+		console.error(`✘ Invalid JSON: ${e.message}`);
+		process.exit(1);
+	}
+
+	if (typeof json !== 'object' || json === null || Array.isArray(json)) {
+		console.error('✘ JSON must be an object: { "locale": { "section.key": "value", ... }, ... }');
+		process.exit(1);
+	}
+
+	if (dryRun) console.log('Dry run — files will NOT be written.\n');
+
+	// Build the same Map structure that runAdd expects
+	const map = new Map();
+	for (const [locale, keys] of Object.entries(json)) {
+		const loc = locale.toLowerCase();
+		if (!KNOWN_LOCALES.has(loc)) {
+			console.warn(`  ⚠ Unknown locale "${locale}" — skipped.`);
+			continue;
+		}
+		if (typeof keys !== 'object' || keys === null || Array.isArray(keys)) {
+			console.warn(`  ⚠ Locale "${locale}" value must be an object — skipped.`);
+			continue;
+		}
+		const entries = [];
+		for (const [key, value] of Object.entries(keys)) {
+			if (typeof value !== 'string') {
+				console.warn(`  ⚠ [${loc}] "${key}" value is not a string — skipped.`);
+				continue;
+			}
+			entries.push({ key, value });
+		}
+		if (entries.length) map.set(loc, entries);
+	}
+
+	if (!map.size) {
+		console.error('✘ No valid entries found in JSON.');
+		process.exit(1);
+	}
+
+	runAdd(map, dryRun);
+}
+
+// =============================================================================
 // CHECK mode — compact missing-key report
-// ---------------------------------------------------------------------------
+// =============================================================================
 
 /**
  * Recursively collect all dot-paths for leaf (string/number) values in an object.
@@ -321,8 +456,10 @@ function getByPath(obj, dotPath) {
 	return dotPath.split('.').reduce((acc, k) => acc?.[k], obj);
 }
 
-async function runCheck() {
-	// Load all locale files as live JS modules
+/**
+ * Load all locale data as JS modules. Shared by both check modes.
+ */
+async function loadAllLocaleData() {
 	const data = {};
 	for (const loc of ALL_LOCALES) {
 		const url = pathToFileURL(resolve(I18N_DIR, `${loc}.js`)).href;
@@ -333,6 +470,11 @@ async function runCheck() {
 			console.warn(`  ✘ Could not load ${loc}.js — skipped.`);
 		}
 	}
+	return data;
+}
+
+async function runCheck(jsonMode) {
+	const data = await loadAllLocaleData();
 
 	const ref = data['en'];
 	if (!ref) { console.error('Could not load en.js as reference.'); process.exit(1); }
@@ -350,6 +492,29 @@ async function runCheck() {
 		if (absentIn.length) missing.push({ dotPath, absentIn });
 	}
 
+	if (jsonMode) {
+		const entries = missing.map(({ dotPath, absentIn }) => ({
+			key: dotPath,
+			locales: absentIn,
+			en: String(getByPath(ref, dotPath) ?? ''),
+		}));
+		const json = JSON.stringify({
+			total: missing.length,
+			missing: entries
+		}, null, 2);
+		const tmpDir = join(__dirname, '../../node_modules/.tmp');
+		mkdirSync(tmpDir, { recursive: true });
+		const outPath = join(tmpDir, 'i18n-check.json');
+		writeFileSync(outPath, json, 'utf-8');
+		if (!missing.length) {
+			console.log('✔ All keys present in all locales.');
+		} else {
+			console.log(`✘ ${missing.length} missing keys → ${outPath}`);
+			process.exit(1);
+		}
+		return;
+	}
+
 	if (!missing.length) {
 		console.log('✔ All keys present in all locales.');
 		return;
@@ -363,9 +528,9 @@ async function runCheck() {
 	process.exit(1);
 }
 
-// ---------------------------------------------------------------------------
+// =============================================================================
 // Helpers
-// ---------------------------------------------------------------------------
+// =============================================================================
 
 function loadSource(locale) {
 	try {
@@ -419,9 +584,9 @@ function parseListArgs(args) {
 	return { locale, paths };
 }
 
-// ---------------------------------------------------------------------------
+// =============================================================================
 // Main
-// ---------------------------------------------------------------------------
+// =============================================================================
 const args = process.argv.slice(2);
 const subcommand = args[0]?.toUpperCase();
 
@@ -437,10 +602,21 @@ if (subcommand === 'LIST') {
 	const { map, dryRun } = parseAddArgs(args.slice(1));
 	if (!map.size) { printHelp(); process.exit(0); }
 	runAdd(map, dryRun);
+} else if (subcommand === 'FILL') {
+	const rest = args.slice(1);
+	const dryRun = rest[0]?.toUpperCase() === 'DRY';
+	const filePath = dryRun ? rest[1] : rest[0];
+	if (!filePath) {
+		console.error('Error: FILL requires a JSON file path.');
+		printHelp();
+		process.exit(1);
+	}
+	runFill(filePath, dryRun);
 } else if (subcommand === 'CHECK') {
-	await runCheck();
+	const jsonMode = args.slice(1).some((a) => a.toUpperCase() === 'JSON');
+	await runCheck(jsonMode);
 } else {
-	console.error(`Unknown subcommand "${args[0]}". Use ADD, LIST, or CHECK.`);
+	console.error(`Unknown subcommand "${args[0]}". Use ADD, FILL, LIST, or CHECK.`);
 	printHelp();
 	process.exit(1);
 }
@@ -450,8 +626,9 @@ function printHelp() {
 
 Usage:
   npm run i18n-manager ADD [DRY] <LOCALE> key=value [key2=value2 ...]
+  npm run i18n-manager FILL [DRY] <path-to-json>
   npm run i18n-manager LIST [LOCALE] [path1 path2 ...]
-  npm run i18n-manager CHECK
+  npm run i18n-manager CHECK [JSON]
 
 Locale codes (case-insensitive): EN ES DE FR IT JP CN NL PL PT RU TR
 
@@ -459,14 +636,17 @@ Key format:
   section.leaf               register.confirmPassword
   section.subsection.leaf    dmca.advanced.claimLabel
 
+FILL JSON format:
+  { "locale": { "section.key": "translated value", ... }, ... }
+
 Examples:
   npm run i18n-manager ADD ES register.confirmPassword="Confirmar contraseña"
-  npm run i18n-manager ADD ES dmca.advanced.claimLabel="Reclamación"
   npm run i18n-manager ADD DRY ES register.confirmPassword="Confirmar contraseña"
+  npm run i18n-manager FILL node_modules/.tmp/i18n-fill.json
+  npm run i18n-manager FILL DRY node_modules/.tmp/i18n-fill.json
   npm run i18n-manager LIST ES register
-  npm run i18n-manager LIST ES register.confirmPassword register.success
-  npm run i18n-manager LIST ES dmca.advanced
   npm run i18n-manager LIST dmca.advanced
   npm run i18n-manager CHECK
+  npm run i18n-manager CHECK JSON
 `);
 }

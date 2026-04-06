@@ -32,7 +32,7 @@ This guide is for agentic coding agents (like yourself) operating in the VRCStor
 | **Build Frontend (Dev)** | `npm run build-frontend:dev` (development bundle with source maps) |
 | **Watch Frontend** | `npm run build-frontend:watch` (esbuild watch mode, dev bundle) |
 | **Generate Types** | `npm run cf-typegen` (updates `worker-configuration.d.ts` from `wrangler.jsonc`) |
-| **Manage i18n** | `npm run i18n-manager [ADD\|LIST\|CHECK] ...` (see [i18n section](#i18n-frontend)) |
+| **Manage i18n** | `npm run i18n-manager [ADD\|FILL\|LIST\|CHECK] ...` (see [i18n section](#i18n-frontend)) |
 | **Seed DB** | `npm run seed` (populates local D1 with test data via `src/test/setup/populate.ts`) |
 | **Linting** | `npx prettier --check .` (Formatting check) |
 
@@ -319,21 +319,12 @@ Locale files live in `public/js/i18n/` as ES modules (`export default { ... }`).
 - **No Fallbacks:** NEVER use fallback strings with the `t()` function (e.g., avoid `t('key') || 'Fallback'`). Just use `t('key')`. Fallbacks make it harder to detect missing translations.
 - **Consistency check:** Run `npm run i18n-manager CHECK` to detect missing keys across all locale files (compact one-line-per-key output). Exits with code `1` if issues are found (CI-safe).
 
-#### Adding keys to locale files
+#### Adding a few keys (ADD mode — for 1–2 keys)
 
-Use the `npm run i18n-manager` tool instead of editing files by hand.
+Use `ADD` for quick, small corrections — one or two keys at most.
 
 ```bash
-# Add one key to one locale
 npm run i18n-manager ADD ES register.confirmPassword="Confirmar contraseña"
-
-# Add a nested key (subsection)
-npm run i18n-manager ADD ES dmca.advanced.claimLabel="Reclamación"
-
-# Add multiple keys to one locale at once
-npm run i18n-manager ADD ES register.confirmPassword="Confirmar contraseña" register.hasAccount="¿Ya tienes cuenta?"
-
-# Dry run — previews changes without writing
 npm run i18n-manager ADD DRY ES register.confirmPassword="Confirmar contraseña"
 ```
 
@@ -342,72 +333,59 @@ npm run i18n-manager ADD DRY ES register.confirmPassword="Confirmar contraseña"
 - Key format is dot-notation at any depth: `section.leaf` or `section.subsection.leaf`.
 - If the key already exists in the target locale, it is skipped silently.
 - After running, always verify with `npm run i18n-manager CHECK`.
+- Run **one command per locale** — do not chain all locales in a single command.
 
-**For agents:** When adding keys to multiple locales, **run one command per locale** — do not chain all locales in a single command. This keeps output readable and makes it easier to spot failures per locale.
+#### Batch-filling missing translations (FILL mode — for 3+ keys)
 
+When CHECK reports many missing keys, use `FILL` instead of `ADD`. FILL reads translations from a JSON file, eliminating shell escaping issues entirely.
+
+**Step 1 — Get the missing keys with EN reference values**
 ```bash
-# Preferred: one command per locale
-npm run i18n-manager ADD ES register.confirmPassword="Confirmar contraseña"
-npm run i18n-manager ADD DE register.confirmPassword="Passwort bestätigen"
-npm run i18n-manager ADD FR register.confirmPassword="Confirmer le mot de passe"
+npm run i18n-manager CHECK JSON
+```
+This writes a compact JSON file to `node_modules/.tmp/i18n-check.json` with one line per missing key (key, locales, EN value). Read it.
+
+**Step 2 — Create a JSON file with all translations**
+
+Write a JSON file to `./i18n-fill.json`. Format:
+```json
+{
+  "de": {
+    "dmca.modeSimple": "Einfacher Modus",
+    "dmca.modeAdvanced": "Erweiterter Modus"
+  },
+  "it": {
+    "blog.title": "Blog",
+    "blog.subtitle": "Articoli e notizie di VRCStorage"
+  }
+}
 ```
 
-#### Inspecting keys before editing (LIST mode)
+**Step 3 — Run FILL**
+```bash
+npm run i18n-manager FILL ./i18n-fill.json
+```
+Add `DRY` before the path to preview without writing.
 
-Before adding keys, use `LIST` to see what already exists in a section. This avoids duplicate work and confirms the structure.
+**Step 4 — Verify**
+```bash
+npm run i18n-manager CHECK
+```
+Repeat until output is `✔ All keys present in all locales.`
+
+> [!IMPORTANT]
+> **Always use FILL for batch operations (3+ keys).** Using ADD for many keys across many locales is error-prone due to shell escaping. FILL avoids this entirely because translations are written to a JSON file (no shell involved).
+
+#### Inspecting keys (LIST mode)
 
 ```bash
-# Show all keys in a section for one locale
-npm run i18n-manager LIST ES register
-
-# Show specific leaf keys
-npm run i18n-manager LIST ES register.confirmPassword register.success
-
-# Show a nested subsection across ALL locales (useful to spot which locales are missing it)
-npm run i18n-manager LIST dmca.advanced
-
-# Show all top-level section names for a locale
-npm run i18n-manager LIST ES
+npm run i18n-manager LIST ES register          # All keys in a section
+npm run i18n-manager LIST ES register.success   # Specific leaf key
+npm run i18n-manager LIST dmca.advanced         # Across ALL locales
+npm run i18n-manager LIST ES                    # Top-level sections
 ```
 
 LIST mode never writes files — it is always safe to run.
-
-#### Workflow: filling missing translations
-
-Use this exact sequence when tasked with fixing missing i18n keys.
-
-**Step 1 — Find what is missing**
-```bash
-npm run i18n-manager CHECK
-```
-Output is one line per missing key: `section.key: locale1, locale2, ...`
-
-**Step 2 — Read the English reference value**
-```bash
-npm run i18n-manager LIST EN section.key
-# Example:
-npm run i18n-manager LIST EN dmca.modeSimple
-```
-
-**Step 3 — Add the translation to each missing locale (one command per locale)**
-```bash
-npm run i18n-manager ADD DE dmca.modeSimple="Einfach"
-npm run i18n-manager ADD IT dmca.modeSimple="Semplice"
-npm run i18n-manager ADD NL dmca.modeSimple="Eenvoudig"
-```
-
-**Step 4 — Verify and repeat**
-```bash
-npm run i18n-manager CHECK
-```
-Repeat from Step 2 until output is `✔ All keys present in all locales.`
-
-> [!TIP]
-> When multiple keys share the same missing locales (e.g. all `dmca.simple.*` missing in `de, it, nl, pl, tr`), batch them in one command per locale:
-> ```bash
-> npm run i18n-manager ADD DE dmca.simple.intro="..." dmca.simple.reporterName="..."
-> npm run i18n-manager ADD IT dmca.simple.intro="..." dmca.simple.reporterName="..."
-> ```
 
 ### R2 Media Lifecycle & Orphan Cleanup
 
