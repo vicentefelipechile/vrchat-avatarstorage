@@ -377,7 +377,10 @@ export async function uploadAfter(_ctx: RouteContext): Promise<void> {
 			if (!isValidExt) { color = 'red'; sym = '✗'; msg += ` - ${t('upload.errorInvalidFileType')}`; }
 			else if (!isValidSize) { color = 'red'; sym = '✗'; msg += ` - ${t('upload.errorFileTooLarge')} (max ${maxMb}MB)`; }
 			const div = document.createElement('div');
-			div.innerHTML = `<span style="color:${color}">${sym} ${msg}</span>`;
+			const span = document.createElement('span');
+			span.style.color = color;
+			span.textContent = `${sym} ${msg}`;
+			div.appendChild(span);
 			fileInfo.appendChild(div);
 		});
 		if (!allValid) { uploadError.textContent = `${t('upload.error')}: Invalid files.`; fileInput.value = ''; }
