@@ -143,6 +143,17 @@ export async function wikiAfter(ctx: RouteContext): Promise<void> {
 
 	const contentEl = document.getElementById('wiki-content')!;
 
+	function escapeHtml(input: string): string {
+		// Use DOMPurify to strip any HTML, then escape special characters.
+		const sanitized = DOMPurify.sanitize(input, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] });
+		return sanitized
+			.replace(/&/g, '&amp;')
+			.replace(/</g, '&lt;')
+			.replace(/>/g, '&gt;')
+			.replace(/"/g, '&quot;')
+			.replace(/'/g, '&#39;');
+	}
+
 	// -----------------------------------------------------------------------
 	// Load topic content
 	// -----------------------------------------------------------------------
@@ -190,10 +201,11 @@ export async function wikiAfter(ctx: RouteContext): Promise<void> {
 					return;
 				} catch { /* fall through to error */ }
 			}
+			const safeTopicId = escapeHtml(topicId);
 			contentEl.innerHTML = `
 				<div style="padding:20px;text-align:center;color:#cc0000">
 					<h3>${t('common.error')}</h3>
-					<p>Could not load content for topic: ${topicId}</p>
+					<p>Could not load content for topic: ${safeTopicId}</p>
 				</div>`;
 		}
 	}
