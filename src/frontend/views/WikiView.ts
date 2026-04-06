@@ -317,7 +317,8 @@ export async function wikiAfter(ctx: RouteContext): Promise<void> {
 
 	// Browser back/forward inside wiki
 	window.onpopstate = () => {
-		const tp = new URLSearchParams(location.search).get('topic') ?? 'home';
+		const rawTp = new URLSearchParams(location.search).get('topic');
+		const tp = (rawTp && isValidTopic(rawTp)) ? rawTp : 'home';
 		loadTopic(tp, false);
 	};
 
