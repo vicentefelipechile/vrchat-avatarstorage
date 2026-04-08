@@ -10,11 +10,12 @@
 
 VRCStorage se enfoca **exclusivamente en contenido para avatares de VRChat**: avatares, assets y ropa/accesorios. La sección `worlds` se descarta funcionalmente (los datos existentes no se tocan, pero no se implementan filtros ni rutas nuevas para ella).
 
-Este documento cubre tres cambios grandes que se implementan juntos:
+Este documento cubre cuatro cambios grandes que se implementan juntos:
 
 1. **Rutas separadas por categoría** con filtros facetados: `/api/avatars`, `/api/assets`, `/api/clothes`.
 2. **Sistema de autores** normalizado con página pública `/authors/:slug`.
 3. **Admin Dashboard** completamente rediseñado en `/admin` (solo desktop).
+4. **Sistema de historial extendido** — los cambios en metadatos se guardan en `resource_history` y se muestran en `HistoryView`.
 
 ---
 
@@ -141,7 +142,6 @@ Ambas empiezan vacías. No hay datos a migrar del sistema viejo.
 | `booth_url` | TEXT NULL | BOOTH (mercado JP) |
 | `gumroad_url` | TEXT NULL | Gumroad |
 | `patreon_url` | TEXT NULL | Patreon |
-| `discord_url` | TEXT NULL | Discord server |
 | `created_at` | INTEGER | Unix timestamp |
 | `updated_at` | INTEGER | Unix timestamp |
 
@@ -154,17 +154,20 @@ Ambas empiezan vacías. No hay datos a migrar del sistema viejo.
 | `resource_uuid` | TEXT PK FK | → `resources.uuid` ON DELETE CASCADE | ✓ |
 | `author_uuid` | TEXT NULL FK | → `avatar_authors.uuid` (admin vincula después) | — |
 | `author_name_raw` | TEXT NULL | Texto libre del uploader | — |
-| `gender` | TEXT NOT NULL | `male`, `female`, `undefined` | ✓ |
-| `body_size` | TEXT NOT NULL | `tall`, `medium`, `small` | ✓ |
-| `avatar_type` | TEXT NOT NULL | `anime`, `furry`, `human`, `monster`, `robot`, `other` | ✓ |
+| `gender` | TEXT NOT NULL | `male`, `female`, `androgynous`, `undefined` | ✓ |
+| `body_size` | TEXT NOT NULL | `tiny`, `small`, `medium`, `tall`, `giant` | ✓ |
+| `avatar_type` | TEXT NOT NULL | `anime`, `kemono`, `furry`, `human`, `semi-realistic`, `chibi`, `mecha`, `monster`, `fantasy`, `sci-fi`, `vtuber`, `other` | ✓ |
 | `is_nsfw` | INTEGER DEFAULT 0 | `0` / `1` | ✓ |
 | `has_physbones` | INTEGER DEFAULT 0 | `0` / `1` | ✓ |
 | `has_face_tracking` | INTEGER DEFAULT 0 | `0` / `1` | ✓ |
 | `has_dps` | INTEGER DEFAULT 0 | `0` / `1` | ✓ |
+| `has_gogoloco` | INTEGER DEFAULT 0 | `0` / `1` | ✓ |
+| `has_toggles` | INTEGER DEFAULT 0 | `0` / `1` | ✓ |
+| `is_quest_optimized` | INTEGER DEFAULT 0 | `0` / `1` | ✓ |
 | `sdk_version` | TEXT DEFAULT 'sdk3' | `sdk3`, `sdk2` | ✓ |
 | `platform` | TEXT DEFAULT 'cross' | `pc`, `quest`, `cross` | ✓ |
 
-**Índices:** `gender`, `avatar_type`, `body_size`, `is_nsfw`, `platform`, `author_uuid`
+**Índices:** `gender`, `avatar_type`, `body_size`, `is_nsfw`, `platform`, `author_uuid`, `has_gogoloco`, `is_quest_optimized`
 
 **Flujo de autor:** el uploader escribe texto libre → se guarda en `author_name_raw`. El admin crea el registro en `avatar_authors` y ejecuta "Vincular recursos" → setea `author_uuid`. La búsqueda filtra por `author_uuid` (JOIN exacto) o como fallback usa `LIKE` sobre `author_name_raw`.
 
@@ -173,29 +176,29 @@ Ambas empiezan vacías. No hay datos a migrar del sistema viejo.
 | Columna | Tipo | Valores | Obligatorio |
 |---|---|---|---|
 | `resource_uuid` | TEXT PK FK | → `resources.uuid` ON DELETE CASCADE | ✓ |
-| `asset_type` | TEXT NOT NULL | `prop`, `shader`, `prefab`, `script`, `vfx`, `sound`, `animation`, `tool`, `other` | ✓ |
+| `asset_type` | TEXT NOT NULL | `prop`, `shader`, `particle`, `vfx`, `prefab`, `script`, `animation`, `avatar-base`, `texture-pack`, `sound`, `tool`, `hud`, `other` | ✓ |
 | `is_nsfw` | INTEGER DEFAULT 0 | `0` / `1` | ✓ |
-| `is_erp` | INTEGER DEFAULT 0 | `0` / `1` | ✓ |
-| `is_funny` | INTEGER DEFAULT 0 | `0` / `1` | ✓ |
+| `unity_version` | TEXT DEFAULT '2022' | `2019`, `2022` | ✓ |
 | `platform` | TEXT DEFAULT 'cross' | `pc`, `quest`, `cross` | ✓ |
 | `sdk_version` | TEXT DEFAULT 'sdk3' | `sdk3`, `sdk2` | ✓ |
 
-**Índices:** `asset_type`, `is_nsfw`, `platform`
+**Índices:** `asset_type`, `is_nsfw`, `platform`, `unity_version`
 
 ### 4.4 Tabla `clothes_meta`
 
 | Columna | Tipo | Valores | Obligatorio |
 |---|---|---|---|
 | `resource_uuid` | TEXT PK FK | → `resources.uuid` ON DELETE CASCADE | ✓ |
-| `gender_fit` | TEXT NOT NULL | `male`, `female`, `unisex` | ✓ |
-| `clothing_type` | TEXT NOT NULL | `top`, `bottom`, `dress`, `fullbody`, `shoes`, `accessory`, `underwear`, `other` | ✓ |
+| `gender_fit` | TEXT NOT NULL | `male`, `female`, `unisex`, `kemono` | ✓ |
+| `clothing_type` | TEXT NOT NULL | `top`, `jacket`, `bottom`, `dress`, `fullbody`, `swimwear`, `shoes`, `legwear`, `hat`, `hair`, `accessory`, `tail`, `ears`, `wings`, `body-part`, `underwear`, `other` | ✓ |
 | `is_base` | INTEGER DEFAULT 0 | `0` / `1` | ✓ |
 | `base_avatar_uuid` | TEXT NULL FK | → `resources.uuid` (avatar base referenciado) | Solo si `is_base=1` |
 | `base_avatar_name_raw` | TEXT NULL | Texto libre si el avatar base no está en la DB | — |
 | `is_nsfw` | INTEGER DEFAULT 0 | `0` / `1` | ✓ |
+| `has_physbones` | INTEGER DEFAULT 0 | `0` / `1` | ✓ |
 | `platform` | TEXT DEFAULT 'cross' | `pc`, `quest`, `cross` | ✓ |
 
-**Índices:** `gender_fit`, `clothing_type`, `is_base`, `is_nsfw`, `platform`
+**Índices:** `gender_fit`, `clothing_type`, `is_base`, `is_nsfw`, `platform`, `has_physbones`
 
 ---
 
@@ -249,13 +252,16 @@ POST /api/admin/users/:username/role    Cambiar rol de usuario
 
 | Parámetro | Valores |
 |---|---|
-| `gender` | `male`, `female`, `undefined` |
-| `body_size` | `tall`, `medium`, `small` |
-| `avatar_type` | `anime`, `furry`, `human`, `monster`, `robot`, `other` |
+| `gender` | `male`, `female`, `androgynous`, `undefined` |
+| `body_size` | `tiny`, `small`, `medium`, `tall`, `giant` |
+| `avatar_type` | `anime`, `kemono`, `furry`, `human`, `semi-realistic`, `chibi`, `mecha`, `monster`, `fantasy`, `sci-fi`, `vtuber`, `other` |
 | `is_nsfw` | `0`, `1` |
 | `has_physbones` | `0`, `1` |
 | `has_face_tracking` | `0`, `1` |
 | `has_dps` | `0`, `1` |
+| `has_gogoloco` | `0`, `1` |
+| `has_toggles` | `0`, `1` |
+| `is_quest_optimized` | `0`, `1` |
 | `platform` | `pc`, `quest`, `cross` |
 | `sdk_version` | `sdk3`, `sdk2` |
 | `author_uuid` | UUID del autor normalizado |
@@ -267,10 +273,9 @@ POST /api/admin/users/:username/role    Cambiar rol de usuario
 
 | Parámetro | Valores |
 |---|---|
-| `asset_type` | `prop`, `shader`, `prefab`, `script`, `vfx`, `sound`, `animation`, `tool`, `other` |
+| `asset_type` | `prop`, `shader`, `particle`, `vfx`, `prefab`, `script`, `animation`, `avatar-base`, `texture-pack`, `sound`, `tool`, `hud`, `other` |
 | `is_nsfw` | `0`, `1` |
-| `is_erp` | `0`, `1` |
-| `is_funny` | `0`, `1` |
+| `unity_version` | `2019`, `2022` |
 | `platform` | `pc`, `quest`, `cross` |
 | `sort_by`, `sort_order`, `page`, `limit` | Estándar |
 
@@ -278,10 +283,11 @@ POST /api/admin/users/:username/role    Cambiar rol de usuario
 
 | Parámetro | Valores |
 |---|---|
-| `gender_fit` | `male`, `female`, `unisex` |
-| `clothing_type` | `top`, `bottom`, `dress`, `fullbody`, `shoes`, `accessory`, `underwear`, `other` |
+| `gender_fit` | `male`, `female`, `unisex`, `kemono` |
+| `clothing_type` | `top`, `jacket`, `bottom`, `dress`, `fullbody`, `swimwear`, `shoes`, `legwear`, `hat`, `hair`, `accessory`, `tail`, `ears`, `wings`, `body-part`, `underwear`, `other` |
 | `is_base` | `0`, `1` |
 | `is_nsfw` | `0`, `1` |
+| `has_physbones` | `0`, `1` |
 | `platform` | `pc`, `quest`, `cross` |
 | `sort_by`, `sort_order`, `page`, `limit` | Estándar |
 
@@ -415,7 +421,7 @@ Solo se muestran los iconos de redes para los campos que no sean `null`. La pág
 │               │                                                      │
 │  [sidebar     │                                                      │
 │   220px fijo] │  [área de contenido, flex-1, scroll independiente]   │
-└───────────────┴───────────────────────────────────────────────────── ┘
+└───────────────┴──────────────────────────────────────────────────────┘
 ```
 
 **Secciones del dashboard:**
@@ -488,12 +494,16 @@ El POST va al endpoint correcto según categoría (`/api/avatars`, `/api/assets`
 | Archivo | Cambio |
 |---|---|
 | `src/index.ts` | Montar las 4 nuevas rutas (`/api/avatars`, `/api/assets`, `/api/clothes`, `/api/authors`) |
-| `src/types.ts` | Añadir interfaces `AvatarAuthor`, `AvatarMeta`, `AssetMeta`, `ClothesMeta` |
+| `src/types.ts` | Añadir interfaces `AvatarAuthor`, `AvatarMeta`, `AssetMeta`, `ClothesMeta`, `ResourceHistoryEntry` extendido |
 | `src/validators.ts` | Añadir schemas Zod para las 4 nuevas entidades |
 | `src/routes/admin.ts` | Añadir `GET /api/admin/stats`, `GET /api/admin/users`, `GET /api/admin/resources` |
+| `src/routes/avatars.ts` | Al crear/editar: insertar snapshot `meta_edit` en `resource_history` |
+| `src/routes/assets.ts` | Ídem para assets |
+| `src/routes/clothes.ts` | Ídem para ropa |
 | `src/frontend/app.ts` | Registrar 4 nuevas rutas frontend (`/avatars`, `/assets`, `/clothes`, `/authors/:slug`) |
 | `src/frontend/views/UploadView.ts` | Eliminar bloque legacy, añadir bloques de metadatos por categoría, cambiar endpoint POST |
 | `src/frontend/views/AdminView.ts` | Rediseño completo con layout sidebar + secciones |
+| `src/frontend/views/HistoryView.ts` | Renderizar entradas `meta_edit` con diff visual de metadatos |
 | `public/style.css` | Añadir `@import` de los 3 nuevos archivos CSS |
 
 ### Archivos sin cambios
@@ -502,7 +512,6 @@ El POST va al endpoint correcto según categoría (`/api/avatars`, `/api/assets`
 |---|---|
 | `src/routes/resources.ts` | Compatibilidad con favoritos, historial, ItemView, admin existente |
 | `src/frontend/views/CategoryView.ts` | Sigue como fallback para `worlds` |
-| `src/frontend/views/ItemView.ts` | Metadatos de categoría se muestran en iteración posterior |
 
 ---
 
@@ -519,6 +528,136 @@ El POST va al endpoint correcto según categoría (`/api/avatars`, `/api/assets`
 | Admin dashboard solo desktop | Interfaz densa; no tiene sentido en mobile |
 | Navegación del dashboard sin cambio de URL | JS-only; evita rutas adicionales; la URL `/admin` no cambia |
 | Rutas `/api/avatars` adicionales | `GET /api/resources` se mantiene intacto para no romper código existente |
+| Historial reutiliza `resource_history` | No se crea tabla nueva; se añade `change_type = 'meta_edit'` con JSON snapshot en `previous_data` |
+| Snapshot completo en cada edit de meta | Igual que `content_edit` — se guarda el estado **anterior** completo, no solo el campo cambiado. Permite reconstruir cualquier versión. |
+| diff visual en `HistoryView` calculado en cliente | El backend devuelve los snapshots crudos; el diff se calcula en el frontend para no añadir carga al worker |
+
+---
+
+## 9. Sistema de Historial Extendido
+
+### 9.1 Estado actual
+
+La tabla `resource_history` ya existe desde `0001_initial.sql`:
+
+```sql
+CREATE TABLE resource_history (
+    uuid          TEXT PRIMARY KEY,
+    resource_uuid TEXT NOT NULL,
+    actor_uuid    TEXT NOT NULL,
+    change_type   TEXT NOT NULL,    -- actualmente: 'content_edit' | 'tag_change' | 'approval'
+    previous_data TEXT NOT NULL,    -- JSON con el estado ANTERIOR al cambio
+    created_at    INTEGER DEFAULT (unixepoch())
+)
+```
+
+El flujo actual en `src/routes/resources.ts` (PUT /:uuid) hace un snapshot de `{title, description, category, tags}` **antes** de aplicar la edición y lo guarda como `change_type = 'content_edit'`.
+
+### 9.2 Extensión: `change_type = 'meta_edit'`
+
+Se añade un nuevo valor de `change_type` sin modificar la tabla:
+
+| `change_type` | Cuándo se genera | Contenido de `previous_data` |
+|---|---|---|
+| `content_edit` | Al editar título, descripción, categoría o tags | `{title, description, category, tags[]}` |
+| `meta_edit` | Al editar `avatar_meta`, `asset_meta` o `clothes_meta` | `{meta_type, fields: {...todos los campos antes del cambio}}` |
+| `approval` | Al aprobar o rechazar un recurso | `{is_active: bool}` |
+
+**Estructura del snapshot `meta_edit`:**
+
+```json
+{
+  "meta_type": "avatar_meta",
+  "fields": {
+    "gender": "female",
+    "body_size": "medium",
+    "avatar_type": "anime",
+    "is_nsfw": 0,
+    "has_physbones": 1,
+    "has_face_tracking": 0,
+    "has_dps": 0,
+    "has_gogoloco": 0,
+    "has_toggles": 1,
+    "is_quest_optimized": 0,
+    "sdk_version": "sdk3",
+    "platform": "cross",
+    "author_name_raw": "Manuka",
+    "author_uuid": null
+  }
+}
+```
+
+### 9.3 Cuándo se genera la entrada de historial
+
+| Operación | Behavior |
+|---|---|
+| **POST** `/api/avatars` (crear) | **No** genera entrada — es la creación inicial, no un cambio |
+| **PUT** `/api/avatars/:uuid` (editar metadatos) | Snapshot del estado **anterior** de `avatar_meta` → inserta `meta_edit` |
+| **POST** `/api/authors/:slug/link-resource` (admin vincula autor) | Snapshot del `author_uuid` e `author_name_raw` anteriores → inserta `meta_edit`. El `actor_uuid` es el admin que hizo la vinculación |
+| **PUT** `/api/assets/:uuid` o `/api/clothes/:uuid` | Mismo patrón — snapshot del `asset_meta` / `clothes_meta` anterior |
+
+El snapshot se genera y la actualización se aplican en el mismo `db.batch()` para garantizar atomicidad.
+
+### 9.4 Endpoint de historial
+
+El endpoint existente `GET /api/resources/:uuid/history` en `src/routes/resources.ts` devuelve todas las entradas de `resource_history` para un recurso. Se mantiene intacto — los nuevos `meta_edit` aparecen automáticamente en la misma respuesta.
+
+```json
+[
+  {
+    "uuid": "...",
+    "actor_username": "admin",
+    "actor_avatar_url": "...",
+    "change_type": "meta_edit",
+    "previous_data": "{\"meta_type\":\"avatar_meta\",\"fields\":{...}}",
+    "created_at": 1234567890
+  },
+  {
+    "uuid": "...",
+    "actor_username": "admin",
+    "change_type": "content_edit",
+    "previous_data": "{\"title\":\"...\",\"description\":\"...\",\"tags\":[...]}",
+    "created_at": 1234567800
+  }
+]
+```
+
+### 9.5 Renderizado en `HistoryView`
+
+El `HistoryView` actual muestra entradas `content_edit`. Se extiende para renderizar también `meta_edit`:
+
+**Para `content_edit`** (comportamiento actual, sin cambios):
+- Muestra diff de título, descripción y tags.
+
+**Para `meta_edit`** (nuevo):
+- Parsea `previous_data.fields` y lo compara contra el estado **actual** del meta (fetched aparte).
+- Renderiza una tabla de dos columnas: campo / valor anterior / valor actual.
+- Los campos con cambio se resaltan visualmente.
+- Si `meta_type = 'avatar_meta'` y `author_uuid` cambió de null a un UUID, se muestra `"Autor vinculado: [nombre del autor]"` como texto especial.
+
+**Para `approval`** (comportamiento actual, sin cambios):
+- Muestra si fue aprobado o rechazado.
+
+```
+┌────────────────────────────────────────────────────────────────────┐
+│  Historial de cambios — Nombre del Avatar                          │
+├────────────────────────────────────────────────────────────────────┤
+│  [👤 admin]  hace 2 horas              [meta_edit]                 │
+│                                                                    │
+│  Campo            │ Antes              │ Después                   │
+│  ─────────────────┼────────────────────┼───────────────────────    │
+│  platform         │ pc                 │ cross           ← cambio  │
+│  is_quest_opti... │ 0                  │ 1               ← cambio  │
+│  (otros campos sin cambios no se muestran)                         │
+├────────────────────────────────────────────────────────────────────┤
+│  [👤 admin]  hace 5 horas              [content_edit]              │
+│                                                                    │
+│  Título: "Manuka v1.0" → "Manuka v1.1"                             │
+│  Tags: +quest, -pc-only                                            │
+└────────────────────────────────────────────────────────────────────┘
+```
+
+Solo los campos que **cambiaron** se muestran en la fila de diff. Los campos sin cambio se omiten para no saturar la vista.
 
 ---
 
@@ -547,14 +686,16 @@ El POST va al endpoint correcto según categoría (`/api/avatars`, `/api/assets`
   - [ ] Tabla `avatar_meta` con todas las columnas definidas en §4.2
   - [ ] FK `resource_uuid` → `resources.uuid` ON DELETE CASCADE
   - [ ] FK nullable `author_uuid` → `avatar_authors.uuid`
-  - [ ] Índices en: `gender`, `avatar_type`, `body_size`, `is_nsfw`, `platform`, `author_uuid`
+  - [ ] Índices en: `gender`, `avatar_type`, `body_size`, `is_nsfw`, `platform`, `author_uuid`, `has_gogoloco`, `is_quest_optimized`
   - [ ] Tabla `asset_meta` con todas las columnas definidas en §4.3
   - [ ] FK `resource_uuid` → `resources.uuid` ON DELETE CASCADE
-  - [ ] Índices en: `asset_type`, `is_nsfw`, `platform`
+  - [ ] Índices en: `asset_type`, `is_nsfw`, `platform`, `unity_version`
   - [ ] Tabla `clothes_meta` con todas las columnas definidas en §4.4
   - [ ] FK `resource_uuid` → `resources.uuid` ON DELETE CASCADE
   - [ ] FK nullable `base_avatar_uuid` → `resources.uuid`
-  - [ ] Índices en: `gender_fit`, `clothing_type`, `is_base`, `is_nsfw`, `platform`
+  - [ ] Índices en: `gender_fit`, `clothing_type`, `is_base`, `is_nsfw`, `platform`, `has_physbones`
+
+> **Nota:** no se necesita migración para el sistema de historial. La tabla `resource_history` ya existe y el nuevo `change_type = 'meta_edit'` es solo un valor de texto en la columna existente.
 
 ---
 
@@ -565,6 +706,8 @@ El POST va al endpoint correcto según categoría (`/api/avatars`, `/api/assets`
   - [ ] Interface `AvatarMeta`
   - [ ] Interface `AssetMeta`
   - [ ] Interface `ClothesMeta`
+  - [ ] Tipo `MetaEditSnapshot` — `{ meta_type: 'avatar_meta' | 'asset_meta' | 'clothes_meta'; fields: Record<string, unknown> }`
+  - [ ] Tipo `HistoryChangeType` — unión `'content_edit' | 'meta_edit' | 'approval'`
 - [ ] Añadir en `src/validators.ts`
   - [ ] `AvatarAuthorSchema` (Zod)
   - [ ] `AvatarMetaSchema` (Zod, campos obligatorios marcados)
@@ -577,13 +720,19 @@ El POST va al endpoint correcto según categoría (`/api/avatars`, `/api/assets`
 
 - [ ] Crear `src/routes/avatars.ts`
   - [ ] `GET /api/avatars` — `INNER JOIN avatar_meta`, filtros facetados via `QueryBuilder`
-  - [ ] `POST /api/avatars` — crear en `resources` + insertar en `avatar_meta` con `db.batch()`
+  - [ ] `POST /api/avatars` — crear en `resources` + insertar en `avatar_meta` con `db.batch()` — **no genera historial** (creación inicial)
+  - [ ] `PUT /api/avatars/:uuid` — editar metadatos del avatar:
+    - [ ] Snapshot del `avatar_meta` actual → `previous_data` JSON con `meta_type: 'avatar_meta'`
+    - [ ] Insertar en `resource_history` con `change_type = 'meta_edit'` y `actor_uuid` del usuario
+    - [ ] Actualizar `avatar_meta` — todo en `db.batch()` para atomicidad
 - [ ] Crear `src/routes/assets.ts`
   - [ ] `GET /api/assets` — `INNER JOIN asset_meta`, filtros facetados
-  - [ ] `POST /api/assets` — crear en `resources` + insertar en `asset_meta` con `db.batch()`
+  - [ ] `POST /api/assets` — crear en `resources` + insertar en `asset_meta` con `db.batch()` — **no genera historial**
+  - [ ] `PUT /api/assets/:uuid` — snapshot de `asset_meta` + `meta_edit` + actualización en `db.batch()`
 - [ ] Crear `src/routes/clothes.ts`
   - [ ] `GET /api/clothes` — `INNER JOIN clothes_meta`, filtros facetados
-  - [ ] `POST /api/clothes` — crear en `resources` + insertar en `clothes_meta` con `db.batch()`
+  - [ ] `POST /api/clothes` — crear en `resources` + insertar en `clothes_meta` con `db.batch()` — **no genera historial**
+  - [ ] `PUT /api/clothes/:uuid` — snapshot de `clothes_meta` + `meta_edit` + actualización en `db.batch()`
 - [ ] Montar en `src/index.ts`
   - [ ] `app.route('/api/avatars', avatarsRouter)`
   - [ ] `app.route('/api/assets', assetsRouter)`
@@ -612,6 +761,16 @@ El POST va al endpoint correcto según categoría (`/api/avatars`, `/api/assets`
   - [ ] `GET /api/admin/stats` — batch de queries: usuarios totales, recursos por categoría, pendientes, autores, media total, media huérfana, últimas 5 subidas, últimos 5 registros
   - [ ] `GET /api/admin/users?q=&page=` — lista con búsqueda por username
   - [ ] `GET /api/admin/resources?category=&status=&q=&page=` — lista completa con filtros
+
+---
+
+## FASE 5B — Backend: Historial para Vinculación de Autores
+
+- [ ] En `src/routes/authors.ts`, endpoint `POST /api/authors/:slug/link-resource`:
+  - [ ] Antes de setear `avatar_meta.author_uuid`, leer el valor actual de `author_uuid` y `author_name_raw`
+  - [ ] Generar snapshot `{ meta_type: 'avatar_meta', fields: { author_uuid: <anterior>, author_name_raw: <anterior> } }`
+  - [ ] Insertar en `resource_history` con `change_type = 'meta_edit'`
+  - [ ] Actualizar `avatar_meta` y registrar historia en `db.batch()` para atomicidad
 
 ---
 
@@ -680,7 +839,7 @@ El POST va al endpoint correcto según categoría (`/api/avatars`, `/api/assets`
   - [ ] Paginación con filtros sincronizados en URL
   - [ ] Estado vacío si no hay resultados
 - [ ] Crear `src/frontend/views/AssetsView.ts`
-  - [ ] Panel: `asset_type`, `platform`, `sdk_version`, toggles `is_nsfw`, `is_erp`, `is_funny`
+  - [ ] Panel: `asset_type`, `platform`, `sdk_version`, toggles `is_nsfw`
   - [ ] Mismo layout, counter y paginación
 - [ ] Crear `src/frontend/views/ClothesView.ts`
   - [ ] Panel: `gender_fit`, `clothing_type`, `platform`, toggles `is_nsfw`, `is_base`
@@ -690,6 +849,21 @@ El POST va al endpoint correcto según categoría (`/api/avatars`, `/api/assets`
   - [ ] `route('/avatars', avatarsView, { after: avatarsAfter })`
   - [ ] `route('/assets', assetsView, { after: assetsAfter })`
   - [ ] `route('/clothes', clothesView, { after: clothesAfter })`
+
+---
+
+## FASE 8B — Frontend: HistoryView Extendido
+
+- [ ] Modificar `src/frontend/views/HistoryView.ts`
+  - [ ] Mantener renderizado actual de `content_edit` y `approval` sin cambios
+  - [ ] Añadir rama para `change_type === 'meta_edit'`:
+    - [ ] Parsear `previous_data` como `MetaEditSnapshot`
+    - [ ] Hacer fetch del estado actual del meta (`GET /api/avatars/:uuid`, `/api/assets/:uuid` o `/api/clothes/:uuid`) para obtener los valores actuales
+    - [ ] Calcular diff: iterar `fields` del snapshot y comparar contra los valores actuales del recurso
+    - [ ] Renderizar tabla con columnas: Campo / Antes / Después — solo filas donde el valor cambió
+    - [ ] Caso especial: si `author_uuid` cambió de `null` a un UUID, mostrar `"Autor vinculado: [nombre]"` en lugar del UUID crudo
+    - [ ] Si todos los campos del snapshot son iguales al actual (edit sin cambio real), mostrar `"Sin cambios detectados"`
+  - [ ] Añadir estilos inline o clases CSS para resaltar la columna "Antes" (texto tachado o color diferente) vs "Después"
 
 ---
 
@@ -742,9 +916,9 @@ El POST va al endpoint correcto según categoría (`/api/avatars`, `/api/assets`
 
 - [ ] Ejecutar `npm run i18n-manager CHECK JSON` — obtener claves faltantes
 - [ ] Crear `i18n-fill.json` con todas las traducciones nuevas (ver §6 para las claves)
-  - [ ] Claves de filtros de avatares: `filters.gender.*`, `filters.body_size.*`, `filters.avatar_type.*`, `filters.platform.*`, `filters.sdk.*`, `filters.nsfw`, `filters.physbones`, `filters.dps`, `filters.face_tracking`
-  - [ ] Claves de filtros de assets: `filters.asset_type.*`, `filters.erp`, `filters.funny`
-  - [ ] Claves de filtros de ropa: `filters.gender_fit.*`, `filters.clothing_type.*`, `filters.is_base`
+  - [ ] Claves de filtros de avatares: `filters.gender.*`, `filters.body_size.*`, `filters.avatar_type.*`, `filters.platform.*`, `filters.sdk.*`, `filters.nsfw`, `filters.physbones`, `filters.dps`, `filters.face_tracking`, `filters.gogoloco`, `filters.toggles`, `filters.quest_optimized`
+  - [ ] Claves de filtros de assets: `filters.asset_type.*`, `filters.erp`, `filters.funny`, `filters.free`, `filters.unity_version.*`
+  - [ ] Claves de filtros de ropa: `filters.gender_fit.*`, `filters.clothing_type.*`, `filters.is_base`, `filters.physbones`
   - [ ] Claves de UI del panel: `filters.title`, `filters.clear`, `filters.results_count`, `filters.sort_by`, `filters.sort_by.recent`, `filters.sort_by.popular`, `filters.sort_by.az`
   - [ ] Claves de página de autor: `authors.resources`, `authors.no_resources`, `authors.socials`
   - [ ] Claves del admin: secciones del sidebar (`admin.section.*`), formularios de autores, tablas
@@ -772,4 +946,9 @@ El POST va al endpoint correcto según categoría (`/api/avatars`, `/api/assets`
 - [ ] Admin Dashboard: toggle de rol admin en Usuarios
 - [ ] Admin Dashboard: limpieza de huérfanos y caché funcionan
 - [ ] Admin Dashboard: aviso "solo escritorio" en viewport < 1024px
+- [ ] **Historial:** editar metadatos de un avatar desde admin → verificar que aparece entrada `meta_edit` en `/resource/:uuid/history`
+- [ ] **Historial:** verificar que el diff muestra solo los campos que cambiaron
+- [ ] **Historial:** vincular un autor a un avatar → verificar entrada `meta_edit` con `author_uuid` en historial
+- [ ] **Historial:** publicar un avatar nuevo → verificar que **no** se genera ninguna entrada de historial
+- [ ] **Historial:** verificar que las entradas `content_edit` y `approval` siguen renderizando correctamente (sin regresiones)
 - [ ] Ejecutar `npx prettier --check .` — sin diferencias de formato
