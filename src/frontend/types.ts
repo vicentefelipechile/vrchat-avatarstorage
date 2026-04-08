@@ -111,21 +111,6 @@ export interface BlogPost {
 	tags?: string[];
 }
 
-// -------------------------------------------------------------------------
-// Cache
-// -------------------------------------------------------------------------
-
-export interface CacheOptions {
-	ttl?: number;
-	persistent?: boolean;
-	type?: 'json' | 'text';
-}
-
-export interface CacheEntry {
-	data: unknown;
-	timestamp: number;
-}
-
 
 
 // -------------------------------------------------------------------------

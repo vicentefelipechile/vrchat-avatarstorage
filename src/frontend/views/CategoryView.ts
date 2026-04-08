@@ -2,10 +2,27 @@
 // views/CategoryView.ts — Resource listing by category with pagination
 // =========================================================================
 
+// =========================================================================
+// Imports
+// =========================================================================
+
 import { DataCache } from '../cache';
 import { t } from '../i18n';
 import { stripMarkdown } from '../utils';
 import type { RouteContext, Resource } from '../types';
+
+// =========================================================================
+// Interfaces
+// =========================================================================
+
+interface CategoryViewData {
+	resources: Resource[];
+	pagination: {
+		page: number;
+		hasNextPage: boolean;
+		hasPrevPage: boolean
+	};
+}
 
 // =========================================================================
 // Helpers
@@ -80,12 +97,9 @@ export async function categoryView(ctx: RouteContext): Promise<string> {
 	let hasMore = false;
 
 	try {
-		const data = (await DataCache.fetch(cacheKey, { ttl: 60_000, persistent: true })) as {
-			resources: Resource[];
-			pagination: { page: number; hasNextPage: boolean; hasPrevPage: boolean };
-		};
-		resources = data.resources ?? [];
-		hasMore = data.pagination?.hasNextPage ?? false;
+		const data = (await DataCache.fetch<CategoryViewData>(cacheKey, { ttl: 900_000 }));
+		resources = data.resources;
+		hasMore = data.pagination.hasNextPage;
 	} catch {
 		return `
 			<div class="category-header">

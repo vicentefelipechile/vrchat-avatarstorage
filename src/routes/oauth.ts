@@ -25,14 +25,19 @@ const oauth = new Hono<{ Bindings: Env }>();
 // Constants
 // =========================================================================================================
 
+const USERNAME_ALFAUMERIC = new RegExp(/^[a-zA-Z0-9_]+$/)
+
+const OAUTH_COMPLETE_TIME = 7 * 24 * 60 * 60 // One Week
+
 const OAUTH_STATE_TTL = 60 * 10; // 10 minutes
+
 const COMPLETE_SCHEMA = z.object({
 	token: z.string().min(1).max(128),
 	username: z
 		.string()
 		.min(3)
 		.max(32)
-		.regex(/^[a-zA-Z0-9_]+$/, 'Username may only contain letters, numbers, and underscores'),
+		.regex(USERNAME_ALFAUMERIC, 'Username may only contain letters, numbers, and underscores'),
 });
 
 // =========================================================================================================
@@ -133,7 +138,7 @@ oauth.post('/complete', async (c) => {
 		// Create session for the newly registered user
 		await createSession(c, { username: user.username, is_admin: user.is_admin });
 		await c.env.VRCSTORAGE_KV.put(`user:${user.username}`, JSON.stringify({ username: user.username, is_admin: false }), {
-			expirationTtl: 60 * 60 * 24 * 7,
+			expirationTtl: OAUTH_COMPLETE_TIME,
 		});
 
 		return c.json({ success: true });

@@ -24,6 +24,14 @@ const wiki = new Hono<{ Bindings: Env }>();
 // Get global wiki comments
 // =========================================================================================================
 
+export interface WikiComments {
+	uuid: string;
+	text: string;
+	timestamp: number;
+	author: string;
+	author_avatar: string;
+}
+
 wiki.get('/comments', async (c) => {
 	// Join with users to get username and avatar
 	const { results } = await c.env.DB.prepare(
@@ -37,7 +45,7 @@ wiki.get('/comments', async (c) => {
          JOIN users u ON c.author_uuid = u.uuid 
          ORDER BY c.created_at DESC
          LIMIT 50`, // Limit to last 50 comments for now
-	).all<any>();
+	).all<WikiComments>();
 
 	return c.json(results);
 });

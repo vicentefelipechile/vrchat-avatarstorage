@@ -174,7 +174,6 @@ resources.get('/:uuid', async (c) => {
             r.is_active,
             r.created_at,
             r.updated_at,
-            u.username        AS author_username,
             tm.r2_key         AS thumbnail_key,
             rm_ref.r2_key     AS reference_image_key,
             COALESCE((
@@ -235,8 +234,6 @@ resources.get('/:uuid', async (c) => {
 		is_active: row.is_active,
 		created_at: row.created_at,
 		updated_at: row.updated_at,
-		// Author: only username, never UUID or avatar
-		author: row.author_username ? { username: row.author_username } : null,
 		// Gallery
 		thumbnail_key: row.thumbnail_key ?? null,
 		reference_image_key: row.reference_image_key ?? null,
