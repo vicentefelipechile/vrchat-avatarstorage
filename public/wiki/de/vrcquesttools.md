@@ -3,12 +3,14 @@
 <span class="badge">TOOL</span>
 
 ## Was ist das?
+
 VRCQuestTools ist eine Unity-Erweiterung, entwickelt von **kurotu**, die es ermöglicht, für PC designte VRChat-Avatare auf die Android-Plattform (Meta Quest/PICO) zu konvertieren. Dieses Tool automatisiert den Prozess, einen Avatar mit den strikten Performance-Einschränkungen mobiler Geräte kompatibel zu machen.
 
 > [!NOTE]
 > VRCQuestTools arbeitet in seinen neuesten Versionen über das **Non-Destructive Modular Framework (NDMF)**-System, das den Avatar verarbeitet, ohne die Originaldateien zu verändern.
 
 ## Wofür ist es?
+
 - Konvertierung von PC-Avataren zu Android mit wenigen Klicks
 - Automatische Reduzierung von Polygonen und Materialien
 - Entfernung von nicht Quest-kompatiblen Komponenten (Lights, Cloth, etc.)
@@ -20,13 +22,14 @@ VRCQuestTools ist eine Unity-Erweiterung, entwickelt von **kurotu**, die es erm�
 
 ## Systemanforderungen
 
-| Anforderung | Mindestversion |
-|-------------|----------------|
-| Unity | 2019.4.31f1, 2022.3.6f1 oder 2022.3.22f1 |
-| VRChat SDK | Avatars 3.3.0 oder neuer |
-| Android Build Support Modul | In Unity installiert |
+| Anforderung                 | Mindestversion                           |
+| --------------------------- | ---------------------------------------- |
+| Unity                       | 2019.4.31f1, 2022.3.6f1 oder 2022.3.22f1 |
+| VRChat SDK                  | Avatars 3.3.0 oder neuer                 |
+| Android Build Support Modul | In Unity installiert                     |
 
 ## Wo bekommt man es?
+
 - **Offizielle Seite:** [kurotu.github.io/VRCQuestTools](https://kurotu.github.io/VRCQuestTools/)
 - **Dokumentation:** [VRCQuestTools Dokumentation](https://kurotu.github.io/VRCQuestTools/docs/intro)
 - **GitHub:** [kurotu/VRCQuestTools](https://github.com/kurotu/VRCQuestTools)
@@ -64,12 +67,12 @@ VRCQuestTools ist eine Unity-Erweiterung, entwickelt von **kurotu**, die es erm�
 
 ## Quest Performance-Limits
 
-| Metrik | Exzellent | Gut | Mittel | Schlecht | Sehr Schlecht |
-|--------|-----------|-----|--------|----------|---------------|
-| **Dreiecke** | 7.500 | 10.000 | 15.000 | 20.000 | >20.000 |
-| **Material Slots** | 1 | 1 | 1 | 2 | >2 |
-| **Skinned Meshes** | 1 | 1 | 1 | 2 | >2 |
-| **PhysBones** | 2 | 4 | 6 | 8 | >8 |
+| Metrik             | Exzellent | Gut    | Mittel | Schlecht | Sehr Schlecht |
+| ------------------ | --------- | ------ | ------ | -------- | ------------- |
+| **Dreiecke**       | 7.500     | 10.000 | 15.000 | 20.000   | >20.000       |
+| **Material Slots** | 1         | 1      | 1      | 2        | >2            |
+| **Skinned Meshes** | 1         | 1      | 1      | 2        | >2            |
+| **PhysBones**      | 2         | 4      | 6      | 8        | >8            |
 
 > [!NOTE]
 > Standardmäßig ist das **Minimum Displayed Performance Rank**-Level auf mobilen Geräten auf **Medium** gesetzt. Das bedeutet, dass Avatare mit Poor oder Very Poor für andere Nutzer nicht sichtbar sind, es sei denn, sie wählen manuell, deinen Avatar anzuzeigen.
@@ -86,10 +89,10 @@ Für weitere Informationen über das Performance-Ranking-System, schaue in die [
 
 ## Referenzen
 
-kurotu. (n.d.). *VRCQuestTools - Avatar Converter and Utilities for Android*. GitHub Pages. Retrieved from https://kurotu.github.io/VRCQuestTools/
+kurotu. (n.d.). _VRCQuestTools - Avatar Converter and Utilities for Android_. GitHub Pages. Retrieved from https://kurotu.github.io/VRCQuestTools/
 
-kurotu. (n.d.). *Introduction*. VRCQuestTools Docs. Retrieved from https://kurotu.github.io/VRCQuestTools/docs/intro
+kurotu. (n.d.). _Introduction_. VRCQuestTools Docs. Retrieved from https://kurotu.github.io/VRCQuestTools/docs/intro
 
-kurotu. (2025). *kurotu/VRCQuestTools* [Software]. GitHub. Retrieved from https://github.com/kurotu/VRCQuestTools
+kurotu. (2025). _kurotu/VRCQuestTools_ [Software]. GitHub. Retrieved from https://github.com/kurotu/VRCQuestTools
 
-VRChat Inc. (2025). *Performance Ranks*. VRChat Creator Documentation. Retrieved from https://creators.vrchat.com/avatars/avatar-performance-ranking-system/
+VRChat Inc. (2025). _Performance Ranks_. VRChat Creator Documentation. Retrieved from https://creators.vrchat.com/avatars/avatar-performance-ranking-system/

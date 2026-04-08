@@ -3,9 +3,11 @@
 <span class="badge">RACCOMANDATO</span>
 
 ## Cos'è?
+
 Gogo Loco è un sistema di locomozione avanzato per avatar VRChat, creato da **franada** [1]. Permette agli utenti desktop e VR senza "Full Body Tracking" di accedere a funzionalità di pose, volo e personalizzazione dell'avatar normalmente non disponibili.
 
 ## A cosa serve?
+
 - **Pose Statiche:** Permette di sedersi, sdraiarsi ed eseguire varie pose artistiche ovunque.
 - **Simulazione Full Body:** Include animazioni che simulano i tracker delle gambe.
 - **Volo:** Permette di volare in mondi con collisioni o restrizioni di salto.
@@ -16,10 +18,12 @@ Gogo Loco è un sistema di locomozione avanzato per avatar VRChat, creato da **f
 > Sebbene possa essere installato manualmente, è altamente raccomandato usare **VRCFury** per facilitare l'installazione ed evitare conflitti con altri menu.
 
 ## Dove trovarlo?
+
 - [GitHub - Gogo Loco (Gratuito)](https://github.com/Franada/goloco)
 - [Gumroad - Gogo Loco (Supporta il creatore)](https://franadavrc.gumroad.com/l/gogoloco)
 
 ## Prerequisiti
+
 - **Unity:** La versione raccomandata per VRChat.
 - **VRChat SDK:** Installato nel tuo progetto (VCC).
 - **Gogo Loco:** Il file `.unitypackage` scaricato.
@@ -28,6 +32,7 @@ Gogo Loco è un sistema di locomozione avanzato per avatar VRChat, creato da **f
 ## Guida all'Installazione
 
 ### Metodo 1: Con VRCFury (Raccomandato e Facile)
+
 Questo è il metodo più semplice e automatizzato [3].
 
 1. **Installa VRCFury:** Assicurati che **VRCFury** sia installato nel tuo progetto tramite VCC.
@@ -43,6 +48,7 @@ Questo è il metodo più semplice e automatizzato [3].
 ---
 
 ### Metodo 2: Installazione Manuale con Avatar 3.0 Manager
+
 Se non vuoi usare VRCFury o hai bisogno di controllo completo [4].
 
 1. **VRLabs Avatar 3.0 Manager:** Scarica e importa questo strumento gratuito.
@@ -69,7 +75,7 @@ Se non vuoi usare VRCFury o hai bisogno di controllo completo [4].
 
 ## Riferimenti
 
-* Franada. (n.d.). Gogo Loco. GitHub. https://github.com/Franada/goloco
-* Franada. (n.d.). Gogo Loco. Gumroad. https://franadavrc.gumroad.com/l/gogoloco
-* VRCFury. (n.d.). VRCFury Documentation. https://vrcfury.com
-* VRLabs. (n.d.). Avatar 3.0 Manager. GitHub. https://github.com/VRLabs/Avatars-3-0-Manager
+- Franada. (n.d.). Gogo Loco. GitHub. https://github.com/Franada/goloco
+- Franada. (n.d.). Gogo Loco. Gumroad. https://franadavrc.gumroad.com/l/gogoloco
+- VRCFury. (n.d.). VRCFury Documentation. https://vrcfury.com
+- VRLabs. (n.d.). Avatar 3.0 Manager. GitHub. https://github.com/VRLabs/Avatars-3-0-Manager

@@ -1,4 +1,5 @@
 # Пошаговое Руководство: Подготовка Unity с VCC
+
 Выполните эти шаги ПЕРЕД импортом загруженного аватара
 
 > [!NOTE]
@@ -6,27 +7,35 @@
 > Вам не нужно устанавливать, настраивать или управлять Unity напрямую самостоятельно. Весь процесс подготовки проекта и установки зависимостей выполняется внутри VCC. Вы откроете Unity только в самом конце для импорта и загрузки вашего аватара.
 
 ### Шаг 1: Установите VRChat Creator Companion (VCC)
+
 Загрузите **VRChat Creator Companion** с сайта [vrchat.com/home/download](https://vrchat.com/home/download). **VCC** — это официальный инструмент, который автоматически управляет Unity, VRChat SDK и всеми необходимыми пакетами.
 
 ### Шаг 2: Установите Unity Hub и Unity через VCC
+
 При первом открытии VCC он обнаружит, установлен ли у вас Unity. Следуйте указаниям мастера настройки, чтобы он установил **Unity Hub**, а затем загрузил правильную версию **Unity**, требуемую VRChat (в настоящее время это серия 2022.3). Позвольте VCC автоматически установить обе программы.
 
 ### Шаг 3: Создайте Новый Проект Аватара
+
 Откройте VCC → **Projects** → **Create New Project**. Выберите шаблон **"Avatars"**. Дайте ему имя (например, "Мои Аватары VRChat"). VCC автоматически подготовит ваш проект с **VRChat SDK**.
 
 ### Шаг 4: Добавьте Репозиторий Poiyomi
+
 В VCC перейдите в **Settings** → **Packages** → **Add Repository**. Вставьте этот URL-адрес: [https://poiyomi.github.io/vpm/index.json](https://poiyomi.github.io/vpm/index.json) и нажмите "Add". Это позволит вам легко установить **Poiyomi**, что жизненно важно для правильного отображения текстур аватаров. Вы можете найти более подробную информацию в нашем [руководстве по Poiyomi](/wiki?topic=poiyomi).
 
 ### Шаг 5: Добавьте Репозиторий VRCFury (Необязательно)
+
 Если вашему аватару это требуется, в **Settings** → **Packages** → **Add Repository** вставьте: [https://vcc.vrcfury.com](https://vcc.vrcfury.com) и нажмите "Add". **VRCFury** упрощает установку одежды и аксессуаров с помощью перетаскивания. Мы рекомендуем ознакомиться с [руководством по VRCFury](/wiki?topic=vrcfury) для получения дополнительной информации.
 
 ### Шаг 6: Установите Пакеты в Ваш Проект
+
 В VCC выберите ваш недавно созданный проект → **Manage Project**. Найдите **"Poiyomi Toon Shader"** и нажмите кнопку **"+"**, чтобы добавить его. Если вам нужен VRCFury, добавьте его также с помощью этой же кнопки. Нажмите **"Apply"** или просто подождите, пока он загрузится.
 
 ### Шаг 7: Откройте Проект и Импортируйте Аватар
+
 В меню проекта VCC нажмите **"Open Project"**, чтобы открыть Unity в первый раз (это может занять некоторое время). После открытия импортируйте свой аватар: перетащите файл **.unitypackage** в окно Unity (на вкладку `Project` или `Assets`) или используйте **Assets → Import Package → Custom Package**.
 
 ### Шаг 8: Проверка и Настройка
+
 Перетащите **префаб аватара** на сцену. Если всё правильно и установлен Poiyomi, вы **НЕ увидите маджентовых (розовых) материалов**. Настройте аватар с помощью **VRChat SDK → Show Control Panel → Builder**. Устраните ошибки с помощью **"Auto Fix"** и загрузите с помощью **"Build & Publish"**.
 
 > [!TIP]
@@ -37,7 +46,7 @@
 
 ## Ссылки
 
-* VRChat Inc. (б.д.). VRChat Creator Companion. VRChat. https://vrchat.com/home/download
-* Unity Technologies. (б.д.). Unity Hub. Unity. https://unity.com/download
-* Poiyomi. (б.д.). Poiyomi Toon Shader. GitHub. https://github.com/poiyomi/PoiyomiToonShader
-* VRCFury. (б.д.). VRCFury Documentation. https://vrcfury.com
+- VRChat Inc. (б.д.). VRChat Creator Companion. VRChat. https://vrchat.com/home/download
+- Unity Technologies. (б.д.). Unity Hub. Unity. https://unity.com/download
+- Poiyomi. (б.д.). Poiyomi Toon Shader. GitHub. https://github.com/poiyomi/PoiyomiToonShader
+- VRCFury. (б.д.). VRCFury Documentation. https://vrcfury.com

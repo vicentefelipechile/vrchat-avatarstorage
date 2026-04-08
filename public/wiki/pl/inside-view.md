@@ -3,9 +3,11 @@
 <span class="badge badge-blue">Wizualne</span> <span class="badge badge-purple">ERP</span> <span class="badge badge-yellow">SPS</span>
 
 ## Co to jest?
+
 **Inside View**, stworzony przez **Liindy** [1], to asset dla awatarów VRChat pozwalający zobaczyć wnętrze siatki (jak otwór SPS) dodając symulowaną głębię wizualną.
 
 ## Główne Funkcje
+
 - **Symulowana Głębia:** Tworzy iluzję tunelu lub szczegółowego wnętrza.
 - **Zoptymalizowane:** Używa shaderów zamiast ciężkiej geometrii.
 - **Integracja SPS:** Zaprojektowane do współpracy z penetracjami SPS.
@@ -24,4 +26,4 @@
 
 ## Odniesienia
 
-* Liindy. (n.d.). Inside View (VRCFury). Jinxxy. https://jinxxy.com/Liindy/InsideView
+- Liindy. (n.d.). Inside View (VRCFury). Jinxxy. https://jinxxy.com/Liindy/InsideView

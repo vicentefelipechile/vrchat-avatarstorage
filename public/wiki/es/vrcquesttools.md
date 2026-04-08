@@ -3,12 +3,14 @@
 <span class="badge">HERRAMIENTA</span>
 
 ## ¿Qué es?
+
 VRCQuestTools es una extensión de Unity desarrollada por **kurotu** que permite convertir avatares de VRChat diseñados para PC hacia la plataforma Android (Meta Quest/PICO). Esta herramienta automatiza el proceso de hacer un avatar compatible con las estrictas limitaciones de rendimiento de los dispositivos móviles.
 
 > [!NOTE]
 > VRCQuestTools funciona mediante el sistema **Non-Destructive Modular Framework (NDMF)** en sus versiones más recientes, lo que permite procesar el avatar sin modificar los archivos originales.
 
 ## ¿Para qué sirve?
+
 - Convertir avatares de PC a Android con unos pocos clics
 - Reducir polígonos y materiales automáticamente
 - Eliminar componentes no compatibles con Quest (Lights, Cloth, etc.)
@@ -20,13 +22,14 @@ VRCQuestTools es una extensión de Unity desarrollada por **kurotu** que permite
 
 ## Requisitos del entorno
 
-| Requisito | Versión mínima |
-|-----------|----------------|
-| Unity | 2019.4.31f1, 2022.3.6f1 o 2022.3.22f1 |
-| VRChat SDK | Avatars 3.3.0 o posterior |
-| Módulo Android Build Support | Instalado en Unity |
+| Requisito                    | Versión mínima                        |
+| ---------------------------- | ------------------------------------- |
+| Unity                        | 2019.4.31f1, 2022.3.6f1 o 2022.3.22f1 |
+| VRChat SDK                   | Avatars 3.3.0 o posterior             |
+| Módulo Android Build Support | Instalado en Unity                    |
 
 ## ¿Dónde obtenerlo?
+
 - **Página Oficial:** [kurotu.github.io/VRCQuestTools](https://kurotu.github.io/VRCQuestTools/)
 - **Documentación:** [Documentación VRCQuestTools](https://kurotu.github.io/VRCQuestTools/docs/intro)
 - **GitHub:** [kurotu/VRCQuestTools](https://github.com/kurotu/VRCQuestTools)
@@ -64,12 +67,12 @@ VRCQuestTools es una extensión de Unity desarrollada por **kurotu** que permite
 
 ## Limitaciones de rendimiento en Quest
 
-| Métrica | Excellent | Good | Medium | Poor | Very Poor |
-|---------|-----------|------|--------|------|-----------|
-| **Triángulos** | 7,500 | 10,000 | 15,000 | 20,000 | >20,000 |
-| **Material Slots** | 1 | 1 | 1 | 2 | >2 |
-| **Skinned Meshes** | 1 | 1 | 1 | 2 | >2 |
-| **PhysBones** | 2 | 4 | 6 | 8 | >8 |
+| Métrica            | Excellent | Good   | Medium | Poor   | Very Poor |
+| ------------------ | --------- | ------ | ------ | ------ | --------- |
+| **Triángulos**     | 7,500     | 10,000 | 15,000 | 20,000 | >20,000   |
+| **Material Slots** | 1         | 1      | 1      | 2      | >2        |
+| **Skinned Meshes** | 1         | 1      | 1      | 2      | >2        |
+| **PhysBones**      | 2         | 4      | 6      | 8      | >8        |
 
 > [!NOTE]
 > Por defecto, el nivel de **Minimum Displayed Performance Rank** en dispositivos móviles está configurado en **Medium**. Esto significa que los avatares clasificados como Poor o Very Poor no serán visibles para otros usuarios, a menos que decidan mostrar tu avatar manualmente.
@@ -86,10 +89,10 @@ Para más información sobre el sistema de ranking de rendimiento, consulta la [
 
 ## Referencias
 
-kurotu. (s. f.). *VRCQuestTools - Avatar Converter and Utilities for Android*. GitHub Pages. https://kurotu.github.io/VRCQuestTools/
+kurotu. (s. f.). _VRCQuestTools - Avatar Converter and Utilities for Android_. GitHub Pages. https://kurotu.github.io/VRCQuestTools/
 
-kurotu. (s. f.). *Introduction*. VRCQuestTools Docs. https://kurotu.github.io/VRCQuestTools/docs/intro
+kurotu. (s. f.). _Introduction_. VRCQuestTools Docs. https://kurotu.github.io/VRCQuestTools/docs/intro
 
-kurotu. (2025). *kurotu/VRCQuestTools* [Software]. GitHub. https://github.com/kurotu/VRCQuestTools
+kurotu. (2025). _kurotu/VRCQuestTools_ [Software]. GitHub. https://github.com/kurotu/VRCQuestTools
 
-VRChat Inc. (2025). *Performance Ranks*. VRChat Creator Documentation. https://creators.vrchat.com/avatars/avatar-performance-ranking-system/
+VRChat Inc. (2025). _Performance Ranks_. VRChat Creator Documentation. https://creators.vrchat.com/avatars/avatar-performance-ranking-system/

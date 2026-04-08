@@ -3,6 +3,7 @@
 <span class="badge badge-purple">Tool</span> <span class="badge badge-blue">Workflow</span>
 
 ## Что такое Gesture Manager?
+
 **Gesture Manager**, разработанный **BlackStartx**, является незаменимым инструментом для создателей аватаров VRChat. Он позволяет просматривать и редактировать анимации, жесты и меню аватара прямо в Unity, избавляя от необходимости загружать аватар в игру для проверки каждого изменения [1].
 
 Он почти полностью имитирует систему анимации VRChat, включая **радиальное меню (Expressions Menu)**, что позволяет мгновенно проверить правильность работы ваших переключателей и ползунков.
@@ -14,7 +15,9 @@
 Существует два основных способа установки этого инструмента в ваш проект.
 
 ### Способ 1: VRChat Creator Companion (Рекомендуется)
+
 Это самый простой способ, гарантирующий, что у вас всегда будет последняя версия, совместимая с вашим проектом [2].
+
 1. Откройте **VRChat Creator Companion (VCC)**.
 2. Выберите свой проект.
 3. Убедитесь, что пакеты «Curated» не отфильтрованы.
@@ -22,19 +25,21 @@
 5. Откройте проект в Unity.
 
 ### Способ 2: Вручную (пакет Unity)
+
 Если вы не используете VCC или вам нужна конкретная версия:
-1. Загрузите файл `.unitypackage` из раздела *Releases* на GitHub BlackStartx или с его страницы на BOOTH [3].
+
+1. Загрузите файл `.unitypackage` из раздела _Releases_ на GitHub BlackStartx или с его страницы на BOOTH [3].
 2. Импортируйте пакет в свой проект Unity (`Assets > Import Package > Custom Package`).
 
 ---
 
 ## Основные характеристики
 
-*   **Радиальное меню 3.0:** Точно воссоздает меню выражений VRChat.
-*   **Эмуляция жестов:** Позволяет тестировать жесты левой и правой руки с помощью кнопок в инспекторе.
-*   **Камера активной сцены:** Синхронизирует игровую камеру с камерой сцены для облегчения тестирования PhysBones и контактов.
-*   **Тестирование контактов:** Позволяет активировать *VRCContacts*, нажимая на них мышью.
-*   **Отладка параметров:** Отображает список всех параметров аватара и их текущие значения.
+- **Радиальное меню 3.0:** Точно воссоздает меню выражений VRChat.
+- **Эмуляция жестов:** Позволяет тестировать жесты левой и правой руки с помощью кнопок в инспекторе.
+- **Камера активной сцены:** Синхронизирует игровую камеру с камерой сцены для облегчения тестирования PhysBones и контактов.
+- **Тестирование контактов:** Позволяет активировать _VRCContacts_, нажимая на них мышью.
+- **Отладка параметров:** Отображает список всех параметров аватара и их текущие значения.
 
 ---
 
@@ -53,7 +58,7 @@
 
 ## Ссылки
 
-* BlackStartx. (б.д.). VRC-Gesture-Manager. GitHub. https://github.com/BlackStartx/VRC-Gesture-Manager
-* VRChat. (б.д.). Expression Menu and Controls. VRChat Documentation. https://creators.vrchat.com/avatars/expression-menu-and-controls
-* VRChat. (б.д.). VCC Documentation. VRChat Creator Companion. https://vcc.docs.vrchat.com
-* BlackStartx. (б.д.). Gesture Manager. Booth. https://blackstartx.booth.pm/items/3922472
+- BlackStartx. (б.д.). VRC-Gesture-Manager. GitHub. https://github.com/BlackStartx/VRC-Gesture-Manager
+- VRChat. (б.д.). Expression Menu and Controls. VRChat Documentation. https://creators.vrchat.com/avatars/expression-menu-and-controls
+- VRChat. (б.д.). VCC Documentation. VRChat Creator Companion. https://vcc.docs.vrchat.com
+- BlackStartx. (б.д.). Gesture Manager. Booth. https://blackstartx.booth.pm/items/3922472

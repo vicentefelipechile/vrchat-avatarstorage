@@ -3,6 +3,7 @@
 <span class="badge">TOOL</span>
 
 ## Wat is het?
+
 VRCQuestTools is een Unity-extensie, ontwikkeld door **kurotu**, waarmee je PC-ontworpen VRChat-avatars kunt converteren naar het Android-platform (Meta Quest/PICO).
 
 > [!NOTE]
@@ -12,9 +13,11 @@ VRCQuestTools is een Unity-extensie, ontwikkeld door **kurotu**, waarmee je PC-o
 > VRoid Studio-avatars zijn NIET compatibel met Android.
 
 ## Waar te vinden?
+
 - **Officiële site:** [kurotu.github.io/VRCQuestTools](https://kurotu.github.io/VRCQuestTools/)
 
 ## Conversie
+
 1. Rechtsklik op je avatar in de Unity Hierarchy
 2. Selecteer **VRCQuestTools** → **Convert Avatar For Android**
 3. Klik **Begin Converter Settings** en dan **Convert**
@@ -23,14 +26,14 @@ VRCQuestTools is een Unity-extensie, ontwikkeld door **kurotu**, waarmee je PC-o
 
 ## Quest Prestatielimieten
 
-| Metriek | Uitstekend | Goed | Gemiddeld | Slecht |
-|---------|-----------|------|--------|--------|
-| **Driehoeken** | 7.500 | 10.000 | 15.000 | 20.000 |
-| **Materiaalslots** | 1 | 1 | 1 | 2 |
-| **PhysBones** | 2 | 4 | 6 | 8 |
+| Metriek            | Uitstekend | Goed   | Gemiddeld | Slecht |
+| ------------------ | ---------- | ------ | --------- | ------ |
+| **Driehoeken**     | 7.500      | 10.000 | 15.000    | 20.000 |
+| **Materiaalslots** | 1          | 1      | 1         | 2      |
+| **PhysBones**      | 2          | 4      | 6         | 8      |
 
 ---
 
 ## Referenties
 
-kurotu. (n.d.). *VRCQuestTools*. GitHub Pages. Retrieved from https://kurotu.github.io/VRCQuestTools/
+kurotu. (n.d.). _VRCQuestTools_. GitHub Pages. Retrieved from https://kurotu.github.io/VRCQuestTools/

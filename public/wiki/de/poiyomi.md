@@ -3,9 +3,11 @@
 <span class="badge badge-blue">ABHÄNGIGKEIT</span>
 
 ## Was ist das?
+
 Poiyomi ist ein Shader für Unity, speziell für VRChat entwickelt. Er ermöglicht es, stilisierte und Cartoon-artige Darstellungen auf Avataren mit fortgeschrittenen visuellen Effekten zu erstellen.
 
 ## Wofür ist es?
+
 - Anpassbare stilisierte Schattierung (Toon, realistisch, flach)
 - Spezialeffekte: Outlines, Decals, Glitzer, Funkeln
 - AudioLink-Unterstützung (audioreaktive Effekte)
@@ -17,6 +19,7 @@ Poiyomi ist ein Shader für Unity, speziell für VRChat entwickelt. Er ermöglic
 > Poiyomi ist NICHT in den Avatar-Dateien enthalten, die du herunterlädst. Du musst es selbst in Unity installieren, BEVOR du den Avatar öffnest.
 
 ## Wo bekommt man es?
+
 - **Offizielle Seite (Downloads):** [poiyomi.com/download](https://poiyomi.com/download)
 - **Kostenlose Version:** [GitHub - Poiyomi Toon Shader](https://github.com/poiyomi/PoiyomiToonShader)
 - **Pro-Version:** [Patreon - Poiyomi](https://www.patreon.com/poiyomi)
@@ -33,7 +36,7 @@ Die Verwendung von VCC (VRChat Creator Companion) ist der sauberste und empfohle
    - Am einfachsten gehst du auf die offizielle Downloads-Seite: [poiyomi.com/download](https://poiyomi.com/download).
    - Scrolle nach unten zu „Method 2", finde den Abschnitt **Creator Companion (VCC)** und klicke den **„Add to VCC"**-Button.
    - Dein Browser wird nach Erlaubnis fragen, VCC zu öffnen. Akzeptiere es, und klicke in VCC auf **„I Understand, Add Repository"**.
-   - *(Manuelle Alternative)*: Öffne VCC, gehe zu **Settings** -> **Packages**-Tab -> **Add Repository**, füge die URL `https://poiyomi.github.io/vpm/index.json` im entsprechenden Feld ein und klicke **Add**.
+   - _(Manuelle Alternative)_: Öffne VCC, gehe zu **Settings** -> **Packages**-Tab -> **Add Repository**, füge die URL `https://poiyomi.github.io/vpm/index.json` im entsprechenden Feld ein und klicke **Add**.
 2. **Shader zu deinem Projekt hinzufügen:**
    - Navigiere in VCC zum Bereich Projekte und klicke bei dem VRChat-Projekt, in dem du den Shader installieren möchtest, auf **Manage Project**.
    - Im Abschnitt **Selected Repos** (Seitenmenü oder obere Dropdown-Liste der Repositories) stelle sicher, dass **„Poiyomi's VPM Repo"** angekreuzt ist.
@@ -58,6 +61,6 @@ Dies ist die klassische Methode. Beachte, dass es schwieriger ist, in Zukunft zu
 
 ## Referenzen
 
-Poiyomi. (n.d.). *Download*. Poiyomi Shaders. Retrieved from https://poiyomi.com/download
+Poiyomi. (n.d.). _Download_. Poiyomi Shaders. Retrieved from https://poiyomi.com/download
 
-Poiyomi. (n.d.). *PoiyomiToonShader: A feature rich toon shader for Unity and VRChat*. GitHub. Retrieved from https://github.com/poiyomi/PoiyomiToonShader
+Poiyomi. (n.d.). _PoiyomiToonShader: A feature rich toon shader for Unity and VRChat_. GitHub. Retrieved from https://github.com/poiyomi/PoiyomiToonShader

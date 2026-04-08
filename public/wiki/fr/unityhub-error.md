@@ -9,14 +9,16 @@ Voici comment supprimer tous les fichiers temporaires et paramètres corrompus.
 Suivez attentivement ces étapes pour vous assurer qu'Unity Hub fonctionne à nouveau :
 
 ### 1. Désinstaller Unity Hub
+
 > [!WARNING]
 > Avertissement
-> Pour cette étape, vous devez utiliser le **programme de désinstallation officiel de Windows** (depuis *Paramètres -> Applications* ou le *Panneau de configuration*). **N'utilisez PAS de programmes tiers** comme IObit Uninstaller, Revo Uninstaller, etc., car ils peuvent supprimer des clés de registre nécessaires et aggraver le problème.
+> Pour cette étape, vous devez utiliser le **programme de désinstallation officiel de Windows** (depuis _Paramètres -> Applications_ ou le _Panneau de configuration_). **N'utilisez PAS de programmes tiers** comme IObit Uninstaller, Revo Uninstaller, etc., car ils peuvent supprimer des clés de registre nécessaires et aggraver le problème.
 
 - Allez dans les **Paramètres Windows** -> **Applications**.
 - Trouvez "Unity Hub" dans la liste et cliquez sur **Désinstaller**.
 
 ### 2. Supprimer les répertoires résiduels
+
 Même après la désinstallation, Unity laisse des dossiers de configuration (cache) cachés sur votre système. Vous devez les trouver et les supprimer manuellement.
 
 Ouvrez l'Explorateur de fichiers Windows, copiez chacune des adresses suivantes dans la barre supérieure, puis appuyez sur Entrée. **Si le dossier existe, supprimez-le complètement :**
@@ -28,10 +30,12 @@ Ouvrez l'Explorateur de fichiers Windows, copiez chacune des adresses suivantes 
 - `%USERPROFILE%\AppData\Local\Unity`
 - `%USERPROFILE%\AppData\Local\Unity Hub`
 
-*(Note : Vous pouvez copier et coller le chemin `%USERPROFILE%` directement dans la barre de l'explorateur, de la même manière que vous utiliseriez `%appdata%` pour installer des mods Minecraft, et cela vous amènera automatiquement à votre dossier utilisateur actuel).*
+_(Note : Vous pouvez copier et coller le chemin `%USERPROFILE%` directement dans la barre de l'explorateur, de la même manière que vous utiliseriez `%appdata%` pour installer des mods Minecraft, et cela vous amènera automatiquement à votre dossier utilisateur actuel)._
 
 ### 3. Réinstaller Unity Hub
+
 Une fois le système complètement nettoyé des fichiers Unity :
+
 1. Allez sur le [site officiel d'Unity](https://unity.com/download) et téléchargez la dernière version d'Unity Hub.
 2. Exécutez le programme d'installation et suivez les étapes normales.
 3. Attendez que tout s'installe correctement, reconnectez-vous, et confirmez que l'erreur est résolue.

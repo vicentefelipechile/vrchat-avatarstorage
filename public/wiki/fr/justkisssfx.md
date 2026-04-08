@@ -3,9 +3,11 @@
 <span class="badge">SFX</span> <span class="badge badge-purple">INTERACTION</span> <span class="badge badge-red">ERP</span>
 
 ## Qu'est-ce que c'est ?
+
 JustKissSFX est un asset d'effets sonores (SFX) pour VRChat développé par **NEVER STOP DREAMING** (@vrc_eun). Il permet d'ajouter des sons de baisers à votre avatar, des baisers normaux aux baisers profonds (deep kisses), créant une expérience plus immersive dans les interactions sociales et ERP.
 
 ## À quoi ça sert ?
+
 - Ajouter des sons de baisers à votre avatar VRChat
 - Détecter les baisers continus et reproduire automatiquement des sons de baiser profond
 - Plus d'immersion dans les interactions sociales et le contenu pour adultes
@@ -13,13 +15,13 @@ JustKissSFX est un asset d'effets sonores (SFX) pour VRChat développé par **NE
 
 ## Caractéristiques principales
 
-| Caractéristique | Description |
-|----------------|-------------|
-| **Sons inclus** | 32 effets sonores de baisers |
-| **Baisers normaux** | 20 types différents |
-| **Deep kisses** | 12 types différents |
-| **Voix** | Non incluse (effets sonores uniquement) |
-| **Compatibilité** | [Modular Avatar](/wiki?topic=modular-avatar) |
+| Caractéristique     | Description                                  |
+| ------------------- | -------------------------------------------- |
+| **Sons inclus**     | 32 effets sonores de baisers                 |
+| **Baisers normaux** | 20 types différents                          |
+| **Deep kisses**     | 12 types différents                          |
+| **Voix**            | Non incluse (effets sonores uniquement)      |
+| **Compatibilité**   | [Modular Avatar](/wiki?topic=modular-avatar) |
 
 ### Spécifications techniques
 
@@ -34,15 +36,18 @@ JustKissSFX est un asset d'effets sonores (SFX) pour VRChat développé par **NE
 
 > [!WARNING]
 > Les effets sonores ne seront pas reproduits si :
+>
 > - L'avatar opposite a le head collider désactivé
 > - Les Contacts sont configurés pour désactiver les interactions
 > - Les paramètres de sécurité de VRChat limitent la lecture audio
 
 ## Exigences
+
 - **[Modular Avatar](/wiki?topic=modular-avatar) :** 1.11 ou supérieur
 - **VRCSDK :** 3.7.5 ou supérieur
 
 ## Où l'obtenir ?
+
 - **BOOTH :** [JustKissSFX](https://booth.pm/ja/items/5534236)
 
 ## Comment installer ?
@@ -59,4 +64,4 @@ JustKissSFX est un asset d'effets sonores (SFX) pour VRChat développé par **NE
 
 ## Références
 
-Never Stop Dreaming. (2024). *チュパサウンド JustKissSFX*. BOOTH. Récupéré de https://booth.pm/ja/items/5534236
+Never Stop Dreaming. (2024). _チュパサウンド JustKissSFX_. BOOTH. Récupéré de https://booth.pm/ja/items/5534236

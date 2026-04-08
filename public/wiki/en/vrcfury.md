@@ -3,9 +3,11 @@
 <span class="badge">OPTIONAL</span>
 
 ## What is it?
+
 VRCFury is a free Unity plugin that greatly simplifies VRChat avatar configuration. It makes it easy to install clothing, props, gestures, and animations without manually editing animation controllers.
 
 ## What is it for?
+
 - One-click clothing and accessory installation
 - Automatic gesture and animation setup
 - Automatic VRChat menu generation
@@ -17,6 +19,7 @@ VRCFury is a free Unity plugin that greatly simplifies VRChat avatar configurati
 > VRCFury is an OPTIONAL but highly recommended tool. Some avatars require it to work properly. If an avatar needs it, it will be indicated in the description.
 
 ## Where to get it?
+
 - **Official site (Downloads):** [vrcfury.com/download](https://vrcfury.com/download/)
 - **GitHub:** [VRCFury/VRCFury](https://github.com/VRCFury/VRCFury)
 
@@ -32,7 +35,7 @@ Using VCC ensures that VRCFury is always up to date and does not cause compatibi
    - Go to the official downloads page: [vrcfury.com/download](https://vrcfury.com/download/).
    - In step 1 ("Install VRChat Creator Companion"), if you already have VCC installed, you can skip it. In step 2, click the **"Click Here to add VRCFury to VCC"** button.
    - Your browser will ask for permission to open VCC. Accept it, and once inside VCC, click **"I Understand, Add Repository"**.
-   - *(Manual alternative)*: Open VCC, go to **Settings** -> **Packages** tab -> **Add Repository**, paste the URL `https://vcc.vrcfury.com` in the corresponding field, and click **Add**.
+   - _(Manual alternative)_: Open VCC, go to **Settings** -> **Packages** tab -> **Add Repository**, paste the URL `https://vcc.vrcfury.com` in the corresponding field, and click **Add**.
 2. **Add VRCFury to your project:**
    - In VCC, go to your projects list and click **Manage Project** on the project you are using.
    - In the repositories list on the left (or top right), make sure **"VRCFury Repo"** is checked.
@@ -57,6 +60,6 @@ This method is no longer recommended and is considered obsolete (Legacy), but it
 
 ## References
 
-VRCFury. (n.d.). *Download*. VRCFury. Retrieved from https://vrcfury.com/download/
+VRCFury. (n.d.). _Download_. VRCFury. Retrieved from https://vrcfury.com/download/
 
-VRCFury. (n.d.). *VRCFury*. GitHub. Retrieved from https://github.com/VRCFury/VRCFury
+VRCFury. (n.d.). _VRCFury_. GitHub. Retrieved from https://github.com/VRCFury/VRCFury

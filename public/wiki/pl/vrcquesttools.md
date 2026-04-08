@@ -3,12 +3,14 @@
 <span class="badge">NARZĘDZIE</span>
 
 ## Co to jest?
+
 VRCQuestTools to rozszerzenie Unity, stworzone przez **kurotu**, które pozwala konwertować awatary VRChat zaprojektowane na PC na platformę Android (Meta Quest/PICO).
 
 > [!NOTE]
 > VRCQuestTools w najnowszych wersjach działa poprzez system **Non-Destructive Modular Framework (NDMF)**.
 
 ## Gdzie to zdobyć?
+
 - **Oficjalna strona:** [kurotu.github.io/VRCQuestTools](https://kurotu.github.io/VRCQuestTools/)
 - **GitHub:** [kurotu/VRCQuestTools](https://github.com/kurotu/VRCQuestTools)
 
@@ -26,14 +28,14 @@ VRCQuestTools to rozszerzenie Unity, stworzone przez **kurotu**, które pozwala 
 
 ## Limity Wydajności Quest
 
-| Metryka | Doskonała | Dobra | Średnia | Słaba | Bardzo Słaba |
-|---------|-----------|------|--------|--------|---------------|
-| **Trójkąty** | 7.500 | 10.000 | 15.000 | 20.000 | >20.000 |
-| **Sloty Materiałów** | 1 | 1 | 1 | 2 | >2 |
-| **PhysBones** | 2 | 4 | 6 | 8 | >8 |
+| Metryka              | Doskonała | Dobra  | Średnia | Słaba  | Bardzo Słaba |
+| -------------------- | --------- | ------ | ------- | ------ | ------------ |
+| **Trójkąty**         | 7.500     | 10.000 | 15.000  | 20.000 | >20.000      |
+| **Sloty Materiałów** | 1         | 1      | 1       | 2      | >2           |
+| **PhysBones**        | 2         | 4      | 6       | 8      | >8           |
 
 ---
 
 ## Odniesienia
 
-kurotu. (n.d.). *VRCQuestTools*. GitHub Pages. Retrieved from https://kurotu.github.io/VRCQuestTools/
+kurotu. (n.d.). _VRCQuestTools_. GitHub Pages. Retrieved from https://kurotu.github.io/VRCQuestTools/

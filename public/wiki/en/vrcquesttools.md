@@ -3,12 +3,14 @@
 <span class="badge">TOOL</span>
 
 ## What is it?
+
 VRCQuestTools is a Unity extension developed by **kurotu** that allows converting VRChat avatars designed for PC to the Android platform (Meta Quest/PICO). This tool automates the process of making an avatar compatible with the strict performance limitations of mobile devices.
 
 > [!NOTE]
 > VRCQuestTools works through the **Non-Destructive Modular Framework (NDMF)** system in its latest versions, which allows processing the avatar without modifying the original files.
 
 ## What is it for?
+
 - Converting PC avatars to Android with a few clicks
 - Automatically reducing polygons and materials
 - Removing components not compatible with Quest (Lights, Cloth, etc.)
@@ -20,13 +22,14 @@ VRCQuestTools is a Unity extension developed by **kurotu** that allows convertin
 
 ## Environment requirements
 
-| Requirement | Minimum version |
-|-------------|-----------------|
-| Unity | 2019.4.31f1, 2022.3.6f1 or 2022.3.22f1 |
-| VRChat SDK | Avatars 3.3.0 or later |
-| Android Build Support module | Installed in Unity |
+| Requirement                  | Minimum version                        |
+| ---------------------------- | -------------------------------------- |
+| Unity                        | 2019.4.31f1, 2022.3.6f1 or 2022.3.22f1 |
+| VRChat SDK                   | Avatars 3.3.0 or later                 |
+| Android Build Support module | Installed in Unity                     |
 
 ## Where to get it?
+
 - **Official Page:** [kurotu.github.io/VRCQuestTools](https://kurotu.github.io/VRCQuestTools/)
 - **Documentation:** [VRCQuestTools Documentation](https://kurotu.github.io/VRCQuestTools/docs/intro)
 - **GitHub:** [kurotu/VRCQuestTools](https://github.com/kurotu/VRCQuestTools)
@@ -64,12 +67,12 @@ VRCQuestTools is a Unity extension developed by **kurotu** that allows convertin
 
 ## Quest performance limits
 
-| Metric | Excellent | Good | Medium | Poor | Very Poor |
-|--------|-----------|------|--------|------|-----------|
-| **Triangles** | 7,500 | 10,000 | 15,000 | 20,000 | >20,000 |
-| **Material Slots** | 1 | 1 | 1 | 2 | >2 |
-| **Skinned Meshes** | 1 | 1 | 1 | 2 | >2 |
-| **PhysBones** | 2 | 4 | 6 | 8 | >8 |
+| Metric             | Excellent | Good   | Medium | Poor   | Very Poor |
+| ------------------ | --------- | ------ | ------ | ------ | --------- |
+| **Triangles**      | 7,500     | 10,000 | 15,000 | 20,000 | >20,000   |
+| **Material Slots** | 1         | 1      | 1      | 2      | >2        |
+| **Skinned Meshes** | 1         | 1      | 1      | 2      | >2        |
+| **PhysBones**      | 2         | 4      | 6      | 8      | >8        |
 
 > [!NOTE]
 > By default, the **Minimum Displayed Performance Rank** level on mobile devices is set to **Medium**. This means that avatars classified as Poor or Very Poor will not be visible to other users, unless they choose to manually show your avatar.
@@ -86,10 +89,10 @@ For more information about the performance ranking system, check the [official V
 
 ## References
 
-kurotu. (n.d.). *VRCQuestTools - Avatar Converter and Utilities for Android*. GitHub Pages. Retrieved from https://kurotu.github.io/VRCQuestTools/
+kurotu. (n.d.). _VRCQuestTools - Avatar Converter and Utilities for Android_. GitHub Pages. Retrieved from https://kurotu.github.io/VRCQuestTools/
 
-kurotu. (n.d.). *Introduction*. VRCQuestTools Docs. Retrieved from https://kurotu.github.io/VRCQuestTools/docs/intro
+kurotu. (n.d.). _Introduction_. VRCQuestTools Docs. Retrieved from https://kurotu.github.io/VRCQuestTools/docs/intro
 
-kurotu. (2025). *kurotu/VRCQuestTools* [Software]. GitHub. Retrieved from https://github.com/kurotu/VRCQuestTools
+kurotu. (2025). _kurotu/VRCQuestTools_ [Software]. GitHub. Retrieved from https://github.com/kurotu/VRCQuestTools
 
-VRChat Inc. (2025). *Performance Ranks*. VRChat Creator Documentation. Retrieved from https://creators.vrchat.com/avatars/avatar-performance-ranking-system/
+VRChat Inc. (2025). _Performance Ranks_. VRChat Creator Documentation. Retrieved from https://creators.vrchat.com/avatars/avatar-performance-ranking-system/

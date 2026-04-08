@@ -3,9 +3,11 @@
 <span class="badge badge-blue">Görsel</span> <span class="badge badge-purple">ERP</span> <span class="badge badge-yellow">SPS</span>
 
 ## Nedir?
+
 **Inside View**, **Liindy** tarafından oluşturulan, simüle edilmiş görsel derinlik ekleyerek bir mesh'in (SPS açıklığı gibi) içini görmenizi sağlayan bir VRChat avatar asset'idir [1].
 
 ## Temel Özellikler
+
 - **Simüle Edilmiş Derinlik:** Detaylı bir iç mekan illüzyonu oluşturur.
 - **Optimize:** Ağır geometri yerine shader kullanır.
 - **SPS Entegrasyonu:** SPS penetrasyonlarıyla çalışmak üzere tasarlanmış.
@@ -24,4 +26,4 @@
 
 ## Kaynaklar
 
-* Liindy. (n.d.). Inside View (VRCFury). Jinxxy. https://jinxxy.com/Liindy/InsideView
+- Liindy. (n.d.). Inside View (VRCFury). Jinxxy. https://jinxxy.com/Liindy/InsideView

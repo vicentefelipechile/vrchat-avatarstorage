@@ -3,9 +3,11 @@
 <span class="badge badge-blue">Visueel</span> <span class="badge badge-purple">ERP</span> <span class="badge badge-yellow">SPS</span>
 
 ## Wat is het?
+
 **Inside View**, gemaakt door **Liindy** [1], is een asset voor VRChat-avatars waarmee je de binnenkant van een mesh kunt zien door gesimuleerde visuele diepte toe te voegen.
 
 ## Belangrijkste Functies
+
 - **Gesimuleerde Diepte:** Creëert de illusie van een gedetailleerd interieur.
 - **Geoptimaliseerd:** Gebruikt shaders in plaats van zware geometrie.
 - **SPS-integratie:** Ontworpen om samen te werken met SPS-penetraties.
@@ -24,4 +26,4 @@
 
 ## Referenties
 
-* Liindy. (n.d.). Inside View (VRCFury). Jinxxy. https://jinxxy.com/Liindy/InsideView
+- Liindy. (n.d.). Inside View (VRCFury). Jinxxy. https://jinxxy.com/Liindy/InsideView

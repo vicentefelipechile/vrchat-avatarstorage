@@ -3,9 +3,11 @@
 <span class="badge">OPCIONAL</span>
 
 ## O que é?
+
 VRCFury é um plugin gratuito do Unity que simplifica enormemente a configuração de avatares do VRChat. Facilita a instalação de roupas, props, gestos e animações sem a necessidade de editar manualmente os controladores de animação.
 
 ## Para que serve?
+
 - Instalação de roupas e acessórios com um único clique
 - Configuração automática de gestos e animações
 - Geração automática de menus do VRChat
@@ -17,6 +19,7 @@ VRCFury é um plugin gratuito do Unity que simplifica enormemente a configuraç�
 > VRCFury é uma ferramenta OPCIONAL, mas altamente recomendada. Alguns avatares a requerem para funcionar corretamente. Se um avatar precisar, isso será indicado na descrição dele.
 
 ## Onde obter?
+
 - **Site Oficial (Downloads):** [vrcfury.com/download](https://vrcfury.com/download/)
 - **GitHub:** [VRCFury/VRCFury](https://github.com/VRCFury/VRCFury)
 
@@ -32,7 +35,7 @@ Usar o VCC garante que o VRCFury permaneça sempre atualizado e não cause probl
    - Vá para a página oficial de downloads: [vrcfury.com/download](https://vrcfury.com/download/).
    - No passo 1 ("Install VRChat Creator Companion"), se você já tiver o VCC instalado, pode ignorá-lo. No passo 2, clique no botão **"Click Here to add VRCFury to VCC"**.
    - Seu navegador pedirá permissão para abrir o VCC. Aceite e, uma vez dentro do VCC, clique em **"I Understand, Add Repository"**.
-   - *(Alternativa manual)*: Abra o VCC, vá para **Settings** -> aba **Packages** -> **Add Repository**, cole a URL `https://vcc.vrcfury.com` no espaço correspondente e clique em **Add**.
+   - _(Alternativa manual)_: Abra o VCC, vá para **Settings** -> aba **Packages** -> **Add Repository**, cole a URL `https://vcc.vrcfury.com` no espaço correspondente e clique em **Add**.
 2. **Adicionar VRCFury ao seu projeto:**
    - No VCC, vá para a lista de seus projetos e clique em **Manage Project** sobre o projeto que você está usando.
    - Na lista de repositórios à esquerda (ou no canto superior direito), certifique-se de que **"VRCFury Repo"** esteja marcado.
@@ -57,6 +60,6 @@ Este método não é mais recomendado e é considerado obsoleto (Legacy), mas ai
 
 ## Referências
 
-VRCFury. (s. d.). *Download*. VRCFury. Recuperado de https://vrcfury.com/download/
+VRCFury. (s. d.). _Download_. VRCFury. Recuperado de https://vrcfury.com/download/
 
-VRCFury. (s. d.). *VRCFury*. GitHub. Recuperado de https://github.com/VRCFury/VRCFury
+VRCFury. (s. d.). _VRCFury_. GitHub. Recuperado de https://github.com/VRCFury/VRCFury

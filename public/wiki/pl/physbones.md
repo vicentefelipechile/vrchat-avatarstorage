@@ -3,6 +3,7 @@
 <span class="badge badge-blue">ZALEŻNOŚĆ</span>
 
 ## Co to jest?
+
 PhysBones to zbiór komponentów wbudowanych w VRChat SDK, które dodają ruch wtórny (fizykę) do obiektów w awatarach i światach. Za pomocą PhysBones możesz dodać ruch do włosów, ogonów, uszu, ubrań i więcej.
 
 > [!NOTE]
@@ -10,14 +11,15 @@ PhysBones to zbiór komponentów wbudowanych w VRChat SDK, które dodają ruch w
 
 ## Główne Komponenty
 
-| Komponent | Opis |
-|------------|-------------|
-| **VRCPhysBone** | Główny komponent definiujący łańcuch bone'ów animowanych fizyką |
-| **VRCPhysBoneCollider** | Definiuje kolidery wpływające na PhysBones |
+| Komponent               | Opis                                                            |
+| ----------------------- | --------------------------------------------------------------- |
+| **VRCPhysBone**         | Główny komponent definiujący łańcuch bone'ów animowanych fizyką |
+| **VRCPhysBoneCollider** | Definiuje kolidery wpływające na PhysBones                      |
 
 ## Konfiguracja
 
 ### Siły
+
 - **Pull**: Siła przywracająca bone'y do pozycji spoczynkowej
 - **Spring/Momentum**: Oscylacja przy próbie osiągnięcia pozycji spoczynkowej
 - **Gravity**: Ilość zastosowanej grawitacji
@@ -28,34 +30,37 @@ PhysBones to zbiór komponentów wbudowanych w VRChat SDK, które dodają ruch w
 
 ### Limity
 
-| Typ | Opis |
-|------|-------------|
-| **None** | Brak limitów |
+| Typ       | Opis                                    |
+| --------- | --------------------------------------- |
+| **None**  | Brak limitów                            |
 | **Angle** | Ograniczone do maksymalnego kąta od osi |
-| **Hinge** | Ograniczone wzdłuż płaszczyzny |
-| **Polar** | Łączy Hinge z Yaw |
+| **Hinge** | Ograniczone wzdłuż płaszczyzny          |
+| **Polar** | Łączy Hinge z Yaw                       |
 
 ### Grab & Pose
 
-| Ustawienie | Opis |
-|------------|-------------|
-| **Allow Grabbing** | Pozwala graczom chwytać bone'y |
-| **Allow Posing** | Pozwala graczom pozować po chwyceniu |
+| Ustawienie         | Opis                                 |
+| ------------------ | ------------------------------------ |
+| **Allow Grabbing** | Pozwala graczom chwytać bone'y       |
+| **Allow Posing**   | Pozwala graczom pozować po chwyceniu |
 
 ## Praktyczne Przykłady
 
 ### Przykład 1: Długie Włosy
+
 1. Wybierz root bone włosów
 2. Dodaj komponent **VRCPhysBone**
 3. Skonfiguruj: Pull: 0.3-0.5, Gravity: 0.5-1.0, Radius: 0.05-0.1
 4. Dodaj **Limits** typu Angle, aby zapobiec przenikaniu przez głowę
 
 ### Przykład 2: Ogon Zwierzęcy
+
 1. Wybierz bazowy bone ogona
 2. Dodaj komponent **VRCPhysBone**
 3. Skonfiguruj: Pull: 0.2-0.4, Momentum: 0.5-0.7, Gravity: 0.3-0.6
 
 ### Przykład 3: Spódnica
+
 1. Wybierz root bone spódnicy
 2. Dodaj komponent **VRCPhysBone**
 3. Skonfiguruj: Pull: 0.1-0.3, Gravity: 0.8-1.0
@@ -64,10 +69,12 @@ PhysBones to zbiór komponentów wbudowanych w VRChat SDK, które dodają ruch w
 ## Częste Błędy
 
 ### PhysBone się nie rusza
+
 - Sprawdź czy Root Transform jest poprawnie przypisany
 - Upewnij się, że wartość Pull nie jest 0
 
 ### PhysBone przechodzi przez ciało
+
 - Dodaj Limits do komponentu
 - Dodaj Collidery do awatara
 
@@ -75,4 +82,4 @@ PhysBones to zbiór komponentów wbudowanych w VRChat SDK, które dodają ruch w
 
 ## Odniesienia
 
-VRChat. (2025). *PhysBones*. VRChat Creators. Retrieved from https://creators.vrchat.com/common-components/physbones/
+VRChat. (2025). _PhysBones_. VRChat Creators. Retrieved from https://creators.vrchat.com/common-components/physbones/

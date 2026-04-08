@@ -3,12 +3,14 @@
 <span class="badge badge-blue">DÉPENDANCE</span>
 
 ## Qu'est-ce que c'est ?
+
 PhysBones est un ensemble de composants intégrés au SDK VRChat qui permet d'ajouter un mouvement secondaire (physique) aux objets dans les avatars et les mondes. Avec PhysBones, vous pouvez ajouter du mouvement aux cheveux, queues, oreilles, vêtements, câbles, plantes et plus encore. Les utiliser correctement rend vos avatars plus dynamiques et réalistes.
 
 > [!NOTE]
 > PhysBones est le **remplacement officiel** de Dynamic Bones dans VRChat. Bien que Dynamic Bones fonctionne encore sur les avatars existants (il se convertit automatiquement), tous les créateurs devraient utiliser PhysBones pour les nouveaux avatars.
 
 ## À quoi ça sert ?
+
 - Ajouter de la physique aux cheveux, queues, oreilles et vêtements
 - Permettre à d'autres joueurs d'interagir avec les éléments de votre avatar (saisir, positionner)
 - Créer un mouvement secondaire dynamique et réaliste
@@ -18,11 +20,11 @@ PhysBones est un ensemble de composants intégrés au SDK VRChat qui permet d'aj
 
 PhysBones est composé de trois composants qui fonctionnent ensemble :
 
-| Composant | Description |
-|------------|-------------|
-| **VRCPhysBone** | Composant principal qui définit la chaîne d'os qui sera animée avec la physique |
-| **VRCPhysBoneCollider** | Définit les colliders qui affectent PhysBones (tête, torse, mains, etc.) |
-| **VRCPhysBoneRoot** | Optionnel. Définit la racine du mouvement pour plusieurs PhysBones (mondes uniquement) |
+| Composant               | Description                                                                            |
+| ----------------------- | -------------------------------------------------------------------------------------- |
+| **VRCPhysBone**         | Composant principal qui définit la chaîne d'os qui sera animée avec la physique        |
+| **VRCPhysBoneCollider** | Définit les colliders qui affectent PhysBones (tête, torse, mains, etc.)               |
+| **VRCPhysBoneRoot**     | Optionnel. Définit la racine du mouvement pour plusieurs PhysBones (mondes uniquement) |
 
 ## Configuration détaillée
 
@@ -31,22 +33,24 @@ PhysBones est composé de trois composants qui fonctionnent ensemble :
 Vous pouvez sélectionner la version du composant VRCPhysBone directement dans l'inspecteur. Par défaut, la dernière version disponible est utilisée.
 
 **Version 1.0 :**
+
 - Version de base du composant PhysBone
 
 **Version 1.1 (Squishy Bones) :**
+
 - Permet aux os de se comprimer et de s'étirer
 - La gravité agit maintenant comme une proportion de la rotation des os au repos
 - Un Pull positif est requis pour que les os se déplacent dans la direction de la gravité
 
 ### Transforms
 
-| Paramètre | Description |
-|------------|-------------|
-| **Root Transform** | Transform où le composant commence. Si vide, commence à ce GameObject |
-| **Ignore Transforms** | Liste des transforms qui ne doivent pas être affectés par le composant |
-| **Ignore Other Phys Bones** | Si activé, le PhysBone ignore les autres PhysBones dans la hiérarchie |
-| **Endpoint Position** | Vecteur pour créer des os supplémentaires à chaque extrémité de la chaîne |
-| **Multi-Child Type** | Comportement de l'os racine quand plusieurs chaînes existent |
+| Paramètre                   | Description                                                               |
+| --------------------------- | ------------------------------------------------------------------------- |
+| **Root Transform**          | Transform où le composant commence. Si vide, commence à ce GameObject     |
+| **Ignore Transforms**       | Liste des transforms qui ne doivent pas être affectés par le composant    |
+| **Ignore Other Phys Bones** | Si activé, le PhysBone ignore les autres PhysBones dans la hiérarchie     |
+| **Endpoint Position**       | Vecteur pour créer des os supplémentaires à chaque extrémité de la chaîne |
+| **Multi-Child Type**        | Comportement de l'os racine quand plusieurs chaînes existent              |
 
 > [!CAUTION]
 > Si vous utilisez un seul os racine, ou une racine avec plusieurs enfants (sans petits-enfants), vous DEVEZ définir un Endpoint Position ! C'est différent de Dynamic Bones.
@@ -54,10 +58,12 @@ Vous pouvez sélectionner la version du composant VRCPhysBone directement dans l
 ### Forces
 
 **Type d'intégration :**
+
 - **Simplified** : Plus stable, plus facile à configurer, moins réactif aux forces externes
 - **Advanced** : Moins stable, permet des configurations plus complexes, plus réactif aux forces externes
 
 Paramètres disponibles :
+
 - **Pull** : Force pour retourner les os à leur position de repos
 - **Spring** (Simplified) / **Momentum** (Advanced) : Quantité d'oscillation pour atteindre la position de repos
 - **Stiffness** (Advanced uniquement) : Force pour rester à la position de repos
@@ -71,11 +77,11 @@ Paramètres disponibles :
 
 Les limites permettent de restreindre le mouvement d'une chaîne PhysBones. Elles sont très utiles pour éviter que les cheveux traversent la tête, et sont **beaucoup plus performantes** que les colliders.
 
-| Type | Description |
-|------|-------------|
-| **None** | Pas de limites |
-| **Angle** | Limité à un angle max depuis un axe. Visualisé comme un cône |
-| **Hinge** | Limité le long d'un plan. Similaire à une part de pizza |
+| Type      | Description                                                     |
+| --------- | --------------------------------------------------------------- |
+| **None**  | Pas de limites                                                  |
+| **Angle** | Limité à un angle max depuis un axe. Visualisé comme un cône    |
+| **Hinge** | Limité le long d'un plan. Similaire à une part de pizza         |
 | **Polar** | Combine Hinge avec Yaw. Plus complexe, utiliser avec modération |
 
 > [!WARNING]
@@ -83,33 +89,34 @@ Les limites permettent de restreindre le mouvement d'une chaîne PhysBones. Elle
 
 ### Collision
 
-| Paramètre | Description |
-|------------|-------------|
-| **Radius** | Rayon de collision autour de chaque os (en mètres) |
+| Paramètre           | Description                                                                                   |
+| ------------------- | --------------------------------------------------------------------------------------------- |
+| **Radius**          | Rayon de collision autour de chaque os (en mètres)                                            |
 | **Allow Collision** | Permet la collision avec les colliders globaux (mains des autres joueurs, colliders du monde) |
-| **Colliders** | Liste des colliders spécifiques avec lesquels ce PhysBone collide |
+| **Colliders**       | Liste des colliders spécifiques avec lesquels ce PhysBone collide                             |
 
 **Options Allow Collision :**
+
 - **True** : Collide avec les colliders globaux
 - **False** : Collide seulement avec les colliders listés
 - **Other** : Options avancées pour filtrer par type (avatar, monde, objet)
 
 ### Stretch & Squish (v1.1 uniquement)
 
-| Paramètre | Description |
-|------------|-------------|
+| Paramètre          | Description                                                    |
+| ------------------ | -------------------------------------------------------------- |
 | **Stretch Motion** | Quantité de mouvement affectant l'étirement/compression des os |
-| **Max Stretch** | Étirement max autorisé (multiple de la longueur originale) |
-| **Max Squish** | Compression max autorisée (multiple de la longueur originale) |
+| **Max Stretch**    | Étirement max autorisé (multiple de la longueur originale)     |
+| **Max Squish**     | Compression max autorisée (multiple de la longueur originale)  |
 
 ### Grab & Pose
 
-| Paramètre | Description |
-|------------|-------------|
-| **Allow Grabbing** | Permet aux joueurs de saisir les os |
-| **Allow Posing** | Permet aux joueurs de positionner après avoir saisi |
-| **Grab Movement** | Contrôle comment les os bougent quand saisis (0 = utilise pull/spring, 1 = immédiat) |
-| **Snap To Hand** | L'os s'ajuste automatiquement à la main qui le saisit |
+| Paramètre          | Description                                                                          |
+| ------------------ | ------------------------------------------------------------------------------------ |
+| **Allow Grabbing** | Permet aux joueurs de saisir les os                                                  |
+| **Allow Posing**   | Permet aux joueurs de positionner après avoir saisi                                  |
+| **Grab Movement**  | Contrôle comment les os bougent quand saisis (0 = utilise pull/spring, 1 = immédiat) |
+| **Snap To Hand**   | L'os s'ajuste automatiquement à la main qui le saisit                                |
 
 ## Cas d'utilisation pratiques
 
@@ -164,6 +171,7 @@ Les limites permettent de restreindre le mouvement d'une chaîne PhysBones. Elle
 VRChat convertit automatiquement les composants Dynamic Bones en PhysBones lors du chargement de l'avatar. Cependant, cette conversion n'est pas parfaite.
 
 **Différences principales :**
+
 - Dynamic Bones utilise le mode Advanced par défaut lors de la conversion
 - Certains paramètres de Dynamic Bones n'ont pas d'équivalent dans PhysBones
 - La conversion automatique utilise "Ignore" pour Multi-Child Type
@@ -176,12 +184,13 @@ Vous pouvez convertir manuellement vos avatars en utilisant VRChat SDK → Utili
 
 ## Limites et performances
 
-| Plateforme | Limite |
-|------------|--------|
-| **PC** | ~256 transforms par composant |
+| Plateforme     | Limite                                                             |
+| -------------- | ------------------------------------------------------------------ |
+| **PC**         | ~256 transforms par composant                                      |
 | **Meta Quest** | Limite plus basse (consulter la documentation Performance Ranking) |
 
 **Conseils d'optimisation :**
+
 - N'avez pas plus de 256 transforms par composant PhysBone
 - Si vous avez plus de 128 transforms, envisagez de diviser en plusieurs composants
 - Utilisez **Limits** au lieu des colliders quand possible
@@ -193,20 +202,24 @@ Vous pouvez convertir manuellement vos avatars en utilisant VRChat SDK → Utili
 ## Erreurs courantes
 
 ### Le PhysBone ne bouge pas
+
 - Vérifiez que Root Transform est correctement assigné
 - Assurez-vous qu'il n'est pas sur "Ignore" dans Multi-Child Type
 - Vérifiez que la valeur Pull n'est pas 0
 
 ### Le PhysBone traverse le corps
+
 - Ajoutez des limites (Limits) au composant
 - Ajoutez des colliders à l'avatar et configurez-les dans PhysBone
 - Augmentez la valeur Pull
 
 ### Les os n'atteignent pas la position de repos
+
 - Augmentez la valeur Pull
 - Ajustez Spring/Momentum selon le type d'intégration
 
 ### Les os traversent le corps
+
 - Ajoutez VRCPhysBoneCollider à l'avatar
 - Configurez le collider dans la liste Colliders de PhysBone
 - Vérifiez que le Radius est approprié
@@ -221,6 +234,6 @@ Vous pouvez convertir manuellement vos avatars en utilisant VRChat SDK → Utili
 
 ## Références
 
-VRChat. (2025). *PhysBones*. VRChat Creators. Récupéré de https://creators.vrchat.com/common-components/physbones/
+VRChat. (2025). _PhysBones_. VRChat Creators. Récupéré de https://creators.vrchat.com/common-components/physbones/
 
-VRChat. (2025). *VRCPhysBoneCollider*. VRChat Creators. Récupéré de https://creators.vrchat.com/common-components/physbones/#vrcphysbonecollider
+VRChat. (2025). _VRCPhysBoneCollider_. VRChat Creators. Récupéré de https://creators.vrchat.com/common-components/physbones/#vrcphysbonecollider

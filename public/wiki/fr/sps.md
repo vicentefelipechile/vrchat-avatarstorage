@@ -3,16 +3,20 @@
 <span class="badge badge-purple">ERP</span> <span class="badge badge-red">NSFW</span>
 
 ## Qu'est-ce que c'est ?
+
 **SPS** (Super Plug Shader), parfois appelé familièrement "SSP", est un système de déformation de maillage gratuit et moderne pour VRChat conçu par l'équipe de **VRCFury**. Il permet aux parties de l'avatar de se déformer de manière réaliste lors de l'interaction avec d'autres avatars ou objets, remplaçant les systèmes plus anciens et payants comme **DPS** (Dynamic Penetration System) et **TPS** [1].
 
 ## À quoi ça sert ?
+
 - **Déformation réaliste :** Simule la pénétration et le contact physique en déformant le maillage de l'avatar.
 - **Optimisation :** Il est beaucoup plus léger et efficace que les anciens systèmes.
 - **Gratuit :** Contrairement au DPS, SPS est entièrement gratuit et open source.
 - **Compatibilité :** Fonctionne avec la plupart des shaders modernes (Poiyomi, LilToon, etc.) et est rétrocompatible avec les avatars utilisant DPS ou TPS.
 
 ## Prérequis
+
 Avant de commencer, assurez-vous d'avoir les éléments suivants :
+
 - **Unity :** La version recommandée pour VRChat.
 - **VRChat SDK :** Installé dans votre projet (VCC).
 - **VRCFury :** Installé et mis à jour vers la dernière version [2].
@@ -23,12 +27,15 @@ Avant de commencer, assurez-vous d'avoir les éléments suivants :
 SPS est entièrement géré via les outils VRCFury dans Unity. Vous n'avez pas besoin d'importer des paquets de shaders étranges ni de faire des configurations d'animation manuelles complexes.
 
 ### Étape 1 : Installer VRCFury
+
 Si vous ne l'avez pas encore, installez VRCFury depuis le VRChat Creator Companion (VCC).
+
 1. Ouvrez VCC.
 2. Allez dans "Manage Project".
 3. Cherchez "VRCFury" dans la liste des paquets et cliquez sur installer (ou ajoutez le dépôt s'il n'apparaît pas).
 
 ### Étape 2 : Créer un Socket (Orifice)
+
 Un "Socket" est le récepteur de l'interaction (bouche, etc.).
 
 1. **Outils :** Dans la barre supérieure de Unity, allez à `Tools` > `VRCFury` > `SPS` > `Create Socket` [1].
@@ -46,6 +53,7 @@ Un "Socket" est le récepteur de l'interaction (bouche, etc.).
 > **Attention aux Grandes Proportions :** Si votre avatar a des hanches très larges ou un très gros fessier ("énormes culs"), **déplacez le Socket encore plus vers l'extérieur**. Sinon, l'autre personne entrera en collision avec le maillage du corps avant de pouvoir "atteindre" le point d'interaction.
 
 ### Étape 3 : Créer un Plug (Pénétrateur)
+
 Un "Plug" est l'objet qui pénètre et se déforme.
 
 1. **Préparation du Maillage :**
@@ -61,7 +69,9 @@ Un "Plug" est l'objet qui pénètre et se déforme.
    - Configurez le **Type** approprié.
 
 ### Étape 4 : Tester dans Unity
+
 Vous n'avez pas besoin de mettre en ligne l'avatar pour tester si cela fonctionne.
+
 1. Installez **Gesture Manager** depuis le VCC [1].
 2. Entrez en **Play Mode** dans Unity.
 3. Sélectionnez le Gesture Manager.
@@ -77,7 +87,7 @@ Vous n'avez pas besoin de mettre en ligne l'avatar pour tester si cela fonctionn
 
 ## Références
 
-* VRCFury. (s.d.). SPS (Super Plug Shader). VRCFury Documentation. https://vrcfury.com/sps
-* VRCFury. (s.d.). Download & Install. VRCFury Documentation. https://vrcfury.com/download
-* VRCD. (s.d.). SPS Tutorial. VRCD. https://vrcd.org.cn
-* VRCFury. (s.d.). SPS Troubleshooting. VRCFury Documentation. https://vrcfury.com/sps
+- VRCFury. (s.d.). SPS (Super Plug Shader). VRCFury Documentation. https://vrcfury.com/sps
+- VRCFury. (s.d.). Download & Install. VRCFury Documentation. https://vrcfury.com/download
+- VRCD. (s.d.). SPS Tutorial. VRCD. https://vrcd.org.cn
+- VRCFury. (s.d.). SPS Troubleshooting. VRCFury Documentation. https://vrcfury.com/sps

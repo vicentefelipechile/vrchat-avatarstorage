@@ -3,9 +3,11 @@
 <span class="badge">NARZĘDZIE</span>
 
 ## Co to jest?
+
 SyncDances to prefab Unity dla VRChat, który pozwala awatarom tańczyć w idealnej synchronizacji. Gdy gracz rozpoczyna taniec, wszyscy z zainstalowanym systemem tańczą jednocześnie.
 
 ## Do czego służy?
+
 - Zsynchronizowane tańce między wieloma graczami w VRChat
 - System nadawca-odbiorca, gdzie jeden kontroluje, a reszta podąża
 - Kontrola prędkości tańca (zsynchronizowana)
@@ -14,6 +16,7 @@ SyncDances to prefab Unity dla VRChat, który pozwala awatarom tańczyć w ideal
 ## Instalacja
 
 ### Metoda z VRCFury (Zalecana)
+
 1. Pobierz plik `SyncDancesPrefab PC (VRCFURY)` z pakietu
 2. Przeciągnij prefab na swój awatar w Unity
 3. Gotowe! Awatar jest gotowy do przesłania
@@ -22,6 +25,7 @@ SyncDances to prefab Unity dla VRChat, który pozwala awatarom tańczyć w ideal
 > Nie instaluj pojedynczych plików item — tylko główny prefab.
 
 ## Jak używać
+
 1. Zainstaluj prefab na awatarze
 2. Użyj menu VRChat, aby wybrać taniec
 3. Jeśli jesteś "Nadawcą", inni ("Odbiorcy") tańczą zsynchronizowanie
@@ -30,6 +34,7 @@ SyncDances to prefab Unity dla VRChat, który pozwala awatarom tańczyć w ideal
 > Kontrola prędkości NIE działa z osobami używającymi SyncDances 3.1 lub starszego.
 
 ## Zasoby
+
 - **Zakup:** [BOOTH - SyncDances 4.5](https://booth.pm/en/items/4881102)
 - **SyncDances Modular Avatar:** [BOOTH](https://booth.pm/en/items/6311129)
 
@@ -37,4 +42,4 @@ SyncDances to prefab Unity dla VRChat, który pozwala awatarom tańczyć w ideal
 
 ## Odniesienia
 
-Kinimara. (2025). *SyncDances 4.5*. BOOTH. https://booth.pm/en/items/4881102
+Kinimara. (2025). _SyncDances 4.5_. BOOTH. https://booth.pm/en/items/4881102

@@ -3,12 +3,14 @@
 <span class="badge">TOOL</span>
 
 ## Was ist das?
+
 Modular Avatar ist eine Sammlung von **nicht-destruktiven** Werkzeugen zur Modularisierung deiner VRChat-Avatare und Verteilung von Avatar-Komponenten. Mit Modular Avatar ist das Hinzufügen eines neuen Outfits oder Gimmicks zu deinem Avatar so einfach wie Drag-and-Drop.
 
 > [!NOTE]
 > Modular Avatar arbeitet über das **Non-Destructive Modular Framework (NDMF)**-System, das den Avatar zur Build-Zeit verarbeitet, ohne deine Originaldateien zu verändern.
 
 ## Wofür ist es?
+
 - Ein-Klick-Installation von Kleidung und Accessoires per **Drag-and-Drop**
 - Animator-Organisation: teilt den FX-Animator in mehrere Sub-Animatoren auf und führt sie zur Laufzeit zusammen
 - Automatische VRChat-Menükonfiguration
@@ -18,31 +20,32 @@ Modular Avatar ist eine Sammlung von **nicht-destruktiven** Werkzeugen zur Modul
 
 ## Hauptfunktionen
 
-| Funktion | Modular Avatar | VRCFury |
-|----------|----------------|---------| 
-| **Outfit-Installation** | Ja (Drag-and-Drop) | Ja (Ein-Klick) |
-| **Toggle-System** | Ja (erweitert) | Ja (einfach) |
-| **Animator-Organisation** | Ja (Zusammenführung) | Nein |
-| **Automatische Menüs** | Ja (komplett) | Ja (einfach) |
-| **Nicht-destruktiver Prozess** | Ja (NDMF) | Ja |
-| **Blendshape-Sync** | Ja | Nein |
-| **Bone Proxy** | Ja | Nein |
+| Funktion                       | Modular Avatar       | VRCFury        |
+| ------------------------------ | -------------------- | -------------- |
+| **Outfit-Installation**        | Ja (Drag-and-Drop)   | Ja (Ein-Klick) |
+| **Toggle-System**              | Ja (erweitert)       | Ja (einfach)   |
+| **Animator-Organisation**      | Ja (Zusammenführung) | Nein           |
+| **Automatische Menüs**         | Ja (komplett)        | Ja (einfach)   |
+| **Nicht-destruktiver Prozess** | Ja (NDMF)            | Ja             |
+| **Blendshape-Sync**            | Ja                   | Nein           |
+| **Bone Proxy**                 | Ja                   | Nein           |
 
 ### Komponentenbeschreibungen
 
-| Komponente | Beschreibung |
-|------------|-------------|
-| **Merge Armature** | Führt Prefab-Armaturen in den übergeordneten Avatar zusammen, üblich beim Hinzufügen von Kleidung. MA minimiert die Anzahl erstellter Bones und verwendet bestehende wieder, wenn möglich. |
-| **Merge Animator** | Führt Sub-Animatoren in den übergeordneten Avatar zusammen, nützlich für verschiedene Arten von Avatar-Gimmicks. |
-| **Object Toggle** | Erstellt Menüeinträge zum Aktivieren oder Deaktivieren von Objekten. Kann auch Blendshapes beim Umschalten aktualisieren. |
-| **Blendshape Sync** | Synchronisiert die Blendshapes von Kleidung oder Accessoires mit dem Basis-Avatar, wenn du die Körperform anpasst. |
-| **Bone Proxy** | Ermöglicht das Hinzufügen einzigartiger Props wie Waffen oder Spezialeffekte, die direkt an Avatar-Bones befestigt werden. |
-| **Menu System** | Komplettes Menüsystem zur Bearbeitung deines Avatars aus dem VRChat-Menü. |
+| Komponente          | Beschreibung                                                                                                                                                                               |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Merge Armature**  | Führt Prefab-Armaturen in den übergeordneten Avatar zusammen, üblich beim Hinzufügen von Kleidung. MA minimiert die Anzahl erstellter Bones und verwendet bestehende wieder, wenn möglich. |
+| **Merge Animator**  | Führt Sub-Animatoren in den übergeordneten Avatar zusammen, nützlich für verschiedene Arten von Avatar-Gimmicks.                                                                           |
+| **Object Toggle**   | Erstellt Menüeinträge zum Aktivieren oder Deaktivieren von Objekten. Kann auch Blendshapes beim Umschalten aktualisieren.                                                                  |
+| **Blendshape Sync** | Synchronisiert die Blendshapes von Kleidung oder Accessoires mit dem Basis-Avatar, wenn du die Körperform anpasst.                                                                         |
+| **Bone Proxy**      | Ermöglicht das Hinzufügen einzigartiger Props wie Waffen oder Spezialeffekte, die direkt an Avatar-Bones befestigt werden.                                                                 |
+| **Menu System**     | Komplettes Menüsystem zur Bearbeitung deines Avatars aus dem VRChat-Menü.                                                                                                                  |
 
 > [!TIP]
 > Modular Avatar ist besonders nützlich, wenn du Kleidung oder Accessoires als Prefabs verteilen möchtest. Benutzer müssen das Prefab nur auf ihren Avatar ziehen und MA erledigt alles automatisch.
 
 ## Wo bekommt man es?
+
 - **Offizielle Seite:** [modular-avatar.nadena.dev](https://modular-avatar.nadena.dev/)
 - **Dokumentation:** [Modular Avatar Dokumentation](https://modular-avatar.nadena.dev/docs/intro)
 - **GitHub:** [bdunderscore/modular-avatar](https://github.com/bdunderscore/modular-avatar)
@@ -93,8 +96,8 @@ Modular Avatar und VRCFury sind **komplementäre Tools**. Viele moderne Outfits 
 
 ## Referenzen
 
-Modular Avatar. (n.d.). *Modular Avatar*. Nadena Dev. Retrieved from https://modular-avatar.nadena.dev/
+Modular Avatar. (n.d.). _Modular Avatar_. Nadena Dev. Retrieved from https://modular-avatar.nadena.dev/
 
-Modular Avatar. (n.d.). *Tutorials*. Nadena Dev. Retrieved from https://modular-avatar.nadena.dev/docs/tutorials
+Modular Avatar. (n.d.). _Tutorials_. Nadena Dev. Retrieved from https://modular-avatar.nadena.dev/docs/tutorials
 
-bd_. (2026). *bdunderscore/modular-avatar* [Software]. GitHub. Retrieved from https://github.com/bdunderscore/modular-avatar
+bd\_. (2026). _bdunderscore/modular-avatar_ [Software]. GitHub. Retrieved from https://github.com/bdunderscore/modular-avatar

@@ -3,16 +3,20 @@
 <span class="badge badge-purple">ERP</span> <span class="badge badge-red">NSFW</span>
 
 ## 是什么？
+
 **SPS** (Super Plug Shader)，有时通俗地称为 "SSP"，是由 **VRCFury** 团队设计的 VRChat 免费现代网格变形系统。它允许头像部分在与其他头像或物体交互时真实地变形，取代了 **DPS** (Dynamic Penetration System) 和 **TPS** 等旧的付费系统 [1]。
 
 ## 有什么用？
+
 - **真实变形：** 通过使头像网格变形来模拟穿透和物理接触。
 - **优化：** 它比旧系统更轻便、更高效。
 - **免费：** 与 DPS 不同，SPS 是完全免费且开源的。
 - **兼容性：** 适用于大多数现代着色器（Poiyomi, LilToon 等），并向后兼容使用 DPS 或 TPS 的头像。
 
 ## 先决条件
+
 在开始之前，请确保你拥有以下内容：
+
 - **Unity：** VRChat 推荐的版本。
 - **VRChat SDK：** 已安装在你的项目中 (VCC)。
 - **VRCFury：** 已安装并更新到最新版本 [2]。
@@ -23,12 +27,15 @@
 SPS 完全通过 Unity 中的 VRCFury 工具进行管理。你不需要导入奇怪的着色器包或进行复杂的特定手动动画配置。
 
 ### 第 1 步：安装 VRCFury
+
 如果你还没有，请从 VRChat Creator Companion (VCC) 安装 VRCFury。
+
 1. 打开 VCC。
 2. 转到 "Manage Project"。
 3. 在包列表中搜索 "VRCFury" 并点击安装（如果未出现，请添加存储库）。
 
 ### 第 2 步：创建 Socket (孔/插座)
+
 "Socket" 是交互的接收器（嘴巴等）。
 
 1. **工具：** 在 Unity 的顶部栏中，转到 `Tools` > `VRCFury` > `SPS` > `Create Socket` [1]。
@@ -46,6 +53,7 @@ SPS 完全通过 Unity 中的 VRCFury 工具进行管理。你不需要导入奇
 > **注意大比例：** 如果你的头像臀部很宽或屁股很大（"巨臀"），**请将 Socket 进一步向外移动**。否则，对方在能够“到达”交互点之前就会与身体网格发生碰撞。
 
 ### 第 3 步：创建 Plug (插入物/插头)
+
 "Plug" 是穿透并变形的对象。
 
 1. **网格准备：**
@@ -61,7 +69,9 @@ SPS 完全通过 Unity 中的 VRCFury 工具进行管理。你不需要导入奇
    - 配置适当的 **Type**。
 
 ### 第 4 步：在 Unity 中测试
+
 你不需要上传头像来测试它是否有效。
+
 1. 从 VCC 安装 **Gesture Manager** [1]。
 2. 进入 Unity 的 **Play Mode**。
 3. 选择 Gesture Manager。
@@ -77,7 +87,7 @@ SPS 完全通过 Unity 中的 VRCFury 工具进行管理。你不需要导入奇
 
 ## 参考资料
 
-* VRCFury. (n.d.). SPS (Super Plug Shader). VRCFury Documentation. https://vrcfury.com/sps
-* VRCFury. (n.d.). Download & Install. VRCFury Documentation. https://vrcfury.com/download
-* VRCD. (n.d.). SPS Tutorial. VRCD. https://vrcd.org.cn
-* VRCFury. (n.d.). SPS Troubleshooting. VRCFury Documentation. https://vrcfury.com/sps
+- VRCFury. (n.d.). SPS (Super Plug Shader). VRCFury Documentation. https://vrcfury.com/sps
+- VRCFury. (n.d.). Download & Install. VRCFury Documentation. https://vrcfury.com/download
+- VRCD. (n.d.). SPS Tutorial. VRCD. https://vrcd.org.cn
+- VRCFury. (n.d.). SPS Troubleshooting. VRCFury Documentation. https://vrcfury.com/sps

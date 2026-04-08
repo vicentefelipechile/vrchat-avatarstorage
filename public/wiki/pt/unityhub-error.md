@@ -9,14 +9,16 @@ Veja abaixo como excluir todos os arquivos temporários e configurações corrom
 Siga estes passos cuidadosamente para garantir que o Unity Hub volte a funcionar:
 
 ### 1. Desinstalar Unity Hub
+
 > [!WARNING]
 > Aviso
-> Para este passo, você deve usar o **desinstalador oficial do Windows** (em *Configurações -> Aplicativos* ou no *Painel de Controle*). **NÃO use programas de terceiros** como IObit Uninstaller, Revo Uninstaller, etc., pois eles podem apagar chaves de registro necessárias e piorar o problema.
+> Para este passo, você deve usar o **desinstalador oficial do Windows** (em _Configurações -> Aplicativos_ ou no _Painel de Controle_). **NÃO use programas de terceiros** como IObit Uninstaller, Revo Uninstaller, etc., pois eles podem apagar chaves de registro necessárias e piorar o problema.
 
 - Vá em **Configurações do Windows** -> **Aplicativos**.
 - Encontre "Unity Hub" na lista e clique em **Desinstalar**.
 
 ### 2. Excluir diretórios residuais
+
 Mesmo após a desinstalação, o Unity deixa pastas de configuração (cache) ocultas em seu sistema. Você deve procurá-las e excluí-las manualmente.
 
 Abra o Explorador de Arquivos do Windows, copie cada um dos seguintes caminhos na barra superior e pressione Enter. **Se a pasta existir, exclua-a completamente:**
@@ -28,10 +30,12 @@ Abra o Explorador de Arquivos do Windows, copie cada um dos seguintes caminhos n
 - `%USERPROFILE%\AppData\Local\Unity`
 - `%USERPROFILE%\AppData\Local\Unity Hub`
 
-*(Nota: Você pode copiar e colar o caminho `%USERPROFILE%` diretamente na barra do explorador, da mesma maneira que usaria `%appdata%` para instalar mods no Minecraft, e ele o levará automaticamente à sua pasta de usuário atual).*
+_(Nota: Você pode copiar e colar o caminho `%USERPROFILE%` diretamente na barra do explorador, da mesma maneira que usaria `%appdata%` para instalar mods no Minecraft, e ele o levará automaticamente à sua pasta de usuário atual)._
 
 ### 3. Reinstalar Unity Hub
+
 Quando o sistema estiver completamente limpo de arquivos do Unity:
+
 1. Vá para a [página oficial do Unity](https://unity.com/download) e baixe a versão mais recente do Unity Hub.
 2. Execute o instalador e siga as etapas normalmente.
 3. Aguarde tudo instalar corretamente, faça o login novamente e confirme se o erro foi corrigido.

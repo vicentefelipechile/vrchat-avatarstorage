@@ -3,9 +3,11 @@
 <span class="badge">RECOMENDADO</span>
 
 ## ¿Qué es?
+
 Gogo Loco es un sistema de locomoción avanzado para avatares de VRChat creado por **franada** [1]. Permite a los usuarios de escritorio y VR sin "full body tracking" acceder a funciones de pose, vuelo y ajustes de avatar que normalmente no estarían disponibles.
 
 ## ¿Para qué sirve?
+
 - **Poses estáticas:** Permite sentarse, acostarse y realizar diversas poses artísticas en cualquier lugar.
 - **Simulación de Full Body:** Incluye animaciones que simulan tener rastreadores en las piernas.
 - **Vuelo:** Permite volar en mundos que tienen colisiones o restricciones de salto.
@@ -17,17 +19,22 @@ Gogo Loco es un sistema de locomoción avanzado para avatares de VRChat creado p
 > Aunque se puede instalar manualmente, se recomienda encarecidamente usar **VRCFury** para facilitar la instalación y evitar conflictos con otros menús.
 
 ## ¿Dónde obtenerlo?
+
 - [GitHub - Gogo Loco (Gratis)](https://github.com/Franada/goloco)
 - [Gumroad - Gogo Loco (Apoya al creador)](https://franadavrc.gumroad.com/l/gogoloco)
 
 ## ¿Se puede poner a modelos que no lo tienen?
+
 Sí, **Gogo Loco** se puede añadir a prácticamente cualquier avatar, siempre que cumpla con un requisito principal:
+
 - **Debe ser un avatar humanoide** (o tener el esqueleto configurado como humanoide en Unity).
 
 Los avatares "genéricos" o no humanoides (como objetos flotante, arañas complejas sin esqueleto humano, etc.) pueden tener problemas o no funcionar correctamente, ya que Gogo Loco manipula huesos humanos específicos (caderas, piernas, espalda).
 
 ## Requisitos Previos
+
 Antes de empezar, asegúrate de tener lo siguiente:
+
 - **Unity:** La versión recomendada para VRChat (actualmente algo como 2022.3.22f1).
 - **VRChat SDK:** Instalado en tu proyecto (VCC).
 - **Gogo Loco:** El paquete `.unitypackage` descargado (versión gratuita o de pago).
@@ -41,6 +48,7 @@ Existen dos métodos principales para instalar Gogo Loco en tu avatar. Elige el 
 ---
 
 ### Método 1: Usando VRCFury (Recomendado y Fácil)
+
 Este es el método más sencillo, automatizado y menos propenso a errores [3].
 
 1. **Instalar VRCFury:** Asegúrate de tener **VRCFury** instalado en tu proyecto a través del VRChat Creator Companion (VCC).
@@ -48,7 +56,7 @@ Este es el método más sencillo, automatizado y menos propenso a errores [3].
 3. **Buscar el Prefab:**
    - En la ventana `Project` de Unity, navega a la carpeta: `Assets/GoGo/Loco/Prefabs`.
    - Busca el prefab llamado **GoGo Loco Beyond**.
-     - *Nota:* "Beyond" incluye las funciones de vuelo, escala y poses. Si solo quieres algunas funciones, explora las otras carpetas.
+     - _Nota:_ "Beyond" incluye las funciones de vuelo, escala y poses. Si solo quieres algunas funciones, explora las otras carpetas.
 4. **Instalar en el Avatar:**
    - Arrastra el prefab **GoGo Loco Beyond** y **suéltalo directamente sobre tu avatar** en la jerarquía (`Hierarchy`). El prefab debe quedar como un "hijo" (child) de tu avatar.
    - ¡Listo! No necesitas configurar nada más.
@@ -57,6 +65,7 @@ Este es el método más sencillo, automatizado y menos propenso a errores [3].
 ---
 
 ### Método 2: Instalación Manual con Avatar 3.0 Manager
+
 Si prefieres no usar VRCFury o necesitas un control total, usa esta herramienta para evitar errores humanos al copiar parámetros y capas [4].
 
 1. **VRLabs Avatar 3.0 Manager:** Descarga e importa esta herramienta gratuita (disponible en GitHub o VCC).
@@ -92,7 +101,7 @@ Si prefieres no usar VRCFury o necesitas un control total, usa esta herramienta 
 
 ## Referencias
 
-* Franada. (s.f.). Gogo Loco. GitHub. https://github.com/Franada/goloco
-* Franada. (s.f.). Gogo Loco. Gumroad. https://franadavrc.gumroad.com/l/gogoloco
-* VRCFury. (s.f.). VRCFury Documentation. https://vrcfury.com
-* VRLabs. (s.f.). Avatar 3.0 Manager. GitHub. https://github.com/VRLabs/Avatars-3-0-Manager
+- Franada. (s.f.). Gogo Loco. GitHub. https://github.com/Franada/goloco
+- Franada. (s.f.). Gogo Loco. Gumroad. https://franadavrc.gumroad.com/l/gogoloco
+- VRCFury. (s.f.). VRCFury Documentation. https://vrcfury.com
+- VRLabs. (s.f.). Avatar 3.0 Manager. GitHub. https://github.com/VRLabs/Avatars-3-0-Manager
