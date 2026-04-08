@@ -6,7 +6,6 @@ export default {
     common: {
         loading: 'Загрузка...',
         loadingResources: 'Загрузка ресурсов...',
-
         loadingComments: 'Загрузка комментариев...',
         loadingCleanup: 'Загрузка информации об очистке...',
         loadingPending: 'Загрузка ожидающих ресурсов...',
@@ -75,8 +74,14 @@ export default {
         '2fa_backup_ok': 'Я сохранил свои коды',
         '2fa_continue': 'Продолжить',
     },
-    home: { welcome: 'Добро пожаловать в VRCStorage', browse: 'Просмотр ресурсов по категориям:', latest: 'Последние ресурсы' },
-    card: { view: 'Подробнее' },
+    home: {
+        welcome: 'Добро пожаловать в VRCStorage',
+        browse: 'Просмотр ресурсов по категориям:',
+        latest: 'Последние ресурсы'
+    },
+    card: {
+        view: 'Подробнее'
+    },
     avatar: {
         options: 'Параметры аватара',
         platform: 'Платформа',
@@ -90,8 +95,19 @@ export default {
         pcQuest: 'ПК / Quest',
         default: 'По умолчанию',
     },
-    category: { showing: 'Показано', of: 'из', resources: 'ресурсов', prev: 'Назад', next: 'Вперед' },
-    pagination: { prev: 'Назад', next: 'Вперед', page: 'Страница', of: 'из' },
+    category: {
+        showing: 'Показано',
+        of: 'из',
+        resources: 'ресурсов',
+        prev: 'Назад',
+        next: 'Вперед'
+    },
+    pagination: {
+        prev: 'Назад',
+        next: 'Вперед',
+        page: 'Страница',
+        of: 'из'
+    },
     admin: {
         title: 'Панель администратора',
         noPending: 'Нет ресурсов, ожидающих одобрения.',
@@ -173,9 +189,19 @@ export default {
         title: 'История Изменений',
         backToResource: 'Назад к Ресурсу',
         noHistory: 'Для этого ресурса нет записей об изменениях.',
-        field: { title: 'Название', desc: 'Описание', cat: 'Категория', tags: 'Теги' },
+        field: {
+            title: 'Название',
+            desc: 'Описание',
+            cat: 'Категория',
+            tags: 'Теги'
+        },
         noVisibleChanges: 'Нет видимых изменений контента.',
-        types: { content_edit: 'Редактирование контента', create: 'Создание', approval: 'Одобрение' },
+        types: {
+            content_edit: 'Редактирование контента',
+            create: 'Создание',
+            approval: 'Одобрение',
+            meta_edit: 'Метаданные Изменены',
+        },
     },
     login: {
         title: 'Вход',
@@ -280,30 +306,81 @@ export default {
     },
     wiki: {
         title: 'Вики - Руководство по зависимостям',
-        poiyomi: { title: 'Poiyomi Toon Shader' },
-        vrcfury: { title: 'VRCFury' },
-        modularAvatar: { title: 'Modular Avatar' },
-        physbones: { title: 'PhysBones' },
-        syncdances: { title: 'SyncDances' },
-        vrcquesttools: { title: 'VRCQuestTools' },
-        setup: { title: 'Руководство по установке' },
-        faq: { title: 'Часто задаваемые вопросы' },
-        gogoloco: { title: 'GoGo Loco' },
-        gogolocoNsfw: { title: 'NSFW Locomotion' },
-        sps: { title: 'SPS (Super Plug Shader)' },
-        dps: { title: 'DPS (Dynamic Penetration System)' },
-        insideView: { title: 'Inside View' },
-        pcs: { title: 'PCS (Penetration Contact System)' },
-        parameter: { title: 'Параметры аватара' },
-        actionMenu: { title: 'Меню действий' },
-        gestureManager: { title: 'Эмулятор Gesture Manager' },
-        nsfwEssentials: { title: 'Основы NSFW' },
-        haptics: { title: 'Руководство по Хаптике' },
-        comments: { title: 'Комментарии Вики' },
-        desktopPuppeteer: { title: 'Desktop Puppeteer' },
-        unityhubError: { title: 'Ошибка Unity Hub' },
-        justkisssfx: { title: 'JustKissSFX' },
-        categories: { vrchat: 'VRChat', dependencies: 'Зависимости', erp: 'ERP', informative: 'Информационный' },
+        poiyomi: {
+            title: 'Poiyomi Toon Shader'
+        },
+        vrcfury: {
+            title: 'VRCFury'
+        },
+        modularAvatar: {
+            title: 'Modular Avatar'
+        },
+        physbones: {
+            title: 'PhysBones'
+        },
+        syncdances: {
+            title: 'SyncDances'
+        },
+        vrcquesttools: {
+            title: 'VRCQuestTools'
+        },
+        setup: {
+            title: 'Руководство по установке'
+        },
+        faq: {
+            title: 'Часто задаваемые вопросы'
+        },
+        gogoloco: {
+            title: 'GoGo Loco'
+        },
+        gogolocoNsfw: {
+            title: 'NSFW Locomotion'
+        },
+        sps: {
+            title: 'SPS (Super Plug Shader)'
+        },
+        dps: {
+            title: 'DPS (Dynamic Penetration System)'
+        },
+        insideView: {
+            title: 'Inside View'
+        },
+        pcs: {
+            title: 'PCS (Penetration Contact System)'
+        },
+        parameter: {
+            title: 'Параметры аватара'
+        },
+        actionMenu: {
+            title: 'Меню действий'
+        },
+        gestureManager: {
+            title: 'Эмулятор Gesture Manager'
+        },
+        nsfwEssentials: {
+            title: 'Основы NSFW'
+        },
+        haptics: {
+            title: 'Руководство по Хаптике'
+        },
+        comments: {
+            title: 'Комментарии Вики'
+        },
+        desktopPuppeteer: {
+            title: 'Desktop Puppeteer'
+        },
+        unityhubError: {
+            title: 'Ошибка Unity Hub'
+        },
+        justkisssfx: {
+            title: 'JustKissSFX'
+        },
+        categories: {
+            vrchat: 'VRChat',
+            dependencies: 'Зависимости',
+            erp: 'ERP',
+            informative: 'Информационный'
+        },
     },
     dmca: {},
     blog: {

@@ -74,8 +74,14 @@ export default {
         '2fa_backup_ok': '我已保存我的代码',
         '2fa_continue': '继续',
     },
-    home: { welcome: '欢迎来到 VRCStorage', browse: '按类别浏览资源：', latest: '最新资源' },
-    card: { view: '查看详情' },
+    home: {
+        welcome: '欢迎来到 VRCStorage',
+        browse: '按类别浏览资源：',
+        latest: '最新资源'
+    },
+    card: {
+        view: '查看详情'
+    },
     avatar: {
         options: '虚拟形象选项',
         platform: '平台',
@@ -89,8 +95,19 @@ export default {
         pcQuest: 'PC / Quest',
         default: '默认',
     },
-    category: { showing: '显示', of: '/', resources: '资源', prev: '上一页', next: '下一页' },
-    pagination: { prev: '上一页', next: '下一页', page: '页', of: '/' },
+    category: {
+        showing: '显示',
+        of: '/',
+        resources: '资源',
+        prev: '上一页',
+        next: '下一页'
+    },
+    pagination: {
+        prev: '上一页',
+        next: '下一页',
+        page: '页',
+        of: '/'
+    },
     admin: {
         title: '管理员面板',
         noPending: '没有等待批准的资源。',
@@ -172,9 +189,19 @@ export default {
         title: '变更历史',
         backToResource: '返回资源',
         noHistory: '此资源没有变更记录。',
-        field: { title: '标题', desc: '描述', cat: '类别', tags: '标签' },
+        field: {
+            title: '标题',
+            desc: '描述',
+            cat: '类别',
+            tags: '标签'
+        },
         noVisibleChanges: '没有可见的内容变更。',
-        types: { content_edit: '内容编辑', create: '创建', approval: '批准' },
+        types: {
+            content_edit: '内容编辑',
+            create: '创建',
+            approval: '批准',
+            meta_edit: '元数据已编辑'
+        },
     },
     login: {
         title: '登录',
@@ -279,30 +306,81 @@ export default {
     },
     wiki: {
         title: '维基 - 依赖指南',
-        poiyomi: { title: 'Poiyomi Toon Shader' },
-        vrcfury: { title: 'VRCFury' },
-        modularAvatar: { title: 'Modular Avatar' },
-        physbones: { title: 'PhysBones' },
-        syncdances: { title: 'SyncDances' },
-        vrcquesttools: { title: 'VRCQuestTools' },
-        setup: { title: '安装指南' },
-        faq: { title: '常见问题' },
-        gogoloco: { title: 'GoGo Loco' },
-        gogolocoNsfw: { title: 'NSFW Locomotion' },
-        sps: { title: 'SPS (Super Plug Shader)' },
-        dps: { title: 'DPS (Dynamic Penetration System)' },
-        insideView: { title: 'Inside View' },
-        pcs: { title: 'PCS (Penetration Contact System)' },
-        parameter: { title: '虚拟形象参数' },
-        actionMenu: { title: '操作菜单' },
-        gestureManager: { title: 'Gesture Manager 模拟器' },
-        nsfwEssentials: { title: 'NSFW 基础指南' },
-        haptics: { title: '触觉指南' },
-        comments: { title: 'Wiki 评论' },
-        desktopPuppeteer: { title: 'Desktop Puppeteer' },
-        unityhubError: { title: 'Unity Hub 错误' },
-        justkisssfx: { title: 'JustKissSFX' },
-        categories: { vrchat: 'VRChat', dependencies: '依赖项', erp: 'ERP', informative: '信息' },
+        poiyomi: {
+            title: 'Poiyomi Toon Shader'
+        },
+        vrcfury: {
+            title: 'VRCFury'
+        },
+        modularAvatar: {
+            title: 'Modular Avatar'
+        },
+        physbones: {
+            title: 'PhysBones'
+        },
+        syncdances: {
+            title: 'SyncDances'
+        },
+        vrcquesttools: {
+            title: 'VRCQuestTools'
+        },
+        setup: {
+            title: '安装指南'
+        },
+        faq: {
+            title: '常见问题'
+        },
+        gogoloco: {
+            title: 'GoGo Loco'
+        },
+        gogolocoNsfw: {
+            title: 'NSFW Locomotion'
+        },
+        sps: {
+            title: 'SPS (Super Plug Shader)'
+        },
+        dps: {
+            title: 'DPS (Dynamic Penetration System)'
+        },
+        insideView: {
+            title: 'Inside View'
+        },
+        pcs: {
+            title: 'PCS (Penetration Contact System)'
+        },
+        parameter: {
+            title: '虚拟形象参数'
+        },
+        actionMenu: {
+            title: '操作菜单'
+        },
+        gestureManager: {
+            title: 'Gesture Manager 模拟器'
+        },
+        nsfwEssentials: {
+            title: 'NSFW 基础指南'
+        },
+        haptics: {
+            title: '触觉指南'
+        },
+        comments: {
+            title: 'Wiki 评论'
+        },
+        desktopPuppeteer: {
+            title: 'Desktop Puppeteer'
+        },
+        unityhubError: {
+            title: 'Unity Hub 错误'
+        },
+        justkisssfx: {
+            title: 'JustKissSFX'
+        },
+        categories: {
+            vrchat: 'VRChat',
+            dependencies: '依赖项',
+            erp: 'ERP',
+            informative: '信息'
+        },
     },
     blog: {
         title: '博客',

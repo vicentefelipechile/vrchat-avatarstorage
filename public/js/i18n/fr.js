@@ -74,8 +74,14 @@ export default {
         '2fa_backup_ok': "J'ai enregistré mes codes",
         '2fa_continue': 'Continuer',
     },
-    home: { welcome: 'Bienvenue sur VRCStorage', browse: 'Parcourir les ressources par catégorie :', latest: 'Dernières ressources' },
-    card: { view: 'Voir les détails' },
+    home: {
+        welcome: 'Bienvenue sur VRCStorage',
+        browse: 'Parcourir les ressources par catégorie :',
+        latest: 'Dernières ressources'
+    },
+    card: {
+        view: 'Voir les détails'
+    },
     avatar: {
         options: "Options d'Avatar",
         platform: 'Plateforme',
@@ -89,16 +95,26 @@ export default {
         pcQuest: 'PC / Quest',
         default: 'Par défaut',
     },
-    category: { showing: 'Affichage de', of: 'sur', resources: 'ressources', prev: 'Précédent', next: 'Suivant' },
-    pagination: { prev: 'Précédent', next: 'Suivant', page: 'Page', of: 'sur' },
+    category: {
+        showing: 'Affichage de',
+        of: 'sur',
+        resources: 'ressources',
+        prev: 'Précédent',
+        next: 'Suivant'
+    },
+    pagination: {
+        prev: 'Précédent',
+        next: 'Suivant',
+        page: 'Page',
+        of: 'sur'
+    },
     admin: {
         title: "Panneau d'administration",
         noPending: "Aucune ressource en attente d'approbation.",
         delete: 'Supprimer',
         deleteConfirm: 'Êtes-vous sûr de vouloir supprimer ce commentaire ?',
         cleanupOrphaned: 'Nettoyer les fichiers orphelins',
-        cleanupConfirm:
-            'Nettoyer les fichiers orphelins ? Cela supprimera les fichiers téléchargés il y a plus de 24 heures qui ne sont associés à aucune ressource.',
+        cleanupConfirm: 'Nettoyer les fichiers orphelins ? Cela supprimera les fichiers téléchargés il y a plus de 24 heures qui ne sont associés à aucune ressource.',
         cleaning: 'Nettoyage...',
         cleanupSuccess: 'Nettoyage réussi : {count} fichiers supprimés',
         error: 'Erreur',
@@ -150,33 +166,42 @@ export default {
         history: 'Historique',
         errorLoadingComments: 'Erreur lors du chargement des commentaires.',
         md: {
-            bold:        'Gras',
-            italic:      'Italique',
-            strike:      'Barré',
-            code:        'Code en ligne',
-            codeblock:   'Bloc de code',
-            link:        'Lien',
-            quote:       'Citation',
-            ul:          'Liste',
-            image:       'Envoyer image',
-            uploading:   'Envoi de l\'image...',
+            bold: 'Gras',
+            italic: 'Italique',
+            strike: 'Barré',
+            code: 'Code en ligne',
+            codeblock: 'Bloc de code',
+            link: 'Lien',
+            quote: 'Citation',
+            ul: 'Liste',
+            image: 'Envoyer image',
+            uploading: 'Envoi de l\'image...',
             uploadError: 'Erreur d\'envoi. Veuillez réessayer.',
         },
     },
     edit: {
         title: 'Modifier la ressource',
         addFileHeader: 'Ajouter un fichier (Mise à jour)',
-        addFileDesc:
-            "Télécharger un nouveau fichier pour l'ajouter à la liste de téléchargement (v1.1, v1.2, etc). Ne remplace pas les fichiers précédents.",
+        addFileDesc: "Télécharger un nouveau fichier pour l'ajouter à la liste de téléchargement (v1.1, v1.2, etc). Ne remplace pas les fichiers précédents.",
         saving: 'Enregistrement...',
     },
     history: {
         title: 'Historique des modifications',
         backToResource: 'Retour à la ressource',
         noHistory: 'Aucun changement enregistré pour cette ressource.',
-        field: { title: 'Titre', desc: 'Description', cat: 'Catégorie', tags: 'Tags' },
+        field: {
+            title: 'Titre',
+            desc: 'Description',
+            cat: 'Catégorie',
+            tags: 'Tags'
+        },
         noVisibleChanges: 'Aucun changement visible.',
-        types: { content_edit: 'Modification de contenu', create: 'Création', approval: 'Approbation' },
+        types: {
+            content_edit: 'Modification de contenu',
+            create: 'Création',
+            approval: 'Approbation',
+            meta_edit: 'Métadonnées Modifiées',
+        },
     },
     login: {
         title: 'Connexion',
@@ -281,30 +306,81 @@ export default {
     },
     wiki: {
         title: 'Wiki - Guide des dépendances',
-        poiyomi: { title: 'Poiyomi Toon Shader' },
-        vrcfury: { title: 'VRCFury' },
-        modularAvatar: { title: 'Modular Avatar' },
-        physbones: { title: 'PhysBones' },
-        syncdances: { title: 'SyncDances' },
-        vrcquesttools: { title: 'VRCQuestTools' },
-        setup: { title: "Guide d'installation" },
-        faq: { title: 'FAQ' },
-        gogoloco: { title: 'GoGo Loco' },
-        gogolocoNsfw: { title: 'NSFW Locomotion' },
-        sps: { title: 'SPS (Super Plug Shader)' },
-        dps: { title: 'DPS (Dynamic Penetration System)' },
-        insideView: { title: 'Inside View' },
-        pcs: { title: 'PCS (Penetration Contact System)' },
-        parameter: { title: "Paramètres d'Avatar" },
-        actionMenu: { title: "Menu d'Actions" },
-        gestureManager: { title: 'Gesture Manager Emulator' },
-        nsfwEssentials: { title: 'Les Essentiels NSFW' },
-        haptics: { title: 'Guide Haptique' },
-        comments: { title: 'Commentaires Wiki' },
-        desktopPuppeteer: { title: 'Desktop Puppeteer' },
-        unityhubError: { title: 'Erreur Unity Hub' },
-        justkisssfx: { title: 'JustKissSFX' },
-        categories: { vrchat: 'VRChat', dependencies: 'Dépendances', erp: 'ERP', informative: 'Informatif' },
+        poiyomi: {
+            title: 'Poiyomi Toon Shader'
+        },
+        vrcfury: {
+            title: 'VRCFury'
+        },
+        modularAvatar: {
+            title: 'Modular Avatar'
+        },
+        physbones: {
+            title: 'PhysBones'
+        },
+        syncdances: {
+            title: 'SyncDances'
+        },
+        vrcquesttools: {
+            title: 'VRCQuestTools'
+        },
+        setup: {
+            title: "Guide d'installation"
+        },
+        faq: {
+            title: 'FAQ'
+        },
+        gogoloco: {
+            title: 'GoGo Loco'
+        },
+        gogolocoNsfw: {
+            title: 'NSFW Locomotion'
+        },
+        sps: {
+            title: 'SPS (Super Plug Shader)'
+        },
+        dps: {
+            title: 'DPS (Dynamic Penetration System)'
+        },
+        insideView: {
+            title: 'Inside View'
+        },
+        pcs: {
+            title: 'PCS (Penetration Contact System)'
+        },
+        parameter: {
+            title: "Paramètres d'Avatar"
+        },
+        actionMenu: {
+            title: "Menu d'Actions"
+        },
+        gestureManager: {
+            title: 'Gesture Manager Emulator'
+        },
+        nsfwEssentials: {
+            title: 'Les Essentiels NSFW'
+        },
+        haptics: {
+            title: 'Guide Haptique'
+        },
+        comments: {
+            title: 'Commentaires Wiki'
+        },
+        desktopPuppeteer: {
+            title: 'Desktop Puppeteer'
+        },
+        unityhubError: {
+            title: 'Erreur Unity Hub'
+        },
+        justkisssfx: {
+            title: 'JustKissSFX'
+        },
+        categories: {
+            vrchat: 'VRChat',
+            dependencies: 'Dépendances',
+            erp: 'ERP',
+            informative: 'Informatif'
+        },
     },
     dmca: {
         title: 'Avis DMCA',

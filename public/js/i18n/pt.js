@@ -74,8 +74,14 @@ export default {
         '2fa_backup_ok': 'Guardei meus códigos',
         '2fa_continue': 'Continuar',
     },
-    home: { welcome: 'Bem-vindo ao VRCStorage', browse: 'Navegar recursos por categoria:', latest: 'Últimos Recursos' },
-    card: { view: 'Ver Detalhes' },
+    home: {
+        welcome: 'Bem-vindo ao VRCStorage',
+        browse: 'Navegar recursos por categoria:',
+        latest: 'Últimos Recursos'
+    },
+    card: {
+        view: 'Ver Detalhes'
+    },
     avatar: {
         options: 'Opções de Avatar',
         platform: 'Plataforma',
@@ -89,16 +95,26 @@ export default {
         pcQuest: 'PC / Quest',
         default: 'Padrão',
     },
-    category: { showing: 'Mostrando', of: 'de', resources: 'recursos', prev: 'Anterior', next: 'Próximo' },
-    pagination: { prev: 'Anterior', next: 'Próximo', page: 'Página', of: 'de' },
+    category: {
+        showing: 'Mostrando',
+        of: 'de',
+        resources: 'recursos',
+        prev: 'Anterior',
+        next: 'Próximo'
+    },
+    pagination: {
+        prev: 'Anterior',
+        next: 'Próximo',
+        page: 'Página',
+        of: 'de'
+    },
     admin: {
         title: 'Painel de Administrador',
         noPending: 'Não há recursos pendentes de aprovação.',
         delete: 'Excluir',
         deleteConfirm: 'Tem certeza de que deseja excluir este comentário?',
         cleanupOrphaned: 'Limpar Arquivos Órfãos',
-        cleanupConfirm:
-            'Limpar arquivos órfãos? Isso excluirá arquivos enviados há mais de 24 horas que não estão associados a nenhum recurso.',
+        cleanupConfirm: 'Limpar arquivos órfãos? Isso excluirá arquivos enviados há mais de 24 horas que não estão associados a nenhum recurso.',
         cleaning: 'Limpando...',
         cleanupSuccess: 'Limpeza concluída: {count} arquivos excluídos',
         error: 'Erro',
@@ -173,9 +189,19 @@ export default {
         title: 'Histórico de Alterações',
         backToResource: 'Voltar ao Recurso',
         noHistory: 'Não há alterações registradas para este recurso.',
-        field: { title: 'Título', desc: 'Descrição', cat: 'Categoria', tags: 'Tags' },
+        field: {
+            title: 'Título',
+            desc: 'Descrição',
+            cat: 'Categoria',
+            tags: 'Tags'
+        },
         noVisibleChanges: 'Sem alterações visíveis no conteúdo.',
-        types: { content_edit: 'Edição de Conteúdo', create: 'Criação', approval: 'Aprovação' },
+        types: {
+            content_edit: 'Edição de Conteúdo',
+            create: 'Criação',
+            approval: 'Aprovação',
+            meta_edit: 'Metadados Editados',
+        },
     },
     login: {
         title: 'Login',
@@ -280,30 +306,81 @@ export default {
     },
     wiki: {
         title: 'Wiki - Guia de Dependências',
-        poiyomi: { title: 'Poiyomi Toon Shader' },
-        vrcfury: { title: 'VRCFury' },
-        modularAvatar: { title: 'Modular Avatar' },
-        physbones: { title: 'PhysBones' },
-        syncdances: { title: 'SyncDances' },
-        vrcquesttools: { title: 'VRCQuestTools' },
-        setup: { title: 'Guia de Instalação' },
-        faq: { title: 'Perguntas Frequentes' },
-        gogoloco: { title: 'GoGo Loco' },
-        gogolocoNsfw: { title: 'NSFW Locomotion' },
-        sps: { title: 'SPS (Super Plug Shader)' },
-        dps: { title: 'DPS (Dynamic Penetration System)' },
-        insideView: { title: 'Inside View' },
-        pcs: { title: 'PCS (Penetration Contact System)' },
-        parameter: { title: 'Parâmetros do Avatar' },
-        actionMenu: { title: 'Menu de Ações' },
-        gestureManager: { title: 'Gesture Manager Emulator' },
-        nsfwEssentials: { title: 'Guia Essencial NSFW' },
-        haptics: { title: 'Guia Haptic' },
-        comments: { title: 'Comentários da Wiki' },
-        desktopPuppeteer: { title: 'Desktop Puppeteer' },
-        unityhubError: { title: 'Erro Unity Hub' },
-        justkisssfx: { title: 'JustKissSFX' },
-        categories: { vrchat: 'VRChat', dependencies: 'Dependências', erp: 'ERP', informative: 'Informativo' },
+        poiyomi: {
+            title: 'Poiyomi Toon Shader'
+        },
+        vrcfury: {
+            title: 'VRCFury'
+        },
+        modularAvatar: {
+            title: 'Modular Avatar'
+        },
+        physbones: {
+            title: 'PhysBones'
+        },
+        syncdances: {
+            title: 'SyncDances'
+        },
+        vrcquesttools: {
+            title: 'VRCQuestTools'
+        },
+        setup: {
+            title: 'Guia de Instalação'
+        },
+        faq: {
+            title: 'Perguntas Frequentes'
+        },
+        gogoloco: {
+            title: 'GoGo Loco'
+        },
+        gogolocoNsfw: {
+            title: 'NSFW Locomotion'
+        },
+        sps: {
+            title: 'SPS (Super Plug Shader)'
+        },
+        dps: {
+            title: 'DPS (Dynamic Penetration System)'
+        },
+        insideView: {
+            title: 'Inside View'
+        },
+        pcs: {
+            title: 'PCS (Penetration Contact System)'
+        },
+        parameter: {
+            title: 'Parâmetros do Avatar'
+        },
+        actionMenu: {
+            title: 'Menu de Ações'
+        },
+        gestureManager: {
+            title: 'Gesture Manager Emulator'
+        },
+        nsfwEssentials: {
+            title: 'Guia Essencial NSFW'
+        },
+        haptics: {
+            title: 'Guia Haptic'
+        },
+        comments: {
+            title: 'Comentários da Wiki'
+        },
+        desktopPuppeteer: {
+            title: 'Desktop Puppeteer'
+        },
+        unityhubError: {
+            title: 'Erro Unity Hub'
+        },
+        justkisssfx: {
+            title: 'JustKissSFX'
+        },
+        categories: {
+            vrchat: 'VRChat',
+            dependencies: 'Dependências',
+            erp: 'ERP',
+            informative: 'Informativo'
+        },
     },
     dmca: {
         title: 'Aviso DMCA',

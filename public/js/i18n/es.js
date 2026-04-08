@@ -76,8 +76,14 @@ export default {
 		'2fa_backup_ok': 'He guardado mis códigos',
 		'2fa_continue': 'Continuar',
 	},
-	home: { welcome: 'Bienvenido a VRCStorage', browse: 'Explora recursos por categoría:', latest: 'Últimos Recursos' },
-	card: { view: 'Ver Detalles' },
+	home: {
+		welcome: 'Bienvenido a VRCStorage',
+		browse: 'Explora recursos por categoría:',
+		latest: 'Últimos Recursos'
+	},
+	card: {
+		view: 'Ver Detalles'
+	},
 	avatar: {
 		options: 'Opciones de Avatar',
 		platform: 'Plataforma',
@@ -91,8 +97,19 @@ export default {
 		pcQuest: 'PC / Quest',
 		default: 'Por defecto',
 	},
-	category: { showing: 'Mostrando', of: 'de', resources: 'recursos', prev: 'Anterior', next: 'Siguiente' },
-	pagination: { prev: 'Anterior', next: 'Siguiente', page: 'Página', of: 'de' },
+	category: {
+		showing: 'Mostrando',
+		of: 'de',
+		resources: 'recursos',
+		prev: 'Anterior',
+		next: 'Siguiente'
+	},
+	pagination: {
+		prev: 'Anterior',
+		next: 'Siguiente',
+		page: 'Página',
+		of: 'de'
+	},
 	admin: {
 		title: 'Panel de Administrador',
 		noPending: 'No hay recursos pendientes de aprobación.',
@@ -174,9 +191,19 @@ export default {
 		title: 'Historial de Cambios',
 		backToResource: 'Volver al Recurso',
 		noHistory: 'No hay cambios registrados para este recurso.',
-		field: { title: 'Título', desc: 'Descripción', cat: 'Categoría', tags: 'Etiquetas' },
+		field: {
+			title: 'Título',
+			desc: 'Descripción',
+			cat: 'Categoría',
+			tags: 'Etiquetas'
+		},
 		noVisibleChanges: 'Sin cambios visibles en el contenido.',
-		types: { content_edit: 'Edición de Contenido', create: 'Creación', approval: 'Aprobación' },
+		types: {
+			content_edit: 'Edición de Contenido',
+			create: 'Creación',
+			approval: 'Aprobación',
+			meta_edit: 'Metadatos Editados',
+		},
 	},
 	login: {
 		title: 'Login',
@@ -281,30 +308,81 @@ export default {
 	},
 	wiki: {
 		title: 'Wiki - Guía de Dependencias',
-		poiyomi: { title: 'Poiyomi Toon Shader' },
-		vrcfury: { title: 'VRCFury' },
-		modularAvatar: { title: 'Modular Avatar' },
-		physbones: { title: 'PhysBones' },
-		syncdances: { title: 'SyncDances' },
-		vrcquesttools: { title: 'VRCQuestTools' },
-		setup: { title: 'Guía de Instalación' },
-		faq: { title: 'Preguntas Frecuentes' },
-		gogoloco: { title: 'GoGo Loco' },
-		gogolocoNsfw: { title: 'NSFW Locomotion' },
-		sps: { title: 'SPS (Super Plug Shader)' },
-		dps: { title: 'DPS (Dynamic Penetration System)' },
-		insideView: { title: 'Inside View' },
-		pcs: { title: 'PCS (Penetration Contact System)' },
-		parameter: { title: 'Parámetros del Avatar' },
-		actionMenu: { title: 'Menú de Acciones' },
-		gestureManager: { title: 'Gesture Manager Emulator' },
-		nsfwEssentials: { title: 'Guía Esencial NSFW' },
-		haptics: { title: 'Guía de Hápticos' },
-		comments: { title: 'Comentarios' },
-		desktopPuppeteer: { title: 'Desktop Puppeteer' },
-		unityhubError: { title: 'Error Unity Hub' },
-		justkisssfx: { title: 'JustKissSFX' },
-		categories: { vrchat: 'VRChat', dependencies: 'Dependencias', erp: 'ERP', informative: 'Informativo' },
+		poiyomi: {
+			title: 'Poiyomi Toon Shader'
+		},
+		vrcfury: {
+			title: 'VRCFury'
+		},
+		modularAvatar: {
+			title: 'Modular Avatar'
+		},
+		physbones: {
+			title: 'PhysBones'
+		},
+		syncdances: {
+			title: 'SyncDances'
+		},
+		vrcquesttools: {
+			title: 'VRCQuestTools'
+		},
+		setup: {
+			title: 'Guía de Instalación'
+		},
+		faq: {
+			title: 'Preguntas Frecuentes'
+		},
+		gogoloco: {
+			title: 'GoGo Loco'
+		},
+		gogolocoNsfw: {
+			title: 'NSFW Locomotion'
+		},
+		sps: {
+			title: 'SPS (Super Plug Shader)'
+		},
+		dps: {
+			title: 'DPS (Dynamic Penetration System)'
+		},
+		insideView: {
+			title: 'Inside View'
+		},
+		pcs: {
+			title: 'PCS (Penetration Contact System)'
+		},
+		parameter: {
+			title: 'Parámetros del Avatar'
+		},
+		actionMenu: {
+			title: 'Menú de Acciones'
+		},
+		gestureManager: {
+			title: 'Gesture Manager Emulator'
+		},
+		nsfwEssentials: {
+			title: 'Guía Esencial NSFW'
+		},
+		haptics: {
+			title: 'Guía de Hápticos'
+		},
+		comments: {
+			title: 'Comentarios'
+		},
+		desktopPuppeteer: {
+			title: 'Desktop Puppeteer'
+		},
+		unityhubError: {
+			title: 'Error Unity Hub'
+		},
+		justkisssfx: {
+			title: 'JustKissSFX'
+		},
+		categories: {
+			vrchat: 'VRChat',
+			dependencies: 'Dependencias',
+			erp: 'ERP',
+			informative: 'Informativo'
+		},
 	},
 	dmca: {
 		title: 'Aviso DMCA',

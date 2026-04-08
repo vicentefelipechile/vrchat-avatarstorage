@@ -74,8 +74,14 @@ export default {
         '2fa_backup_ok': 'コードを保存しました',
         '2fa_continue': '続ける',
     },
-    home: { welcome: 'VRCStorageへようこそ', browse: 'カテゴリー別リソース:', latest: '最新のリソース' },
-    card: { view: '詳細を見る' },
+    home: {
+        welcome: 'VRCStorageへようこそ',
+        browse: 'カテゴリー別リソース:',
+        latest: '最新のリソース'
+    },
+    card: {
+        view: '詳細を見る'
+    },
     avatar: {
         options: 'アバターオプション',
         platform: 'プラットフォーム',
@@ -89,16 +95,26 @@ export default {
         pcQuest: 'PC / Quest',
         default: 'デフォルト',
     },
-    category: { showing: '表示中', of: '/', resources: '件', prev: '前へ', next: '次へ' },
-    pagination: { prev: '前へ', next: '次へ', page: 'ページ', of: '/' },
+    category: {
+        showing: '表示中',
+        of: '/',
+        resources: '件',
+        prev: '前へ',
+        next: '次へ'
+    },
+    pagination: {
+        prev: '前へ',
+        next: '次へ',
+        page: 'ページ',
+        of: '/'
+    },
     admin: {
         title: '管理パネル',
         noPending: '承認待ちのリソースはありません。',
         delete: '削除',
         deleteConfirm: 'このコメントを削除してもよろしいですか？',
         cleanupOrphaned: '不要なファイルのクリーンアップ',
-        cleanupConfirm:
-            '不要なファイルを削除しますか？これにより、24時間以上前にアップロードされ、リソースに関連付けられていないファイルが削除されます。',
+        cleanupConfirm: '不要なファイルを削除しますか？これにより、24時間以上前にアップロードされ、リソースに関連付けられていないファイルが削除されます。',
         cleaning: 'クリーニング中...',
         cleanupSuccess: 'クリーンアップ成功: {count} 個のファイルを削除しました',
         error: 'エラー',
@@ -173,9 +189,19 @@ export default {
         title: '変更履歴',
         backToResource: 'リソースに戻る',
         noHistory: 'このリソースの変更履歴はありません。',
-        field: { title: 'タイトル', desc: '説明', cat: 'カテゴリー', tags: 'タグ' },
+        field: {
+            title: 'タイトル',
+            desc: '説明',
+            cat: 'カテゴリー',
+            tags: 'タグ'
+        },
         noVisibleChanges: 'コンテンツに目に見える変更はありません。',
-        types: { content_edit: 'コンテンツ編集', create: '作成', approval: '承認' },
+        types: {
+            content_edit: 'コンテンツ編集',
+            create: '作成',
+            approval: '承認',
+            meta_edit: 'メタデータ編集',
+        },
     },
     login: {
         title: 'ログイン',
@@ -280,30 +306,81 @@ export default {
     },
     wiki: {
         title: 'ウィキ - 依存関係ガイド',
-        poiyomi: { title: 'Poiyomi Toon Shader' },
-        vrcfury: { title: 'VRCFury' },
-        modularAvatar: { title: 'Modular Avatar' },
-        physbones: { title: 'PhysBones' },
-        syncdances: { title: 'SyncDances' },
-        vrcquesttools: { title: 'VRCQuestTools' },
-        setup: { title: 'セットアップガイド' },
-        faq: { title: 'よくある質問' },
-        gogoloco: { title: 'GoGo Loco' },
-        gogolocoNsfw: { title: 'NSFW Locomotion' },
-        sps: { title: 'SPS (Super Plug Shader)' },
-        dps: { title: 'DPS (Dynamic Penetration System)' },
-        insideView: { title: 'Inside View' },
-        pcs: { title: 'PCS (Penetration Contact System)' },
-        parameter: { title: 'アバターパラメータ' },
-        actionMenu: { title: 'アクションメニュー' },
-        gestureManager: { title: 'Gesture Manager エミュレーター' },
-        nsfwEssentials: { title: 'NSFW エッセンシャル' },
-        haptics: { title: 'ハプティクスガイド' },
-        comments: { title: 'Wikiコメント' },
-        desktopPuppeteer: { title: 'Desktop Puppeteer' },
-        unityhubError: { title: 'Unity Hubエラー' },
-        justkisssfx: { title: 'JustKissSFX' },
-        categories: { vrchat: 'VRChat', dependencies: '依存関係', erp: 'ERP', informative: '情報' },
+        poiyomi: {
+            title: 'Poiyomi Toon Shader'
+        },
+        vrcfury: {
+            title: 'VRCFury'
+        },
+        modularAvatar: {
+            title: 'Modular Avatar'
+        },
+        physbones: {
+            title: 'PhysBones'
+        },
+        syncdances: {
+            title: 'SyncDances'
+        },
+        vrcquesttools: {
+            title: 'VRCQuestTools'
+        },
+        setup: {
+            title: 'セットアップガイド'
+        },
+        faq: {
+            title: 'よくある質問'
+        },
+        gogoloco: {
+            title: 'GoGo Loco'
+        },
+        gogolocoNsfw: {
+            title: 'NSFW Locomotion'
+        },
+        sps: {
+            title: 'SPS (Super Plug Shader)'
+        },
+        dps: {
+            title: 'DPS (Dynamic Penetration System)'
+        },
+        insideView: {
+            title: 'Inside View'
+        },
+        pcs: {
+            title: 'PCS (Penetration Contact System)'
+        },
+        parameter: {
+            title: 'アバターパラメータ'
+        },
+        actionMenu: {
+            title: 'アクションメニュー'
+        },
+        gestureManager: {
+            title: 'Gesture Manager エミュレーター'
+        },
+        nsfwEssentials: {
+            title: 'NSFW エッセンシャル'
+        },
+        haptics: {
+            title: 'ハプティクスガイド'
+        },
+        comments: {
+            title: 'Wikiコメント'
+        },
+        desktopPuppeteer: {
+            title: 'Desktop Puppeteer'
+        },
+        unityhubError: {
+            title: 'Unity Hubエラー'
+        },
+        justkisssfx: {
+            title: 'JustKissSFX'
+        },
+        categories: {
+            vrchat: 'VRChat',
+            dependencies: '依存関係',
+            erp: 'ERP',
+            informative: '情報'
+        },
     },
     dmca: {},
     blog: {

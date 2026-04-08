@@ -74,8 +74,14 @@ export default {
 		'2fa_backup_ok': 'Ho salvato i miei codici',
 		'2fa_continue': 'Continua',
 	},
-	home: { welcome: 'Benvenuto su VRCStorage', browse: 'Sfoglia le risorse per categoria:', latest: 'Ultime risorse' },
-	card: { view: 'Vedi dettagli' },
+	home: {
+		welcome: 'Benvenuto su VRCStorage',
+		browse: 'Sfoglia le risorse per categoria:',
+		latest: 'Ultime risorse'
+	},
+	card: {
+		view: 'Vedi dettagli'
+	},
 	avatar: {
 		options: 'Opzioni avatar',
 		platform: 'Piattaforma',
@@ -89,8 +95,19 @@ export default {
 		pcQuest: 'PC / Quest',
 		default: 'Predefinito',
 	},
-	category: { showing: 'Mostrando', of: 'di', resources: 'risorse', prev: 'Precedente', next: 'Successivo' },
-	pagination: { prev: 'Precedente', next: 'Successivo', page: 'Pagina', of: 'di' },
+	category: {
+		showing: 'Mostrando',
+		of: 'di',
+		resources: 'risorse',
+		prev: 'Precedente',
+		next: 'Successivo'
+	},
+	pagination: {
+		prev: 'Precedente',
+		next: 'Successivo',
+		page: 'Pagina',
+		of: 'di'
+	},
 	admin: {
 		title: 'Pannello Admin',
 		noPending: 'Nessuna risorsa in attesa di approvazione.',
@@ -159,10 +176,17 @@ export default {
 		history: 'Cronologia',
 		errorLoadingComments: 'Errore nel caricamento dei commenti.',
 		md: {
-			bold: 'Grassetto', italic: 'Corsivo', strike: 'Barrato',
-			code: 'Codice inline', codeblock: 'Blocco di codice', link: 'Link',
-			quote: 'Citazione', ul: 'Elenco', image: 'Carica immagine',
-			uploading: 'Caricamento immagine...', uploadError: 'Caricamento fallito. Riprova.',
+			bold: 'Grassetto',
+			italic: 'Corsivo',
+			strike: 'Barrato',
+			code: 'Codice inline',
+			codeblock: 'Blocco di codice',
+			link: 'Link',
+			quote: 'Citazione',
+			ul: 'Elenco',
+			image: 'Carica immagine',
+			uploading: 'Caricamento immagine...',
+			uploadError: 'Caricamento fallito. Riprova.',
 		},
 	},
 	edit: {
@@ -175,28 +199,46 @@ export default {
 		title: 'Cronologia modifiche',
 		backToResource: 'Torna alla risorsa',
 		noHistory: 'Nessuna modifica registrata per questa risorsa.',
-		field: { title: 'Titolo', desc: 'Descrizione', cat: 'Categoria', tags: 'Tag' },
+		field: {
+			title: 'Titolo',
+			desc: 'Descrizione',
+			cat: 'Categoria',
+			tags: 'Tag'
+		},
 		noVisibleChanges: 'Nessuna modifica visibile al contenuto.',
-		types: { content_edit: 'Contenuto modificato', create: 'Creato', approval: 'Approvazione' },
+		types: {
+			content_edit: 'Contenuto modificato',
+			create: 'Creato',
+			approval: 'Approvazione',
+			meta_edit: 'Metadati Modificati',
+		},
 	},
 	login: {
-		title: 'Accedi', username: 'Nome utente', password: 'Password',
-		btn: 'Accedi', hint: 'Suggerimento: user / password',
+		title: 'Accedi',
+		username: 'Nome utente',
+		password: 'Password',
+		btn: 'Accedi',
+		hint: 'Suggerimento: user / password',
 		error: 'Credenziali non valide',
 		success: 'Accesso effettuato con successo!',
 		enter2FA: 'Inserisci il codice a 6 cifre dalla tua app di autenticazione',
 		invalid2FA: 'Il codice deve essere di 6 cifre numeriche',
 		logout_success: 'Disconnessione effettuata',
 		register: 'Non hai un account? Registrati',
-		logout: 'Esci', logoutConfirm: 'Sei sicuro di voler uscire?',
+		logout: 'Esci',
+		logoutConfirm: 'Sei sicuro di voler uscire?',
 		'2fa_code': 'Codice di autenticazione',
 		'2fa_hint': 'Inserisci il codice a 6 cifre dalla tua app di autenticazione OPPURE un codice di backup di 8 caratteri',
-		back: 'Indietro', or: 'o', google: 'Continua con Google',
+		back: 'Indietro',
+		or: 'o',
+		google: 'Continua con Google',
 	},
 	oauthRegister: {
 		title: 'Scegli il tuo nome utente',
 		subtitle: 'Stai per creare il tuo account. Scegli un nome utente unico.',
-		usernamePlaceholder: 'nome_utente', btn: 'Crea account', loading: 'Creazione account...',
+		usernamePlaceholder: 'nome_utente',
+		btn: 'Crea account',
+		loading: 'Creazione account...',
 		errorExpired: 'Sessione di registrazione scaduta. Accedi di nuovo con Google.',
 		errorTaken: 'Il nome utente è già in uso.',
 		errorInvalid: 'Il nome utente deve essere di 3-32 caratteri e può contenere solo lettere, numeri e underscore.',
@@ -212,17 +254,32 @@ export default {
 		success: "Registrazione completata. Effettua l'accesso.",
 	},
 	upload: {
-		title: 'Carica risorsa', name: 'Titolo', desc: 'Descrizione', cat: 'Categoria',
-		file: 'File', btn: 'Carica', success: 'Caricamento riuscito',
-		thumbnail: 'Miniatura', reference: 'Galleria (Immagini/Video)', mainFile: 'File principale',
-		preview: 'Anteprima', optional: 'Opzionale', required: '*',
-		uploading: 'Caricamento file...', uploadingThumbnail: 'Caricamento miniatura...',
-		uploadingReference: 'Caricamento file galleria...', uploadingFile: 'Caricamento file principale...',
-		creating: 'Creazione risorsa...', error: 'Errore',
+		title: 'Carica risorsa',
+		name: 'Titolo',
+		desc: 'Descrizione',
+		cat: 'Categoria',
+		file: 'File',
+		btn: 'Carica',
+		success: 'Caricamento riuscito',
+		thumbnail: 'Miniatura',
+		reference: 'Galleria (Immagini/Video)',
+		mainFile: 'File principale',
+		preview: 'Anteprima',
+		optional: 'Opzionale',
+		required: '*',
+		uploading: 'Caricamento file...',
+		uploadingThumbnail: 'Caricamento miniatura...',
+		uploadingReference: 'Caricamento file galleria...',
+		uploadingFile: 'Caricamento file principale...',
+		creating: 'Creazione risorsa...',
+		error: 'Errore',
 		fileTypes: 'Solo file RAR, ZIP o UnityPackage',
-		imageVideo: "Immagine o video per l'anteprima", imageVideoAdditional: 'Max 8 file (Immagini/Video)',
-		validFile: 'file valido', invalidFile: 'File non valido',
-		markdownPlaceholder: 'Scrivi la descrizione in Markdown...', noContent: 'Nessun contenuto',
+		imageVideo: "Immagine o video per l'anteprima",
+		imageVideoAdditional: 'Max 8 file (Immagini/Video)',
+		validFile: 'file valido',
+		invalidFile: 'File non valido',
+		markdownPlaceholder: 'Scrivi la descrizione in Markdown...',
+		noContent: 'Nessun contenuto',
 		resourceName: 'Nome risorsa',
 		errorMainFile: 'Il file principale deve essere .rar, .zip, .unitypackage o .blend',
 		errorThumbnail: 'Devi selezionare una miniatura',
@@ -230,32 +287,110 @@ export default {
 		errorReferenceUpload: 'Errore nel caricamento dei file galleria',
 		errorFileUpload: 'Errore nel caricamento del file principale',
 		errorCreateResource: 'Errore nella creazione della risorsa',
-		errorUnknown: 'Errore sconosciuto', errorCaptcha: 'Completa il CAPTCHA',
+		errorUnknown: 'Errore sconosciuto',
+		errorCaptcha: 'Completa il CAPTCHA',
 		maxFiles: 'Max 8 file consentiti',
-		backupLinks: 'Link di backup (Opzionale)', backupLinksHint: 'Un URL per riga (Google Drive, Dropbox, ecc.)',
-		tags: 'Tag', tagsHint: 'Separati da virgola', captcha: 'CAPTCHA *',
-		errorMaxFiles: 'Max 3 file consentiti', errorFileTooLarge: 'File troppo grande',
-		errorImageDimensions: 'Dimensioni immagine troppo grandi', errorInvalidFileType: 'Tipo di file non valido',
+		backupLinks: 'Link di backup (Opzionale)',
+		backupLinksHint: 'Un URL per riga (Google Drive, Dropbox, ecc.)',
+		tags: 'Tag',
+		tagsHint: 'Separati da virgola',
+		captcha: 'CAPTCHA *',
+		errorMaxFiles: 'Max 3 file consentiti',
+		errorFileTooLarge: 'File troppo grande',
+		errorImageDimensions: 'Dimensioni immagine troppo grandi',
+		errorInvalidFileType: 'Tipo di file non valido',
 	},
 	cats: {
-		avatars: 'Avatar', worlds: 'Mondi', assets: 'Asset', clothes: 'Abbigliamento', others: 'Altro',
-		desc: { avatars: 'Avatar 3D per VRChat', worlds: 'Mondi virtuali da esplorare', assets: 'Risorse e strumenti', clothes: 'Abbigliamento e accessori', others: 'Altre risorse varie' },
+		avatars: 'Avatar',
+		worlds: 'Mondi',
+		assets: 'Asset',
+		clothes: 'Abbigliamento',
+		others: 'Altro',
+		desc: {
+			avatars: 'Avatar 3D per VRChat',
+			worlds: 'Mondi virtuali da esplorare',
+			assets: 'Risorse e strumenti',
+			clothes: 'Abbigliamento e accessori',
+			others: 'Altre risorse varie'
+		},
 	},
 	wiki: {
 		title: 'Wiki - Guida alle dipendenze',
-		poiyomi: { title: 'Poiyomi Toon Shader' }, vrcfury: { title: 'VRCFury' },
-		modularAvatar: { title: 'Modular Avatar' }, physbones: { title: 'PhysBones' },
-		syncdances: { title: 'SyncDances' }, vrcquesttools: { title: 'VRCQuestTools' },
-		setup: { title: "Guida all'installazione" }, faq: { title: 'FAQ' },
-		gogoloco: { title: 'GoGo Loco' }, gogolocoNsfw: { title: 'NSFW Locomotion' },
-		sps: { title: 'SPS (Super Plug Shader)' }, dps: { title: 'DPS (Dynamic Penetration System)' },
-		insideView: { title: 'Inside View' }, pcs: { title: 'PCS (Penetration Contact System)' },
-		parameter: { title: 'Parametri avatar' }, actionMenu: { title: 'Menu azioni' },
-		gestureManager: { title: 'Gesture Manager Emulator' }, nsfwEssentials: { title: 'NSFW Essenziali' },
-		haptics: { title: "Guida all'aptica" }, comments: { title: 'Commenti Wiki' },
-		desktopPuppeteer: { title: 'Desktop Puppeteer' }, unityhubError: { title: 'Errore Unity Hub' },
-		justkisssfx: { title: 'JustKissSFX' },
-		categories: { vrchat: 'VRChat', dependencies: 'Dipendenze', erp: 'ERP', informative: 'Informativo' },
+		poiyomi: {
+			title: 'Poiyomi Toon Shader'
+		},
+		vrcfury: {
+			title: 'VRCFury'
+		},
+		modularAvatar: {
+			title: 'Modular Avatar'
+		},
+		physbones: {
+			title: 'PhysBones'
+		},
+		syncdances: {
+			title: 'SyncDances'
+		},
+		vrcquesttools: {
+			title: 'VRCQuestTools'
+		},
+		setup: {
+			title: "Guida all'installazione"
+		},
+		fq: {
+			title: 'FAQ'
+		},
+		gogoloco: {
+			title: 'GoGo Loco'
+		},
+		gogolocoNsfw: {
+			title: 'NSFW Locomotion'
+		},
+		sps: {
+			title: 'SPS (Super Plug Shader)'
+		},
+		dps: {
+			title: 'DPS (Dynamic Penetration System)'
+		},
+		insideView: {
+			title: 'Inside View'
+		},
+		pcs: {
+			title: 'PCS (Penetration Contact System)'
+		},
+		parameter: {
+			title: 'Parametri avatar'
+		},
+		actionMenu: {
+			title: 'Menu azioni'
+		},
+		gestureManager: {
+			title: 'Gesture Manager Emulator'
+		},
+		nsfwEssentials: {
+			title: 'NSFW Essenziali'
+		},
+		haptics: {
+			title: "Guida all'aptica"
+		},
+		comments: {
+			title: 'Commenti Wiki'
+		},
+		desktopPuppeteer: {
+			title: 'Desktop Puppeteer'
+		},
+		unityhubError: {
+			title: 'Errore Unity Hub'
+		},
+		justkisssfx: {
+			title: 'JustKissSFX'
+		},
+		categories: {
+			vrchat: 'VRChat',
+			dependencies: 'Dipendenze',
+			erp: 'ERP',
+			informative: 'Informativo'
+		},
 	},
 	dmca: {
 		title: 'Avviso DMCA',
