@@ -22,6 +22,13 @@ import {
 	Pencil,
 	Quote,
 	Strikethrough,
+	Globe,
+	X,
+	ShoppingBag,
+	CreditCard,
+	User,
+	MessageCircle,
+	Check
 } from 'lucide';
 
 // Lucide's internal node data: [tagName, attrs, children?]
@@ -72,4 +79,22 @@ export const icons = {
 	heart: (size = 16, extraAttrs = '') => icon(Heart as unknown as LucideIconData, size, extraAttrs),
 	edit: (size = 16, extraAttrs = '') => icon(Pencil as unknown as LucideIconData, size, extraAttrs),
 	history: (size = 16, extraAttrs = '') => icon(History as unknown as LucideIconData, size, extraAttrs),
+	check: (size = 16, extraAttrs = '') => icon(Check as unknown as LucideIconData, size, extraAttrs),
+	x: (size = 16, extraAttrs = '') => icon(X as unknown as LucideIconData, size, extraAttrs),
+
+	// Author profiles
+	globe: (size = 16, extraAttrs = '') => icon(Globe as unknown as LucideIconData, size, extraAttrs),
+	twitter: (size = 16, extraAttrs = '') => icon(X as unknown as LucideIconData, size, extraAttrs),
+	'shopping-bag': (size = 16, extraAttrs = '') => icon(ShoppingBag as unknown as LucideIconData, size, extraAttrs),
+	'credit-card': (size = 16, extraAttrs = '') => icon(CreditCard as unknown as LucideIconData, size, extraAttrs),
+	user: (size = 16, extraAttrs = '') => icon(User as unknown as LucideIconData, size, extraAttrs),
+	'message-circle': (size = 16, extraAttrs = '') => icon(MessageCircle as unknown as LucideIconData, size, extraAttrs),
 } as const;
+
+/**
+ * Returns an icon string by name. Returns empty string if not found.
+ */
+export function getIcon(name: string, size = 16, extraAttrs = ''): string {
+	const fn = (icons as Record<string, (s: number, e: string) => string>)[name];
+	return fn ? fn(size, extraAttrs) : '';
+}

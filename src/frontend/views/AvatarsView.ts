@@ -1,0 +1,262 @@
+// =========================================================================
+// views/AvatarsView.ts — Avatar search with sidebar filter panel
+// =========================================================================
+
+// =========================================================================
+// Imports
+// =========================================================================
+
+import { t } from '../i18n';
+import { buildFilterPanel, initFilterPanel } from '../filter-panel';
+import { navigateTo } from '../router';
+import type { RouteContext } from '../types';
+
+// =========================================================================
+// Types
+// =========================================================================
+
+interface AvatarResource {
+	uuid: string;
+	title: string;
+	thumbnail_key: string | null;
+	download_count: number;
+	created_at: number;
+	meta: {
+		gender: string;
+		body_size: string;
+		avatar_type: string;
+		is_nsfw: number;
+		has_physbones: number;
+		has_dps: number;
+		has_face_tracking: number;
+		has_gogoloco: number;
+		has_toggles: number;
+		is_quest_optimized: number;
+		sdk_version: string;
+		platform: string;
+		author_name_raw: string | null;
+		author_name: string | null;
+		author_slug: string | null;
+	};
+}
+
+interface AvatarListResponse {
+	resources: AvatarResource[];
+	pagination: { page: number; limit: number; total: number; hasNextPage: boolean; hasPrevPage: boolean };
+}
+
+// =========================================================================
+// Helpers
+// =========================================================================
+
+function avatarCard(res: AvatarResource): string {
+	const title = res.title.substring(0, 50);
+	const date = new Date(res.created_at * 1000).toLocaleDateString();
+	const authorDisplay = res.meta.author_name || res.meta.author_name_raw || '';
+	const authorHtml = res.meta.author_slug
+		? `<a href="/authors/${res.meta.author_slug}" data-link class="card-author-link">${authorDisplay}</a>`
+		: authorDisplay
+			? `<span class="card-author-plain">${authorDisplay}</span>`
+			: '';
+
+	const imgHtml = res.thumbnail_key
+		? `<div class="card-image"><img src="/api/download/${res.thumbnail_key}" alt="${title}" loading="lazy"><span class="card-badge">${res.meta.avatar_type}</span></div>`
+		: `<div class="card-image card-image-placeholder"><span class="card-badge">${res.meta.avatar_type}</span></div>`;
+
+	return `<div class="card">
+		<a href="/item/${res.uuid}" data-link class="card-link">${imgHtml}</a>
+		<div class="card-body">
+			<h3>${title}${res.title.length > 50 ? '…' : ''}</h3>
+			<div class="card-meta">
+				<span>${date}</span>
+				<div class="card-stats"><span>📥 ${res.download_count}</span></div>
+			</div>
+			${authorHtml ? `<p class="card-author">${authorHtml}</p>` : ''}
+			<div class="card-footer">
+				<a href="/item/${res.uuid}" data-link class="btn">${t('card.view')}</a>
+			</div>
+		</div>
+	</div>`;
+}
+
+const AVATAR_FILTER_CONFIG = {
+	groups: [
+		{
+			name: 'avatar_type',
+			label: 'Tipo',
+			type: 'checkbox' as const,
+			options: [
+				{ value: 'anime', label: 'Anime' },
+				{ value: 'kemono', label: 'Kemono' },
+				{ value: 'furry', label: 'Furry' },
+				{ value: 'human', label: 'Humano' },
+				{ value: 'semi-realistic', label: 'Semi-realista' },
+				{ value: 'chibi', label: 'Chibi' },
+				{ value: 'mecha', label: 'Mecha' },
+				{ value: 'monster', label: 'Monster' },
+				{ value: 'fantasy', label: 'Fantasy' },
+				{ value: 'sci-fi', label: 'Sci-Fi' },
+				{ value: 'vtuber', label: 'VTuber' },
+				{ value: 'other', label: 'Otro' },
+			],
+		},
+		{
+			name: 'gender',
+			label: 'Género',
+			type: 'checkbox' as const,
+			options: [
+				{ value: 'male', label: 'Male' },
+				{ value: 'female', label: 'Female' },
+				{ value: 'androgynous', label: 'Androgynous' },
+				{ value: 'undefined', label: 'Undefined' },
+			],
+		},
+		{
+			name: 'body_size',
+			label: 'Tamaño',
+			type: 'checkbox' as const,
+			options: [
+				{ value: 'tiny', label: 'Tiny' },
+				{ value: 'small', label: 'Small' },
+				{ value: 'medium', label: 'Medium' },
+				{ value: 'tall', label: 'Tall' },
+				{ value: 'giant', label: 'Giant' },
+			],
+		},
+		{
+			name: 'platform',
+			label: 'Plataforma',
+			type: 'checkbox' as const,
+			options: [
+				{ value: 'pc', label: 'PC Only' },
+				{ value: 'quest', label: 'Quest Only' },
+				{ value: 'cross', label: 'Cross-Platform' },
+			],
+		},
+		{
+			name: 'sdk_version',
+			label: 'SDK',
+			type: 'checkbox' as const,
+			options: [
+				{ value: 'sdk3', label: 'SDK 3.0' },
+				{ value: 'sdk2', label: 'SDK 2.0' },
+			],
+		},
+		{
+			name: 'features',
+			label: 'Features',
+			type: 'toggle' as const,
+			options: [
+				{ value: 'is_nsfw', label: 'NSFW' },
+				{ value: 'has_physbones', label: 'PhysBones' },
+				{ value: 'has_dps', label: 'DPS' },
+				{ value: 'has_face_tracking', label: 'Face Tracking' },
+				{ value: 'has_gogoloco', label: 'GoGoLoco' },
+				{ value: 'has_toggles', label: 'Toggles' },
+				{ value: 'is_quest_optimized', label: 'Quest Optimized' },
+			],
+		},
+	],
+};
+
+function buildSortSelect(current: string): string {
+	const opts = [
+		{ value: 'created_at', label: t('sort.newest') },
+		{ value: 'download_count', label: t('sort.mostDownloaded') },
+		{ value: 'title', label: t('sort.aZ') },
+	];
+	return `<select class="filter-select" id="avatar-sort-select" style="width:auto;">
+		${opts.map((o) => `<option value="${o.value}"${current === o.value ? ' selected' : ''}>${o.label}</option>`).join('')}
+	</select>`;
+}
+
+// =========================================================================
+// View
+// =========================================================================
+
+export async function avatarsView(ctx: RouteContext): Promise<string> {
+	document.title = t('filterPanel.titleAvatars');
+
+	const params = ctx.query;
+	const page = parseInt(params.get('page') || '1', 10);
+	const sortBy = params.get('sort_by') || 'created_at';
+
+	const qs = params.toString();
+	let data: AvatarListResponse | null = null;
+	try {
+		const res = await fetch(`/api/avatars?${qs}`);
+		if (res.ok) data = await res.json() as AvatarListResponse;
+	} catch { /* empty */ }
+
+	const resources = data?.resources ?? [];
+	const pagination = data?.pagination ?? { page: 1, total: 0, hasNextPage: false, hasPrevPage: false };
+
+	const cardsHtml = resources.length === 0
+		? `<div class="category-empty"><p>${t('filterPanel.noAvatars')}</p></div>`
+		: `<div class="grid">${resources.map(avatarCard).join('')}</div>`;
+
+	const prevBtn = pagination.hasPrevPage
+		? `<a href="/avatars?${buildPageParams(params, page - 1)}" data-link class="btn">${t('filterPanel.prev')}</a>`
+		: '';
+	const nextBtn = pagination.hasNextPage
+		? `<a href="/avatars?${buildPageParams(params, page + 1)}" data-link class="btn">${t('filterPanel.next')}</a>`
+		: '';
+	const pagCtrls = (prevBtn || nextBtn)
+		? `<div class="pagination" style="display:flex;gap:10px;justify-content:center;margin-top:30px;">
+			${prevBtn}<span style="align-self:center;">${t('filterPanel.pagePrefix')} ${pagination.page}</span>${nextBtn}
+		  </div>`
+		: '';
+
+	return `<div class="category-layout">
+		${buildFilterPanel(AVATAR_FILTER_CONFIG)}
+		<div class="category-results">
+			<div class="filter-results-header">
+				<span class="filter-results-count">${pagination.total} ${t('filterPanel.avatarCountStr')}</span>
+				<div class="filter-sort-row">
+					<span>${t('filterPanel.sortLabel')}</span>
+					${buildSortSelect(sortBy)}
+				</div>
+			</div>
+			${cardsHtml}
+			${pagCtrls}
+		</div>
+	</div>`;
+}
+
+// =========================================================================
+// After
+// =========================================================================
+
+export function avatarsAfter(ctx: RouteContext): void {
+	const panel = document.getElementById('filter-panel');
+	if (!panel) return;
+
+	initFilterPanel(panel, (newParams) => {
+		// Preserve sort_by
+		const sortEl = document.getElementById('avatar-sort-select') as HTMLSelectElement | null;
+		if (sortEl?.value) newParams.set('sort_by', sortEl.value);
+		newParams.delete('page');
+		history.replaceState(null, '', `/avatars?${newParams.toString()}`);
+		navigateTo(`/avatars?${newParams.toString()}`);
+	});
+
+	// Sort select change
+	document.getElementById('avatar-sort-select')?.addEventListener('change', (e) => {
+		const sortBy = (e.target as HTMLSelectElement).value;
+		const p = ctx.query;
+		p.set('sort_by', sortBy);
+		p.delete('page');
+		history.replaceState(null, '', `/avatars?${p.toString()}`);
+		navigateTo(`/avatars?${p.toString()}`);
+	});
+}
+
+// =========================================================================
+// Helpers
+// =========================================================================
+
+function buildPageParams(current: URLSearchParams, newPage: number): string {
+	const p = new URLSearchParams(current.toString());
+	p.set('page', String(newPage));
+	return p.toString();
+}

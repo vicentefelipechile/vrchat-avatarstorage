@@ -188,6 +188,7 @@ export default {
 			uploading: 'Bild wird hochgeladen...',
 			uploadError: 'Upload fehlgeschlagen. Bitte versuche es erneut.',
 		},
+		specifications: 'Spezifikationen',
 	},
 	edit: {
 		title: 'Ressource bearbeiten',

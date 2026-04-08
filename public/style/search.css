@@ -1,0 +1,245 @@
+/* =============================================================================
+   search.css — Category search pages: two-column layout, filter panel
+   Used by AvatarsView, AssetsView, ClothesView
+   ============================================================================= */
+
+/* ---- Layout ---- */
+.category-layout {
+	display: flex;
+	gap: 0;
+	align-items: flex-start;
+}
+
+/* ---- Filter Panel ---- */
+.filter-panel {
+	width: 260px;
+	min-width: 260px;
+	position: sticky;
+	top: 80px;
+	max-height: calc(100vh - 100px);
+	overflow-y: auto;
+	border: 1px solid var(--border-color);
+	background: var(--bg-card);
+	padding: 0;
+	flex-shrink: 0;
+	margin-right: 0;
+}
+
+.filter-panel-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 14px 16px;
+	border-bottom: 1px solid var(--border-color);
+}
+
+.filter-panel-header h3 {
+	margin: 0;
+	font-size: 0.85rem;
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+	font-weight: 700;
+	color: var(--text-muted);
+}
+
+.filter-reset-btn {
+	font-size: 0.75rem;
+	color: var(--accent);
+	background: none;
+	border: none;
+	cursor: pointer;
+	padding: 0;
+	text-decoration: underline;
+	font-family: inherit;
+}
+
+.filter-reset-btn:hover {
+	opacity: 0.75;
+}
+
+/* ---- Filter Group ---- */
+.filter-group {
+	padding: 12px 16px;
+	border-bottom: 1px solid var(--border-color);
+}
+
+.filter-group:last-child {
+	border-bottom: none;
+}
+
+.filter-group-label {
+	display: block;
+	font-size: 0.78rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	color: var(--text-muted);
+	margin-bottom: 8px;
+}
+
+/* ---- Filter Chips (checkbox as pill) ---- */
+.filter-chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.filter-chip {
+	display: inline-block;
+	cursor: pointer;
+}
+
+.filter-chip input[type='checkbox'] {
+	display: none;
+}
+
+.filter-chip-label {
+	display: inline-block;
+	padding: 3px 10px;
+	font-size: 0.78rem;
+	border: 1px solid var(--border-color);
+	color: var(--text-muted);
+	cursor: pointer;
+	transition: background 0.15s, color 0.15s, border-color 0.15s;
+	user-select: none;
+	background: transparent;
+}
+
+.filter-chip input[type='checkbox']:checked + .filter-chip-label {
+	background: var(--text-main);
+	color: var(--bg-body);
+	border-color: var(--text-main);
+}
+
+/* ---- Filter Toggle (boolean switch row) ---- */
+.filter-toggle {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 4px 0;
+	cursor: pointer;
+}
+
+.filter-toggle-label {
+	font-size: 0.83rem;
+	color: var(--text-muted);
+	user-select: none;
+}
+
+.filter-toggle input[type='checkbox'] {
+	appearance: none;
+	-webkit-appearance: none;
+	width: 30px;
+	height: 16px;
+	border: 1px solid var(--border-color);
+	background: transparent;
+	cursor: pointer;
+	position: relative;
+	transition: background 0.2s, border-color 0.2s;
+	flex-shrink: 0;
+}
+
+.filter-toggle input[type='checkbox']::after {
+	content: '';
+	position: absolute;
+	top: 2px;
+	left: 2px;
+	width: 10px;
+	height: 10px;
+	background: var(--text-muted);
+	transition: left 0.2s, background 0.2s;
+}
+
+.filter-toggle input[type='checkbox']:checked {
+	background: var(--text-main);
+	border-color: var(--text-main);
+}
+
+.filter-toggle input[type='checkbox']:checked::after {
+	left: 16px;
+	background: var(--bg-body);
+}
+
+/* ---- Filter Select ---- */
+.filter-select {
+	width: 100%;
+	padding: 6px 8px;
+	border: 1px solid var(--border-color);
+	background: var(--bg-body);
+	color: var(--text-main);
+	font-family: inherit;
+	font-size: 0.83rem;
+	cursor: pointer;
+	appearance: none;
+	-webkit-appearance: none;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23888'/%3E%3C/svg%3E");
+	background-repeat: no-repeat;
+	background-position: right 10px center;
+	padding-right: 28px;
+}
+
+.filter-select:focus {
+	outline: 1px solid var(--text-main);
+}
+
+/* ---- Results Area ---- */
+.category-results {
+	flex: 1;
+	min-width: 0;
+	padding-left: 24px;
+}
+
+.filter-results-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 16px;
+	padding-bottom: 12px;
+	border-bottom: 1px solid var(--border-color);
+}
+
+.filter-results-count {
+	font-size: 0.85rem;
+	color: var(--text-muted);
+	font-weight: 500;
+}
+
+.filter-sort-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 0.83rem;
+	color: var(--text-muted);
+}
+
+.filter-sort-row .filter-select {
+	width: auto;
+}
+
+/* ---- Empty State ---- */
+.category-empty {
+	padding: 60px 20px;
+	text-align: center;
+	color: var(--text-muted);
+	border: 1px solid var(--border-color);
+}
+
+.category-empty p {
+	margin: 0;
+	font-size: 0.95rem;
+}
+
+/* ---- Mobile: hide filter panel ---- */
+@media (max-width: 768px) {
+	.filter-panel {
+		display: none;
+	}
+
+	.category-layout {
+		display: block;
+	}
+
+	.category-results {
+		padding-left: 0;
+	}
+}

@@ -210,3 +210,55 @@ export const ChangePasswordSchema = z.object({
 	two_factor_code: z.string().optional(),
 	token: z.string().optional(),
 });
+
+// ============================================================================
+// Category Schemas
+// ============================================================================
+
+export const AvatarAuthorSchema = z.object({
+	name: z.string().min(1, 'Name required').max(100).transform((v) => sanitizeHtml(v)),
+	description: z.string().max(2000).optional().nullable().transform((v) => (v ? sanitizeHtml(v) : v)),
+	avatar_url: z.string().min(1).max(500).optional().nullable(),
+	website_url: z.url().optional().nullable(),
+	twitter_url: z.url().optional().nullable(),
+	booth_url: z.url().optional().nullable(),
+	gumroad_url: z.url().optional().nullable(),
+	patreon_url: z.url().optional().nullable(),
+	discord_url: z.url().optional().nullable(),
+});
+
+export const AvatarMetaSchema = z.object({
+	author_uuid: z.uuid().optional().nullable(),
+	author_name_raw: z.string().max(200).optional().nullable().transform((v) => (v ? sanitizeHtml(v) : v)),
+	gender: z.enum(['male', 'female', 'androgynous', 'undefined']),
+	body_size: z.enum(['tiny', 'small', 'medium', 'tall', 'giant']),
+	avatar_type: z.enum(['anime', 'kemono', 'furry', 'human', 'semi-realistic', 'chibi', 'mecha', 'monster', 'fantasy', 'sci-fi', 'vtuber', 'other']),
+	is_nsfw: z.number().int().min(0).max(1).default(0),
+	has_physbones: z.number().int().min(0).max(1).default(0),
+	has_face_tracking: z.number().int().min(0).max(1).default(0),
+	has_dps: z.number().int().min(0).max(1).default(0),
+	has_gogoloco: z.number().int().min(0).max(1).default(0),
+	has_toggles: z.number().int().min(0).max(1).default(0),
+	is_quest_optimized: z.number().int().min(0).max(1).default(0),
+	sdk_version: z.enum(['sdk3', 'sdk2']).default('sdk3'),
+	platform: z.enum(['pc', 'quest', 'cross']).default('cross'),
+});
+
+export const AssetMetaSchema = z.object({
+	asset_type: z.enum(['prop', 'shader', 'particle', 'vfx', 'prefab', 'script', 'animation', 'avatar-base', 'texture-pack', 'sound', 'tool', 'hud', 'other']),
+	is_nsfw: z.number().int().min(0).max(1).default(0),
+	unity_version: z.enum(['2019', '2022']).default('2022'),
+	platform: z.enum(['pc', 'quest', 'cross']).default('cross'),
+	sdk_version: z.enum(['sdk3', 'sdk2']).default('sdk3'),
+});
+
+export const ClothesMetaSchema = z.object({
+	gender_fit: z.enum(['male', 'female', 'unisex', 'kemono']),
+	clothing_type: z.enum(['top', 'jacket', 'bottom', 'dress', 'fullbody', 'swimwear', 'shoes', 'legwear', 'hat', 'hair', 'accessory', 'tail', 'ears', 'wings', 'body-part', 'underwear', 'other']),
+	is_base: z.number().int().min(0).max(1).default(0),
+	base_avatar_uuid: z.uuid().optional().nullable(),
+	base_avatar_name_raw: z.string().max(200).optional().nullable().transform((v) => (v ? sanitizeHtml(v) : v)),
+	is_nsfw: z.number().int().min(0).max(1).default(0),
+	has_physbones: z.number().int().min(0).max(1).default(0),
+	platform: z.enum(['pc', 'quest', 'cross']).default('cross'),
+});

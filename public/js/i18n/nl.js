@@ -188,6 +188,7 @@ export default {
 			uploading: 'Afbeelding uploaden...',
 			uploadError: 'Upload mislukt. Probeer het opnieuw.',
 		},
+		specifications: 'Specificaties',
 	},
 	edit: {
 		title: 'Bron bewerken',

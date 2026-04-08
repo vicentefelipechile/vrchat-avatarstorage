@@ -350,8 +350,13 @@
 	background: var(--btn-hover);
 }
 
-#lightbox-prev { left: 12px; }
-#lightbox-next { right: 12px; }
+#lightbox-prev {
+	left: 12px;
+}
+
+#lightbox-next {
+	right: 12px;
+}
 
 #lightbox-close {
 	position: fixed;
@@ -494,4 +499,113 @@
 	background: var(--bg-card);
 	color: var(--text-main);
 	display: block;
+}
+
+/* ---- Category metadata panel (ItemView) ---- */
+.item-meta-panel {
+	margin: 0 0 20px 0;
+	background: transparent;
+}
+
+.item-meta-title {
+	margin: 0 0 15px 0;
+	font-size: 0.9rem;
+	font-weight: bold;
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+	color: var(--text-muted);
+	border-bottom: 2px solid var(--border-color);
+	padding-bottom: 8px;
+}
+
+.item-meta-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+	gap: 10px 30px;
+}
+
+.meta-row {
+	display: flex;
+	align-items: center;
+	padding-bottom: 6px;
+	border-bottom: 1px dashed var(--border-light);
+}
+
+.meta-row-label {
+	font-size: 0.8rem;
+	color: var(--text-muted);
+	flex: 0 0 120px;
+}
+
+.meta-row-value {
+	flex: 1;
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	flex-wrap: wrap;
+	margin-left: 16px;
+}
+
+/* Text chip — for enum values */
+.meta-chip {
+	display: inline-block;
+	padding: 6px 12px;
+	font-size: 0.78rem;
+	font-weight: 600;
+	background: var(--btn-bg);
+	color: var(--btn-text);
+	border: 1px solid var(--border-color);
+	white-space: nowrap;
+	text-decoration: none;
+}
+
+.meta-chip--empty {
+	background: transparent;
+	color: var(--text-muted);
+	border-color: transparent;
+	font-weight: normal;
+	padding-left: 0;
+}
+
+.meta-chip--link:hover {
+	background: var(--btn-hover);
+	text-decoration: none;
+}
+
+/* Boolean flags container */
+.meta-flags-container {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-top: 15px;
+	padding-top: 5px;
+}
+
+.meta-flag-chip {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 5px 12px;
+	font-size: 0.75rem;
+	font-weight: 600;
+	text-transform: uppercase;
+	border: 1px solid var(--border-color);
+	background: var(--bg-hover);
+}
+
+.meta-flag-chip--yes {
+	background: #1a4a1a;
+	color: #6bcf6b;
+	border-color: #2d7a2d;
+}
+
+.meta-flag-chip--no {
+	color: var(--text-muted);
+	opacity: 0.8;
+}
+
+@media (max-width: 600px) {
+	.item-meta-grid {
+		grid-template-columns: 1fr;
+	}
 }

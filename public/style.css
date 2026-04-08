@@ -14,6 +14,9 @@
 @import url('./style/pages.css');
 @import url('./style/age-gate.css');
 @import url('./style/blog.css');
+@import url('./style/search.css');
+@import url('./style/authors.css');
+@import url('./style/admin-dashboard.css');
 
 /* ---- Shared utilities ---- */
 .text-center {

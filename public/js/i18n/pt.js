@@ -178,6 +178,7 @@ export default {
             uploading: 'Enviando imagem...',
             uploadError: 'Erro ao enviar imagem. Tente novamente.',
         },
+        specifications: 'Especificações',
     },
     edit: {
         title: 'Editar Recurso',

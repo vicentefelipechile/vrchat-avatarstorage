@@ -188,6 +188,7 @@ export default {
 			uploading: 'Caricamento immagine...',
 			uploadError: 'Caricamento fallito. Riprova.',
 		},
+		specifications: 'Specifiche',
 	},
 	edit: {
 		title: 'Modifica risorsa',

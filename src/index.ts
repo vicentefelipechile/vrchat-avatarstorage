@@ -27,6 +27,10 @@ import favoritesRoutes from './routes/favorites';
 import twoFactorRoutes from './routes/2fa';
 import oauthRoutes from './routes/oauth';
 import blogRoutes from './routes/blog';
+import avatarsRoutes from './routes/avatars';
+import assetsRoutes from './routes/assets';
+import clothesRoutes from './routes/clothes';
+import authorsRoutes from './routes/authors';
 
 // =========================================================================================================
 // Variables
@@ -119,6 +123,10 @@ app.route('/api/tags', tagsRoutes);
 app.route('/api/favorites', favoritesRoutes);
 app.route('/api/admin', adminRoutes);
 app.route('/api', systemRoutes);
+app.route('/api/avatars', avatarsRoutes);
+app.route('/api/assets', assetsRoutes);
+app.route('/api/clothes', clothesRoutes);
+app.route('/api/authors', authorsRoutes);
 
 // =========================================================================================================
 // SEO routes

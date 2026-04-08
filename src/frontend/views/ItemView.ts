@@ -10,12 +10,101 @@ import { icons } from '../icons';
 import { commentEditorHtml, initCommentEditor } from '../comment-editor';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
-import type { RouteContext, Resource, Comment, ResourceLink } from '../types';
+import type { RouteContext, Resource, Comment, ResourceLink, AvatarMeta, AssetMeta, ClothesMeta } from '../types';
 
 // =========================================================================
 // Helpers
 // =========================================================================
 
+/** Render a boolean flag chip. */
+function flagChip(label: string, val: number | null | undefined): string {
+	if (val === 1) return `<span class="meta-flag-chip meta-flag-chip--yes">${label} ${icons.check(14)}</span>`;
+	if (val === 0) return `<span class="meta-flag-chip meta-flag-chip--no">${label} ${icons.x(14)}</span>`;
+	return ''; // Don't render unknown states to save space
+}
+
+/** Render a labelled row inside the meta panel. */
+function metaRow(label: string, value: string): string {
+	return `
+		<div class="meta-row">
+			<span class="meta-row-label">${label}</span>
+			<span class="meta-row-value">${value}</span>
+		</div>`;
+}
+
+/** Render a text value as a chip. */
+function chip(val: string | null | undefined, fallback = '—'): string {
+	if (!val) return `<span class="meta-chip meta-chip--empty">${fallback}</span>`;
+	return `<span class="meta-chip">${val}</span>`;
+}
+
+/**
+ * Renders a category-specific metadata panel for the item detail page.
+ * Returns an empty string if there is no metadata.
+ */
+function renderCategoryMeta(res: Resource): string {
+	if (!res.meta) return '';
+
+	const textRows: string[] = [];
+	const flagChips: string[] = [];
+
+	if (res.category === 'avatars') {
+		const m = res.meta as AvatarMeta;
+		if (m.author_name || m.author_name_raw) {
+			const name = m.author_name ?? m.author_name_raw ?? '';
+			const val = m.author_slug
+				? `<a href="/authors/${m.author_slug}" data-link class="meta-chip meta-chip--link">${name}</a>`
+				: chip(name);
+			textRows.push(metaRow(t('meta.avatar.author').replace(/\s*\*/g, ''), val));
+		}
+		if (m.gender) textRows.push(metaRow(t('meta.avatar.gender').replace(/\s*\*/g, ''), chip(t('meta.gender.' + m.gender) || m.gender)));
+		if (m.body_size) textRows.push(metaRow(t('meta.avatar.size').replace(/\s*\*/g, ''), chip(t('meta.size.' + m.body_size) || m.body_size)));
+		if (m.avatar_type) textRows.push(metaRow(t('meta.avatar.type').replace(/\s*\*/g, ''), chip(t('meta.type.' + m.avatar_type.replace('-', '')) || m.avatar_type)));
+		if (m.platform) textRows.push(metaRow(t('meta.platform.title').replace(/\s*\*/g, ''), chip(t('meta.platform.' + m.platform) || m.platform)));
+		if (m.sdk_version) textRows.push(metaRow('SDK', chip(m.sdk_version.toUpperCase())));
+
+		flagChips.push(flagChip('NSFW', m.is_nsfw));
+		flagChips.push(flagChip('PhysBones', m.has_physbones));
+		flagChips.push(flagChip('Face Tracking', m.has_face_tracking));
+		flagChips.push(flagChip('DPS', m.has_dps));
+		flagChips.push(flagChip('GoGo Loco', m.has_gogoloco));
+		flagChips.push(flagChip(t('meta.extras.toggles').replace(/\s*\*/g, ''), m.has_toggles));
+		flagChips.push(flagChip(t('meta.extras.questOptimized').replace(/\s*\*/g, ''), m.is_quest_optimized));
+	} else if (res.category === 'assets') {
+		const m = res.meta as AssetMeta;
+		if (m.asset_type) textRows.push(metaRow(t('meta.asset.type').replace(/\s*\*/g, ''), chip(t('meta.assetType.' + m.asset_type.replace('-', '')) || m.asset_type)));
+		if (m.platform) textRows.push(metaRow(t('meta.platform.title').replace(/\s*\*/g, ''), chip(t('meta.platform.' + m.platform) || m.platform)));
+		if (m.sdk_version) textRows.push(metaRow('SDK', chip(m.sdk_version.toUpperCase())));
+		if (m.unity_version) textRows.push(metaRow('Unity', chip(m.unity_version)));
+
+		flagChips.push(flagChip('NSFW', m.is_nsfw));
+	} else if (res.category === 'clothes') {
+		const m = res.meta as ClothesMeta;
+		if (m.clothing_type) textRows.push(metaRow(t('meta.clothes.type').replace(/\s*\*/g, ''), chip(t('meta.clothesType.' + m.clothing_type.replace('-', '')) || m.clothing_type)));
+		if (m.gender_fit) textRows.push(metaRow(t('meta.clothes.gender').replace(/\s*\*/g, ''), chip(t('meta.gender.' + m.gender_fit) || m.gender_fit)));
+		if (m.platform) textRows.push(metaRow(t('meta.platform.title').replace(/\s*\*/g, ''), chip(t('meta.platform.' + m.platform) || m.platform)));
+		if (m.base_avatar_name_raw) textRows.push(metaRow(t('meta.clothes.baseAvatar').replace(/\s*\*/g, ''), chip(m.base_avatar_name_raw)));
+
+		flagChips.push(flagChip(t('meta.clothes.isBase').replace(/\s*\*/g, ''), m.is_base));
+		flagChips.push(flagChip('NSFW', m.is_nsfw));
+		flagChips.push(flagChip('PhysBones', m.has_physbones));
+	}
+
+	const renderFlags = flagChips.filter(Boolean).join('');
+	if (!textRows.length && !renderFlags) return '';
+
+	return `
+		<div class="item-meta-panel">
+			<h3 class="item-meta-title">
+				${t('item.specifications')}
+			</h3>
+			<div class="item-meta-grid">
+				${textRows.join('')}
+			</div>
+			${renderFlags ? `<div class="meta-flags-container">${renderFlags}</div>` : ''}
+		</div>
+		<hr>`;
+}
 function downloadSection(res: Resource): string {
 	const { user } = window.appState;
 	if (!user) {
@@ -297,7 +386,7 @@ export async function itemView(ctx: RouteContext): Promise<string> {
 			<hr>
 			<h3>${t('upload.reference')}</h3>
 			${galleryHtml}
-			<hr>
+			${renderCategoryMeta(res)}
 			<h3>${t('upload.desc')}</h3>
 			<div class="description-box markdown-body">${descriptionHtml}</div>
 			<hr>

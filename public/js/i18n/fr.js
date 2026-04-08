@@ -178,6 +178,7 @@ export default {
             uploading: 'Envoi de l\'image...',
             uploadError: 'Erreur d\'envoi. Veuillez réessayer.',
         },
+        specifications: 'Spécifications',
     },
     edit: {
         title: 'Modifier la ressource',

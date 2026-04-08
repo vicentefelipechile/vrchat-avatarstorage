@@ -9,6 +9,11 @@ nav {
 	margin-bottom: 20px;
 }
 
+body:has(.admin-layout) nav,
+body:has(.admin-desktop-only-warning) nav {
+	margin-bottom: 0;
+}
+
 nav .container {
 	display: flex;
 	align-items: center;

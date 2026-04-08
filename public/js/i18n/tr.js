@@ -188,6 +188,7 @@ export default {
 			uploading: 'Görsel yükleniyor...',
 			uploadError: 'Yükleme başarısız. Lütfen tekrar deneyin.',
 		},
+		specifications: 'Özellikler',
 	},
 	edit: {
 		title: 'Kaynağı Düzenle',

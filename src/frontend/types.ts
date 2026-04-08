@@ -70,6 +70,46 @@ export interface ResourceTag {
 	name: string;
 }
 
+// -------------------------------------------------------------------------
+// Category-specific metadata
+// -------------------------------------------------------------------------
+
+export interface AvatarMeta {
+	gender?: string | null;
+	body_size?: string | null;
+	avatar_type?: string | null;
+	is_nsfw?: number | null;
+	has_physbones?: number | null;
+	has_face_tracking?: number | null;
+	has_dps?: number | null;
+	has_gogoloco?: number | null;
+	has_toggles?: number | null;
+	is_quest_optimized?: number | null;
+	sdk_version?: string | null;
+	platform?: string | null;
+	author_name_raw?: string | null;
+	author_name?: string | null;
+	author_slug?: string | null;
+}
+
+export interface AssetMeta {
+	asset_type?: string | null;
+	is_nsfw?: number | null;
+	unity_version?: string | null;
+	platform?: string | null;
+	sdk_version?: string | null;
+}
+
+export interface ClothesMeta {
+	gender_fit?: string | null;
+	clothing_type?: string | null;
+	is_base?: number | null;
+	is_nsfw?: number | null;
+	has_physbones?: number | null;
+	platform?: string | null;
+	base_avatar_name_raw?: string | null;
+}
+
 export interface Resource {
 	uuid: string;
 	title: string;
@@ -85,6 +125,7 @@ export interface Resource {
 	links?: ResourceLink[];
 	mediaFiles?: MediaFile[];
 	tags?: ResourceTag[];
+	meta?: AvatarMeta | AssetMeta | ClothesMeta | null;
 	// Download helpers
 	canDownload?: boolean;
 	downloadUrl?: string | null;

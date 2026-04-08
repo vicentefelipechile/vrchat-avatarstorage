@@ -176,7 +176,13 @@ export interface CommentWithAuthor extends Comment {
 // =========================================================================
 // HISTORIAL DE RECURSOS (AUDIT LOG)
 // =========================================================================
-export type ChangeType = 'content_edit' | 'tag_change' | 'approval';
+export type ChangeType = 'content_edit' | 'tag_change' | 'approval' | 'meta_edit';
+export type HistoryChangeType = 'content_edit' | 'meta_edit' | 'approval';
+
+export interface MetaEditSnapshot {
+	meta_type: 'avatar_meta' | 'asset_meta' | 'clothes_meta';
+	fields: Record<string, unknown>;
+}
 
 export interface ResourceHistory {
 	uuid: string;
@@ -334,4 +340,67 @@ export interface BlogComment {
 export interface BlogCommentWithAuthor extends BlogComment {
 	author_username: string;
 	author_avatar: string | null;
+}
+
+// =========================================================================
+// CATEGORY AUTHORS
+// =========================================================================
+
+export interface AvatarAuthor {
+	uuid: string;
+	name: string;
+	slug: string;
+	description: string | null;
+	avatar_url: string | null;
+	website_url: string | null;
+	twitter_url: string | null;
+	booth_url: string | null;
+	gumroad_url: string | null;
+	patreon_url: string | null;
+	discord_url: string | null;
+	created_at: number;
+	updated_at: number;
+}
+
+// =========================================================================
+// CATEGORY METADATA
+// =========================================================================
+
+export interface AvatarMeta {
+	resource_uuid: string;
+	author_uuid: string | null;
+	author_name_raw: string | null;
+	gender: 'male' | 'female' | 'androgynous' | 'undefined';
+	body_size: 'tiny' | 'small' | 'medium' | 'tall' | 'giant';
+	avatar_type: 'anime' | 'kemono' | 'furry' | 'human' | 'semi-realistic' | 'chibi' | 'mecha' | 'monster' | 'fantasy' | 'sci-fi' | 'vtuber' | 'other';
+	is_nsfw: number;
+	has_physbones: number;
+	has_face_tracking: number;
+	has_dps: number;
+	has_gogoloco: number;
+	has_toggles: number;
+	is_quest_optimized: number;
+	sdk_version: 'sdk3' | 'sdk2';
+	platform: 'pc' | 'quest' | 'cross';
+}
+
+export interface AssetMeta {
+	resource_uuid: string;
+	asset_type: 'prop' | 'shader' | 'particle' | 'vfx' | 'prefab' | 'script' | 'animation' | 'avatar-base' | 'texture-pack' | 'sound' | 'tool' | 'hud' | 'other';
+	is_nsfw: number;
+	unity_version: '2019' | '2022';
+	platform: 'pc' | 'quest' | 'cross';
+	sdk_version: 'sdk3' | 'sdk2';
+}
+
+export interface ClothesMeta {
+	resource_uuid: string;
+	gender_fit: 'male' | 'female' | 'unisex' | 'kemono';
+	clothing_type: 'top' | 'jacket' | 'bottom' | 'dress' | 'fullbody' | 'swimwear' | 'shoes' | 'legwear' | 'hat' | 'hair' | 'accessory' | 'tail' | 'ears' | 'wings' | 'body-part' | 'underwear' | 'other';
+	is_base: number;
+	base_avatar_uuid: string | null;
+	base_avatar_name_raw: string | null;
+	is_nsfw: number;
+	has_physbones: number;
+	platform: 'pc' | 'quest' | 'cross';
 }

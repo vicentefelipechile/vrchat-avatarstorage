@@ -178,6 +178,7 @@ export default {
             uploading: 'Загрузка изображения...',
             uploadError: 'Ошибка загрузки. Попробуйте ещё раз.',
         },
+        specifications: 'Характеристики',
     },
     edit: {
         title: 'Редактировать Ресурс',

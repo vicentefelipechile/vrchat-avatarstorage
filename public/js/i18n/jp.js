@@ -178,6 +178,7 @@ export default {
             uploading: '画像をアップロード中...',
             uploadError: 'アップロードに失敗しました。もう一度お試しください。',
         },
+        specifications: '仕様',
     },
     edit: {
         title: 'リソースを編集',

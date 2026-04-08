@@ -27,6 +27,10 @@ import { oauthRegisterView, oauthRegisterAfter } from './views/OAuthRegisterView
 import { blogListView } from './views/BlogListView';
 import { blogPostView, blogPostAfter } from './views/BlogPostView';
 import { blogCreateView, blogCreateAfter } from './views/BlogCreateView';
+import { avatarsView, avatarsAfter } from './views/AvatarsView';
+import { assetsView, assetsAfter } from './views/AssetsView';
+import { clothesView, clothesAfter } from './views/ClothesView';
+import { authorView, authorAfter } from './views/AuthorView';
 
 // =========================================================================
 // Global state
@@ -79,6 +83,10 @@ route('/blog', blogListView);
 route('/blog/create', blogCreateView, { after: blogCreateAfter });
 route('/blog/:id', blogPostView, { after: blogPostAfter });
 route('/blog/:id/edit', blogCreateView, { after: blogCreateAfter });
+route('/avatars', avatarsView, { after: avatarsAfter });
+route('/assets', assetsView, { after: assetsAfter });
+route('/clothes', clothesView, { after: clothesAfter });
+route('/authors/:slug', authorView, { after: authorAfter });
 
 notFound(async () => `
 	<div style="padding:60px;text-align:center">

@@ -1,0 +1,222 @@
+// =========================================================================
+// views/AssetsView.ts — Assets search with sidebar filter panel
+// =========================================================================
+
+// =========================================================================
+// Imports
+// =========================================================================
+
+import { t } from '../i18n';
+import { buildFilterPanel, initFilterPanel } from '../filter-panel';
+import { navigateTo } from '../router';
+import type { RouteContext } from '../types';
+
+// =========================================================================
+// Types
+// =========================================================================
+
+interface AssetResource {
+	uuid: string;
+	title: string;
+	thumbnail_key: string | null;
+	download_count: number;
+	created_at: number;
+	meta: {
+		asset_type: string;
+		is_nsfw: number;
+		unity_version: string;
+		platform: string;
+		sdk_version: string;
+	};
+}
+
+interface AssetListResponse {
+	resources: AssetResource[];
+	pagination: { page: number; limit: number; total: number; hasNextPage: boolean; hasPrevPage: boolean };
+}
+
+// =========================================================================
+// Helpers
+// =========================================================================
+
+function assetCard(res: AssetResource): string {
+	const title = res.title.substring(0, 50);
+	const date = new Date(res.created_at * 1000).toLocaleDateString();
+
+	const imgHtml = res.thumbnail_key
+		? `<div class="card-image"><img src="/api/download/${res.thumbnail_key}" alt="${title}" loading="lazy"><span class="card-badge">${res.meta.asset_type}</span></div>`
+		: `<div class="card-image card-image-placeholder"><span class="card-badge">${res.meta.asset_type}</span></div>`;
+
+	return `<div class="card">
+		<a href="/item/${res.uuid}" data-link class="card-link">${imgHtml}</a>
+		<div class="card-body">
+			<h3>${title}${res.title.length > 50 ? '…' : ''}</h3>
+			<div class="card-meta">
+				<span>${date}</span>
+				<div class="card-stats"><span>📥 ${res.download_count}</span></div>
+			</div>
+			<div class="card-footer">
+				<a href="/item/${res.uuid}" data-link class="btn">${t('card.view')}</a>
+			</div>
+		</div>
+	</div>`;
+}
+
+const ASSET_FILTER_CONFIG = {
+	groups: [
+		{
+			name: 'asset_type',
+			label: 'Tipo',
+			type: 'checkbox' as const,
+			options: [
+				{ value: 'prop', label: 'Prop' },
+				{ value: 'shader', label: 'Shader' },
+				{ value: 'particle', label: 'Particle' },
+				{ value: 'vfx', label: 'VFX' },
+				{ value: 'prefab', label: 'Prefab' },
+				{ value: 'script', label: 'Script' },
+				{ value: 'animation', label: 'Animation' },
+				{ value: 'avatar-base', label: 'Avatar Base' },
+				{ value: 'texture-pack', label: 'Texture Pack' },
+				{ value: 'sound', label: 'Sound' },
+				{ value: 'tool', label: 'Tool' },
+				{ value: 'hud', label: 'HUD' },
+				{ value: 'other', label: 'Otro' },
+			],
+		},
+		{
+			name: 'platform',
+			label: 'Plataforma',
+			type: 'checkbox' as const,
+			options: [
+				{ value: 'pc', label: 'PC Only' },
+				{ value: 'quest', label: 'Quest Only' },
+				{ value: 'cross', label: 'Cross-Platform' },
+			],
+		},
+		{
+			name: 'sdk_version',
+			label: 'SDK',
+			type: 'checkbox' as const,
+			options: [
+				{ value: 'sdk3', label: 'SDK 3.0' },
+				{ value: 'sdk2', label: 'SDK 2.0' },
+			],
+		},
+		{
+			name: 'unity_version',
+			label: 'Unity',
+			type: 'checkbox' as const,
+			options: [
+				{ value: '2022', label: 'Unity 2022' },
+				{ value: '2019', label: 'Unity 2019' },
+			],
+		},
+		{
+			name: 'toggles',
+			label: 'Filtros',
+			type: 'toggle' as const,
+			options: [{ value: 'is_nsfw', label: 'NSFW' }],
+		},
+	],
+};
+
+function buildSortSelect(current: string): string {
+	const opts = [
+		{ value: 'created_at', label: t('sort.newest') },
+		{ value: 'download_count', label: t('sort.mostDownloaded') },
+		{ value: 'title', label: t('sort.aZ') },
+	];
+	return `<select class="filter-select" id="asset-sort-select" style="width:auto;">
+		${opts.map((o) => `<option value="${o.value}"${current === o.value ? ' selected' : ''}>${o.label}</option>`).join('')}
+	</select>`;
+}
+
+// =========================================================================
+// View
+// =========================================================================
+
+export async function assetsView(ctx: RouteContext): Promise<string> {
+	document.title = t('filterPanel.titleAssets');
+
+	const params = ctx.query;
+	const page = parseInt(params.get('page') || '1', 10);
+	const sortBy = params.get('sort_by') || 'created_at';
+
+	const qs = params.toString();
+	let data: AssetListResponse | null = null;
+	try {
+		const res = await fetch(`/api/assets?${qs}`);
+		if (res.ok) data = await res.json() as AssetListResponse;
+	} catch { /* empty */ }
+
+	const resources = data?.resources ?? [];
+	const pagination = data?.pagination ?? { page: 1, total: 0, hasNextPage: false, hasPrevPage: false };
+
+	const cardsHtml = resources.length === 0
+		? `<div class="category-empty"><p>${t('filterPanel.noAssets')}</p></div>`
+		: `<div class="grid">${resources.map(assetCard).join('')}</div>`;
+
+	const prevBtn = pagination.hasPrevPage
+		? `<a href="/assets?${buildPageParams(params, page - 1)}" data-link class="btn">${t('filterPanel.prev')}</a>`
+		: '';
+	const nextBtn = pagination.hasNextPage
+		? `<a href="/assets?${buildPageParams(params, page + 1)}" data-link class="btn">${t('filterPanel.next')}</a>`
+		: '';
+	const pagCtrls = (prevBtn || nextBtn)
+		? `<div class="pagination" style="display:flex;gap:10px;justify-content:center;margin-top:30px;">
+			${prevBtn}<span style="align-self:center;">${t('filterPanel.pagePrefix')} ${pagination.page}</span>${nextBtn}
+		  </div>`
+		: '';
+
+	return `<div class="category-layout">
+		${buildFilterPanel(ASSET_FILTER_CONFIG)}
+		<div class="category-results">
+			<div class="filter-results-header">
+				<span class="filter-results-count">${pagination.total} ${t('filterPanel.assetCountStr')}</span>
+				<div class="filter-sort-row">
+					<span>${t('filterPanel.sortLabel')}</span>
+					${buildSortSelect(sortBy)}
+				</div>
+			</div>
+			${cardsHtml}
+			${pagCtrls}
+		</div>
+	</div>`;
+}
+
+// =========================================================================
+// After
+// =========================================================================
+
+export function assetsAfter(ctx: RouteContext): void {
+	const panel = document.getElementById('filter-panel');
+	if (!panel) return;
+
+	initFilterPanel(panel, (newParams) => {
+		const sortEl = document.getElementById('asset-sort-select') as HTMLSelectElement | null;
+		if (sortEl?.value) newParams.set('sort_by', sortEl.value);
+		newParams.delete('page');
+		history.replaceState(null, '', `/assets?${newParams.toString()}`);
+		navigateTo(`/assets?${newParams.toString()}`);
+	});
+
+	document.getElementById('asset-sort-select')?.addEventListener('change', (e) => {
+		const sortBy = (e.target as HTMLSelectElement).value;
+		const p = ctx.query;
+		p.set('sort_by', sortBy);
+		p.delete('page');
+		history.replaceState(null, '', `/assets?${p.toString()}`);
+		navigateTo(`/assets?${p.toString()}`);
+	});
+}
+
+// =========================================================================
+// Helpers
+// =========================================================================
+
+function buildPageParams(current: URLSearchParams, newPage: number): string {
+	const p = new URLSearchParams(current.toString());
+	p.set('page', String(newPage));
+	return p.toString();
+}

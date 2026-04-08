@@ -178,6 +178,7 @@ export default {
             uploading: '上传图片中...',
             uploadError: '上传失败，请重试。',
         },
+        specifications: '规格',
     },
     edit: {
         title: '编辑资源',

@@ -342,6 +342,183 @@ admin.post('/users/:username/role', async (c) => {
 });
 
 // =========================================================================================================
+// GET /api/admin/stats
+// Consolidated metrics for the admin dashboard overview section.
+// =========================================================================================================
+
+admin.get('/stats', async (c) => {
+	const user = await getAuthUser(c);
+	if (!user) return c.json({ error: 'Unauthorized' }, 401);
+	if (!user.is_admin) return c.json({ error: 'Forbidden' }, 403);
+
+	const TWENTY_FOUR_HOURS = 24 * 60 * 60;
+	const cutoffTime = Math.floor(Date.now() / 1000) - TWENTY_FOUR_HOURS;
+
+	try {
+		const [
+			totalUsers,
+			totalAvatars,
+			totalAssets,
+			totalClothes,
+			totalPending,
+			totalAuthors,
+			totalMedia,
+			orphanedMedia,
+			latestUploads,
+			latestRegistrations,
+		] = await c.env.DB.batch([
+			c.env.DB.prepare('SELECT COUNT(*) as count FROM users'),
+			c.env.DB.prepare("SELECT COUNT(*) as count FROM resources WHERE category = 'avatars' AND is_active = 1"),
+			c.env.DB.prepare("SELECT COUNT(*) as count FROM resources WHERE category = 'assets' AND is_active = 1"),
+			c.env.DB.prepare("SELECT COUNT(*) as count FROM resources WHERE category = 'clothes' AND is_active = 1"),
+			c.env.DB.prepare('SELECT COUNT(*) as count FROM resources WHERE is_active = 0'),
+			c.env.DB.prepare('SELECT COUNT(*) as count FROM avatar_authors'),
+			c.env.DB.prepare('SELECT COUNT(*) as count FROM media'),
+			c.env.DB.prepare(
+				`SELECT COUNT(*) as count FROM media m
+				WHERE m.created_at < ?
+				AND m.uuid NOT IN (
+					SELECT thumbnail_uuid FROM resources WHERE thumbnail_uuid IS NOT NULL
+					UNION SELECT reference_image_uuid FROM resources WHERE reference_image_uuid IS NOT NULL
+					UNION SELECT media_uuid FROM resource_n_media
+					UNION SELECT cover_image_uuid FROM blog_posts WHERE cover_image_uuid IS NOT NULL
+				)
+				AND NOT EXISTS (SELECT 1 FROM users WHERE INSTR(users.avatar_url, m.r2_key) > 0)
+				AND NOT EXISTS (SELECT 1 FROM comments WHERE INSTR(comments.text, m.r2_key) > 0)
+				AND NOT EXISTS (SELECT 1 FROM blog_comments WHERE INSTR(blog_comments.text, m.r2_key) > 0)
+				AND NOT EXISTS (SELECT 1 FROM blog_posts WHERE INSTR(blog_posts.content, m.r2_key) > 0)`,
+			).bind(cutoffTime),
+			c.env.DB.prepare(
+				`SELECT r.uuid, r.title, r.category, r.created_at, u.username as author_username
+				FROM resources r LEFT JOIN users u ON r.author_uuid = u.uuid
+				ORDER BY r.created_at DESC LIMIT 5`,
+			),
+			c.env.DB.prepare(
+				'SELECT uuid, username, created_at FROM users ORDER BY created_at DESC LIMIT 5',
+			),
+		]);
+
+		return c.json({
+			users: (totalUsers.results[0] as { count: number })?.count ?? 0,
+			avatars: (totalAvatars.results[0] as { count: number })?.count ?? 0,
+			assets: (totalAssets.results[0] as { count: number })?.count ?? 0,
+			clothes: (totalClothes.results[0] as { count: number })?.count ?? 0,
+			pending: (totalPending.results[0] as { count: number })?.count ?? 0,
+			authors: (totalAuthors.results[0] as { count: number })?.count ?? 0,
+			media: (totalMedia.results[0] as { count: number })?.count ?? 0,
+			orphaned_media: (orphanedMedia.results[0] as { count: number })?.count ?? 0,
+			latest_uploads: latestUploads.results,
+			latest_registrations: latestRegistrations.results,
+		});
+	} catch (e) {
+		console.error('Admin stats error:', e);
+		return c.json({ error: 'Failed to fetch stats' }, 500);
+	}
+});
+
+// =========================================================================================================
+// GET /api/admin/users?q=&page=
+// List users with optional search by username. [admin only]
+// =========================================================================================================
+
+admin.get('/users', async (c) => {
+	const user = await getAuthUser(c);
+	if (!user) return c.json({ error: 'Unauthorized' }, 401);
+	if (!user.is_admin) return c.json({ error: 'Forbidden' }, 403);
+
+	const q = c.req.query('q') || '';
+	const page = Math.max(1, parseInt(c.req.query('page') || '1', 10));
+	const limit = 30;
+	const offset = (page - 1) * limit;
+
+	try {
+		const whereStr = q ? 'WHERE username LIKE ?' : '';
+		const bindings: unknown[] = q ? [`%${q}%`] : [];
+
+		const countResult = await c.env.DB.prepare(
+			`SELECT COUNT(*) as total FROM users ${whereStr}`,
+		)
+			.bind(...bindings)
+			.first<{ total: number }>();
+		const total = countResult?.total ?? 0;
+
+		const rows = await c.env.DB.prepare(
+			`SELECT uuid, username, avatar_url, is_admin, created_at FROM users ${whereStr} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+		)
+			.bind(...bindings, limit, offset)
+			.all<{ uuid: string; username: string; avatar_url: string | null; is_admin: number; created_at: number }>();
+
+		return c.json({
+			users: rows.results,
+			pagination: { page, limit, total, hasNextPage: offset + limit < total, hasPrevPage: page > 1 },
+		});
+	} catch (e) {
+		console.error('Admin users error:', e);
+		return c.json({ error: 'Failed to fetch users' }, 500);
+	}
+});
+
+// =========================================================================================================
+// GET /api/admin/resources?category=&status=&q=&page=
+// List all resources with optional filters. [admin only]
+// =========================================================================================================
+
+admin.get('/resources', async (c) => {
+	const user = await getAuthUser(c);
+	if (!user) return c.json({ error: 'Unauthorized' }, 401);
+	if (!user.is_admin) return c.json({ error: 'Forbidden' }, 403);
+
+	const q = c.req.query('q') || '';
+	const categoryRaw = c.req.query('category') || '';
+	const statusRaw = c.req.query('status') || '';
+	const page = Math.max(1, parseInt(c.req.query('page') || '1', 10));
+	const limit = 30;
+	const offset = (page - 1) * limit;
+
+	const VALID_CATEGORIES = ['avatars', 'assets', 'clothes', 'worlds'];
+	const category = VALID_CATEGORIES.includes(categoryRaw) ? categoryRaw : null;
+	const status = statusRaw === '0' ? 0 : statusRaw === '1' ? 1 : null;
+
+	const clauses: string[] = [];
+	const bindings: unknown[] = [];
+
+	if (q) { clauses.push('r.title LIKE ?'); bindings.push(`%${q}%`); }
+	if (category) { clauses.push('r.category = ?'); bindings.push(category); }
+	if (status !== null) { clauses.push('r.is_active = ?'); bindings.push(status); }
+
+	const whereStr = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
+
+	try {
+		const countResult = await c.env.DB.prepare(
+			`SELECT COUNT(*) as total FROM resources r ${whereStr}`,
+		)
+			.bind(...bindings)
+			.first<{ total: number }>();
+		const total = countResult?.total ?? 0;
+
+		const rows = await c.env.DB.prepare(
+			`SELECT r.uuid, r.title, r.category, r.is_active, r.download_count, r.created_at,
+				u.username as author_username, m.r2_key as thumbnail_key
+			FROM resources r
+			LEFT JOIN users u ON r.author_uuid = u.uuid
+			LEFT JOIN media m ON r.thumbnail_uuid = m.uuid
+			${whereStr}
+			ORDER BY r.created_at DESC LIMIT ? OFFSET ?`,
+		)
+			.bind(...bindings, limit, offset)
+			.all<Record<string, unknown>>();
+
+		return c.json({
+			resources: rows.results,
+			pagination: { page, limit, total, hasNextPage: offset + limit < total, hasPrevPage: page > 1 },
+		});
+	} catch (e) {
+		console.error('Admin resources error:', e);
+		return c.json({ error: 'Failed to fetch resources' }, 500);
+	}
+});
+
+// =========================================================================================================
 // Export
 // =========================================================================================================
 

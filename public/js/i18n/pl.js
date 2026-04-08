@@ -188,6 +188,7 @@ export default {
 			uploading: 'Przesyłanie obrazu...',
 			uploadError: 'Przesyłanie nie powiodło się. Spróbuj ponownie.',
 		},
+		specifications: 'Specyfikacje',
 	},
 	edit: {
 		title: 'Edytuj zasób',

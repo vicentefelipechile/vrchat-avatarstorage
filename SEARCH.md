@@ -674,26 +674,26 @@ Solo los campos que **cambiaron** se muestran en la fila de diff. Los campos sin
 
 ### Migración 0008: Tabla de Autores
 
-- [ ] Crear `migrations/0008_category_authors.sql`
-  - [ ] Tabla `avatar_authors` (uuid, name, slug, description, avatar_url, website_url, twitter_url, booth_url, gumroad_url, patreon_url, discord_url, created_at, updated_at)
-  - [ ] `UNIQUE` en `name` y en `slug`
-  - [ ] Índice en `slug`
-  - [ ] Índice en `name`
+- [x] Crear `migrations/0008_category_authors.sql`
+  - [x] Tabla `avatar_authors` (uuid, name, slug, description, avatar_url, website_url, twitter_url, booth_url, gumroad_url, patreon_url, discord_url, created_at, updated_at)
+  - [x] `UNIQUE` en `name` y en `slug`
+  - [x] Índice en `slug`
+  - [x] Índice en `name`
 
 ### Migración 0009: Metadatos de Categoría
 
-- [ ] Crear `migrations/0009_category_metadata.sql`
-  - [ ] Tabla `avatar_meta` con todas las columnas definidas en §4.2
-  - [ ] FK `resource_uuid` → `resources.uuid` ON DELETE CASCADE
-  - [ ] FK nullable `author_uuid` → `avatar_authors.uuid`
-  - [ ] Índices en: `gender`, `avatar_type`, `body_size`, `is_nsfw`, `platform`, `author_uuid`, `has_gogoloco`, `is_quest_optimized`
-  - [ ] Tabla `asset_meta` con todas las columnas definidas en §4.3
-  - [ ] FK `resource_uuid` → `resources.uuid` ON DELETE CASCADE
-  - [ ] Índices en: `asset_type`, `is_nsfw`, `platform`, `unity_version`
-  - [ ] Tabla `clothes_meta` con todas las columnas definidas en §4.4
-  - [ ] FK `resource_uuid` → `resources.uuid` ON DELETE CASCADE
-  - [ ] FK nullable `base_avatar_uuid` → `resources.uuid`
-  - [ ] Índices en: `gender_fit`, `clothing_type`, `is_base`, `is_nsfw`, `platform`, `has_physbones`
+- [x] Crear `migrations/0009_category_metadata.sql`
+  - [x] Tabla `avatar_meta` con todas las columnas definidas en §4.2
+  - [x] FK `resource_uuid` → `resources.uuid` ON DELETE CASCADE
+  - [x] FK nullable `author_uuid` → `avatar_authors.uuid`
+  - [x] Índices en: `gender`, `avatar_type`, `body_size`, `is_nsfw`, `platform`, `author_uuid`, `has_gogoloco`, `is_quest_optimized`
+  - [x] Tabla `asset_meta` con todas las columnas definidas en §4.3
+  - [x] FK `resource_uuid` → `resources.uuid` ON DELETE CASCADE
+  - [x] Índices en: `asset_type`, `is_nsfw`, `platform`, `unity_version`
+  - [x] Tabla `clothes_meta` con todas las columnas definidas en §4.4
+  - [x] FK `resource_uuid` → `resources.uuid` ON DELETE CASCADE
+  - [x] FK nullable `base_avatar_uuid` → `resources.uuid`
+  - [x] Índices en: `gender_fit`, `clothing_type`, `is_base`, `is_nsfw`, `platform`, `has_physbones`
 
 > **Nota:** no se necesita migración para el sistema de historial. La tabla `resource_history` ya existe y el nuevo `change_type = 'meta_edit'` es solo un valor de texto en la columna existente.
 
@@ -701,235 +701,231 @@ Solo los campos que **cambiaron** se muestran en la fila de diff. Los campos sin
 
 ## FASE 2 — Backend: Tipos y Validación
 
-- [ ] Añadir en `src/types.ts`
-  - [ ] Interface `AvatarAuthor`
-  - [ ] Interface `AvatarMeta`
-  - [ ] Interface `AssetMeta`
-  - [ ] Interface `ClothesMeta`
-  - [ ] Tipo `MetaEditSnapshot` — `{ meta_type: 'avatar_meta' | 'asset_meta' | 'clothes_meta'; fields: Record<string, unknown> }`
-  - [ ] Tipo `HistoryChangeType` — unión `'content_edit' | 'meta_edit' | 'approval'`
-- [ ] Añadir en `src/validators.ts`
-  - [ ] `AvatarAuthorSchema` (Zod)
-  - [ ] `AvatarMetaSchema` (Zod, campos obligatorios marcados)
-  - [ ] `AssetMetaSchema` (Zod)
-  - [ ] `ClothesMetaSchema` (Zod)
+- [x] Añadir en `src/types.ts`
+  - [x] Interface `AvatarAuthor`
+  - [x] Interface `AvatarMeta`
+  - [x] Interface `AssetMeta`
+  - [x] Interface `ClothesMeta`
+  - [x] Tipo `MetaEditSnapshot` — `{ meta_type: 'avatar_meta' | 'asset_meta' | 'clothes_meta'; fields: Record<string, unknown> }`
+  - [x] Tipo `HistoryChangeType` — unión `'content_edit' | 'meta_edit' | 'approval'`
+- [x] Añadir en `src/validators.ts`
+  - [x] `AvatarAuthorSchema` (Zod)
+  - [x] `AvatarMetaSchema` (Zod, campos obligatorios marcados)
+  - [x] `AssetMetaSchema` (Zod)
+  - [x] `ClothesMetaSchema` (Zod)
 
 ---
 
 ## FASE 3 — Backend: Rutas de Categoría
 
-- [ ] Crear `src/routes/avatars.ts`
-  - [ ] `GET /api/avatars` — `INNER JOIN avatar_meta`, filtros facetados via `QueryBuilder`
-  - [ ] `POST /api/avatars` — crear en `resources` + insertar en `avatar_meta` con `db.batch()` — **no genera historial** (creación inicial)
-  - [ ] `PUT /api/avatars/:uuid` — editar metadatos del avatar:
-    - [ ] Snapshot del `avatar_meta` actual → `previous_data` JSON con `meta_type: 'avatar_meta'`
-    - [ ] Insertar en `resource_history` con `change_type = 'meta_edit'` y `actor_uuid` del usuario
-    - [ ] Actualizar `avatar_meta` — todo en `db.batch()` para atomicidad
-- [ ] Crear `src/routes/assets.ts`
-  - [ ] `GET /api/assets` — `INNER JOIN asset_meta`, filtros facetados
-  - [ ] `POST /api/assets` — crear en `resources` + insertar en `asset_meta` con `db.batch()` — **no genera historial**
-  - [ ] `PUT /api/assets/:uuid` — snapshot de `asset_meta` + `meta_edit` + actualización en `db.batch()`
-- [ ] Crear `src/routes/clothes.ts`
-  - [ ] `GET /api/clothes` — `INNER JOIN clothes_meta`, filtros facetados
-  - [ ] `POST /api/clothes` — crear en `resources` + insertar en `clothes_meta` con `db.batch()` — **no genera historial**
-  - [ ] `PUT /api/clothes/:uuid` — snapshot de `clothes_meta` + `meta_edit` + actualización en `db.batch()`
-- [ ] Montar en `src/index.ts`
-  - [ ] `app.route('/api/avatars', avatarsRouter)`
-  - [ ] `app.route('/api/assets', assetsRouter)`
-  - [ ] `app.route('/api/clothes', clothesRouter)`
+- [x] Crear `src/routes/avatars.ts`
+  - [x] `GET /api/avatars` — `INNER JOIN avatar_meta`, filtros facetados via `QueryBuilder`
+  - [x] `POST /api/avatars` — crear en `resources` + insertar en `avatar_meta` con `db.batch()` — **no genera historial** (creación inicial)
+  - [x] `PUT /api/avatars/:uuid` — editar metadatos del avatar:
+    - [x] Snapshot del `avatar_meta` actual → `previous_data` JSON con `meta_type: 'avatar_meta'`
+    - [x] Insertar en `resource_history` con `change_type = 'meta_edit'` y `actor_uuid` del usuario
+    - [x] Actualizar `avatar_meta` — todo en `db.batch()` para atomicidad
+- [x] Crear `src/routes/assets.ts`
+  - [x] `GET /api/assets` — `INNER JOIN asset_meta`, filtros facetados
+  - [x] `POST /api/assets` — crear en `resources` + insertar en `asset_meta` con `db.batch()` — **no genera historial**
+  - [x] `PUT /api/assets/:uuid` — snapshot de `asset_meta` + `meta_edit` + actualización en `db.batch()`
+- [x] Crear `src/routes/clothes.ts`
+  - [x] `GET /api/clothes` — `INNER JOIN clothes_meta`, filtros facetados
+  - [x] `POST /api/clothes` — crear en `resources` + insertar en `clothes_meta` con `db.batch()` — **no genera historial**
+  - [x] `PUT /api/clothes/:uuid` — snapshot de `clothes_meta` + `meta_edit` + actualización en `db.batch()`
+- [x] Montar en `src/index.ts`
+  - [x] `app.route('/api/avatars', avatarsRouter)`
+  - [x] `app.route('/api/assets', assetsRouter)`
+  - [x] `app.route('/api/clothes', clothesRouter)`
 
 ---
 
 ## FASE 4 — Backend: Rutas de Autores
 
-- [ ] Crear `src/routes/authors.ts`
-  - [ ] `GET /api/authors` — listado paginado
-  - [ ] `GET /api/authors/search?q=` — autocompletar nombre (máx 10 resultados)
-  - [ ] `GET /api/authors/:slug` — perfil + avatares (`JOIN avatar_meta`)
-  - [ ] `POST /api/authors` — crear autor [admin only]
-  - [ ] `PUT /api/authors/:slug` — editar autor [admin only]
-  - [ ] `DELETE /api/authors/:slug` — eliminar (verificar que no haya avatares vinculados) [admin only]
-  - [ ] `POST /api/authors/:slug/link-resource` — setear `avatar_meta.author_uuid` [admin only]
-- [ ] Montar en `src/index.ts`
-  - [ ] `app.route('/api/authors', authorsRouter)`
+- [x] Crear `src/routes/authors.ts`
+  - [x] `GET /api/authors` — listado paginado
+  - [x] `GET /api/authors/search?q=` — autocompletar nombre (máx 10 resultados)
+  - [x] `GET /api/authors/:slug` — perfil + avatares (`JOIN avatar_meta`)
+  - [x] `POST /api/authors` — crear autor [admin only]
+  - [x] `PUT /api/authors/:slug` — editar autor [admin only]
+  - [x] `DELETE /api/authors/:slug` — eliminar (verificar que no haya avatares vinculados) [admin only]
+  - [x] `POST /api/authors/:slug/link-resource` — setear `avatar_meta.author_uuid` [admin only]
+- [x] Montar en `src/index.ts`
+  - [x] `app.route('/api/authors', authorsRouter)`
 
 ---
 
 ## FASE 5 — Backend: Nuevos Endpoints de Admin
 
-- [ ] Añadir en `src/routes/admin.ts`
-  - [ ] `GET /api/admin/stats` — batch de queries: usuarios totales, recursos por categoría, pendientes, autores, media total, media huérfana, últimas 5 subidas, últimos 5 registros
-  - [ ] `GET /api/admin/users?q=&page=` — lista con búsqueda por username
-  - [ ] `GET /api/admin/resources?category=&status=&q=&page=` — lista completa con filtros
+- [x] Añadir en `src/routes/admin.ts`
+  - [x] `GET /api/admin/stats` — batch de queries: usuarios totales, recursos por categoría, pendientes, autores, media total, media huérfana, últimas 5 subidas, últimos 5 registros
+  - [x] `GET /api/admin/users?q=&page=` — lista con búsqueda por username
+  - [x] `GET /api/admin/resources?category=&status=&q=&page=` — lista completa con filtros
 
 ---
 
 ## FASE 5B — Backend: Historial para Vinculación de Autores
 
-- [ ] En `src/routes/authors.ts`, endpoint `POST /api/authors/:slug/link-resource`:
-  - [ ] Antes de setear `avatar_meta.author_uuid`, leer el valor actual de `author_uuid` y `author_name_raw`
-  - [ ] Generar snapshot `{ meta_type: 'avatar_meta', fields: { author_uuid: <anterior>, author_name_raw: <anterior> } }`
-  - [ ] Insertar en `resource_history` con `change_type = 'meta_edit'`
-  - [ ] Actualizar `avatar_meta` y registrar historia en `db.batch()` para atomicidad
+- [x] En `src/routes/authors.ts`, endpoint `POST /api/authors/:slug/link-resource`:
+  - [x] Antes de setear `avatar_meta.author_uuid`, leer el valor actual de `author_uuid` y `author_name_raw`
+  - [x] Generar snapshot `{ meta_type: 'avatar_meta', fields: { author_uuid: <anterior>, author_name_raw: <anterior> } }`
+  - [x] Insertar en `resource_history` con `change_type = 'meta_edit'`
+  - [x] Actualizar `avatar_meta` y registrar historia en `db.batch()` para atomicidad
 
 ---
 
 ## FASE 6 — Frontend: CSS
 
-- [ ] Crear `public/style/search.css`
-  - [ ] `.category-layout` — flex row, gap entre panel y grid
-  - [ ] `.filter-panel` — 260px, position sticky
-  - [ ] `.filter-panel-header` — título + botón reset
-  - [ ] `.filter-group`, `.filter-group-label`
-  - [ ] `.filter-chip` — checkbox estilizado como pill seleccionable
-  - [ ] `.filter-toggle` — fila con switch booleano inline
-  - [ ] `.filter-select` — select nativo estilizado
-  - [ ] `.filter-results-count` — contador de resultados
-  - [ ] `.category-results` — flex-1, min-width: 0
-  - [ ] `@media (max-width: 768px)` — `.filter-panel { display: none; }`, layout a bloque
-- [ ] Crear `public/style/authors.css`
-  - [ ] `.author-profile-header` — flex, imagen + nombre + descripción
-  - [ ] `.author-socials` — lista horizontal de links/íconos
-  - [ ] `.author-resources-section` — wrapper del grid de avatares
-- [ ] Crear `public/style/admin-dashboard.css`
-  - [ ] `.admin-layout` — flex row: sidebar + contenido
-  - [ ] `.admin-sidebar` — 220px, fijo, altura del viewport
-  - [ ] `.admin-sidebar-nav-item` — ítem con estado activo
-  - [ ] `.admin-sidebar-badge` — badge de conteo numérico
-  - [ ] `.admin-content` — flex-1, padding, overflow-y auto
-  - [ ] `.admin-section` — oculto por defecto, visible cuando activo
-  - [ ] `.admin-stats-grid` — grid de stat cards
-  - [ ] `.admin-stat-card`, `--warning`, `--danger`
-  - [ ] `.admin-data-table` — tabla flat sin border-radius
-  - [ ] `.admin-badge-status` — badge inline de estado
-  - [ ] `.admin-action-bar` — toolbar de búsqueda + botones sobre tablas
-  - [ ] `.admin-form-panel` — panel de formulario create/edit
-  - [ ] `.admin-desktop-only-warning` — aviso visible en viewport < 1024px
-  - [ ] `@media (max-width: 1024px)` — ocultar `.admin-layout`, mostrar warning
-- [ ] Registrar en `public/style.css`
-  - [ ] `@import './style/search.css'`
-  - [ ] `@import './style/authors.css'`
-  - [ ] `@import './style/admin-dashboard.css'`
+- [x] Crear `public/style/search.css`
+  - [x] `.category-layout` — flex row, gap entre panel y grid
+  - [x] `.filter-panel` — 260px, position sticky
+  - [x] `.filter-panel-header` — título + botón reset
+  - [x] `.filter-group`, `.filter-group-label`
+  - [x] `.filter-chip` — checkbox estilizado como pill seleccionable
+  - [x] `.filter-toggle` — fila con switch booleano inline
+  - [x] `.filter-select` — select nativo estilizado
+  - [x] `.filter-results-count` — contador de resultados
+  - [x] `.category-results` — flex-1, min-width: 0
+  - [x] `@media (max-width: 768px)` — `.filter-panel { display: none; }`, layout a bloque
+- [x] Crear `public/style/authors.css`
+  - [x] `.author-profile-header` — flex, imagen + nombre + descripción
+  - [x] `.author-socials` — lista horizontal de links/íconos
+  - [x] `.author-resources-section` — wrapper del grid de avatares
+- [x] Crear `public/style/admin-dashboard.css`
+  - [x] `.admin-layout` — flex row: sidebar + contenido
+  - [x] `.admin-sidebar` — 220px, fijo, altura del viewport
+  - [x] `.admin-sidebar-nav-item` — ítem con estado activo
+  - [x] `.admin-sidebar-badge` — badge de conteo numérico
+  - [x] `.admin-content` — flex-1, padding, overflow-y auto
+  - [x] `.admin-section` — oculto por defecto, visible cuando activo
+  - [x] `.admin-stats-grid` — grid de stat cards
+  - [x] `.admin-stat-card`, `--warning`, `--danger`
+  - [x] `.admin-data-table` — tabla flat sin border-radius
+  - [x] `.admin-badge-status` — badge inline de estado
+  - [x] `.admin-action-bar` — toolbar de búsqueda + botones sobre tablas
+  - [x] `.admin-form-panel` — panel de formulario create/edit
+  - [x] `.admin-desktop-only-warning` — aviso visible en viewport < 1024px
+  - [x] `@media (max-width: 1024px)` — ocultar `.admin-layout`, mostrar warning
+- [x] Registrar en `public/style.css`
+  - [x] `@import './style/search.css'`
+  - [x] `@import './style/authors.css'`
+  - [x] `@import './style/admin-dashboard.css'`
 
 ---
 
 ## FASE 7 — Frontend: Módulo de Filtros
 
-- [ ] Crear `src/frontend/filter-panel.ts`
-  - [ ] `interface FilterOption` — `{ value: string; label: string }`
-  - [ ] `interface FilterGroupConfig` — `{ name: string; label: string; type: 'checkbox' | 'toggle' | 'select'; options: FilterOption[] }`
-  - [ ] `interface FilterPanelConfig` — `{ groups: FilterGroupConfig[] }`
-  - [ ] `buildFilterPanel(config: FilterPanelConfig): string` — devuelve HTML del panel
-  - [ ] `initFilterPanel(panelEl: HTMLElement, onFilter: (p: URLSearchParams) => void): void`
-    - Listeners en todos los inputs → debounce 300ms → llama `onFilter`
-    - Lee `URLSearchParams` actuales al inicializar y preselecciona valores
-  - [ ] `resetFilters(panelEl: HTMLElement): void` — resetea todos los inputs
+- [x] Crear `src/frontend/filter-panel.ts`
+  - [x] `interface FilterOption` — `{ value: string; label: string }`
+  - [x] `interface FilterGroupConfig` — `{ name: string; label: string; type: 'checkbox' | 'toggle' | 'select'; options: FilterOption[] }`
+  - [x] `interface FilterPanelConfig` — `{ groups: FilterGroupConfig[] }`
+  - [x] `buildFilterPanel(config: FilterPanelConfig): string` — devuelve HTML del panel
+  - [x] `initFilterPanel(panelEl: HTMLElement, onFilter: (p: URLSearchParams) => void): void`
+    - [x] Listeners en todos los inputs → debounce 300ms → llama `onFilter`
+    - [x] Lee `URLSearchParams` actuales al inicializar y preselecciona valores
+  - [x] `resetFilters(panelEl: HTMLElement): void` — resetea todos los inputs
 
 ---
 
 ## FASE 8 — Frontend: Vistas de Categoría
 
-- [ ] Crear `src/frontend/views/AvatarsView.ts`
-  - [ ] Layout `.category-layout`
-  - [ ] Panel: grupos `avatar_type`, `gender`, `body_size`, `platform`, `sdk_version`
-  - [ ] Panel: toggles `is_nsfw`, `has_physbones`, `has_dps`, `has_face_tracking`
-  - [ ] Panel: select `sort_by`
-  - [ ] Counter `"X resultados"` sobre el grid
-  - [ ] Grid de resource cards
-  - [ ] Paginación con filtros sincronizados en URL
-  - [ ] Estado vacío si no hay resultados
-- [ ] Crear `src/frontend/views/AssetsView.ts`
-  - [ ] Panel: `asset_type`, `platform`, `sdk_version`, toggles `is_nsfw`
-  - [ ] Mismo layout, counter y paginación
-- [ ] Crear `src/frontend/views/ClothesView.ts`
-  - [ ] Panel: `gender_fit`, `clothing_type`, `platform`, toggles `is_nsfw`, `is_base`
-  - [ ] Si `is_base` activo: campo autocomplete de avatar base
-  - [ ] Mismo layout, counter y paginación
-- [ ] Registrar en `src/frontend/app.ts`
-  - [ ] `route('/avatars', avatarsView, { after: avatarsAfter })`
-  - [ ] `route('/assets', assetsView, { after: assetsAfter })`
-  - [ ] `route('/clothes', clothesView, { after: clothesAfter })`
+- [x] Crear `src/frontend/views/AvatarsView.ts`
+  - [x] Layout `.category-layout`
+  - [x] Panel: grupos `avatar_type`, `gender`, `body_size`, `platform`, `sdk_version`
+  - [x] Panel: toggles `is_nsfw`, `has_physbones`, `has_dps`, `has_face_tracking`
+  - [x] Panel: select `sort_by`
+  - [x] Counter `"X resultados"` sobre el grid
+  - [x] Grid de resource cards
+  - [x] Paginación con filtros sincronizados en URL
+  - [x] Estado vacío si no hay resultados
+- [x] Crear `src/frontend/views/AssetsView.ts`
+  - [x] Panel: `asset_type`, `platform`, `sdk_version`, toggles `is_nsfw`
+  - [x] Mismo layout, counter y paginación
+- [x] Crear `src/frontend/views/ClothesView.ts`
+  - [x] Panel: `gender_fit`, `clothing_type`, `platform`, toggles `is_nsfw`, `is_base`
+  - [x] Si `is_base` activo: campo autocomplete de avatar base
+  - [x] Mismo layout, counter y paginación
+- [x] Registrar en `src/frontend/app.ts`
+  - [x] `route('/avatars', avatarsView, { after: avatarsAfter })`
+  - [x] `route('/assets', assetsView, { after: assetsAfter })`
+  - [x] `route('/clothes', clothesView, { after: clothesAfter })`
 
 ---
 
 ## FASE 8B — Frontend: HistoryView Extendido
 
-- [ ] Modificar `src/frontend/views/HistoryView.ts`
-  - [ ] Mantener renderizado actual de `content_edit` y `approval` sin cambios
-  - [ ] Añadir rama para `change_type === 'meta_edit'`:
-    - [ ] Parsear `previous_data` como `MetaEditSnapshot`
-    - [ ] Hacer fetch del estado actual del meta (`GET /api/avatars/:uuid`, `/api/assets/:uuid` o `/api/clothes/:uuid`) para obtener los valores actuales
-    - [ ] Calcular diff: iterar `fields` del snapshot y comparar contra los valores actuales del recurso
-    - [ ] Renderizar tabla con columnas: Campo / Antes / Después — solo filas donde el valor cambió
-    - [ ] Caso especial: si `author_uuid` cambió de `null` a un UUID, mostrar `"Autor vinculado: [nombre]"` en lugar del UUID crudo
-    - [ ] Si todos los campos del snapshot son iguales al actual (edit sin cambio real), mostrar `"Sin cambios detectados"`
-  - [ ] Añadir estilos inline o clases CSS para resaltar la columna "Antes" (texto tachado o color diferente) vs "Después"
+- [x] Modificar `src/frontend/views/HistoryView.ts`
+  - [x] Mantener renderizado actual de `content_edit` y `approval` sin cambios
+  - [x] Añadir rama para `change_type === 'meta_edit'`:
+    - [x] Parsear `previous_data` como `MetaEditSnapshot`
+    - [x] Hacer fetch del estado actual del meta (`GET /api/avatars/:uuid`, `/api/assets/:uuid` o `/api/clothes/:uuid`) para obtener los valores actuales
+    - [x] Calcular diff: iterar `fields` del snapshot y comparar contra los valores actuales del recurso
+    - [x] Renderizar tabla con columnas: Campo / Antes / Después — solo filas donde el valor cambió
+    - [x] Caso especial: si `author_uuid` cambió de `null` a un UUID, mostrar `"Autor vinculado: [nombre]"` en lugar del UUID crudo
+    - [x] Si todos los campos del snapshot son iguales al actual (edit sin cambio real), mostrar `"Sin cambios detectados"`
+  - [x] Añadir estilos inline o clases CSS para resaltar la columna "Antes" (texto tachado o color diferente) vs "Después"
 
 ---
 
 ## FASE 9 — Frontend: Vista de Autor
 
-- [ ] Crear `src/frontend/views/AuthorView.ts`
-  - [ ] Fetch `GET /api/authors/:slug`
-  - [ ] 404 si slug no existe
-  - [ ] Header: imagen, nombre, descripción
-  - [ ] Sección de redes (solo renderiza links no-null)
-  - [ ] Grid de avatares del autor (`GET /api/avatars?author_uuid=X`)
-  - [ ] Paginación del grid
-- [ ] Registrar en `src/frontend/app.ts`
-  - [ ] `route('/authors/:slug', authorView, { after: authorAfter })`
+- [x] Crear `src/frontend/views/AuthorView.ts`
+  - [x] Fetch `GET /api/authors/:slug`
+  - [x] 404 si slug no existe
+  - [x] Header: imagen, nombre, descripción
+  - [x] Sección de redes (solo renderiza links no-null)
+  - [x] Grid de avatares del autor (`GET /api/avatars?author_uuid=X`)
+  - [x] Paginación del grid
+- [x] Registrar en `src/frontend/app.ts`
+  - [x] `route('/authors/:slug', authorView, { after: authorAfter })`
 
 ---
 
 ## FASE 10 — Frontend: Admin Dashboard
 
-- [ ] Rediseñar `src/frontend/views/AdminView.ts`
-  - [ ] Guard de viewport: si `< 1024px` mostrar `.admin-desktop-only-warning`
-  - [ ] Layout `.admin-layout`
-  - [ ] Sidebar con 7 ítems + badge numérico en "Pendientes"
-  - [ ] Navegación JS entre secciones (show/hide + estado activo)
-  - [ ] **Sección Overview:** stat cards + tablas de últimas actividades
-  - [ ] **Sección Pendientes:** grid de recursos pendientes, botones Aprobar/Rechazar
-  - [ ] **Sección Recursos:** tabla paginada con búsqueda y filtros, acciones por fila
-  - [ ] **Sección Autores:** tabla + formulario CRUD + herramienta de vinculación por `author_name_raw`
-  - [ ] **Sección Usuarios:** tabla paginada, toggle admin, limpiar caché por fila
-  - [ ] **Sección Almacenamiento:** stats + lista de huérfanos + botón limpiar
-  - [ ] **Sección Caché:** input username + botón limpiar caché
+- [x] Rediseñar `src/frontend/views/AdminView.ts`
+  - [x] Guard de viewport: si `< 1024px` mostrar `.admin-desktop-only-warning`
+  - [x] Layout `.admin-layout`
+  - [x] Sidebar con 7 ítems + badge numérico en "Pendientes"
+  - [x] Navegación JS entre secciones (show/hide + estado activo)
+  - [x] **Sección Overview:** stat cards + tablas de últimas actividades
+  - [x] **Sección Pendientes:** grid de recursos pendientes, botones Aprobar/Rechazar
+  - [x] **Sección Recursos:** tabla paginada con búsqueda y filtros, acciones por fila
+  - [x] **Sección Autores:** tabla + formulario CRUD + herramienta de vinculación por `author_name_raw`
+  - [x] **Sección Usuarios:** tabla paginada, toggle admin, limpiar caché por fila
+  - [x] **Sección Almacenamiento:** stats + lista de huérfanos + botón limpiar
+  - [x] **Sección Caché:** input username + botón limpiar caché
 
 ---
 
 ## FASE 11 — Frontend: Formulario de Upload
 
-- [ ] Modificar `src/frontend/views/UploadView.ts`
-  - [ ] Eliminar opción `worlds` del `<select>` de categoría
-  - [ ] Eliminar bloque `#avatar-fields` actual (Platform/SDK/Version/blend/poiyomi/vrcfury)
-  - [ ] Eliminar concatenación de metadatos en `description` (línea 432)
-  - [ ] Añadir bloque `#avatar-meta-fields` con todos los campos del §6.4
-  - [ ] Añadir bloque `#asset-meta-fields`
-  - [ ] Añadir bloque `#clothes-meta-fields`
-  - [ ] Validación en cliente: submit bloqueado si campos obligatorios vacíos
-  - [ ] POST al endpoint correcto según categoría (`/api/avatars`, `/api/assets`, `/api/clothes`)
+- [x] Modificar `src/frontend/views/UploadView.ts`
+  - [x] Eliminar opción `worlds` del `<select>` de categoría
+  - [x] Eliminar bloque `#avatar-fields` actual (Platform/SDK/Version/blend/poiyomi/vrcfury)
+  - [x] Eliminar concatenación de metadatos en `description` (línea 432)
+  - [x] Añadir bloque `#avatar-meta-fields` con todos los campos del §6.4
+  - [x] Añadir bloque `#asset-meta-fields`
+  - [x] Añadir bloque `#clothes-meta-fields`
+  - [x] Validación en cliente: submit bloqueado si campos obligatorios vacíos
+  - [x] POST al endpoint correcto según categoría (`/api/avatars`, `/api/assets`, `/api/clothes`)
 
 ---
 
 ## FASE 12 — i18n
 
-- [ ] Ejecutar `npm run i18n-manager CHECK JSON` — obtener claves faltantes
-- [ ] Crear `i18n-fill.json` con todas las traducciones nuevas (ver §6 para las claves)
-  - [ ] Claves de filtros de avatares: `filters.gender.*`, `filters.body_size.*`, `filters.avatar_type.*`, `filters.platform.*`, `filters.sdk.*`, `filters.nsfw`, `filters.physbones`, `filters.dps`, `filters.face_tracking`, `filters.gogoloco`, `filters.toggles`, `filters.quest_optimized`
-  - [ ] Claves de filtros de assets: `filters.asset_type.*`, `filters.erp`, `filters.funny`, `filters.free`, `filters.unity_version.*`
-  - [ ] Claves de filtros de ropa: `filters.gender_fit.*`, `filters.clothing_type.*`, `filters.is_base`, `filters.physbones`
-  - [ ] Claves de UI del panel: `filters.title`, `filters.clear`, `filters.results_count`, `filters.sort_by`, `filters.sort_by.recent`, `filters.sort_by.popular`, `filters.sort_by.az`
-  - [ ] Claves de página de autor: `authors.resources`, `authors.no_resources`, `authors.socials`
-  - [ ] Claves del admin: secciones del sidebar (`admin.section.*`), formularios de autores, tablas
-- [ ] Ejecutar `npm run i18n-manager FILL ./i18n-fill.json`
-- [ ] Ejecutar `npm run i18n-manager CHECK` — verificar `✔ All keys present in all locales.`
+- [x] `history.types.meta_edit` añadido a los 12 idiomas via `i18n-fill-phrases.json`
+- [x] Usuario corrige formato de archivos i18n (parse error en fr/cn/de/etc) — build limpio confirmado
+- [ ] *(pendiente)* Claves de filtros de avatares, assets, ropa, UI del panel, página de autor, admin
+- [ ] *(pendiente)* Ejecutar `npm run i18n-manager FILL` y verificar con `CHECK`
 
 ---
 
 ## FASE 13 — QA y Verificación
 
-- [ ] Aplicar migraciones localmente: `wrangler d1 migrations apply DB --local`
+- [x] Aplicar migraciones localmente: `wrangler d1 execute DB --local --file=migrations/0008_category_authors.sql` + `0009_category_metadata.sql` (21 comandos OK)
+- [x] Frontend build limpio (`npm run build-frontend:dev` — 681 KB, 0 errores)
+- [x] Rutas `/avatars`, `/assets`, `/clothes`, `/authors/:slug` registradas en `app.ts`
 - [ ] Verificar que `GET /api/resources` (ruta genérica) responde igual que antes
 - [ ] Probar `GET /api/avatars` sin filtros, con un filtro, con múltiples filtros combinados
 - [ ] Probar `GET /api/assets` y `GET /api/clothes` con sus filtros

@@ -176,6 +176,36 @@ resources.get('/:uuid', async (c) => {
             r.updated_at,
             tm.r2_key         AS thumbnail_key,
             rm_ref.r2_key     AS reference_image_key,
+            -- Avatar metadata
+            am.gender            AS av_gender,
+            am.body_size         AS av_body_size,
+            am.avatar_type       AS av_avatar_type,
+            am.is_nsfw           AS av_is_nsfw,
+            am.has_physbones     AS av_has_physbones,
+            am.has_face_tracking AS av_has_face_tracking,
+            am.has_dps           AS av_has_dps,
+            am.has_gogoloco      AS av_has_gogoloco,
+            am.has_toggles       AS av_has_toggles,
+            am.is_quest_optimized AS av_is_quest_optimized,
+            am.sdk_version       AS av_sdk_version,
+            am.platform          AS av_platform,
+            am.author_name_raw   AS av_author_name_raw,
+            aa.name              AS av_author_name,
+            aa.slug              AS av_author_slug,
+            -- Asset metadata
+            asm.asset_type       AS as_asset_type,
+            asm.is_nsfw          AS as_is_nsfw,
+            asm.unity_version    AS as_unity_version,
+            asm.platform         AS as_platform,
+            asm.sdk_version      AS as_sdk_version,
+            -- Clothes metadata
+            cm.gender_fit           AS cl_gender_fit,
+            cm.clothing_type        AS cl_clothing_type,
+            cm.is_base              AS cl_is_base,
+            cm.is_nsfw              AS cl_is_nsfw,
+            cm.has_physbones        AS cl_has_physbones,
+            cm.platform             AS cl_platform,
+            cm.base_avatar_name_raw AS cl_base_avatar_name_raw,
             COALESCE((
                 SELECT json_group_array(json_object(
                     'uuid',       m.uuid,
@@ -208,6 +238,10 @@ resources.get('/:uuid', async (c) => {
         LEFT JOIN users  u      ON r.author_uuid          = u.uuid
         LEFT JOIN media  tm     ON r.thumbnail_uuid        = tm.uuid
         LEFT JOIN media  rm_ref ON r.reference_image_uuid  = rm_ref.uuid
+        LEFT JOIN avatar_meta   am ON r.uuid = am.resource_uuid
+        LEFT JOIN avatar_authors aa ON am.author_uuid = aa.uuid
+        LEFT JOIN asset_meta   asm ON r.uuid = asm.resource_uuid
+        LEFT JOIN clothes_meta  cm ON r.uuid = cm.resource_uuid
         WHERE r.uuid = ?
     `,
 	)
@@ -237,6 +271,50 @@ resources.get('/:uuid', async (c) => {
 		// Gallery
 		thumbnail_key: row.thumbnail_key ?? null,
 		reference_image_key: row.reference_image_key ?? null,
+		// Category-specific metadata (null if not yet populated)
+		meta: (() => {
+			const cat = row.category as string;
+			if (cat === 'avatars' && row.av_gender !== null && row.av_gender !== undefined) {
+				return {
+					gender: row.av_gender,
+					body_size: row.av_body_size,
+					avatar_type: row.av_avatar_type,
+					is_nsfw: row.av_is_nsfw,
+					has_physbones: row.av_has_physbones,
+					has_face_tracking: row.av_has_face_tracking,
+					has_dps: row.av_has_dps,
+					has_gogoloco: row.av_has_gogoloco,
+					has_toggles: row.av_has_toggles,
+					is_quest_optimized: row.av_is_quest_optimized,
+					sdk_version: row.av_sdk_version,
+					platform: row.av_platform,
+					author_name_raw: row.av_author_name_raw,
+					author_name: row.av_author_name,
+					author_slug: row.av_author_slug,
+				};
+			}
+			if (cat === 'assets' && row.as_asset_type !== null && row.as_asset_type !== undefined) {
+				return {
+					asset_type: row.as_asset_type,
+					is_nsfw: row.as_is_nsfw,
+					unity_version: row.as_unity_version,
+					platform: row.as_platform,
+					sdk_version: row.as_sdk_version,
+				};
+			}
+			if (cat === 'clothes' && row.cl_clothing_type !== null && row.cl_clothing_type !== undefined) {
+				return {
+					gender_fit: row.cl_gender_fit,
+					clothing_type: row.cl_clothing_type,
+					is_base: row.cl_is_base,
+					is_nsfw: row.cl_is_nsfw,
+					has_physbones: row.cl_has_physbones,
+					platform: row.cl_platform,
+					base_avatar_name_raw: row.cl_base_avatar_name_raw,
+				};
+			}
+			return null;
+		})(),
 		mediaFiles,
 		// Tags always public
 		tags,
