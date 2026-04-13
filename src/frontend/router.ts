@@ -10,8 +10,7 @@ import type { Route, RouteContext, ViewFn, AfterFn, RouteOptions } from './types
 
 const routes: Route[] = [];
 
-let notFoundView: ViewFn = async () =>
-	`<div style="padding:40px;text-align:center"><h2>404 — Page not found</h2></div>`;
+let notFoundView: ViewFn = async () => `<div style="padding:40px;text-align:center"><h2>404 — Page not found</h2></div>`;
 
 // -------------------------------------------------------------------------
 // Route registration

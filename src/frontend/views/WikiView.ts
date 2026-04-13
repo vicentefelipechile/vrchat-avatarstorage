@@ -13,9 +13,22 @@ import type { RouteContext } from '../types';
 // Types
 // =========================================================================
 
-interface WikiTopic { id: string; label: string }
-interface WikiCategory { id: string; title: string; topics: WikiTopic[] }
-interface WikiComment { uuid: string; text: string; author: string; author_avatar?: string; timestamp: number }
+interface WikiTopic {
+	id: string;
+	label: string;
+}
+interface WikiCategory {
+	id: string;
+	title: string;
+	topics: WikiTopic[];
+}
+interface WikiComment {
+	uuid: string;
+	text: string;
+	author: string;
+	author_avatar?: string;
+	timestamp: number;
+}
 
 // =========================================================================
 // Static data
@@ -23,7 +36,8 @@ interface WikiComment { uuid: string; text: string; author: string; author_avata
 
 const CATEGORIES: WikiCategory[] = [
 	{
-		id: 'informative', title: 'wiki.categories.informative',
+		id: 'informative',
+		title: 'wiki.categories.informative',
 		topics: [
 			{ id: 'home', label: 'nav.home' },
 			{ id: 'faq', label: 'wiki.faq.title' },
@@ -31,7 +45,8 @@ const CATEGORIES: WikiCategory[] = [
 		],
 	},
 	{
-		id: 'vrchat', title: 'wiki.categories.vrchat',
+		id: 'vrchat',
+		title: 'wiki.categories.vrchat',
 		topics: [
 			{ id: 'setup', label: 'wiki.setup.title' },
 			{ id: 'parameter', label: 'wiki.parameter.title' },
@@ -40,7 +55,8 @@ const CATEGORIES: WikiCategory[] = [
 		],
 	},
 	{
-		id: 'dependencies', title: 'wiki.categories.dependencies',
+		id: 'dependencies',
+		title: 'wiki.categories.dependencies',
 		topics: [
 			{ id: 'poiyomi', label: 'wiki.poiyomi.title' },
 			{ id: 'vrcfury', label: 'wiki.vrcfury.title' },
@@ -54,7 +70,8 @@ const CATEGORIES: WikiCategory[] = [
 		],
 	},
 	{
-		id: 'erp', title: 'wiki.categories.erp',
+		id: 'erp',
+		title: 'wiki.categories.erp',
 		topics: [
 			{ id: 'nsfw-essentials', label: 'wiki.nsfwEssentials.title' },
 			{ id: 'gogoloco-nsfw', label: 'wiki.gogolocoNsfw.title' },
@@ -80,12 +97,16 @@ function isValidTopic(id: string): boolean {
 
 function sidebarHtml(currentTopic: string): string {
 	return CATEGORIES.map((cat) => {
-		const links = cat.topics.map((tp) => `
+		const links = cat.topics
+			.map(
+				(tp) => `
 			<li>
 				<a data-topic="${tp.id}" class="${currentTopic === tp.id ? 'active' : ''}">
 					${t(tp.label)}
 				</a>
-			</li>`).join('');
+			</li>`,
+			)
+			.join('');
 		return `
 			<div class="wiki-sidebar-category">
 				<h3>${t(cat.title)}</h3>
@@ -120,7 +141,7 @@ export async function wikiView(ctx: RouteContext): Promise<string> {
 	document.title = t('wiki.title');
 
 	const topicParam = ctx.query.get('topic');
-	const currentTopic = (topicParam && isValidTopic(topicParam)) ? topicParam : 'home';
+	const currentTopic = topicParam && isValidTopic(topicParam) ? topicParam : 'home';
 
 	return `
 		<div class="wiki-container">
@@ -139,19 +160,14 @@ export async function wikiView(ctx: RouteContext): Promise<string> {
 
 export async function wikiAfter(ctx: RouteContext): Promise<void> {
 	const topicParam = ctx.query.get('topic');
-	let currentTopic = (topicParam && isValidTopic(topicParam)) ? topicParam : 'home';
+	let currentTopic = topicParam && isValidTopic(topicParam) ? topicParam : 'home';
 
 	const contentEl = document.getElementById('wiki-content')!;
 
 	function escapeHtml(input: string): string {
 		// Use DOMPurify to strip any HTML, then escape special characters.
 		const sanitized = DOMPurify.sanitize(input, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] });
-		return sanitized
-			.replace(/&/g, '&amp;')
-			.replace(/</g, '&lt;')
-			.replace(/>/g, '&gt;')
-			.replace(/"/g, '&quot;')
-			.replace(/'/g, '&#39;');
+		return sanitized.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 	}
 
 	// -----------------------------------------------------------------------
@@ -199,7 +215,9 @@ export async function wikiAfter(ctx: RouteContext): Promise<void> {
 					const textEn = await fetchWikiContent('en');
 					renderMarkdown(contentEl, textEn);
 					return;
-				} catch { /* fall through to error */ }
+				} catch {
+					/* fall through to error */
+				}
 			}
 			const safeTopicId = escapeHtml(topicId);
 			contentEl.innerHTML = `
@@ -219,11 +237,12 @@ export async function wikiAfter(ctx: RouteContext): Promise<void> {
 		if (!container) return;
 		try {
 			const comments = (await fetch('/api/wiki/comments').then((r) => r.json())) as WikiComment[];
-			if (!comments?.length) { container.innerHTML = `<p>${t('item.noComments')}</p>`; return; }
+			if (!comments?.length) {
+				container.innerHTML = `<p>${t('item.noComments')}</p>`;
+				return;
+			}
 			const { isAdmin, user } = window.appState;
-			container.innerHTML = comments
-				.map((c) => commentRow(c, isAdmin || user?.username === c.author))
-				.join('');
+			container.innerHTML = comments.map((c) => commentRow(c, isAdmin || user?.username === c.author)).join('');
 		} catch {
 			container.innerHTML = `<p>${t('common.error')}</p>`;
 		}
@@ -234,15 +253,17 @@ export async function wikiAfter(ctx: RouteContext): Promise<void> {
 		contentEl.innerHTML = `
 			<h1>${t('wiki.comments.title')}</h1>
 			<div id="comments-container"><p>${t('common.loading')}</p></div>
-			${user
-				? `<form id="wiki-comment-form" class="wiki-comment-form">
+			${
+				user
+					? `<form id="wiki-comment-form" class="wiki-comment-form">
 					<div class="form-group">
 						<textarea id="comment-text" rows="3" placeholder="${t('item.commentPlaceholder')}" required class="comment-textarea"></textarea>
 					</div>
 					<div id="turnstile-wiki-comment" class="mb-10"></div>
 					<button type="submit" class="btn">${t('item.send')}</button>
 				</form>`
-				: `<hr><h3>${t('item.loginToComment')}</h3>`}`;
+					: `<hr><h3>${t('item.loginToComment')}</h3>`
+			}`;
 
 		await loadComments();
 
@@ -254,14 +275,18 @@ export async function wikiAfter(ctx: RouteContext): Promise<void> {
 				e.preventDefault();
 				const textEl = document.getElementById('comment-text') as HTMLTextAreaElement;
 				const btn = form.querySelector<HTMLButtonElement>('button[type="submit"]')!;
-				const restore = () => { textEl.disabled = false; btn.disabled = false; btn.textContent = t('item.send'); };
+				const restore = () => {
+					textEl.disabled = false;
+					btn.disabled = false;
+					btn.textContent = t('item.send');
+				};
 
 				const text = textEl.value;
 				textEl.disabled = true;
 				btn.disabled = true;
 				btn.textContent = t('item.sending');
 
-				const token = (new FormData(form)).get('cf-turnstile-response') as string;
+				const token = new FormData(form).get('cf-turnstile-response') as string;
 				try {
 					const res = await fetch('/api/wiki/comments', {
 						method: 'POST',
@@ -273,11 +298,14 @@ export async function wikiAfter(ctx: RouteContext): Promise<void> {
 						window.turnstile?.reset();
 						await loadComments();
 					} else {
-						const data = await res.json() as { error?: string };
+						const data = (await res.json()) as { error?: string };
 						showToast('Error: ' + (data.error ?? 'Unknown'), 'error');
 					}
-				} catch { showToast('Error submitting comment', 'error'); }
-				finally { restore(); }
+				} catch {
+					showToast('Error submitting comment', 'error');
+				} finally {
+					restore();
+				}
 			});
 		}
 	}
@@ -297,9 +325,16 @@ export async function wikiAfter(ctx: RouteContext): Promise<void> {
 			try {
 				const res = await fetch(`/api/wiki/comments/${uuid}`, { method: 'DELETE' });
 				if (res.ok) document.getElementById(`comment-${uuid}`)?.remove();
-				else { const d = await res.json() as { error?: string }; showToast('Error: ' + (d.error ?? 'Unknown'), 'error'); }
-			} catch { showToast('Error deleting comment', 'error'); }
-			finally { target.removeAttribute('disabled'); target.textContent = t('admin.delete'); }
+				else {
+					const d = (await res.json()) as { error?: string };
+					showToast('Error: ' + (d.error ?? 'Unknown'), 'error');
+				}
+			} catch {
+				showToast('Error deleting comment', 'error');
+			} finally {
+				target.removeAttribute('disabled');
+				target.textContent = t('admin.delete');
+			}
 			return;
 		}
 
@@ -307,7 +342,10 @@ export async function wikiAfter(ctx: RouteContext): Promise<void> {
 		const href = link?.getAttribute('href');
 		if (href) {
 			const match = href.match(/^\/wiki\?topic=(.+)$/);
-			if (match) { e.preventDefault(); loadTopic(match[1]); }
+			if (match) {
+				e.preventDefault();
+				loadTopic(match[1]);
+			}
 		}
 	});
 
@@ -330,7 +368,7 @@ export async function wikiAfter(ctx: RouteContext): Promise<void> {
 	// Browser back/forward inside wiki
 	window.onpopstate = () => {
 		const rawTp = new URLSearchParams(location.search).get('topic');
-		const tp = (rawTp && isValidTopic(rawTp)) ? rawTp : 'home';
+		const tp = rawTp && isValidTopic(rawTp) ? rawTp : 'home';
 		loadTopic(tp, false);
 	};
 

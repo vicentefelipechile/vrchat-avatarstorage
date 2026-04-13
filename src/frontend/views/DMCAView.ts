@@ -185,12 +185,14 @@ export function dmcaAfter(_ctx: RouteContext): void {
 			asked_by_author: t('dmca.simple.reason_asked'),
 			paid_platform: t('dmca.simple.reason_paid'),
 		};
-		const reporterReason = reasonSelect?.value === 'other'
-			? (reasonOther?.value?.trim() || '___')
-			: (MAP[reasonSelect?.value] || '___');
+		const reporterReason = reasonSelect?.value === 'other' ? reasonOther?.value?.trim() || '___' : MAP[reasonSelect?.value] || '___';
 
 		const urls = urlsRaw
-			? urlsRaw.split('\n').map((u) => `  - ${u.trim()}`).filter((u) => u.length > 4).join('\n')
+			? urlsRaw
+					.split('\n')
+					.map((u) => `  - ${u.trim()}`)
+					.filter((u) => u.length > 4)
+					.join('\n')
 			: `  - ${t('dmca.simple.urlNotSpecified')}`;
 
 		let claimantStr: string;
@@ -198,9 +200,12 @@ export function dmcaAfter(_ctx: RouteContext): void {
 		else if (ct === 'representative') claimantStr = `${t('dmca.simple.optRepresentative')} ${t('dmca.simple.of')} ${companyName}`;
 		else claimantStr = `${t('dmca.simple.optThirdReporter')} (${reporterName})`;
 
-		const infringementStr = ct !== 'third_reporter'
-			? (it === 'mine' ? t('dmca.simple.optMyRights') : `${t('dmca.simple.optThirdParty')} (${t('dmca.simple.recognizedAs')}: "${ownerName}")`)
-			: null;
+		const infringementStr =
+			ct !== 'third_reporter'
+				? it === 'mine'
+					? t('dmca.simple.optMyRights')
+					: `${t('dmca.simple.optThirdParty')} (${t('dmca.simple.recognizedAs')}: "${ownerName}")`
+				: null;
 
 		let actionStr: string;
 		if (action === 'immediate_termination') actionStr = t('dmca.simple.optImmediateTermination');
@@ -236,7 +241,7 @@ export function dmcaAfter(_ctx: RouteContext): void {
 		reporterNameRow.style.display = isThird ? 'flex' : 'none';
 		reporterReasonGroup.style.display = isThird ? '' : 'none';
 		infringementRow.style.display = isThird ? 'none' : '';
-		ownerRow.style.display = (!isThird && it === 'third') ? 'flex' : 'none';
+		ownerRow.style.display = !isThird && it === 'third' ? 'flex' : 'none';
 		proofGroup.style.display = isThird ? 'none' : '';
 
 		updatePreview();
@@ -245,9 +250,21 @@ export function dmcaAfter(_ctx: RouteContext): void {
 	claimantType.addEventListener('change', updateSimpleVisibility);
 	infringementType.addEventListener('change', updateSimpleVisibility);
 
-	['s-company-name', 's-owner-name', 's-resource-urls', 's-proof-text', 's-action-type', 's-reporter-name', 's-reporter-reason', 's-reporter-reason-other'].forEach((id) => {
+	[
+		's-company-name',
+		's-owner-name',
+		's-resource-urls',
+		's-proof-text',
+		's-action-type',
+		's-reporter-name',
+		's-reporter-reason',
+		's-reporter-reason-other',
+	].forEach((id) => {
 		const el = document.getElementById(id);
-		if (el) { el.addEventListener('input', updatePreview); el.addEventListener('change', updatePreview); }
+		if (el) {
+			el.addEventListener('input', updatePreview);
+			el.addEventListener('change', updatePreview);
+		}
 	});
 
 	reasonSelect?.addEventListener('change', () => {

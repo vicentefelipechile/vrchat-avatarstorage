@@ -393,9 +393,7 @@ admin.get('/stats', async (c) => {
 				FROM resources r LEFT JOIN users u ON r.author_uuid = u.uuid
 				ORDER BY r.created_at DESC LIMIT 5`,
 			),
-			c.env.DB.prepare(
-				'SELECT uuid, username, created_at FROM users ORDER BY created_at DESC LIMIT 5',
-			),
+			c.env.DB.prepare('SELECT uuid, username, created_at FROM users ORDER BY created_at DESC LIMIT 5'),
 		]);
 
 		return c.json({
@@ -435,9 +433,7 @@ admin.get('/users', async (c) => {
 		const whereStr = q ? 'WHERE username LIKE ?' : '';
 		const bindings: unknown[] = q ? [`%${q}%`] : [];
 
-		const countResult = await c.env.DB.prepare(
-			`SELECT COUNT(*) as total FROM users ${whereStr}`,
-		)
+		const countResult = await c.env.DB.prepare(`SELECT COUNT(*) as total FROM users ${whereStr}`)
 			.bind(...bindings)
 			.first<{ total: number }>();
 		const total = countResult?.total ?? 0;
@@ -482,16 +478,23 @@ admin.get('/resources', async (c) => {
 	const clauses: string[] = [];
 	const bindings: unknown[] = [];
 
-	if (q) { clauses.push('r.title LIKE ?'); bindings.push(`%${q}%`); }
-	if (category) { clauses.push('r.category = ?'); bindings.push(category); }
-	if (status !== null) { clauses.push('r.is_active = ?'); bindings.push(status); }
+	if (q) {
+		clauses.push('r.title LIKE ?');
+		bindings.push(`%${q}%`);
+	}
+	if (category) {
+		clauses.push('r.category = ?');
+		bindings.push(category);
+	}
+	if (status !== null) {
+		clauses.push('r.is_active = ?');
+		bindings.push(status);
+	}
 
 	const whereStr = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
 
 	try {
-		const countResult = await c.env.DB.prepare(
-			`SELECT COUNT(*) as total FROM resources r ${whereStr}`,
-		)
+		const countResult = await c.env.DB.prepare(`SELECT COUNT(*) as total FROM resources r ${whereStr}`)
 			.bind(...bindings)
 			.first<{ total: number }>();
 		const total = countResult?.total ?? 0;

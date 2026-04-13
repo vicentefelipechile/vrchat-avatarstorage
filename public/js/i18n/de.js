@@ -77,10 +77,10 @@ export default {
 	home: {
 		welcome: 'Willkommen bei VRCStorage',
 		browse: 'Ressourcen nach Kategorie durchsuchen:',
-		latest: 'Neueste Ressourcen'
+		latest: 'Neueste Ressourcen',
 	},
 	card: {
-		view: 'Details anzeigen'
+		view: 'Details anzeigen',
 	},
 	avatar: {
 		options: 'Avatar-Optionen',
@@ -100,13 +100,13 @@ export default {
 		of: 'von',
 		resources: 'Ressourcen',
 		prev: 'Zurück',
-		next: 'Weiter'
+		next: 'Weiter',
 	},
 	pagination: {
 		prev: 'Zurück',
 		next: 'Weiter',
 		page: 'Seite',
-		of: 'von'
+		of: 'von',
 	},
 	admin: {
 		title: 'Admin-Panel',
@@ -114,7 +114,8 @@ export default {
 		delete: 'Löschen',
 		deleteConfirm: 'Bist du sicher, dass du diesen Kommentar löschen möchtest?',
 		cleanupOrphaned: 'Verwaiste Dateien bereinigen',
-		cleanupConfirm: 'Verwaiste Dateien bereinigen? Dies löscht Dateien, die vor mehr als 24 Stunden hochgeladen wurden und keiner Ressource zugeordnet sind.',
+		cleanupConfirm:
+			'Verwaiste Dateien bereinigen? Dies löscht Dateien, die vor mehr als 24 Stunden hochgeladen wurden und keiner Ressource zugeordnet sind.',
 		cleaning: 'Bereinigung...',
 		cleanupSuccess: 'Bereinigung erfolgreich: {count} Dateien gelöscht',
 		error: 'Fehler',
@@ -123,7 +124,8 @@ export default {
 		totalMedia: 'Dateien gesamt',
 		totalResources: 'Ressourcen gesamt',
 		orphanedFilesFound: 'Verwaiste Dateien gefunden',
-		orphanedFilesDesc: '{count} Dateien gefunden, die vor mehr als {hours} Stunden hochgeladen wurden und keiner Ressource zugeordnet sind.',
+		orphanedFilesDesc:
+			'{count} Dateien gefunden, die vor mehr als {hours} Stunden hochgeladen wurden und keiner Ressource zugeordnet sind.',
 		viewFileList: 'Dateiliste anzeigen',
 		noOrphanedFiles: 'Keine verwaisten Dateien',
 		noOrphanedFilesDesc: 'Derzeit gibt es keine verwaisten Dateien. Das System ist sauber.',
@@ -204,7 +206,7 @@ export default {
 			title: 'Titel',
 			desc: 'Beschreibung',
 			cat: 'Kategorie',
-			tags: 'Tags'
+			tags: 'Tags',
 		},
 		noVisibleChanges: 'Keine sichtbaren Inhaltsänderungen.',
 		types: {
@@ -300,7 +302,16 @@ export default {
 		errorFileTooLarge: 'Datei zu groß',
 		errorImageDimensions: 'Bildabmessungen zu groß',
 		errorInvalidFileType: 'Ungültiger Dateityp',
-	},
+		val: {
+			avatarGender: 'Avatar-Geschlecht auswählen',
+			avatarSize: 'Avatar-Größe auswählen',
+			avatarType: 'Avatar-Typ auswählen',
+			assetType: 'Asset-Typ auswählen',
+			platform: 'Plattform auswählen',
+			clothesGender: 'Design-Geschlecht auswählen',
+			clothesType: 'Kleidungstyp auswählen',
+		},
+},
 	cats: {
 		avatars: 'Avatare',
 		worlds: 'Welten',
@@ -318,79 +329,79 @@ export default {
 	wiki: {
 		title: 'Wiki - Abhängigkeiten-Leitfaden',
 		poiyomi: {
-			title: 'Poiyomi Toon Shader'
+			title: 'Poiyomi Toon Shader',
 		},
 		vrcfury: {
-			title: 'VRCFury'
+			title: 'VRCFury',
 		},
 		modularAvatar: {
-			title: 'Modular Avatar'
+			title: 'Modular Avatar',
 		},
 		physbones: {
-			title: 'PhysBones'
+			title: 'PhysBones',
 		},
 		syncdances: {
-			title: 'SyncDances'
+			title: 'SyncDances',
 		},
 		vrcquesttools: {
-			title: 'VRCQuestTools'
+			title: 'VRCQuestTools',
 		},
 		setup: {
-			title: 'Einrichtungsanleitung'
+			title: 'Einrichtungsanleitung',
 		},
 		faq: {
-			title: 'FAQ'
+			title: 'FAQ',
 		},
 		gogoloco: {
-			title: 'GoGo Loco'
+			title: 'GoGo Loco',
 		},
 		gogolocoNsfw: {
-			title: 'NSFW Locomotion'
+			title: 'NSFW Locomotion',
 		},
 		sps: {
-			title: 'SPS (Super Plug Shader)'
+			title: 'SPS (Super Plug Shader)',
 		},
 		dps: {
-			title: 'DPS (Dynamic Penetration System)'
+			title: 'DPS (Dynamic Penetration System)',
 		},
 		insideView: {
-			title: 'Inside View'
+			title: 'Inside View',
 		},
 		pcs: {
-			title: 'PCS (Penetration Contact System)'
+			title: 'PCS (Penetration Contact System)',
 		},
 		parameter: {
-			title: 'Avatar-Parameter'
+			title: 'Avatar-Parameter',
 		},
 		actionMenu: {
-			title: 'Aktionsmenü'
+			title: 'Aktionsmenü',
 		},
 		gestureManager: {
-			title: 'Gesture Manager Emulator'
+			title: 'Gesture Manager Emulator',
 		},
 		nsfwEssentials: {
-			title: 'NSFW Grundlagen'
+			title: 'NSFW Grundlagen',
 		},
 		haptics: {
-			title: 'Haptik-Leitfaden'
+			title: 'Haptik-Leitfaden',
 		},
 		comments: {
-			title: 'Wiki-Kommentare'
+			title: 'Wiki-Kommentare',
 		},
 		desktopPuppeteer: {
-			title: 'Desktop Puppeteer'
+			title: 'Desktop Puppeteer',
 		},
 		unityhubError: {
-			title: 'Unity Hub Fehler'
+			title: 'Unity Hub Fehler',
 		},
 		justkisssfx: {
-			title: 'JustKissSFX'
+			title: 'JustKissSFX',
 		},
 		categories: {
 			vrchat: 'VRChat',
 			dependencies: 'Abhängigkeiten',
 			erp: 'ERP',
-			informative: 'Informativ'
+			informative: 'Informativ',
 		},
 	},
 	dmca: {
@@ -407,8 +418,10 @@ export default {
 		originalWork: 'Identifizierung des Originalwerks',
 		originalWorkHint: 'Beschreiben oder verlinken Sie das urheberrechtlich geschützte Originalwerk.',
 		originalWorkPlaceholder: 'Link zum Originalwerk oder detaillierte Beschreibung...',
-		declarationText: 'Ich erkläre unter Strafe des Meineids, dass die Informationen in dieser Mitteilung korrekt sind, dass ich der Urheberrechtsinhaber bin oder befugt bin, in dessen Namen zu handeln, und dass ich in gutem Glauben davon ausgehe, dass die Nutzung des Materials nicht autorisiert ist.',
-		informalNotice: 'Als Drittmelder wird Ihre Einreichung als informeller Bericht verarbeitet. Wir prüfen ihn, können aber ohne Bestätigung des Rechteinhabers keine Maßnahmen garantieren.',
+		declarationText:
+			'Ich erkläre unter Strafe des Meineids, dass die Informationen in dieser Mitteilung korrekt sind, dass ich der Urheberrechtsinhaber bin oder befugt bin, in dessen Namen zu handeln, und dass ich in gutem Glauben davon ausgehe, dass die Nutzung des Materials nicht autorisiert ist.',
+		informalNotice:
+			'Als Drittmelder wird Ihre Einreichung als informeller Bericht verarbeitet. Wir prüfen ihn, können aber ohne Bestätigung des Rechteinhabers keine Maßnahmen garantieren.',
 		submit: 'Beschwerde einreichen',
 		submitting: 'Wird gesendet...',
 		submitSuccess: 'Ihre Beschwerde wurde erfolgreich eingereicht. Wir prüfen sie innerhalb von 72 Stunden.',
@@ -460,7 +473,8 @@ export default {
 			bodyThirdReporterClaim: 'melde eine mÃ¶gliche Urheberrechtsverletzung an der angegebenen Ressource.',
 			bodyDemand: 'Daher fordere ich:',
 			bodyProof: 'Echtheitsnachweis',
-			bodyDeclaration: 'Ich erklÃ¤re unter Strafe des Meineids, dass die bereitgestellten Informationen korrekt sind und dass ich der Rechteinhaber bin oder autorisiert bin, im Namen des Rechteinhabers zu handeln.',
+			bodyDeclaration:
+				'Ich erklÃ¤re unter Strafe des Meineids, dass die bereitgestellten Informationen korrekt sind und dass ich der Rechteinhaber bin oder autorisiert bin, im Namen des Rechteinhabers zu handeln.',
 			bodyDate: 'Datum',
 		},
 		info: {
@@ -477,5 +491,123 @@ export default {
 			intro: 'Verfassen Sie Ihre DMCA-Mitteilung in professioneller Sprache.',
 			claimLabel: 'Anspruch (in professioneller Sprache):',
 		},
-	}
+	},
+	meta: {
+		required: '* erforderlich',
+		adminOnly: '* nur Admin',
+		select: '-- Auswählen --',
+		platform: {
+			title: 'Plattform',
+			cross: 'Plattformübergreifend (PC + Quest)',
+			crossSimple: 'Plattformübergreifend',
+			pc: 'Nur PC',
+			quest: 'Nur Quest',
+			sdk: 'SDK',
+		},
+		sdk_version: {
+			v3Default: 'SDK 3.0 (Standard)',
+			v3: 'SDK 3.0',
+			v2: 'SDK 2.0',
+			extras: 'Extras',
+			unityVersion: 'Unity-Version',
+		},
+		avatar_gender: {
+			male: 'Männlich',
+			female: 'Weiblich',
+			androgynous: 'Androgyn',
+			undefined: 'Undefiniert',
+			unisex: 'Unisex',
+			kemono: 'Kemono',
+		},
+		avatar_size: {
+			tiny: 'Winzig',
+			small: 'Klein',
+			medium: 'Mittel',
+			tall: 'Groß',
+			giant: 'Riesig',
+		},
+		avatar_type: {
+			anime: 'Anime',
+			kemono: 'Kemono',
+			furry: 'Furry',
+			human: 'Human',
+			semiRealistic: 'Semi-Realistic',
+			chibi: 'Chibi',
+			mecha: 'Mecha',
+			monster: 'Monster',
+			fantasy: 'Fantasy',
+			sciFi: 'Sci-Fi',
+			vtuber: 'VTuber',
+			other: 'Other',
+		},
+		features: {
+			nsfw: 'NSFW',
+			physbones: 'PhysBones',
+			dps: 'DPS',
+			facetracking: 'Face Tracking',
+			gogoloco: 'GoGo Loco',
+			toggles: 'Toggles',
+			questOptimized: 'Quest Optimized',
+		},
+		avatar: {
+			title: 'Avatar-Details',
+			titleAdmin: 'Avatar-Metadaten',
+			gender: 'Avatar-Geschlecht *',
+			size: 'Avatar-Größe *',
+			type: 'Avatar-Typ *',
+			author: 'Originaler Autor',
+			authorHint: '(Name des Avatar-Erstellers)',
+			authorPlaceholder: 'Autor suchen... oder Namen eingeben',
+			extras: 'Avatar-Extras',
+		},
+		asset: {
+			title: 'Asset-Details',
+			titleAdmin: 'Asset-Metadaten',
+			type: 'Asset-Typ *',
+		},
+		asset_type: {
+			prop: 'Prop',
+			shader: 'Shader',
+			particle: 'Particle FX',
+			vfx: 'VFX',
+			prefab: 'Prefab',
+			script: 'Script',
+			animation: 'Animation',
+			avatarBase: 'Avatar Base',
+			texturePack: 'Texture Pack',
+			sound: 'Sound',
+			tool: 'Tool',
+			hud: 'HUD',
+			other: 'Other',
+		},
+		clothes: {
+			title: 'Kleidungsdetails',
+			titleAdmin: 'Kleidungs-Metadaten',
+			gender: 'Design-Geschlecht *',
+			type: 'Kleidungstyp *',
+			isBase: 'Ist Basis (enthält Basis-Avatar)',
+			baseAvatar: 'Für welchen Basis-Avatar?',
+			baseAvatarHint: '(Autovervollständigung oder freier Name)',
+			baseAvatarPlaceholder: 'Basis-Avatar suchen...',
+		},
+		clothing_type: {
+			top: 'Top',
+			jacket: 'Jacket',
+			bottom: 'Bottom',
+			dress: 'Dress',
+			fullbody: 'Full Body',
+			swimwear: 'Swimwear',
+			shoes: 'Shoes',
+			legwear: 'Legwear',
+			hat: 'Hat',
+			hair: 'Hair',
+			accessory: 'Accessory',
+			tail: 'Tail',
+			ears: 'Ears',
+			wings: 'Wings',
+			bodyPart: 'Body Part',
+			underwear: 'Underwear',
+			other: 'Other',
+		},
+},
 };

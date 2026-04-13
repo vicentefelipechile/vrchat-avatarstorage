@@ -42,14 +42,16 @@ function favoriteCard(fav: Favorite): string {
 	return `
 		<div class="card" data-resource-id="${fav.uuid}">
 			<a href="/item/${fav.uuid}" data-link class="card-link">
-				${fav.thumbnail_key
-			? `<div class="card-image">
+				${
+					fav.thumbnail_key
+						? `<div class="card-image">
 						<img src="/api/download/${fav.thumbnail_key}" alt="${title}" loading="lazy">
 						<span class="card-badge">${categoryLabel}</span>
 					</div>`
-			: `<div class="card-image card-image-placeholder">
+						: `<div class="card-image card-image-placeholder">
 						<span class="card-badge">${categoryLabel}</span>
-					</div>`}
+					</div>`
+				}
 			</a>
 			<div class="card-body">
 				<h3>${title}${fav.title.length > 50 ? '…' : ''}</h3>
@@ -116,9 +118,11 @@ export async function favoritesView(ctx: RouteContext): Promise<string> {
 			<h1>${t('nav.favorites')}</h1>
 		</div>
 
-		${favs.length === 0
-			? `<p class="empty-message">${t('common.noFavorites')}</p>`
-			: `<div id="favorites-grid" class="grid">${favs.map(favoriteCard).join('')}</div>`}
+		${
+			favs.length === 0
+				? `<p class="empty-message">${t('common.noFavorites')}</p>`
+				: `<div id="favorites-grid" class="grid">${favs.map(favoriteCard).join('')}</div>`
+		}
 
 		${data.pagination ? paginationHtml(data.pagination.page, data.pagination.total_pages) : ''}`;
 }
@@ -146,7 +150,9 @@ export function favoritesAfter(_ctx: RouteContext): void {
 					body: JSON.stringify({ resource_uuid: uuid, move_to_top: true }),
 				});
 				DataCache.clear('/api/favorites');
-			} catch { /* ignore */ }
+			} catch {
+				/* ignore */
+			}
 		});
 	});
 
@@ -171,7 +177,9 @@ export function favoritesAfter(_ctx: RouteContext): void {
 			try {
 				await fetch(`/api/favorites/${uuid}`, { method: 'DELETE' });
 				DataCache.clear('/api/favorites');
-			} catch { /* ignore */ }
+			} catch {
+				/* ignore */
+			}
 		});
 	});
 }

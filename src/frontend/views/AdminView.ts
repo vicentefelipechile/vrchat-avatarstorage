@@ -87,12 +87,13 @@ export async function adminView(_ctx: RouteContext): Promise<string> {
 		return `<h1>${t('common.accessDenied')}</h1>`;
 	}
 
-	const navHtml = NAV_ITEMS.map((item) =>
-		`<li class="admin-sidebar-nav-item" data-section="${item.id}" id="nav-${item.id}">${item.label}</li>`,
+	const navHtml = NAV_ITEMS.map(
+		(item) => `<li class="admin-sidebar-nav-item" data-section="${item.id}" id="nav-${item.id}">${item.label}</li>`,
 	).join('');
 
-	const sectionsHtml = NAV_ITEMS.map((item) =>
-		`<div class="admin-section" id="section-${item.id}">
+	const sectionsHtml = NAV_ITEMS.map(
+		(item) =>
+			`<div class="admin-section" id="section-${item.id}">
 			<div class="admin-loading" id="loading-${item.id}">${t('admin.loading')}</div>
 		</div>`,
 	).join('');
@@ -160,12 +161,18 @@ async function loadSection(id: string): Promise<void> {
 	if (!el) return;
 
 	switch (id) {
-		case 'overview': return loadOverview(el);
-		case 'resources': return loadResources(el);
-		case 'users': return loadUsers(el);
-		case 'authors': return loadAuthors(el);
-		case 'media': return loadMedia(el);
-		case 'cache': return loadCache(el);
+		case 'overview':
+			return loadOverview(el);
+		case 'resources':
+			return loadResources(el);
+		case 'users':
+			return loadUsers(el);
+		case 'authors':
+			return loadAuthors(el);
+		case 'media':
+			return loadMedia(el);
+		case 'cache':
+			return loadCache(el);
 	}
 }
 
@@ -175,24 +182,27 @@ async function loadOverview(el: HTMLElement): Promise<void> {
 	let stats: AdminStats;
 	try {
 		const res = await fetch('/api/admin/stats');
-		stats = await res.json() as AdminStats;
+		stats = (await res.json()) as AdminStats;
 	} catch {
 		el.innerHTML = `<p class="error-message">${t('admin.statsError')}</p>`;
 		return;
 	}
 
-	const latestUploadsHtml = stats.latest_uploads.map((r) =>
-		`<tr>
+	const latestUploadsHtml = stats.latest_uploads
+		.map(
+			(r) =>
+				`<tr>
 			<td><a href="/item/${r.uuid}" data-link>${r.title}</a></td>
 			<td>${r.category}</td>
 			<td>${r.author_username ?? '—'}</td>
 			<td>${new Date(r.created_at * 1000).toLocaleDateString()}</td>
 		</tr>`,
-	).join('');
+		)
+		.join('');
 
-	const latestUsersHtml = stats.latest_registrations.map((u) =>
-		`<tr><td>${u.username}</td><td>${new Date(u.created_at * 1000).toLocaleDateString()}</td></tr>`,
-	).join('');
+	const latestUsersHtml = stats.latest_registrations
+		.map((u) => `<tr><td>${u.username}</td><td>${new Date(u.created_at * 1000).toLocaleDateString()}</td></tr>`)
+		.join('');
 
 	el.innerHTML = `<h2 class="admin-section-title">${t('admin.nav.overview')}</h2>
 		<div class="admin-stats-grid">
@@ -277,10 +287,12 @@ async function loadResources(el: HTMLElement, page = 1, category = '', status = 
 
 	try {
 		const res = await fetch(`/api/admin/resources?${qp.toString()}`);
-		const data = await res.json() as { resources: ResourceRow[]; pagination: PaginationMeta };
+		const data = (await res.json()) as { resources: ResourceRow[]; pagination: PaginationMeta };
 
-		const tableBody = data.resources.map((r) =>
-			`<tr>
+		const tableBody = data.resources
+			.map(
+				(r) =>
+					`<tr>
 				<td><a href="/item/${r.uuid}" data-link>${r.title}</a></td>
 				<td>${r.category}</td>
 				<td>${r.author_username ?? '—'}</td>
@@ -288,21 +300,19 @@ async function loadResources(el: HTMLElement, page = 1, category = '', status = 
 				<td>${r.download_count}</td>
 				<td>${new Date(r.created_at * 1000).toLocaleDateString()}</td>
 				<td class="admin-row-actions">
-					${!r.is_active
-					? `<button class="btn" data-approve="${r.uuid}">${t('admin.resources.btnApprove')}</button>`
-					: ''}
+					${!r.is_active ? `<button class="btn" data-approve="${r.uuid}">${t('admin.resources.btnApprove')}</button>` : ''}
 				</td>
 			</tr>`,
-		).join('');
+			)
+			.join('');
 
 		const pagBtns = `<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
-			${data.pagination.hasPrevPage ? `<button class="btn" data-res-page="${page - 1}">${t('filterPanel.prev')}</button>` : ''}
+			${data.pagination.hasPrevPage ? `<button class="btn" data-res-page="${page - 1}">← ${t('filterPanel.prev')}</button>` : ''}
 			<span style="align-self:center;font-size:0.85rem;color:var(--text-muted)">${t('admin.resources.pageLabel')} ${page} · ${data.pagination.total} ${t('admin.resources.resultsLabel')}</span>
-			${data.pagination.hasNextPage ? `<button class="btn" data-res-page="${page + 1}">${t('filterPanel.next')}</button>` : ''}
+			${data.pagination.hasNextPage ? `<button class="btn" data-res-page="${page + 1}">${t('filterPanel.next')} →</button>` : ''}
 		</div>`;
 
-		document.getElementById('res-table-wrap')!.innerHTML =
-			`<table class="admin-data-table">
+		document.getElementById('res-table-wrap')!.innerHTML = `<table class="admin-data-table">
 				<thead><tr><th>${t('admin.overview.colTitle')}</th><th>${t('admin.overview.colCat')}</th><th>${t('admin.overview.colAuthor')}</th><th>${t('admin.resources.colStatus')}</th><th>↓</th><th>${t('admin.overview.colDate')}</th><th></th></tr></thead>
 				<tbody>${tableBody || `<tr><td colspan="7">${t('admin.resources.noResults')}</td></tr>`}</tbody>
 			</table>${pagBtns}`;
@@ -317,7 +327,9 @@ async function loadResources(el: HTMLElement, page = 1, category = '', status = 
 						showToast(t('admin.resources.toastApproved'), 'success');
 						loadResources(el, page, category, status, q);
 					} else showToast(t('admin.resources.toastApproveError'), 'error');
-				} catch { showToast(t('admin.networkError'), 'error'); }
+				} catch {
+					showToast(t('admin.networkError'), 'error');
+				}
 			});
 		});
 
@@ -358,10 +370,12 @@ async function loadUsers(el: HTMLElement, page = 1, q = ''): Promise<void> {
 		const qp = new URLSearchParams({ page: String(page) });
 		if (q) qp.set('q', q);
 		const res = await fetch(`/api/admin/users?${qp.toString()}`);
-		const data = await res.json() as { users: UserRow[]; pagination: PaginationMeta };
+		const data = (await res.json()) as { users: UserRow[]; pagination: PaginationMeta };
 
-		const tbody = data.users.map((u) =>
-			`<tr>
+		const tbody = data.users
+			.map(
+				(u) =>
+					`<tr>
 				<td>${u.username}</td>
 				<td><span class="admin-badge-status ${u.is_admin ? 'active' : 'inactive'}">${u.is_admin ? t('admin.users.roleAdmin') : t('admin.users.roleUser')}</span></td>
 				<td>${new Date(u.created_at * 1000).toLocaleDateString()}</td>
@@ -369,7 +383,8 @@ async function loadUsers(el: HTMLElement, page = 1, q = ''): Promise<void> {
 					<button class="btn" data-clear-cache="${u.username}">${t('admin.users.btnCache')}</button>
 				</td>
 			</tr>`,
-		).join('');
+			)
+			.join('');
 
 		const pagBtns = `<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
 			${data.pagination.hasPrevPage ? `<button class="btn" data-user-page="${page - 1}">${t('filterPanel.prev')}</button>` : ''}
@@ -377,8 +392,7 @@ async function loadUsers(el: HTMLElement, page = 1, q = ''): Promise<void> {
 			${data.pagination.hasNextPage ? `<button class="btn" data-user-page="${page + 1}">${t('filterPanel.next')}</button>` : ''}
 		</div>`;
 
-		document.getElementById('user-table-wrap')!.innerHTML =
-			`<table class="admin-data-table">
+		document.getElementById('user-table-wrap')!.innerHTML = `<table class="admin-data-table">
 				<thead><tr><th>${t('admin.overview.colUser')}</th><th>${t('admin.users.colRole')}</th><th>${t('admin.users.colRegistered')}</th><th></th></tr></thead>
 				<tbody>${tbody || `<tr><td colspan="4">${t('admin.resources.noResults')}</td></tr>`}</tbody>
 			</table>${pagBtns}`;
@@ -390,7 +404,9 @@ async function loadUsers(el: HTMLElement, page = 1, q = ''): Promise<void> {
 					const r = await fetch(`/api/admin/cache/clear/${encodeURIComponent(username)}`, { method: 'POST' });
 					if (r.ok) showToast(`${t('admin.users.toastCacheCleared')} "${username}"`, 'success');
 					else showToast(t('admin.users.toastCacheClearedError'), 'error');
-				} catch { showToast(t('admin.networkError'), 'error'); }
+				} catch {
+					showToast(t('admin.networkError'), 'error');
+				}
 			});
 		});
 
@@ -410,7 +426,14 @@ async function loadUsers(el: HTMLElement, page = 1, q = ''): Promise<void> {
 
 // ---- Authors ----
 
-interface AuthorRow { uuid: string; name: string; slug: string; avatar_url: string | null; resource_count: number; created_at: number }
+interface AuthorRow {
+	uuid: string;
+	name: string;
+	slug: string;
+	avatar_url: string | null;
+	resource_count: number;
+	created_at: number;
+}
 
 async function loadAuthors(el: HTMLElement, page = 1): Promise<void> {
 	el.innerHTML = `<h2 class="admin-section-title">${t('admin.authors.title')}</h2>
@@ -423,10 +446,12 @@ async function loadAuthors(el: HTMLElement, page = 1): Promise<void> {
 
 	try {
 		const res = await fetch(`/api/authors?page=${page}&limit=30`);
-		const data = await res.json() as { authors: AuthorRow[]; pagination: PaginationMeta };
+		const data = (await res.json()) as { authors: AuthorRow[]; pagination: PaginationMeta };
 
-		const tbody = data.authors.map((a) =>
-			`<tr>
+		const tbody = data.authors
+			.map(
+				(a) =>
+					`<tr>
 				<td style="display:flex;align-items:center;gap:10px;">
 					${a.avatar_url ? `<img src="${a.avatar_url}" style="width:32px;height:32px;object-fit:cover;border:1px solid var(--border-color);" alt="">` : `<div style="width:32px;height:32px;background:var(--bg-body);border:1px solid var(--border-color);"></div>`}
 					<a href="/authors/${a.slug}" data-link>${a.name}</a>
@@ -438,7 +463,8 @@ async function loadAuthors(el: HTMLElement, page = 1): Promise<void> {
 					<button class="btn" data-delete-author="${a.slug}">${t('admin.authors.btnDelete')}</button>
 				</td>
 			</tr>`,
-		).join('');
+			)
+			.join('');
 
 		const pagBtns = `<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
 			${data.pagination.hasPrevPage ? `<button class="btn" data-author-page="${page - 1}">${t('filterPanel.prev')}</button>` : ''}
@@ -446,8 +472,7 @@ async function loadAuthors(el: HTMLElement, page = 1): Promise<void> {
 			${data.pagination.hasNextPage ? `<button class="btn" data-author-page="${page + 1}">${t('filterPanel.next')}</button>` : ''}
 		</div>`;
 
-		document.getElementById('authors-table-wrap')!.innerHTML =
-			`<table class="admin-data-table">
+		document.getElementById('authors-table-wrap')!.innerHTML = `<table class="admin-data-table">
 				<thead><tr><th>${t('admin.authors.colName')}</th><th>${t('admin.authors.colAvatars')}</th><th>${t('admin.authors.colCreated')}</th><th></th></tr></thead>
 				<tbody>${tbody || `<tr><td colspan="4">${t('admin.authors.noAuthors')}</td></tr>`}</tbody>
 			</table>${pagBtns}`;
@@ -456,7 +481,15 @@ async function loadAuthors(el: HTMLElement, page = 1): Promise<void> {
 			btn.addEventListener('click', async () => {
 				const slug = btn.dataset.editAuthor!;
 				const existing = await fetch(`/api/authors/${slug}`);
-				const { author } = await existing.json() as { author: AuthorRow & { description?: string; website_url?: string; twitter_url?: string; booth_url?: string; gumroad_url?: string } };
+				const { author } = (await existing.json()) as {
+					author: AuthorRow & {
+						description?: string;
+						website_url?: string;
+						twitter_url?: string;
+						booth_url?: string;
+						gumroad_url?: string;
+					};
+				};
 				showAuthorForm(el, 'edit', author);
 			});
 		});
@@ -467,9 +500,16 @@ async function loadAuthors(el: HTMLElement, page = 1): Promise<void> {
 				if (!confirm(`${t('admin.authors.confirmDelete')} "${slug}"?`)) return;
 				try {
 					const r = await fetch(`/api/authors/${slug}`, { method: 'DELETE' });
-					if (r.ok) { showToast(t('admin.authors.toastDeleted'), 'success'); loadAuthors(el, page); }
-					else { const d = await r.json() as { error?: string }; showToast(d.error ?? 'Error', 'error'); }
-				} catch { showToast(t('admin.networkError'), 'error'); }
+					if (r.ok) {
+						showToast(t('admin.authors.toastDeleted'), 'success');
+						loadAuthors(el, page);
+					} else {
+						const d = (await r.json()) as { error?: string };
+						showToast(d.error ?? 'Error', 'error');
+					}
+				} catch {
+					showToast(t('admin.networkError'), 'error');
+				}
 			});
 		});
 
@@ -515,9 +555,15 @@ async function uploadAuthorImage(fileInput: HTMLInputElement): Promise<string | 
 		formData.append('file', file);
 		const r = await fetch('/api/upload', { method: 'PUT', body: formData });
 		dismiss();
-		if (!r.ok) { showToast(t('admin.authors.toastUploadError'), 'error'); return null; }
-		const d = await r.json() as { r2_key?: string };
-		if (!d.r2_key) { showToast(t('admin.authors.toastInvalidServerResp'), 'error'); return null; }
+		if (!r.ok) {
+			showToast(t('admin.authors.toastUploadError'), 'error');
+			return null;
+		}
+		const d = (await r.json()) as { r2_key?: string };
+		if (!d.r2_key) {
+			showToast(t('admin.authors.toastInvalidServerResp'), 'error');
+			return null;
+		}
 		return `/api/download/${d.r2_key}`;
 	} catch {
 		dismiss();
@@ -531,7 +577,16 @@ async function uploadAuthorImage(fileInput: HTMLInputElement): Promise<string | 
 // =========================================================================
 
 type AuthorFormMode = 'create' | 'edit';
-interface AuthorFormData { slug: string; name: string; description?: string; avatar_url?: string | null; website_url?: string | null; twitter_url?: string | null; booth_url?: string | null; gumroad_url?: string | null }
+interface AuthorFormData {
+	slug: string;
+	name: string;
+	description?: string;
+	avatar_url?: string | null;
+	website_url?: string | null;
+	twitter_url?: string | null;
+	booth_url?: string | null;
+	gumroad_url?: string | null;
+}
 
 function showAuthorForm(sectionEl: HTMLElement, mode: AuthorFormMode, author?: AuthorFormData): void {
 	document.getElementById('author-form-panel')?.remove();
@@ -602,7 +657,10 @@ function showAuthorForm(sectionEl: HTMLElement, mode: AuthorFormMode, author?: A
 
 	document.getElementById('af-submit')?.addEventListener('click', async () => {
 		const name = (document.getElementById('af-name') as HTMLInputElement).value.trim();
-		if (!name) { showToast(t('admin.authors.toastNameRequired'), 'error'); return; }
+		if (!name) {
+			showToast(t('admin.authors.toastNameRequired'), 'error');
+			return;
+		}
 
 		const payload: Record<string, unknown> = {
 			name,
@@ -623,10 +681,12 @@ function showAuthorForm(sectionEl: HTMLElement, mode: AuthorFormMode, author?: A
 				form.remove();
 				loadAuthors(sectionEl);
 			} else {
-				const d = await r.json() as { error?: string };
+				const d = (await r.json()) as { error?: string };
 				showToast(d.error ?? 'Error', 'error');
 			}
-		} catch { showToast(t('admin.networkError'), 'error'); }
+		} catch {
+			showToast(t('admin.networkError'), 'error');
+		}
 	});
 }
 
@@ -638,16 +698,16 @@ async function loadMedia(el: HTMLElement): Promise<void> {
 
 	try {
 		const res = await fetch('/api/admin/stats/orphaned-media');
-		const stats = await res.json() as OrphanStats;
+		const stats = (await res.json()) as OrphanStats;
 
 		const warningClass = stats.orphaned_count > 0 ? '--warning' : '';
 		const filesList = stats.orphaned_files.length
 			? `<details style="margin-top:10px"><summary>${t('admin.media.viewList')} (${stats.orphaned_files.length})</summary>
 				<ul class="file-list">${stats.orphaned_files.map((f) => `<li><strong>${f.filename}</strong> — ${f.type}, ${f.age_hours}h</li>`).join('')}</ul>
-			</details>` : '';
+			</details>`
+			: '';
 
-		document.getElementById('media-stats-wrap')!.innerHTML =
-			`<div class="admin-stats-grid">
+		document.getElementById('media-stats-wrap')!.innerHTML = `<div class="admin-stats-grid">
 				<div class="admin-stat-card">
 					<div class="admin-stat-value">${stats.total_media}</div>
 					<div class="admin-stat-label">${t('admin.media.totalMedia')}</div>
@@ -667,9 +727,11 @@ async function loadMedia(el: HTMLElement): Promise<void> {
 					${t('admin.media.desc')}
 				</p>
 				${filesList}
-				${stats.orphaned_count > 0
-					? `<button class="btn btn-danger" id="cleanup-orphaned" style="margin-top:14px">🗑️ ${t('admin.media.btnDeleteOrphaned')} (${stats.orphaned_count})</button>`
-					: `<p style="color:#3fb950;font-size:0.88rem;margin:10px 0 0">✅ ${t('admin.media.noOrphaned')}</p>`}
+				${
+					stats.orphaned_count > 0
+						? `<button class="btn btn-danger" id="cleanup-orphaned" style="margin-top:14px">🗑️ ${t('admin.media.btnDeleteOrphaned')} (${stats.orphaned_count})</button>`
+						: `<p style="color:#3fb950;font-size:0.88rem;margin:10px 0 0">✅ ${t('admin.media.noOrphaned')}</p>`
+				}
 			</div>`;
 
 		document.getElementById('cleanup-orphaned')?.addEventListener('click', async (e) => {
@@ -679,10 +741,19 @@ async function loadMedia(el: HTMLElement): Promise<void> {
 			btn.textContent = `⏳ ${t('admin.media.toastDeleting')}`;
 			try {
 				const r = await fetch('/api/admin/cleanup/orphaned-media', { method: 'POST' });
-				const d = await r.json() as { deleted?: number; error?: string };
-				if (r.ok) { showToast(`${d.deleted} ${t('admin.media.toastDeleted')}`, 'success'); loadMedia(el); }
-				else { showToast(d.error ?? 'Error', 'error'); btn.disabled = false; btn.textContent = `🗑️ ${t('admin.media.btnDeleteOrphaned')}`; }
-			} catch { showToast(t('admin.networkError'), 'error'); btn.disabled = false; }
+				const d = (await r.json()) as { deleted?: number; error?: string };
+				if (r.ok) {
+					showToast(`${d.deleted} ${t('admin.media.toastDeleted')}`, 'success');
+					loadMedia(el);
+				} else {
+					showToast(d.error ?? 'Error', 'error');
+					btn.disabled = false;
+					btn.textContent = `🗑️ ${t('admin.media.btnDeleteOrphaned')}`;
+				}
+			} catch {
+				showToast(t('admin.networkError'), 'error');
+				btn.disabled = false;
+			}
 		});
 	} catch {
 		document.getElementById('media-stats-wrap')!.innerHTML = `<p class="error-message">${t('admin.statsError')}</p>`;
@@ -714,10 +785,16 @@ function loadCache(el: HTMLElement): void {
 		btn.textContent = '…';
 		try {
 			const r = await fetch(`/api/admin/cache/clear/${encodeURIComponent(username)}`, { method: 'POST' });
-			const d = await r.json() as { error?: string };
-			if (r.ok) { showToast(`${t('admin.users.toastCacheCleared')} "${username}"`, 'success'); input.value = ''; }
-			else showToast(d.error ?? t('admin.users.toastCacheClearedError'), 'error');
-		} catch { showToast(t('admin.networkError'), 'error'); }
-		finally { btn.disabled = false; btn.textContent = t('admin.users.btnCache'); }
+			const d = (await r.json()) as { error?: string };
+			if (r.ok) {
+				showToast(`${t('admin.users.toastCacheCleared')} "${username}"`, 'success');
+				input.value = '';
+			} else showToast(d.error ?? t('admin.users.toastCacheClearedError'), 'error');
+		} catch {
+			showToast(t('admin.networkError'), 'error');
+		} finally {
+			btn.disabled = false;
+			btn.textContent = t('admin.users.btnCache');
+		}
 	});
 }

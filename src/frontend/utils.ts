@@ -20,9 +20,15 @@ export function resizeImage(file: File, maxWidth: number, maxHeight: number): Pr
 				let { width, height } = img;
 
 				if (width > height) {
-					if (width > maxWidth) { height = Math.round((height * maxWidth) / width); width = maxWidth; }
+					if (width > maxWidth) {
+						height = Math.round((height * maxWidth) / width);
+						width = maxWidth;
+					}
 				} else {
-					if (height > maxHeight) { width = Math.round((width * maxHeight) / height); height = maxHeight; }
+					if (height > maxHeight) {
+						width = Math.round((width * maxHeight) / height);
+						height = maxHeight;
+					}
 				}
 
 				const canvas = document.createElement('canvas');
@@ -31,9 +37,10 @@ export function resizeImage(file: File, maxWidth: number, maxHeight: number): Pr
 				canvas.getContext('2d')!.drawImage(img, 0, 0, width, height);
 
 				canvas.toBlob(
-					(blob) => blob
-						? resolve(new File([blob], file.name, { type: file.type, lastModified: Date.now() }))
-						: reject(new Error('Canvas to Blob failed')),
+					(blob) =>
+						blob
+							? resolve(new File([blob], file.name, { type: file.type, lastModified: Date.now() }))
+							: reject(new Error('Canvas to Blob failed')),
 					file.type,
 				);
 			};
@@ -96,7 +103,7 @@ async function getSiteKey(): Promise<string | null> {
 	if (_cachedSiteKey) return _cachedSiteKey;
 	try {
 		const res = await fetch('/api/config');
-		const data = await res.json() as { turnstileSiteKey?: string };
+		const data = (await res.json()) as { turnstileSiteKey?: string };
 		_cachedSiteKey = data.turnstileSiteKey ?? null;
 		return _cachedSiteKey;
 	} catch {
@@ -105,10 +112,16 @@ async function getSiteKey(): Promise<string | null> {
 }
 
 export async function renderTurnstile(selector: string): Promise<void> {
-	if (!window.turnstile) { console.warn('Turnstile not loaded yet.'); return; }
+	if (!window.turnstile) {
+		console.warn('Turnstile not loaded yet.');
+		return;
+	}
 
 	const key = await getSiteKey();
-	if (!key) { console.error('Turnstile site key missing'); return; }
+	if (!key) {
+		console.error('Turnstile site key missing');
+		return;
+	}
 
 	const container = document.querySelector(selector);
 	if (!container) return;
@@ -138,7 +151,10 @@ export function loadingBtn(btn: HTMLButtonElement, text = '…'): () => void {
 	const orig = btn.innerHTML;
 	btn.disabled = true;
 	btn.textContent = text;
-	return () => { btn.disabled = false; btn.innerHTML = orig; };
+	return () => {
+		btn.disabled = false;
+		btn.innerHTML = orig;
+	};
 }
 
 // -------------------------------------------------------------------------
@@ -186,7 +202,10 @@ export function showToast(message: string, type: ToastType = 'info', duration = 
 	let timer: ReturnType<typeof setTimeout> | null = null;
 	if (duration > 0) timer = setTimeout(dismiss, duration);
 
-	toast.addEventListener('click', () => { if (timer) clearTimeout(timer); dismiss(); });
+	toast.addEventListener('click', () => {
+		if (timer) clearTimeout(timer);
+		dismiss();
+	});
 
 	return dismiss;
 }

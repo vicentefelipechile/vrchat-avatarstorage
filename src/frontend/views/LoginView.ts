@@ -105,7 +105,7 @@ export function loginAfter(_ctx: RouteContext): void {
 
 		const username = (document.getElementById('username') as HTMLInputElement).value.trim();
 		const password = (document.getElementById('password') as HTMLInputElement).value;
-		const token = (new FormData(form)).get('cf-turnstile-response') as string;
+		const token = new FormData(form).get('cf-turnstile-response') as string;
 
 		try {
 			const res = await fetch('/api/auth/login', {
@@ -113,7 +113,13 @@ export function loginAfter(_ctx: RouteContext): void {
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ username, password, token }),
 			});
-			const data = await res.json() as { success?: boolean; requires_2fa?: boolean; pre_auth_token?: string; username?: string; error?: string };
+			const data = (await res.json()) as {
+				success?: boolean;
+				requires_2fa?: boolean;
+				pre_auth_token?: string;
+				username?: string;
+				error?: string;
+			};
 
 			// Check requires_2fa FIRST — the backend returns 200 for this case too,
 			// so we must inspect the payload before treating res.ok as a full login.
@@ -171,7 +177,7 @@ export function loginAfter(_ctx: RouteContext): void {
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ username: _username, code, pre_auth_token: _preAuthToken }),
 			});
-			const data = await res.json() as { success?: boolean; error?: string };
+			const data = (await res.json()) as { success?: boolean; error?: string };
 
 			if (res.ok) {
 				sessionStorage.setItem('flash_toast', JSON.stringify({ message: t('login.success') || '¡Sesión iniciada!', type: 'success' }));

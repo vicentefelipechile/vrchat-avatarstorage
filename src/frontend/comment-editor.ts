@@ -123,7 +123,10 @@ export function initCommentEditor(opts: CommentEditorInitOptions): void {
 	form.querySelectorAll<HTMLButtonElement>('[data-md-action]').forEach((btn) => {
 		btn.addEventListener('click', () => {
 			const action = btn.dataset.mdAction!;
-			if (action === 'image') { triggerImagePicker(textarea); return; }
+			if (action === 'image') {
+				triggerImagePicker(textarea);
+				return;
+			}
 
 			const def = MD_ACTIONS[action];
 			if (!def) return;
@@ -160,7 +163,7 @@ export function initCommentEditor(opts: CommentEditorInitOptions): void {
 		const text = textarea.value.trim();
 		if (!text) return;
 
-		const token = (new FormData(form)).get('cf-turnstile-response') as string ?? '';
+		const token = (new FormData(form).get('cf-turnstile-response') as string) ?? '';
 
 		const restore = () => {
 			submitBtn.disabled = false;
@@ -226,7 +229,10 @@ export function initMarkdownToolbar(textarea: HTMLTextAreaElement, root: Element
 	root.querySelectorAll<HTMLButtonElement>('[data-md-action]').forEach((btn) => {
 		btn.addEventListener('click', () => {
 			const action = btn.dataset.mdAction!;
-			if (action === 'image') { triggerImagePicker(textarea); return; }
+			if (action === 'image') {
+				triggerImagePicker(textarea);
+				return;
+			}
 
 			const def = MD_ACTIONS[action];
 			if (!def) return;
@@ -278,7 +284,7 @@ async function uploadAndInsertImage(file: File, textarea: HTMLTextAreaElement): 
 		dismiss();
 		if (!res.ok) throw new Error(await res.text());
 
-		const data = await res.json() as { r2_key: string };
+		const data = (await res.json()) as { r2_key: string };
 		const markdown = `![image](/api/download/${data.r2_key})`;
 		const pos = textarea.selectionStart;
 		textarea.setRangeText('\n\n' + markdown + '\n\n', pos, pos, 'end');

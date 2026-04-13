@@ -35,7 +35,9 @@ footer p {
 	text-decoration: none;
 	padding: 4px 0;
 	border-bottom: 1px solid transparent;
-	transition: color 0.2s, border-color 0.2s;
+	transition:
+		color 0.2s,
+		border-color 0.2s;
 }
 
 .footer-links a:hover {
@@ -204,7 +206,9 @@ footer p {
 	font-size: 0.95rem;
 	font-weight: bold;
 	cursor: pointer;
-	transition: background 0.2s, color 0.2s;
+	transition:
+		background 0.2s,
+		color 0.2s;
 }
 
 .dmca-tab-btn:first-child {

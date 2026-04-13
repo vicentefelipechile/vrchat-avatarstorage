@@ -30,11 +30,10 @@
 		const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
 		if (storedTheme === 'dark' || (!storedTheme && systemPrefersDark)) {
 			document.documentElement.setAttribute('data-theme', 'dark');
-		};
+		}
 	</script>
 	<div id="turnstile-widget" style="display: none"></div>
 	<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
-
 </head>
 
 <body>
@@ -47,16 +46,16 @@
 
 			<div class="nav-links">
 				<a href="/" data-link data-i18n="nav.home">Home</a>
-				<a href="/category/avatars" data-link data-i18n="nav.avatars">Avatares</a>
-				<a href="/category/assets" data-link data-i18n="nav.assets">Assets</a>
-				<a href="/category/clothes" data-link data-i18n="nav.clothes">Ropa</a>
+				<a href="/avatars" data-link data-i18n="nav.avatars">Avatares</a>
+				<a href="/assets" data-link data-i18n="nav.assets">Assets</a>
+				<a href="/clothes" data-link data-i18n="nav.clothes">Ropa</a>
 				<div class="container-vh"></div>
 				<a href="/wiki" data-link data-i18n="nav.wiki">Wiki</a>
 				<a href="/blog" data-link data-i18n="nav.blog">Blog</a>
 			</div>
 
 			<div class="nav-utils">
-					<select id="lang-selector" aria-label="Language">
+				<select id="lang-selector" aria-label="Language">
 					<option value="es">🇪🇸 ES</option>
 					<option value="en">🇺🇸 EN</option>
 					<option value="pt">🇧🇷 PT</option>
@@ -187,17 +186,24 @@
 	-->
 
 	<!-- Age Gate Modal -->
-	<div id="age-gate-overlay" class="age-gate-overlay" style="display:none;" aria-modal="true" role="dialog" aria-labelledby="age-gate-title">
+	<div id="age-gate-overlay" class="age-gate-overlay" style="display: none" aria-modal="true" role="dialog"
+		aria-labelledby="age-gate-title">
 		<div class="age-gate-modal">
 			<div class="age-gate-icon">🔞</div>
 			<h2 id="age-gate-title" class="age-gate-title">Age Verification Required</h2>
-			<p class="age-gate-body">VRCStorage hosts content intended for adults only. You must be <strong>18 years of age or older</strong> to access this platform.</p>
+			<p class="age-gate-body">
+				VRCStorage hosts content intended for adults only. You must be <strong>18 years of age or older</strong>
+				to access this platform.
+			</p>
 			<p class="age-gate-question">Are you at least 18 years old?</p>
 			<div class="age-gate-actions">
 				<button id="age-gate-yes" class="btn age-gate-btn-yes">Yes, I am 18 or older</button>
 				<button id="age-gate-no" class="btn age-gate-btn-no">No, I am under 18</button>
 			</div>
-			<p class="age-gate-legal">By clicking "Yes", you confirm you are of legal age and agree to our <a href="/tos" data-link>Terms of Service</a>.</p>
+			<p class="age-gate-legal">
+				By clicking "Yes", you confirm you are of legal age and agree to our <a href="/tos" data-link>Terms of
+					Service</a>.
+			</p>
 		</div>
 	</div>
 

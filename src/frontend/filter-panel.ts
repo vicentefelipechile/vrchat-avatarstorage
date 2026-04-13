@@ -3,24 +3,70 @@
 // Used by AvatarsView, AssetsView, ClothesView
 // =========================================================================
 
+import { t } from './i18n';
+
 // =========================================================================
 // Types
 // =========================================================================
 
+export enum FilterType {
+	CheckBox = 'checkbox',
+	Toggle = 'toggle',
+	Select = 'select',
+}
+
 export interface FilterOption {
 	value: string;
-	label: string;
+	label?: string;
 }
 
 export interface FilterGroupConfig {
 	name: string;
-	label: string;
-	type: 'checkbox' | 'toggle' | 'select';
+	label?: string; // i18n alias — overrides `name` for ALL i18n lookups (title + options)
+	type: FilterType;
 	options: FilterOption[];
 }
 
 export interface FilterPanelConfig {
 	groups: FilterGroupConfig[];
+}
+
+// =========================================================================
+// Helpers
+// =========================================================================
+
+/**
+ * Resolves the i18n namespace for a group.
+ * Uses `g.label` as the namespace if provided, otherwise falls back to `g.name`.
+ *
+ * Examples:
+ *   name='gender_fit', label='avatar_gender' → ns = 'avatar_gender'
+ *   name='avatar_type',  label=undefined      → ns = 'avatar_type'
+ */
+function groupNs(g: FilterGroupConfig): string {
+	return g.label ?? g.name;
+}
+
+/**
+ * Resolves group title: t('meta.<ns>.title')
+ */
+function resolveGroupLabel(g: FilterGroupConfig): string {
+	return t(`meta.${groupNs(g)}.title`);
+}
+
+/**
+ * Resolves option label: t('meta.<ns>.<subKey>')
+ * subKey = o.label if provided, otherwise o.value.
+ *
+ * Examples:
+ *   ns='avatar_gender', value='male'                  → t('meta.avatar_gender.male')
+ *   ns='features',      value='is_nsfw', label='nsfw' → t('meta.features.nsfw')
+ *   ns='clothesType',   value='body-part', label='bodyPart' → t('meta.clothesType.bodyPart')
+ */
+function resolveOptionLabel(g: FilterGroupConfig, o: FilterOption): string {
+	const ns = groupNs(g);
+	const subKey = o.label ?? o.value;
+	return t(`meta.${ns}.${subKey}`);
 }
 
 // =========================================================================
@@ -31,47 +77,48 @@ export interface FilterPanelConfig {
 export function buildFilterPanel(config: FilterPanelConfig): string {
 	const groups = config.groups
 		.map((g) => {
+			const groupLabel = resolveGroupLabel(g);
+
 			if (g.type === 'checkbox') {
 				const chips = g.options
 					.map(
 						(o) =>
 							`<label class="filter-chip">
 								<input type="checkbox" name="${g.name}" value="${o.value}" />
-								<span class="filter-chip-label">${o.label}</span>
+								<span class="filter-chip-label">${resolveOptionLabel(g, o)}</span>
 							</label>`,
 					)
 					.join('');
 				return `<div class="filter-group" data-filter-group="${g.name}">
-					<span class="filter-group-label">${g.label}</span>
+					<span class="filter-group-label">${groupLabel}</span>
 					<div class="filter-chips">${chips}</div>
 				</div>`;
 			}
 
 			if (g.type === 'toggle') {
-				// For toggle groups, each option is rendered as its own boolean switch row
 				const rows = g.options
 					.map(
 						(o) =>
 							`<label class="filter-toggle">
-								<span class="filter-toggle-label">${o.label}</span>
+								<span class="filter-toggle-label">${resolveOptionLabel(g, o)}</span>
 								<input type="checkbox" name="${o.value}" value="1" />
 							</label>`,
 					)
 					.join('');
 				return `<div class="filter-group" data-filter-group="${g.name}">
-					<span class="filter-group-label">${g.label}</span>
+					<span class="filter-group-label">${groupLabel}</span>
 					${rows}
 				</div>`;
 			}
 
 			if (g.type === 'select') {
 				const opts = g.options
-					.map((o) => `<option value="${o.value}">${o.label}</option>`)
+					.map((o) => `<option value="${o.value}">${resolveOptionLabel(g, o)}</option>`)
 					.join('');
 				return `<div class="filter-group" data-filter-group="${g.name}">
-					<span class="filter-group-label">${g.label}</span>
+					<span class="filter-group-label">${groupLabel}</span>
 					<select class="filter-select" name="${g.name}">
-						<option value="">— Todos —</option>
+						<option value="">— ${t('meta.select')} —</option>
 						${opts}
 					</select>
 				</div>`;
@@ -83,8 +130,8 @@ export function buildFilterPanel(config: FilterPanelConfig): string {
 
 	return `<aside class="filter-panel" id="filter-panel">
 		<div class="filter-panel-header">
-			<h3>Filtros</h3>
-			<button class="filter-reset-btn" id="filter-reset-btn" type="button">Limpiar</button>
+			<h3>${t('filterPanel.filterTitle')}</h3>
+			<button class="filter-reset-btn" id="filter-reset-btn" type="button">${t('filterPanel.reset')}</button>
 		</div>
 		${groups}
 	</aside>`;
@@ -125,7 +172,7 @@ export function initFilterPanel(panelEl: HTMLElement, onFilter: (p: URLSearchPar
 		if (_debounceTimer) clearTimeout(_debounceTimer);
 		_debounceTimer = setTimeout(() => {
 			onFilter(collectParams(panelEl));
-		}, 300);
+		}, 850);
 	});
 
 	// Reset button

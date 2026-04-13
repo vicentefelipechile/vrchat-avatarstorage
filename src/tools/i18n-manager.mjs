@@ -172,7 +172,10 @@ function runList(locale, paths) {
 
 		for (const loc of targetLocales) {
 			const source = loadSource(loc);
-			if (!source) { console.log(`  [${loc.toUpperCase()}] ✘ file not found`); continue; }
+			if (!source) {
+				console.log(`  [${loc.toUpperCase()}] ✘ file not found`);
+				continue;
+			}
 
 			if (isLeaf) {
 				// Could be a leaf key (section.key) or a nested section (section.sub)
@@ -210,7 +213,10 @@ function runList(locale, paths) {
 			} else {
 				// Top-level section name only
 				const bounds = findSectionBounds(source, parts[0]);
-				if (!bounds) { console.log(`  [${loc.toUpperCase()}] ✘ not found`); continue; }
+				if (!bounds) {
+					console.log(`  [${loc.toUpperCase()}] ✘ not found`);
+					continue;
+				}
 				const content = source.slice(bounds.contentStart, bounds.contentEnd);
 				const keys = extractStringKeys(content);
 				const subs = extractSubSections(content);
@@ -313,7 +319,7 @@ function insertKey(source, dotPath, value) {
 
 	// Detect indentation from the section itself
 	const firstPropMatch = sectionContent.match(/\n([ \t]+)\w/);
-	const leafIndent = firstPropMatch ? firstPropMatch[1] : (source.includes('\t') ? '\t'.repeat(sectionParts.length + 1) : '        ');
+	const leafIndent = firstPropMatch ? firstPropMatch[1] : source.includes('\t') ? '\t'.repeat(sectionParts.length + 1) : '        ';
 
 	if (new RegExp(`['"]?${leafKey}['"]?\\s*:`).test(sectionContent)) {
 		console.log(`  ↷ "${dotPath}" already exists — skipped.`);
@@ -343,12 +349,17 @@ function insertKey(source, dotPath, value) {
 function runAdd(map, dryRun) {
 	if (dryRun) console.log('Dry run — files will NOT be written.\n');
 
-	let totalWritten = 0, totalSkipped = 0, totalFailed = 0;
+	let totalWritten = 0,
+		totalSkipped = 0,
+		totalFailed = 0;
 
 	for (const [locale, entries] of map) {
 		const filePath = join(I18N_DIR, `${locale}.js`);
 		let source = loadSource(locale);
-		if (!source) { totalFailed++; continue; }
+		if (!source) {
+			totalFailed++;
+			continue;
+		}
 
 		console.log(`[${locale.toUpperCase()}]`);
 		let updated = source;
@@ -357,7 +368,11 @@ function runAdd(map, dryRun) {
 			const result = insertKey(updated, key, value);
 			if (result === null) totalFailed++;
 			else if (result === updated) totalSkipped++;
-			else { updated = result; console.log(`  ✓ ${key} = '${value}'`); totalWritten++; }
+			else {
+				updated = result;
+				console.log(`  ✓ ${key} = '${value}'`);
+				totalWritten++;
+			}
 		}
 
 		if (updated !== source) {
@@ -477,7 +492,10 @@ async function runCheck(jsonMode) {
 	const data = await loadAllLocaleData();
 
 	const ref = data['en'];
-	if (!ref) { console.error('Could not load en.js as reference.'); process.exit(1); }
+	if (!ref) {
+		console.error('Could not load en.js as reference.');
+		process.exit(1);
+	}
 
 	const allPaths = collectPaths(ref);
 	const missing = [];
@@ -498,10 +516,14 @@ async function runCheck(jsonMode) {
 			locales: absentIn,
 			en: String(getByPath(ref, dotPath) ?? ''),
 		}));
-		const json = JSON.stringify({
-			total: missing.length,
-			missing: entries
-		}, null, 2);
+		const json = JSON.stringify(
+			{
+				total: missing.length,
+				missing: entries,
+			},
+			null,
+			2,
+		);
 		const tmpDir = join(__dirname, '../../node_modules/.tmp');
 		mkdirSync(tmpDir, { recursive: true });
 		const outPath = join(tmpDir, 'i18n-check.json');
@@ -547,7 +569,10 @@ function parseAddArgs(args) {
 	let dryRun = false;
 
 	for (const arg of args) {
-		if (arg.toUpperCase() === 'DRY') { dryRun = true; continue; }
+		if (arg.toUpperCase() === 'DRY') {
+			dryRun = true;
+			continue;
+		}
 
 		if (KNOWN_LOCALES.has(arg.toLowerCase()) && !arg.includes('=')) {
 			currentLocale = arg.toLowerCase();
@@ -556,7 +581,10 @@ function parseAddArgs(args) {
 		}
 
 		const eqIdx = arg.indexOf('=');
-		if (eqIdx === -1) { console.warn(`Warning: ignored "${arg}"`); continue; }
+		if (eqIdx === -1) {
+			console.warn(`Warning: ignored "${arg}"`);
+			continue;
+		}
 
 		if (!currentLocale) {
 			console.error(`Error: key=value "${arg}" before a locale code. Valid: ${ALL_LOCALES.join(', ')}`);
@@ -600,7 +628,10 @@ if (subcommand === 'LIST') {
 	runList(locale, paths);
 } else if (subcommand === 'ADD') {
 	const { map, dryRun } = parseAddArgs(args.slice(1));
-	if (!map.size) { printHelp(); process.exit(0); }
+	if (!map.size) {
+		printHelp();
+		process.exit(0);
+	}
 	runAdd(map, dryRun);
 } else if (subcommand === 'FILL') {
 	const rest = args.slice(1);

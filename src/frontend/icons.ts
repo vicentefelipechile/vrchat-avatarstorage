@@ -28,7 +28,7 @@ import {
 	CreditCard,
 	User,
 	MessageCircle,
-	Check
+	Check,
 } from 'lucide';
 
 // Lucide's internal node data: [tagName, attrs, children?]

@@ -26,13 +26,9 @@ const PENDING_TTL_SECONDS = 60 * 15; // 15 minutes
  *
  * Returns either:
  *   { status: 'existing', ... }  — create a session immediately
- *   { status: 'pending', pendingToken }  — redirect to /register/oauth?token=...
+ *   { status: 'pending', pendingToken }  — redirect to /oauth/register?token=...
  */
-export async function oauthUpsertUser(
-	db: D1Database,
-	kv: KVNamespace,
-	identity: OAuthIdentity,
-): Promise<OAuthUpsertResult> {
+export async function oauthUpsertUser(db: D1Database, kv: KVNamespace, identity: OAuthIdentity): Promise<OAuthUpsertResult> {
 	const { provider, providerId, email, avatarUrl } = identity;
 
 	// ── Case 1: Provider ID already linked to an account ──────────────────────

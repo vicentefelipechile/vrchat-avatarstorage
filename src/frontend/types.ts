@@ -75,8 +75,8 @@ export interface ResourceTag {
 // -------------------------------------------------------------------------
 
 export interface AvatarMeta {
-	gender?: string | null;
-	body_size?: string | null;
+	avatar_gender?: string | null;
+	avatar_size?: string | null;
 	avatar_type?: string | null;
 	is_nsfw?: number | null;
 	has_physbones?: number | null;
@@ -152,8 +152,6 @@ export interface BlogPost {
 	tags?: string[];
 }
 
-
-
 // -------------------------------------------------------------------------
 // Third-party globals (CDN — Turnstile only)
 // -------------------------------------------------------------------------
@@ -184,4 +182,4 @@ declare global {
 	}
 }
 
-export { };
+export {};

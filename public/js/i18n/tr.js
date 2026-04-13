@@ -77,10 +77,10 @@ export default {
 	home: {
 		welcome: "VRCStorage'a Hoş Geldiniz",
 		browse: 'Kategoriye göre kaynakları gözatın:',
-		latest: 'En Yeni Kaynaklar'
+		latest: 'En Yeni Kaynaklar',
 	},
 	card: {
-		view: 'Detayları Gör'
+		view: 'Detayları Gör',
 	},
 	avatar: {
 		options: 'Avatar Seçenekleri',
@@ -100,13 +100,13 @@ export default {
 		of: '/',
 		resources: 'kaynak',
 		prev: 'Önceki',
-		next: 'Sonraki'
+		next: 'Sonraki',
 	},
 	pagination: {
 		prev: 'Önceki',
 		next: 'Sonraki',
 		page: 'Sayfa',
-		of: '/'
+		of: '/',
 	},
 	admin: {
 		title: 'Yönetici Paneli',
@@ -204,7 +204,7 @@ export default {
 			title: 'Başlık',
 			desc: 'Açıklama',
 			cat: 'Kategori',
-			tags: 'Etiketler'
+			tags: 'Etiketler',
 		},
 		noVisibleChanges: 'Görünür içerik değişikliği yok.',
 		types: {
@@ -300,7 +300,16 @@ export default {
 		errorFileTooLarge: 'Dosya çok büyük',
 		errorImageDimensions: 'Görsel boyutları çok büyük',
 		errorInvalidFileType: 'Geçersiz dosya türü',
-	},
+		val: {
+			avatarGender: 'Avatar cinsiyeti seç',
+			avatarSize: 'Avatar boyutu seç',
+			avatarType: 'Avatar türü seç',
+			assetType: 'Varlık türü seç',
+			platform: 'Platform seç',
+			clothesGender: 'Tasarım cinsiyeti seç',
+			clothesType: 'Giyim türü seç',
+		},
+},
 	cats: {
 		avatars: 'Avatarlar',
 		worlds: 'Dünyalar',
@@ -312,87 +321,90 @@ export default {
 			worlds: 'Keşfedilecek sanal dünyalar',
 			assets: 'Kaynaklar ve araçlar',
 			clothes: 'Kıyafetler ve aksesuarlar',
-			others: 'Çeşitli diğer kaynaklar'
+			others: 'Çeşitli diğer kaynaklar',
 		},
 	},
 	wiki: {
 		title: 'Wiki - Bağımlılık Kılavuzu',
 		poiyomi: {
-			title: 'Poiyomi Toon Shader'
+			title: 'Poiyomi Toon Shader',
 		},
 		vrcfury: {
-			title: 'VRCFury'
+			title: 'VRCFury',
 		},
 		modularAvatar: {
-			title: 'Modular Avatar'
+			title: 'Modular Avatar',
 		},
 		physbones: {
-			title: 'PhysBones'
+			title: 'PhysBones',
 		},
 		syncdances: {
-			title: 'SyncDances'
+			title: 'SyncDances',
 		},
 		vrcquesttools: {
-			title: 'VRCQuestTools'
+			title: 'VRCQuestTools',
 		},
 		setup: {
-			title: 'Kurulum Kılavuzu'
+			title: 'Kurulum Kılavuzu',
 		},
 		fq: {
-			title: 'SSS'
+			title: 'SSS',
 		},
 		gogoloco: {
-			title: 'GoGo Loco'
+			title: 'GoGo Loco',
 		},
 		gogolocoNsfw: {
-			title: 'NSFW Locomotion'
+			title: 'NSFW Locomotion',
 		},
 		sps: {
-			title: 'SPS (Super Plug Shader)'
+			title: 'SPS (Super Plug Shader)',
 		},
 		dps: {
-			title: 'DPS (Dynamic Penetration System)'
+			title: 'DPS (Dynamic Penetration System)',
 		},
 		insideView: {
-			title: 'Inside View'
+			title: 'Inside View',
 		},
 		pcs: {
-			title: 'PCS (Penetration Contact System)'
+			title: 'PCS (Penetration Contact System)',
 		},
 		parameter: {
-			title: 'Avatar Parametreleri'
+			title: 'Avatar Parametreleri',
 		},
 		actionMenu: {
-			title: 'Eylem Menüsü'
+			title: 'Eylem Menüsü',
 		},
 		gestureManager: {
-			title: 'Gesture Manager Emülatörü'
+			title: 'Gesture Manager Emülatörü',
 		},
 		nsfwEssentials: {
-			title: 'NSFW Temelleri'
+			title: 'NSFW Temelleri',
 		},
 		haptics: {
-			title: 'Dokunsal Kılavuz'
+			title: 'Dokunsal Kılavuz',
 		},
 		comments: {
-			title: 'Wiki Yorumları'
+			title: 'Wiki Yorumları',
 		},
 		desktopPuppeteer: {
-			title: 'Desktop Puppeteer'
+			title: 'Desktop Puppeteer',
 		},
 		unityhubError: {
-			title: 'Unity Hub Hatası'
+			title: 'Unity Hub Hatası',
 		},
 		justkisssfx: {
-			title: 'JustKissSFX'
+			title: 'JustKissSFX',
 		},
 		categories: {
 			vrchat: 'VRChat',
 			dependencies: 'Bağımlılıklar',
 			erp: 'ERP',
-			informative: 'Bilgilendirici'
+			informative: 'Bilgilendirici',
 		},
-	},
+		faq: {
+			title: 'FAQ',
+		},
+},
 	dmca: {
 		title: 'DMCA Kaldırma Bildirimi',
 		subtitle: 'vrcstorage.lat üzerinde barındırılan kaynakların telif hakkı ihlalini bildirin',
@@ -407,8 +419,10 @@ export default {
 		originalWork: 'Orijinal eserin tanımlanması',
 		originalWorkHint: 'İhlal edildiğini iddia ettiğiniz orijinal telif hakkıyla korunan eseri açıklayın veya bağlantı verin.',
 		originalWorkPlaceholder: 'Orijinal esere bağlantı veya ayrıntılı açıklama...',
-		declarationText: 'Yalan yere yemin cezası altında, bu bildirimdeki bilgilerin doğru olduğunu, telif hakkı sahibi olduğumu veya sahip adına hareket etme yetkisine sahip olduğumu ve materyalin kullanımının yetkili olmadığına iyi niyetle inandığımı beyan ederim.',
-		informalNotice: 'Üçüncü taraf bildirimci olarak gönderiminiz gayri resmi bir rapor olarak işlenecektir. İnceleyeceğiz ancak hak sahibinin onayı olmadan eylem garanti edemeyiz.',
+		declarationText:
+			'Yalan yere yemin cezası altında, bu bildirimdeki bilgilerin doğru olduğunu, telif hakkı sahibi olduğumu veya sahip adına hareket etme yetkisine sahip olduğumu ve materyalin kullanımının yetkili olmadığına iyi niyetle inandığımı beyan ederim.',
+		informalNotice:
+			'Üçüncü taraf bildirimci olarak gönderiminiz gayri resmi bir rapor olarak işlenecektir. İnceleyeceğiz ancak hak sahibinin onayı olmadan eylem garanti edemeyiz.',
 		submit: 'Talebi Gönder',
 		submitting: 'Gönderiliyor...',
 		submitSuccess: 'Talebiniz başarıyla gönderildi. 72 saat içinde inceleyeceğiz.',
@@ -451,7 +465,7 @@ export default {
 			optImmediateTermination: 'Kaynak hizmetinin derhal sonlandÄ±rÄ±lmasÄ±',
 			optImmediateRemoval: 'KaynaÄŸÄ±n derhal kaldÄ±rÄ±lmasÄ±',
 			optNotifyUser: 'Sorumlu kullanÄ±cÄ±ya bildirim yapÄ±lmasÄ±',
-			resourceUrl: 'Ä°hlal eden kaynaÄŸÄ±n URL\'si:',
+			resourceUrl: "Ä°hlal eden kaynaÄŸÄ±n URL'si:",
 			preview: 'Talep Ã¶nizlemesi:',
 			urlNotSpecified: '(URL belirtilmedi)',
 			bodyI: 'Ben,',
@@ -460,7 +474,8 @@ export default {
 			bodyThirdReporterClaim: 'belirtilen kaynakta olasÄ± bir telif hakkÄ± ihlali bildiriminde bulunuyorum.',
 			bodyDemand: 'Bu nedenle, ÅŸunu talep ediyorum:',
 			bodyProof: 'Ã–zgÃ¼nlÃ¼k kanÄ±tÄ±',
-			bodyDeclaration: 'YalancÄ± ÅŸahitlik cezasÄ± altÄ±nda, saÄŸlanan bilgilerin doÄŸru olduÄŸunu ve hak sahibi olduÄŸumu ya da hak sahibi adÄ±na hareket etmeye yetkili olduÄŸumu beyan ederim.',
+			bodyDeclaration:
+				'YalancÄ± ÅŸahitlik cezasÄ± altÄ±nda, saÄŸlanan bilgilerin doÄŸru olduÄŸunu ve hak sahibi olduÄŸumu ya da hak sahibi adÄ±na hareket etmeye yetkili olduÄŸumu beyan ederim.',
 			bodyDate: 'Tarih',
 		},
 		info: {
@@ -503,4 +518,122 @@ export default {
 		preview: 'Önizleme',
 		write: 'Yaz',
 	},
+	meta: {
+		required: '* gerekli',
+		adminOnly: '* sadece admin',
+		select: '-- Seç --',
+		platform: {
+			title: 'Platform',
+			cross: 'Çapraz Platform (PC + Quest)',
+			crossSimple: 'Çapraz Platform',
+			pc: 'Sadece PC',
+			quest: 'Sadece Quest',
+			sdk: 'SDK',
+		},
+		sdk_version: {
+			v3Default: 'SDK 3.0 (varsayılan)',
+			v3: 'SDK 3.0',
+			v2: 'SDK 2.0',
+			extras: 'Ekstralar',
+			unityVersion: 'Unity Sürümü',
+		},
+		avatar_gender: {
+			male: 'Erkek',
+			female: 'Kadın',
+			androgynous: 'Androjen',
+			undefined: 'Tanımsız',
+			unisex: 'Unisex',
+			kemono: 'Kemono',
+		},
+		avatar_size: {
+			tiny: 'Minik',
+			small: 'Küçük',
+			medium: 'Orta',
+			tall: 'Uzun',
+			giant: 'Dev',
+		},
+		avatar_type: {
+			anime: 'Anime',
+			kemono: 'Kemono',
+			furry: 'Furry',
+			human: 'Human',
+			semiRealistic: 'Semi-Realistic',
+			chibi: 'Chibi',
+			mecha: 'Mecha',
+			monster: 'Monster',
+			fantasy: 'Fantasy',
+			sciFi: 'Sci-Fi',
+			vtuber: 'VTuber',
+			other: 'Other',
+		},
+		features: {
+			nsfw: 'NSFW',
+			physbones: 'PhysBones',
+			dps: 'DPS',
+			facetracking: 'Face Tracking',
+			gogoloco: 'GoGo Loco',
+			toggles: 'Toggles',
+			questOptimized: 'Quest Optimized',
+		},
+		avatar: {
+			title: 'Avatar Detayları',
+			titleAdmin: 'Avatar Meta Verileri',
+			gender: 'Avatar Cinsiyeti *',
+			size: 'Avatar Boyutu *',
+			type: 'Avatar Türü *',
+			author: 'Orijinal Yazar',
+			authorHint: '(avatar yaratıcısının adı)',
+			authorPlaceholder: 'Yazar ara... veya isim yaz',
+			extras: 'Avatar Ekstraları',
+		},
+		asset: {
+			title: 'Varlık Detayları',
+			titleAdmin: 'Varlık Meta Verileri',
+			type: 'Varlık Türü *',
+		},
+		asset_type: {
+			prop: 'Prop',
+			shader: 'Shader',
+			particle: 'Particle FX',
+			vfx: 'VFX',
+			prefab: 'Prefab',
+			script: 'Script',
+			animation: 'Animation',
+			avatarBase: 'Avatar Base',
+			texturePack: 'Texture Pack',
+			sound: 'Sound',
+			tool: 'Tool',
+			hud: 'HUD',
+			other: 'Other',
+		},
+		clothes: {
+			title: 'Giyim Detayları',
+			titleAdmin: 'Giyim Meta Verileri',
+			gender: 'Tasarım Cinsiyeti *',
+			type: 'Giyim Türü *',
+			isBase: 'Temeldir (temel avatar içerir)',
+			baseAvatar: 'Hangi temel avatar için?',
+			baseAvatarHint: '(otomatik tamamlama veya serbest isim)',
+			baseAvatarPlaceholder: 'Temel avatar ara...',
+		},
+		clothing_type: {
+			top: 'Top',
+			jacket: 'Jacket',
+			bottom: 'Bottom',
+			dress: 'Dress',
+			fullbody: 'Full Body',
+			swimwear: 'Swimwear',
+			shoes: 'Shoes',
+			legwear: 'Legwear',
+			hat: 'Hat',
+			hair: 'Hair',
+			accessory: 'Accessory',
+			tail: 'Tail',
+			ears: 'Ears',
+			wings: 'Wings',
+			bodyPart: 'Body Part',
+			underwear: 'Underwear',
+			other: 'Other',
+		},
+},
 };

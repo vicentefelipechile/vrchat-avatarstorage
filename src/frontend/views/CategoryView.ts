@@ -20,7 +20,7 @@ interface CategoryViewData {
 	pagination: {
 		page: number;
 		hasNextPage: boolean;
-		hasPrevPage: boolean
+		hasPrevPage: boolean;
 	};
 }
 
@@ -39,14 +39,16 @@ function resourceCard(res: Resource): string {
 	return `
 		<div class="card">
 			<a href="/item/${res.uuid}" data-link class="card-link">
-				${res.thumbnail_key
-			? `<div class="card-image">
+				${
+					res.thumbnail_key
+						? `<div class="card-image">
 						<img src="/api/download/${res.thumbnail_key}" alt="${title}" loading="lazy">
 						<span class="card-badge">${categoryLabel}</span>
 					</div>`
-			: `<div class="card-image card-image-placeholder">
+						: `<div class="card-image card-image-placeholder">
 						<span class="card-badge">${categoryLabel}</span>
-					</div>`}
+					</div>`
+				}
 			</a>
 			<div class="card-body">
 				<h3>${title}${res.title.length > 50 ? '…' : ''}</h3>
@@ -70,13 +72,9 @@ function paginationControls(category: string, page: number, hasMore: boolean, qu
 
 	return `
 		<div class="pagination" style="display:flex;gap:10px;justify-content:center;margin-top:30px;">
-			${page > 1
-			? `<a href="${base}${sep}page=${page - 1}" data-link class="btn">${t('pagination.prev')}</a>`
-			: ''}
+			${page > 1 ? `<a href="${base}${sep}page=${page - 1}" data-link class="btn">${t('pagination.prev')}</a>` : ''}
 			<span style="align-self:center;">${t('pagination.page')} ${page}</span>
-			${hasMore
-			? `<a href="${base}${sep}page=${page + 1}" data-link class="btn">${t('pagination.next')}</a>`
-			: ''}
+			${hasMore ? `<a href="${base}${sep}page=${page + 1}" data-link class="btn">${t('pagination.next')}</a>` : ''}
 		</div>`;
 }
 
@@ -97,7 +95,7 @@ export async function categoryView(ctx: RouteContext): Promise<string> {
 	let hasMore = false;
 
 	try {
-		const data = (await DataCache.fetch<CategoryViewData>(cacheKey, { ttl: 900_000 }));
+		const data = await DataCache.fetch<CategoryViewData>(cacheKey, { ttl: 900_000 });
 		resources = data.resources;
 		hasMore = data.pagination.hasNextPage;
 	} catch {
@@ -117,9 +115,11 @@ export async function categoryView(ctx: RouteContext): Promise<string> {
 			${searchQuery ? `<p class="category-description">${t('category.showing') || 'Resultados para'} "<strong>${searchQuery}</strong>"</p>` : ''}
 		</div>
 
-		${resources.length === 0
-			? `<p class="empty-message">${t('common.noResourcesFound')}</p>`
-			: `<div class="grid">${resources.map(resourceCard).join('')}</div>`}
+		${
+			resources.length === 0
+				? `<p class="empty-message">${t('common.noResourcesFound')}</p>`
+				: `<div class="grid">${resources.map(resourceCard).join('')}</div>`
+		}
 
 		${paginationControls(category, page, hasMore, searchQuery || null)}`;
 }

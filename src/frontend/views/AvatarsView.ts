@@ -7,7 +7,7 @@
 // =========================================================================
 
 import { t } from '../i18n';
-import { buildFilterPanel, initFilterPanel } from '../filter-panel';
+import { buildFilterPanel, initFilterPanel, FilterType } from '../filter-panel';
 import { navigateTo } from '../router';
 import type { RouteContext } from '../types';
 
@@ -22,8 +22,8 @@ interface AvatarResource {
 	download_count: number;
 	created_at: number;
 	meta: {
-		gender: string;
-		body_size: string;
+		avatar_gender: string;
+		avatar_size: string;
 		avatar_type: string;
 		is_nsfw: number;
 		has_physbones: number;
@@ -51,7 +51,7 @@ interface AvatarListResponse {
 
 function avatarCard(res: AvatarResource): string {
 	const title = res.title.substring(0, 50);
-	const date = new Date(res.created_at * 1000).toLocaleDateString();
+	const date = new Date(res.created_at).toLocaleDateString();
 	const authorDisplay = res.meta.author_name || res.meta.author_name_raw || '';
 	const authorHtml = res.meta.author_slug
 		? `<a href="/authors/${res.meta.author_slug}" data-link class="card-author-link">${authorDisplay}</a>`
@@ -83,77 +83,71 @@ const AVATAR_FILTER_CONFIG = {
 	groups: [
 		{
 			name: 'avatar_type',
-			label: 'Tipo',
-			type: 'checkbox' as const,
+			type: FilterType.CheckBox,
 			options: [
-				{ value: 'anime', label: 'Anime' },
-				{ value: 'kemono', label: 'Kemono' },
-				{ value: 'furry', label: 'Furry' },
-				{ value: 'human', label: 'Humano' },
-				{ value: 'semi-realistic', label: 'Semi-realista' },
-				{ value: 'chibi', label: 'Chibi' },
-				{ value: 'mecha', label: 'Mecha' },
-				{ value: 'monster', label: 'Monster' },
-				{ value: 'fantasy', label: 'Fantasy' },
-				{ value: 'sci-fi', label: 'Sci-Fi' },
-				{ value: 'vtuber', label: 'VTuber' },
-				{ value: 'other', label: 'Otro' },
+				{ value: 'anime' }, // meta.type.anime
+				{ value: 'kemono' },
+				{ value: 'furry' },
+				{ value: 'human' },
+				{ value: 'semi-realistic', label: 'semiRealistic' },
+				{ value: 'chibi' },
+				{ value: 'mecha' },
+				{ value: 'monster' },
+				{ value: 'fantasy' },
+				{ value: 'sci-fi', label: 'sciFi' },
+				{ value: 'vtuber' },
+				{ value: 'other' },
 			],
 		},
 		{
-			name: 'gender',
-			label: 'Género',
-			type: 'checkbox' as const,
+			name: 'avatar_gender',
+			type: FilterType.CheckBox,
 			options: [
-				{ value: 'male', label: 'Male' },
-				{ value: 'female', label: 'Female' },
-				{ value: 'androgynous', label: 'Androgynous' },
-				{ value: 'undefined', label: 'Undefined' },
+				{ value: 'male' },
+				{ value: 'female' },
+				// { value: 'androgynous' },
+				// { value: 'undefined' },
 			],
 		},
 		{
-			name: 'body_size',
-			label: 'Tamaño',
-			type: 'checkbox' as const,
+			name: 'avatar_size',
+			type: FilterType.CheckBox,
 			options: [
-				{ value: 'tiny', label: 'Tiny' },
-				{ value: 'small', label: 'Small' },
-				{ value: 'medium', label: 'Medium' },
-				{ value: 'tall', label: 'Tall' },
-				{ value: 'giant', label: 'Giant' },
+				{ value: 'tiny' },
+				{ value: 'small' },
+				{ value: 'medium' },
+				{ value: 'tall' },
+				{ value: 'giant' },
 			],
 		},
 		{
 			name: 'platform',
-			label: 'Plataforma',
-			type: 'checkbox' as const,
+			type: FilterType.CheckBox,
 			options: [
-				{ value: 'pc', label: 'PC Only' },
-				{ value: 'quest', label: 'Quest Only' },
-				{ value: 'cross', label: 'Cross-Platform' },
+				{ value: 'pc' },
+				{ value: 'quest' },
+				{ value: 'cross' },
 			],
 		},
 		{
 			name: 'sdk_version',
-			label: 'SDK',
-			type: 'checkbox' as const,
+			type: FilterType.CheckBox,
 			options: [
-				{ value: 'sdk3', label: 'SDK 3.0' },
-				{ value: 'sdk2', label: 'SDK 2.0' },
+				{ value: 'sdk3', label: 'v3' },
+				{ value: 'sdk2', label: 'v2' },
 			],
 		},
 		{
 			name: 'features',
-			label: 'Features',
-			type: 'toggle' as const,
+			type: FilterType.Toggle,
 			options: [
-				{ value: 'is_nsfw', label: 'NSFW' },
-				{ value: 'has_physbones', label: 'PhysBones' },
-				{ value: 'has_dps', label: 'DPS' },
-				{ value: 'has_face_tracking', label: 'Face Tracking' },
-				{ value: 'has_gogoloco', label: 'GoGoLoco' },
-				{ value: 'has_toggles', label: 'Toggles' },
-				{ value: 'is_quest_optimized', label: 'Quest Optimized' },
+				{ value: 'is_nsfw', label: 'nsfw' },
+				{ value: 'has_physbones', label: 'physbones' },
+				{ value: 'has_dps', label: 'dps' },
+				{ value: 'has_face_tracking', label: 'facetracking' },
+				{ value: 'has_gogoloco', label: 'gogoloco' },
+				{ value: 'has_toggles', label: 'toggles' },
+				{ value: 'is_quest_optimized', label: 'questOptimized' },
 			],
 		},
 	],
@@ -185,15 +179,18 @@ export async function avatarsView(ctx: RouteContext): Promise<string> {
 	let data: AvatarListResponse | null = null;
 	try {
 		const res = await fetch(`/api/avatars?${qs}`);
-		if (res.ok) data = await res.json() as AvatarListResponse;
-	} catch { /* empty */ }
+		if (res.ok) data = (await res.json()) as AvatarListResponse;
+	} catch {
+		/* empty */
+	}
 
 	const resources = data?.resources ?? [];
 	const pagination = data?.pagination ?? { page: 1, total: 0, hasNextPage: false, hasPrevPage: false };
 
-	const cardsHtml = resources.length === 0
-		? `<div class="category-empty"><p>${t('filterPanel.noAvatars')}</p></div>`
-		: `<div class="grid">${resources.map(avatarCard).join('')}</div>`;
+	const cardsHtml =
+		resources.length === 0
+			? `<div class="category-empty"><p>${t('filterPanel.noAvatars')}</p></div>`
+			: `<div class="grid">${resources.map(avatarCard).join('')}</div>`;
 
 	const prevBtn = pagination.hasPrevPage
 		? `<a href="/avatars?${buildPageParams(params, page - 1)}" data-link class="btn">${t('filterPanel.prev')}</a>`
@@ -201,11 +198,12 @@ export async function avatarsView(ctx: RouteContext): Promise<string> {
 	const nextBtn = pagination.hasNextPage
 		? `<a href="/avatars?${buildPageParams(params, page + 1)}" data-link class="btn">${t('filterPanel.next')}</a>`
 		: '';
-	const pagCtrls = (prevBtn || nextBtn)
-		? `<div class="pagination" style="display:flex;gap:10px;justify-content:center;margin-top:30px;">
+	const pagCtrls =
+		prevBtn || nextBtn
+			? `<div class="pagination" style="display:flex;gap:10px;justify-content:center;margin-top:30px;">
 			${prevBtn}<span style="align-self:center;">${t('filterPanel.pagePrefix')} ${pagination.page}</span>${nextBtn}
 		  </div>`
-		: '';
+			: '';
 
 	return `<div class="category-layout">
 		${buildFilterPanel(AVATAR_FILTER_CONFIG)}

@@ -68,7 +68,7 @@ export async function blogListView(_ctx: RouteContext): Promise<string> {
 	try {
 		const res = await fetch('/api/blog?page=1&limit=10');
 		if (!res.ok) throw new Error();
-		const data = await res.json() as BlogListResponse;
+		const data = (await res.json()) as BlogListResponse;
 		posts = data.data ?? [];
 		pagination = data.pagination;
 	} catch {
@@ -86,18 +86,20 @@ export async function blogListView(_ctx: RouteContext): Promise<string> {
 			</div>
 
 			<div id="blog-list-container">
-				${posts.length === 0
-					? `<p class="empty-state">${t('blog.noPostsYet')}</p>`
-					: posts.map(blogCard).join('')}
+				${posts.length === 0 ? `<p class="empty-state">${t('blog.noPostsYet')}</p>` : posts.map(blogCard).join('')}
 			</div>
 
-			${pagination && pagination.total_pages > 1 ? `
+			${
+				pagination && pagination.total_pages > 1
+					? `
 				<div id="blog-pagination" class="blog-pagination" style="display:flex">
 					${pagination.page > 1 ? `<button id="blog-prev" class="btn btn-outline">${t('pagination.prev')}</button>` : ''}
 					<span class="page-info">${t('pagination.page')} ${pagination.page} ${t('pagination.of')} ${pagination.total_pages}</span>
 					${pagination.page < pagination.total_pages ? `<button id="blog-next" class="btn btn-outline">${t('pagination.next')}</button>` : ''}
 				</div>
-			` : ''}
+			`
+					: ''
+			}
 		</div>`;
 }
 
@@ -118,12 +120,10 @@ export function blogListAfter(_ctx: RouteContext): void {
 
 		try {
 			const res = await fetch(`/api/blog?page=${page}&limit=10`);
-			const data = await res.json() as BlogListResponse;
+			const data = (await res.json()) as BlogListResponse;
 			const posts = data.data ?? [];
 
-			container.innerHTML = posts.length === 0
-				? `<p class="empty-state">${t('blog.noPostsYet')}</p>`
-				: posts.map(blogCard).join('');
+			container.innerHTML = posts.length === 0 ? `<p class="empty-state">${t('blog.noPostsYet')}</p>` : posts.map(blogCard).join('');
 
 			// Update pagination
 			if (paginationEl && data.pagination) {
@@ -143,11 +143,7 @@ export function blogListAfter(_ctx: RouteContext): void {
 	attachPaginationButtons(loadPage, page, Infinity);
 }
 
-function attachPaginationButtons(
-	loadPage: (p: number) => Promise<void>,
-	currentPage: number,
-	totalPages: number,
-): void {
+function attachPaginationButtons(loadPage: (p: number) => Promise<void>, currentPage: number, totalPages: number): void {
 	document.getElementById('blog-prev')?.addEventListener('click', () => {
 		if (currentPage > 1) loadPage(currentPage - 1);
 	});

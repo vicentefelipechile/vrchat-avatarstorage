@@ -80,7 +80,10 @@
 	font-weight: 600;
 	text-transform: uppercase;
 	letter-spacing: 0.05em;
-	transition: background 0.15s, color 0.15s, transform 0.1s;
+	transition:
+		background 0.15s,
+		color 0.15s,
+		transform 0.1s;
 }
 
 .author-social-link:hover {

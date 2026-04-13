@@ -7,7 +7,7 @@
 // =========================================================================
 
 import { t } from '../i18n';
-import { buildFilterPanel, initFilterPanel } from '../filter-panel';
+import { buildFilterPanel, FilterType, initFilterPanel } from '../filter-panel';
 import { navigateTo } from '../router';
 import type { RouteContext } from '../types';
 
@@ -66,57 +66,56 @@ const ASSET_FILTER_CONFIG = {
 	groups: [
 		{
 			name: 'asset_type',
-			label: 'Tipo',
-			type: 'checkbox' as const,
+			type: FilterType.CheckBox,
 			options: [
-				{ value: 'prop', label: 'Prop' },
-				{ value: 'shader', label: 'Shader' },
-				{ value: 'particle', label: 'Particle' },
-				{ value: 'vfx', label: 'VFX' },
-				{ value: 'prefab', label: 'Prefab' },
-				{ value: 'script', label: 'Script' },
-				{ value: 'animation', label: 'Animation' },
-				{ value: 'avatar-base', label: 'Avatar Base' },
-				{ value: 'texture-pack', label: 'Texture Pack' },
-				{ value: 'sound', label: 'Sound' },
-				{ value: 'tool', label: 'Tool' },
-				{ value: 'hud', label: 'HUD' },
-				{ value: 'other', label: 'Otro' },
+				{ value: 'prop' },
+				{ value: 'shader' },
+				{ value: 'particle' },
+				{ value: 'vfx' },
+				{ value: 'prefab' },
+				{ value: 'script' },
+				{ value: 'animation' },
+				{ value: 'avatar-base', label: 'avatarBase' },
+				{ value: 'texture-pack', label: 'texturePack' },
+				{ value: 'sound' },
+				{ value: 'tool'},
+				{ value: 'hud'},
+				{ value: 'other' },
 			],
 		},
 		{
 			name: 'platform',
-			label: 'Plataforma',
-			type: 'checkbox' as const,
+			type: FilterType.CheckBox,
 			options: [
-				{ value: 'pc', label: 'PC Only' },
-				{ value: 'quest', label: 'Quest Only' },
-				{ value: 'cross', label: 'Cross-Platform' },
+				{ value: 'pc' },
+				{ value: 'quest' },
+				{ value: 'cross' },
 			],
 		},
 		{
 			name: 'sdk_version',
-			label: 'SDK',
-			type: 'checkbox' as const,
+			type: FilterType.CheckBox,
 			options: [
-				{ value: 'sdk3', label: 'SDK 3.0' },
-				{ value: 'sdk2', label: 'SDK 2.0' },
+				{ value: 'sdk3', label: 'v3' },
+				{ value: 'sdk2', label: 'v2' },
 			],
 		},
+		/*
 		{
 			name: 'unity_version',
-			label: 'Unity',
-			type: 'checkbox' as const,
+			type: FilterType.CheckBox,
 			options: [
 				{ value: '2022', label: 'Unity 2022' },
 				{ value: '2019', label: 'Unity 2019' },
 			],
 		},
+		*/
 		{
-			name: 'toggles',
-			label: 'Filtros',
-			type: 'toggle' as const,
-			options: [{ value: 'is_nsfw', label: 'NSFW' }],
+			name: 'features',
+			type: FilterType.Toggle,
+			options: [
+				{ value: 'is_nsfw', label: 'nsfw' }
+			],
 		},
 	],
 };
@@ -147,27 +146,31 @@ export async function assetsView(ctx: RouteContext): Promise<string> {
 	let data: AssetListResponse | null = null;
 	try {
 		const res = await fetch(`/api/assets?${qs}`);
-		if (res.ok) data = await res.json() as AssetListResponse;
-	} catch { /* empty */ }
+		if (res.ok) data = (await res.json()) as AssetListResponse;
+	} catch {
+		/* empty */
+	}
 
 	const resources = data?.resources ?? [];
 	const pagination = data?.pagination ?? { page: 1, total: 0, hasNextPage: false, hasPrevPage: false };
 
-	const cardsHtml = resources.length === 0
-		? `<div class="category-empty"><p>${t('filterPanel.noAssets')}</p></div>`
-		: `<div class="grid">${resources.map(assetCard).join('')}</div>`;
+	const cardsHtml =
+		resources.length === 0
+			? `<div class="category-empty"><p>${t('filterPanel.noAssets')}</p></div>`
+			: `<div class="grid">${resources.map(assetCard).join('')}</div>`;
 
 	const prevBtn = pagination.hasPrevPage
-		? `<a href="/assets?${buildPageParams(params, page - 1)}" data-link class="btn">${t('filterPanel.prev')}</a>`
+		? `<a href="/assets?${buildPageParams(params, page - 1)}" data-link class="btn">← ${t('filterPanel.prev')}</a>`
 		: '';
 	const nextBtn = pagination.hasNextPage
-		? `<a href="/assets?${buildPageParams(params, page + 1)}" data-link class="btn">${t('filterPanel.next')}</a>`
+		? `<a href="/assets?${buildPageParams(params, page + 1)}" data-link class="btn">${t('filterPanel.next')} →</a>`
 		: '';
-	const pagCtrls = (prevBtn || nextBtn)
-		? `<div class="pagination" style="display:flex;gap:10px;justify-content:center;margin-top:30px;">
+	const pagCtrls =
+		prevBtn || nextBtn
+			? `<div class="pagination" style="display:flex;gap:10px;justify-content:center;margin-top:30px;">
 			${prevBtn}<span style="align-self:center;">${t('filterPanel.pagePrefix')} ${pagination.page}</span>${nextBtn}
 		  </div>`
-		: '';
+			: '';
 
 	return `<div class="category-layout">
 		${buildFilterPanel(ASSET_FILTER_CONFIG)}

@@ -12,7 +12,10 @@ import type { RouteContext } from '../types';
 // Helpers
 // =========================================================================
 
-interface ImageDimCheck { valid: boolean; error?: string }
+interface ImageDimCheck {
+	valid: boolean;
+	error?: string;
+}
 
 const SIZE_LIMITS = {
 	image: 20 * 1024 * 1024,
@@ -31,12 +34,18 @@ function validateImageDimensions(file: File): Promise<ImageDimCheck> {
 		img.onload = () => {
 			URL.revokeObjectURL(url);
 			if (img.width > MAX_IMAGE_DIMENSION || img.height > MAX_IMAGE_DIMENSION) {
-				resolve({ valid: false, error: `Image too large. Max: ${MAX_IMAGE_DIMENSION}x${MAX_IMAGE_DIMENSION} got ${img.width}x${img.height}` });
+				resolve({
+					valid: false,
+					error: `Image too large. Max: ${MAX_IMAGE_DIMENSION}x${MAX_IMAGE_DIMENSION} got ${img.width}x${img.height}`,
+				});
 			} else {
 				resolve({ valid: true });
 			}
 		};
-		img.onerror = () => { URL.revokeObjectURL(url); resolve({ valid: false, error: 'Could not load image' }); };
+		img.onerror = () => {
+			URL.revokeObjectURL(url);
+			resolve({ valid: false, error: 'Could not load image' });
+		};
 		img.src = url;
 	});
 }
@@ -44,12 +53,17 @@ function validateImageDimensions(file: File): Promise<ImageDimCheck> {
 function createPreviewItem(tag: 'img' | 'video', url: string, name: string, onDelete: () => void): HTMLDivElement {
 	const container = document.createElement('div');
 	container.className = 'preview-item';
-	container.style.cssText = 'display:inline-block;position:relative;border:2px solid var(--border-color);padding:10px;margin:5px;background:var(--bg-card);vertical-align:top';
+	container.style.cssText =
+		'display:inline-block;position:relative;border:2px solid var(--border-color);padding:10px;margin:5px;background:var(--bg-card);vertical-align:top';
 
 	const btn = document.createElement('button');
 	btn.innerHTML = '✕';
-	btn.style.cssText = 'position:absolute;top:5px;right:5px;background:#dc3545;color:white;border:none;border-radius:3px;width:25px;height:25px;cursor:pointer;font-weight:bold;z-index:10';
-	btn.onclick = (e) => { e.preventDefault(); onDelete(); };
+	btn.style.cssText =
+		'position:absolute;top:5px;right:5px;background:#dc3545;color:white;border:none;border-radius:3px;width:25px;height:25px;cursor:pointer;font-weight:bold;z-index:10';
+	btn.onclick = (e) => {
+		e.preventDefault();
+		onDelete();
+	};
 
 	const media = document.createElement(tag) as HTMLImageElement | HTMLVideoElement;
 	media.src = url;
@@ -58,7 +72,8 @@ function createPreviewItem(tag: 'img' | 'video', url: string, name: string, onDe
 
 	const label = document.createElement('div');
 	label.textContent = name;
-	label.style.cssText = 'margin-top:5px;font-size:12px;color:var(--text-muted);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
+	label.style.cssText =
+		'margin-top:5px;font-size:12px;color:var(--text-muted);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
 
 	container.append(btn, media, label);
 	return container;
@@ -68,12 +83,19 @@ function uploadWithProgress(url: string, fd: FormData, onProgress: (p: number) =
 	return new Promise((resolve, reject) => {
 		const xhr = new XMLHttpRequest();
 		xhr.open('PUT', url);
-		xhr.upload.onprogress = (ev) => { if (ev.lengthComputable) onProgress((ev.loaded / ev.total) * 100); };
+		xhr.upload.onprogress = (ev) => {
+			if (ev.lengthComputable) onProgress((ev.loaded / ev.total) * 100);
+		};
 		xhr.onload = () => {
 			if (xhr.status >= 200 && xhr.status < 300) {
-				try { resolve(JSON.parse(xhr.responseText) as { r2_key: string; media_uuid: string }); }
-				catch { reject(new Error('Invalid JSON')); }
-			} else { reject(new Error(`Upload failed ${xhr.status}`)); }
+				try {
+					resolve(JSON.parse(xhr.responseText) as { r2_key: string; media_uuid: string });
+				} catch {
+					reject(new Error('Invalid JSON'));
+				}
+			} else {
+				reject(new Error(`Upload failed ${xhr.status}`));
+			}
 		};
 		xhr.onerror = () => reject(new Error('Network error'));
 		xhr.send(fd);
@@ -89,7 +111,7 @@ async function uploadLargeFile(file: File, onProgress: (p: number) => void): Pro
 		body: JSON.stringify({ filename: file.name, media_type: 'file' }),
 	});
 	if (!initRes.ok) throw new Error('Failed to initialize upload');
-	const { uploadId, key } = await initRes.json() as { uploadId: string; key: string };
+	const { uploadId, key } = (await initRes.json()) as { uploadId: string; key: string };
 
 	const parts: object[] = [];
 	let loaded = 0;
@@ -134,20 +156,20 @@ function buildAvatarMetaFields(): string {
 			<div class="form-group">
 				<label><strong>${t('meta.avatar.gender')}</strong></label>
 				<div class="radio-group" style="display:flex;gap:12px;flex-wrap:wrap;margin-top:6px">
-					<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="av-gender" value="male"> ${t('meta.gender.male')}</label>
-					<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="av-gender" value="female"> ${t('meta.gender.female')}</label>
-					<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="av-gender" value="androgynous"> ${t('meta.gender.androgynous')}</label>
-					<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="av-gender" value="undefined"> ${t('meta.gender.undefined')}</label>
+					<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="av-gender" value="male"> ${t('meta.avatar_gender.male')}</label>
+					<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="av-gender" value="female"> ${t('meta.avatar_gender.female')}</label>
+					<!-- <label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="av-gender" value="androgynous"> ${t('meta.avatar_gender.androgynous')}</label> -->
+					<!-- <label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="av-gender" value="undefined"> ${t('meta.avatar_gender.undefined')}</label> -->
 				</div>
 			</div>
 			<div class="form-group">
 				<label><strong>${t('meta.avatar.size')}</strong></label>
 				<div class="radio-group" style="display:flex;gap:12px;flex-wrap:wrap;margin-top:6px">
-					<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="av-body-size" value="tiny"> ${t('meta.size.tiny')}</label>
-					<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="av-body-size" value="small"> ${t('meta.size.small')}</label>
-					<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="av-body-size" value="medium"> ${t('meta.size.medium')}</label>
-					<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="av-body-size" value="tall"> ${t('meta.size.tall')}</label>
-					<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="av-body-size" value="giant"> ${t('meta.size.giant')}</label>
+					<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="av-body-size" value="tiny"> ${t('meta.avatar_size.tiny')}</label>
+					<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="av-body-size" value="small"> ${t('meta.avatar_size.small')}</label>
+					<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="av-body-size" value="medium"> ${t('meta.avatar_size.medium')}</label>
+					<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="av-body-size" value="tall"> ${t('meta.avatar_size.tall')}</label>
+					<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="av-body-size" value="giant"> ${t('meta.avatar_size.giant')}</label>
 				</div>
 			</div>
 		</div>
@@ -157,25 +179,25 @@ function buildAvatarMetaFields(): string {
 				<label><strong>${t('meta.avatar.type')}</strong></label>
 				<select id="av-avatar-type" class="form-control">
 					<option value="">${t('meta.select')}</option>
-					<option value="anime">${t('meta.type.anime')}</option>
-					<option value="kemono">${t('meta.type.kemono')}</option>
-					<option value="furry">${t('meta.type.furry')}</option>
-					<option value="human">${t('meta.type.human')}</option>
-					<option value="semi-realistic">${t('meta.type.semiRealistic')}</option>
-					<option value="chibi">${t('meta.type.chibi')}</option>
-					<option value="mecha">${t('meta.type.mecha')}</option>
-					<option value="monster">${t('meta.type.monster')}</option>
-					<option value="fantasy">${t('meta.type.fantasy')}</option>
-					<option value="sci-fi">${t('meta.type.sciFi')}</option>
-					<option value="vtuber">${t('meta.type.vtuber')}</option>
-					<option value="other">${t('meta.type.other')}</option>
+					<option value="human">${t('meta.avatar_type.human')}</option>
+					<option value="anime">${t('meta.avatar_type.anime')}</option>
+					<option value="kemono">${t('meta.avatar_type.kemono')}</option>
+					<option value="furry">${t('meta.avatar_type.furry')}</option>
+					<option value="semi-realistic">${t('meta.avatar_type.semiRealistic')}</option>
+					<option value="chibi">${t('meta.avatar_type.chibi')}</option>
+					<option value="mecha">${t('meta.avatar_type.mecha')}</option>
+					<option value="monster">${t('meta.avatar_type.monster')}</option>
+					<option value="fantasy">${t('meta.avatar_type.fantasy')}</option>
+					<option value="sci-fi">${t('meta.avatar_type.sciFi')}</option>
+					<option value="vtuber">${t('meta.avatar_type.vtuber')}</option>
+					<option value="other">${t('meta.avatar_type.other')}</option>
 				</select>
 			</div>
 			<div class="form-group">
 				<label><strong>${t('meta.platform.title')}</strong></label>
 				<select id="av-platform" class="form-control">
-					<option value="cross">${t('meta.platform.cross')}</option>
 					<option value="pc">${t('meta.platform.pc')}</option>
+					<option value="cross">${t('meta.platform.cross')}</option>
 					<option value="quest">${t('meta.platform.quest')}</option>
 				</select>
 			</div>
@@ -183,10 +205,10 @@ function buildAvatarMetaFields(): string {
 
 		<div class="upload-grid">
 			<div class="form-group">
-				<label><strong>${t('meta.sdk.title')}</strong></label>
+				<label><strong>${t('meta.sdk_version.title')}</strong></label>
 				<select id="av-sdk" class="form-control">
-					<option value="sdk3">${t('meta.sdk.v3Default')}</option>
-					<option value="sdk2">${t('meta.sdk.v2')}</option>
+					<option value="sdk3">${t('meta.sdk_version.v3Default')}</option>
+					<option value="sdk2">${t('meta.sdk_version.v2')}</option>
 				</select>
 			</div>
 			<div class="form-group">
@@ -201,13 +223,13 @@ function buildAvatarMetaFields(): string {
 			<div class="form-group">
 				<label><strong>${t('meta.avatar.extras')}</strong></label>
 				<div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:6px">
-					<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="av-nsfw"> ${t('meta.extras.nsfw')}</label>
-					<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="av-physbones"> ${t('meta.extras.physbones')}</label>
-					<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="av-dps"> ${t('meta.extras.dps')}</label>
-					<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="av-facetracking"> ${t('meta.extras.facetracking')}</label>
-					<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="av-gogoloco"> ${t('meta.extras.gogoloco')}</label>
-					<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="av-toggles"> ${t('meta.extras.toggles')}</label>
-					<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="av-questoptimized"> ${t('meta.extras.questOptimized')}</label>
+					<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="av-nsfw"> ${t('meta.features.nsfw')}</label>
+					<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="av-physbones"> ${t('meta.features.physbones')}</label>
+					<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="av-dps"> ${t('meta.features.dps')}</label>
+					<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="av-facetracking"> ${t('meta.features.facetracking')}</label>
+					<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="av-gogoloco"> ${t('meta.features.gogoloco')}</label>
+					<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="av-toggles"> ${t('meta.features.toggles')}</label>
+					<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="av-questoptimized"> ${t('meta.features.questOptimized')}</label>
 				</div>
 			</div>
 		</div>
@@ -266,9 +288,9 @@ function buildAssetMetaFields(): string {
 		</div>
 
 		<div class="form-group" style="margin-top:8px">
-			<label><strong>${t('meta.extras')}</strong></label>
+			<label><strong>${t('meta.features')}</strong></label>
 			<div style="display:flex;gap:12px;margin-top:6px">
-				<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="asset-nsfw"> ${t('meta.extras.nsfw')}</label>
+				<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="asset-nsfw"> ${t('meta.features.nsfw')}</label>
 			</div>
 		</div>
 	</div>`;
@@ -323,10 +345,10 @@ function buildClothesMetaFields(): string {
 				</select>
 			</div>
 			<div class="form-group" style="margin-top:8px">
-				<label><strong>${t('meta.extras')}</strong></label>
+				<label><strong>${t('meta.features')}</strong></label>
 				<div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:6px">
-					<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="clothes-nsfw"> ${t('meta.extras.nsfw')}</label>
-					<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="clothes-physbones"> ${t('meta.extras.physbones')}</label>
+					<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="clothes-nsfw"> ${t('meta.features.nsfw')}</label>
+					<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="clothes-physbones"> ${t('meta.features.physbones')}</label>
 					<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="clothes-is-base"> ${t('meta.clothes.isBase')}</label>
 				</div>
 			</div>
@@ -366,11 +388,6 @@ export async function uploadView(_ctx: RouteContext): Promise<string> {
 						<option value="assets">${t('cats.assets')}</option>
 						<option value="clothes">${t('cats.clothes')}</option>
 					</select>
-				</div>
-
-				<div class="form-group">
-					<label><strong>${t('upload.tags')}</strong> <small>(${t('upload.tagsHint')})</small></label>
-					<input type="text" id="tags" placeholder="anime, horror, quest, nsfw">
 				</div>
 
 				${buildAvatarMetaFields()}
@@ -462,15 +479,22 @@ export async function uploadAfter(_ctx: RouteContext): Promise<void> {
 	// -----------------------------------------------------------------------
 
 	try {
-		const config = await fetch('/api/config').then((r) => r.json()) as { turnstileSiteKey?: string };
+		const config = (await fetch('/api/config').then((r) => r.json())) as { turnstileSiteKey?: string };
 		if (window.turnstile && config.turnstileSiteKey) {
-			turnstileWidgetId = window.turnstile.render('#turnstile-container', {
-				sitekey: config.turnstileSiteKey,
-				callback: (token: string) => { turnstileToken = token; },
-				'expired-callback': () => { turnstileToken = null; },
-			}) ?? null;
+			turnstileWidgetId =
+				window.turnstile.render('#turnstile-container', {
+					sitekey: config.turnstileSiteKey,
+					callback: (token: string) => {
+						turnstileToken = token;
+					},
+					'expired-callback': () => {
+						turnstileToken = null;
+					},
+				}) ?? null;
 		}
-	} catch { /* ignore */ }
+	} catch {
+		/* ignore */
+	}
 
 	// -----------------------------------------------------------------------
 	// Category → meta block toggle
@@ -518,15 +542,24 @@ export async function uploadAfter(_ctx: RouteContext): Promise<void> {
 			clearTimeout(authorDebounce);
 			if (authorUuidInput) authorUuidInput.value = '';
 			const q = authorInput.value.trim();
-			if (q.length < 2) { authorSuggestions.style.display = 'none'; return; }
+			if (q.length < 2) {
+				authorSuggestions.style.display = 'none';
+				return;
+			}
 			authorDebounce = setTimeout(async () => {
 				try {
 					const res = await fetch(`/api/authors/search?q=${encodeURIComponent(q)}`);
-					const data = await res.json() as { uuid: string; name: string; slug: string }[];
-					if (!data.length) { authorSuggestions.style.display = 'none'; return; }
-					authorSuggestions.innerHTML = data.map((a) =>
-						`<div class="suggestion-item" data-uuid="${a.uuid}" data-name="${a.name}" style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border-color)">${a.name}</div>`,
-					).join('');
+					const data = (await res.json()) as { uuid: string; name: string; slug: string }[];
+					if (!data.length) {
+						authorSuggestions.style.display = 'none';
+						return;
+					}
+					authorSuggestions.innerHTML = data
+						.map(
+							(a) =>
+								`<div class="suggestion-item" data-uuid="${a.uuid}" data-name="${a.name}" style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border-color)">${a.name}</div>`,
+						)
+						.join('');
 					authorSuggestions.style.display = 'block';
 					authorSuggestions.querySelectorAll<HTMLElement>('.suggestion-item').forEach((item) => {
 						item.addEventListener('click', () => {
@@ -535,7 +568,9 @@ export async function uploadAfter(_ctx: RouteContext): Promise<void> {
 							authorSuggestions.style.display = 'none';
 						});
 					});
-				} catch { authorSuggestions.style.display = 'none'; }
+				} catch {
+					authorSuggestions.style.display = 'none';
+				}
 			}, 300);
 		});
 		document.addEventListener('click', (e) => {
@@ -557,16 +592,25 @@ export async function uploadAfter(_ctx: RouteContext): Promise<void> {
 			clearTimeout(baseDebounce);
 			if (clothesBaseUuid) clothesBaseUuid.value = '';
 			const q = clothesBaseInput.value.trim();
-			if (q.length < 2) { clothesBaseSuggestions.style.display = 'none'; return; }
+			if (q.length < 2) {
+				clothesBaseSuggestions.style.display = 'none';
+				return;
+			}
 			baseDebounce = setTimeout(async () => {
 				try {
 					const res = await fetch(`/api/resources?category=avatars&q=${encodeURIComponent(q)}&limit=10`);
-					const data = await res.json() as { resources?: { uuid: string; title: string }[] };
+					const data = (await res.json()) as { resources?: { uuid: string; title: string }[] };
 					const items = data.resources ?? [];
-					if (!items.length) { clothesBaseSuggestions.style.display = 'none'; return; }
-					clothesBaseSuggestions.innerHTML = items.map((r) =>
-						`<div class="suggestion-item" data-uuid="${r.uuid}" data-name="${r.title}" style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border-color)">${r.title}</div>`,
-					).join('');
+					if (!items.length) {
+						clothesBaseSuggestions.style.display = 'none';
+						return;
+					}
+					clothesBaseSuggestions.innerHTML = items
+						.map(
+							(r) =>
+								`<div class="suggestion-item" data-uuid="${r.uuid}" data-name="${r.title}" style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border-color)">${r.title}</div>`,
+						)
+						.join('');
 					clothesBaseSuggestions.style.display = 'block';
 					clothesBaseSuggestions.querySelectorAll<HTMLElement>('.suggestion-item').forEach((item) => {
 						item.addEventListener('click', () => {
@@ -575,7 +619,9 @@ export async function uploadAfter(_ctx: RouteContext): Promise<void> {
 							clothesBaseSuggestions.style.display = 'none';
 						});
 					});
-				} catch { clothesBaseSuggestions.style.display = 'none'; }
+				} catch {
+					clothesBaseSuggestions.style.display = 'none';
+				}
 			}, 300);
 		});
 		document.addEventListener('click', (e) => {
@@ -599,10 +645,27 @@ export async function uploadAfter(_ctx: RouteContext): Promise<void> {
 		if (!file) return;
 		const isVideo = file.type.startsWith('video/');
 		const maxSize = isVideo ? SIZE_LIMITS.video : SIZE_LIMITS.image;
-		if (file.size > maxSize) { showToast(`File too large. Max: ${(maxSize / 1024 / 1024).toFixed(0)}MB`, 'warning'); thumbnailInput.value = ''; thumbnailPreview.innerHTML = ''; return; }
-		if (!isVideo) { const c = await validateImageDimensions(file); if (!c.valid) { showToast(c.error || 'Invalid dimensions', 'error'); thumbnailInput.value = ''; thumbnailPreview.innerHTML = ''; return; } }
+		if (file.size > maxSize) {
+			showToast(`File too large. Max: ${(maxSize / 1024 / 1024).toFixed(0)}MB`, 'warning');
+			thumbnailInput.value = '';
+			thumbnailPreview.innerHTML = '';
+			return;
+		}
+		if (!isVideo) {
+			const c = await validateImageDimensions(file);
+			if (!c.valid) {
+				showToast(c.error || 'Invalid dimensions', 'error');
+				thumbnailInput.value = '';
+				thumbnailPreview.innerHTML = '';
+				return;
+			}
+		}
 		const url = URL.createObjectURL(file);
-		const item = createPreviewItem(isVideo ? 'video' : 'img', url, file.name, () => { thumbnailInput.value = ''; thumbnailPreview.innerHTML = ''; URL.revokeObjectURL(url); });
+		const item = createPreviewItem(isVideo ? 'video' : 'img', url, file.name, () => {
+			thumbnailInput.value = '';
+			thumbnailPreview.innerHTML = '';
+			URL.revokeObjectURL(url);
+		});
 		thumbnailPreview.innerHTML = '';
 		thumbnailPreview.appendChild(item);
 	});
@@ -630,11 +693,32 @@ export async function uploadAfter(_ctx: RouteContext): Promise<void> {
 
 	referenceInput.addEventListener('change', async (e) => {
 		const files = Array.from((e.target as HTMLInputElement).files ?? []);
-		if (files.length > 8) { showToast(t('upload.maxFiles') || 'Max 8 files', 'warning'); referenceInput.value = ''; selectedRefFiles = []; renderRefPreview(); return; }
+		if (files.length > 8) {
+			showToast(t('upload.maxFiles') || 'Max 8 files', 'warning');
+			referenceInput.value = '';
+			selectedRefFiles = [];
+			renderRefPreview();
+			return;
+		}
 		for (const f of files) {
 			const maxSize = f.type.startsWith('video/') ? SIZE_LIMITS.video : SIZE_LIMITS.image;
-			if (f.size > maxSize) { showToast(`File "${f.name}" too large.`, 'warning'); referenceInput.value = ''; selectedRefFiles = []; renderRefPreview(); return; }
-			if (f.type.startsWith('image/')) { const c = await validateImageDimensions(f); if (!c.valid) { showToast(`Image "${f.name}": ${c.error}`, 'error'); referenceInput.value = ''; selectedRefFiles = []; renderRefPreview(); return; } }
+			if (f.size > maxSize) {
+				showToast(`File "${f.name}" too large.`, 'warning');
+				referenceInput.value = '';
+				selectedRefFiles = [];
+				renderRefPreview();
+				return;
+			}
+			if (f.type.startsWith('image/')) {
+				const c = await validateImageDimensions(f);
+				if (!c.valid) {
+					showToast(`Image "${f.name}": ${c.error}`, 'error');
+					referenceInput.value = '';
+					selectedRefFiles = [];
+					renderRefPreview();
+					return;
+				}
+			}
 		}
 		selectedRefFiles = files;
 		renderRefPreview();
@@ -648,7 +732,12 @@ export async function uploadAfter(_ctx: RouteContext): Promise<void> {
 		const files = Array.from((e.target as HTMLInputElement).files ?? []);
 		fileInfo.innerHTML = '';
 		uploadError.textContent = '';
-		if (files.length > 3) { fileInfo.innerHTML = `<span style="color:red">✗ ${t('upload.errorMaxFiles')}</span>`; uploadError.textContent = t('upload.errorMaxFiles'); fileInput.value = ''; return; }
+		if (files.length > 3) {
+			fileInfo.innerHTML = `<span style="color:red">✗ ${t('upload.errorMaxFiles')}</span>`;
+			uploadError.textContent = t('upload.errorMaxFiles');
+			fileInput.value = '';
+			return;
+		}
 
 		let allValid = true;
 		files.forEach((file) => {
@@ -657,9 +746,18 @@ export async function uploadAfter(_ctx: RouteContext): Promise<void> {
 			if (!isValidExt || !isValidSize) allValid = false;
 			const mb = (file.size / 1024 / 1024).toFixed(2);
 			const maxMb = (SIZE_LIMITS.file / 1024 / 1024).toFixed(0);
-			let color = 'green', sym = '✓', msg = `${file.name} (${mb} MB)`;
-			if (!isValidExt) { color = 'red'; sym = '✗'; msg += ` - ${t('upload.errorInvalidFileType')}`; }
-			else if (!isValidSize) { color = 'red'; sym = '✗'; msg += ` - ${t('upload.errorFileTooLarge')} (max ${maxMb}MB)`; }
+			let color = 'green',
+				sym = '✓',
+				msg = `${file.name} (${mb} MB)`;
+			if (!isValidExt) {
+				color = 'red';
+				sym = '✗';
+				msg += ` - ${t('upload.errorInvalidFileType')}`;
+			} else if (!isValidSize) {
+				color = 'red';
+				sym = '✗';
+				msg += ` - ${t('upload.errorFileTooLarge')} (max ${maxMb}MB)`;
+			}
 			const div = document.createElement('div');
 			const span = document.createElement('span');
 			span.style.color = color;
@@ -667,7 +765,10 @@ export async function uploadAfter(_ctx: RouteContext): Promise<void> {
 			div.appendChild(span);
 			fileInfo.appendChild(div);
 		});
-		if (!allValid) { uploadError.textContent = `${t('upload.error')}: Invalid files.`; fileInput.value = ''; }
+		if (!allValid) {
+			uploadError.textContent = `${t('upload.error')}: Invalid files.`;
+			fileInput.value = '';
+		}
 	});
 
 	// -----------------------------------------------------------------------
@@ -705,8 +806,8 @@ export async function uploadAfter(_ctx: RouteContext): Promise<void> {
 
 	function collectMeta(category: string): Record<string, unknown> {
 		if (category === 'avatars') {
-			const gender = (document.querySelector('input[name="av-gender"]:checked') as HTMLInputElement).value;
-			const body_size = (document.querySelector('input[name="av-body-size"]:checked') as HTMLInputElement).value;
+			const avatar_gender = (document.querySelector('input[name="av-gender"]:checked') as HTMLInputElement).value;
+			const avatar_size = (document.querySelector('input[name="av-body-size"]:checked') as HTMLInputElement).value;
 			const avatar_type = (document.getElementById('av-avatar-type') as HTMLSelectElement).value;
 			const platform = (document.getElementById('av-platform') as HTMLSelectElement).value;
 			const sdk_version = (document.getElementById('av-sdk') as HTMLSelectElement).value;
@@ -720,8 +821,18 @@ export async function uploadAfter(_ctx: RouteContext): Promise<void> {
 			const authorInput = (document.getElementById('av-author-input') as HTMLInputElement).value.trim();
 			const authorUuid = (document.getElementById('av-author-uuid') as HTMLInputElement).value.trim() || null;
 			return {
-				gender, body_size, avatar_type, platform, sdk_version,
-				is_nsfw, has_physbones, has_dps, has_face_tracking, has_gogoloco, has_toggles, is_quest_optimized,
+				avatar_gender,
+				avatar_size,
+				avatar_type,
+				platform,
+				sdk_version,
+				is_nsfw,
+				has_physbones,
+				has_dps,
+				has_face_tracking,
+				has_gogoloco,
+				has_toggles,
+				is_quest_optimized,
 				author_name_raw: authorInput || null,
 				author_uuid: authorUuid,
 			};
@@ -779,7 +890,11 @@ export async function uploadAfter(_ctx: RouteContext): Promise<void> {
 
 		// Client-side meta validation
 		const metaError = validateMeta(category);
-		if (metaError) { uploadError.textContent = metaError; showToast(metaError, 'error'); return; }
+		if (metaError) {
+			uploadError.textContent = metaError;
+			showToast(metaError, 'error');
+			return;
+		}
 
 		btn.disabled = true;
 		btn.textContent = t('upload.uploading');
@@ -787,12 +902,13 @@ export async function uploadAfter(_ctx: RouteContext): Promise<void> {
 		nav?.style.setProperty('pointer-events', 'none');
 		nav?.style.setProperty('opacity', '0.5');
 
-		const preventNav = (ev: BeforeUnloadEvent) => { ev.preventDefault(); ev.returnValue = ''; };
+		const preventNav = (ev: BeforeUnloadEvent) => {
+			ev.preventDefault();
+			ev.returnValue = '';
+		};
 		window.addEventListener('beforeunload', preventNav);
 
 		const title = (document.getElementById('title') as HTMLInputElement).value;
-		const tagsInput = (document.getElementById('tags') as HTMLInputElement).value;
-		const tags = tagsInput.split(',').map((tag) => tag.trim()).filter(Boolean);
 		const description = descriptionField.value;
 		const meta = collectMeta(category);
 
@@ -800,11 +916,36 @@ export async function uploadAfter(_ctx: RouteContext): Promise<void> {
 		const thumbnail = thumbnailInput.files?.[0];
 		const referenceFiles = referenceInput.files;
 
-		if (mainFiles.length === 0) { uploadError.textContent = `${t('upload.error')}: No file selected`; resetState(); window.removeEventListener('beforeunload', preventNav); return; }
-		if (mainFiles.length > 3) { uploadError.textContent = `${t('upload.error')}: Max 3 files`; resetState(); window.removeEventListener('beforeunload', preventNav); return; }
-		if (mainFiles.some((f) => !VALID_EXTENSIONS.some((ext) => f.name.toLowerCase().endsWith(ext)))) { uploadError.textContent = `${t('upload.error')}: ${t('upload.errorMainFile')}`; resetState(); window.removeEventListener('beforeunload', preventNav); return; }
-		if (!thumbnail) { uploadError.textContent = `${t('upload.error')}: ${t('upload.errorThumbnail')}`; resetState(); window.removeEventListener('beforeunload', preventNav); return; }
-		if (!turnstileToken) { uploadError.textContent = `${t('upload.error')}: ${t('upload.errorCaptcha')}`; resetState(); window.removeEventListener('beforeunload', preventNav); return; }
+		if (mainFiles.length === 0) {
+			uploadError.textContent = `${t('upload.error')}: No file selected`;
+			resetState();
+			window.removeEventListener('beforeunload', preventNav);
+			return;
+		}
+		if (mainFiles.length > 3) {
+			uploadError.textContent = `${t('upload.error')}: Max 3 files`;
+			resetState();
+			window.removeEventListener('beforeunload', preventNav);
+			return;
+		}
+		if (mainFiles.some((f) => !VALID_EXTENSIONS.some((ext) => f.name.toLowerCase().endsWith(ext)))) {
+			uploadError.textContent = `${t('upload.error')}: ${t('upload.errorMainFile')}`;
+			resetState();
+			window.removeEventListener('beforeunload', preventNav);
+			return;
+		}
+		if (!thumbnail) {
+			uploadError.textContent = `${t('upload.error')}: ${t('upload.errorThumbnail')}`;
+			resetState();
+			window.removeEventListener('beforeunload', preventNav);
+			return;
+		}
+		if (!turnstileToken) {
+			uploadError.textContent = `${t('upload.error')}: ${t('upload.errorCaptcha')}`;
+			resetState();
+			window.removeEventListener('beforeunload', preventNav);
+			return;
+		}
 
 		try {
 			// 1. Thumbnail
@@ -863,12 +1004,16 @@ export async function uploadAfter(_ctx: RouteContext): Promise<void> {
 
 			const backupLinksRaw = (document.getElementById('backup-links') as HTMLTextAreaElement).value;
 			const extra = backupLinksRaw
-				? backupLinksRaw.split('\n').map((u) => u.trim()).filter(Boolean).map((url, i) => ({
-					link_url: url,
-					link_title: 'Backup ' + (i + 1),
-					link_type: 'download',
-					display_order: fileLinks.length + i + 1,
-				}))
+				? backupLinksRaw
+						.split('\n')
+						.map((u) => u.trim())
+						.filter(Boolean)
+						.map((url, i) => ({
+							link_url: url,
+							link_title: 'Backup ' + (i + 1),
+							link_type: 'download',
+							display_order: fileLinks.length + i + 1,
+						}))
 				: [];
 
 			const endpointMap: Record<string, string> = {
@@ -879,7 +1024,9 @@ export async function uploadAfter(_ctx: RouteContext): Promise<void> {
 			const endpoint = endpointMap[category] ?? '/api/resources';
 
 			const body = {
-				title, description, category, tags,
+				title,
+				description,
+				category,
 				thumbnail_uuid: thumbData.media_uuid,
 				reference_image_uuid: galleryUuids[0] ?? null,
 				media_files: [thumbData.media_uuid, ...galleryUuids, ...uploadedFiles.map((f) => f.media_uuid)],
@@ -895,13 +1042,13 @@ export async function uploadAfter(_ctx: RouteContext): Promise<void> {
 			});
 
 			if (res.ok) {
-				const data = await res.json() as { uuid: string };
+				const data = (await res.json()) as { uuid: string };
 				DataCache.clear('/api/resources/latest');
 				DataCache.clear(`/api/resources?category=${category}`);
 				window.removeEventListener('beforeunload', preventNav);
 				navigateTo('/item/' + data.uuid);
 			} else {
-				const err = await res.json() as { error?: string };
+				const err = (await res.json()) as { error?: string };
 				throw new Error(err.error ?? t('upload.errorCreateResource'));
 			}
 		} catch (err) {

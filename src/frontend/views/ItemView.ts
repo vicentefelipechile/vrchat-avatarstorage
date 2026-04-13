@@ -57,10 +57,15 @@ function renderCategoryMeta(res: Resource): string {
 				: chip(name);
 			textRows.push(metaRow(t('meta.avatar.author').replace(/\s*\*/g, ''), val));
 		}
-		if (m.gender) textRows.push(metaRow(t('meta.avatar.gender').replace(/\s*\*/g, ''), chip(t('meta.gender.' + m.gender) || m.gender)));
-		if (m.body_size) textRows.push(metaRow(t('meta.avatar.size').replace(/\s*\*/g, ''), chip(t('meta.size.' + m.body_size) || m.body_size)));
-		if (m.avatar_type) textRows.push(metaRow(t('meta.avatar.type').replace(/\s*\*/g, ''), chip(t('meta.type.' + m.avatar_type.replace('-', '')) || m.avatar_type)));
-		if (m.platform) textRows.push(metaRow(t('meta.platform.title').replace(/\s*\*/g, ''), chip(t('meta.platform.' + m.platform) || m.platform)));
+		if (m.avatar_gender) textRows.push(metaRow(t('meta.avatar.gender').replace(/\s*\*/g, ''), chip(t('meta.avatar_gender.' + m.avatar_gender) || m.avatar_gender)));
+		if (m.avatar_size)
+			textRows.push(metaRow(t('meta.avatar.size').replace(/\s*\*/g, ''), chip(t('meta.avatar_size.' + m.avatar_size) || m.avatar_size)));
+		if (m.avatar_type)
+			textRows.push(
+				metaRow(t('meta.avatar.type').replace(/\s*\*/g, ''), chip(t('meta.avatar_type.' + m.avatar_type.replace('-', '')) || m.avatar_type)),
+			);
+		if (m.platform)
+			textRows.push(metaRow(t('meta.platform.title').replace(/\s*\*/g, ''), chip(t('meta.platform.' + m.platform) || m.platform)));
 		if (m.sdk_version) textRows.push(metaRow('SDK', chip(m.sdk_version.toUpperCase())));
 
 		flagChips.push(flagChip('NSFW', m.is_nsfw));
@@ -68,21 +73,33 @@ function renderCategoryMeta(res: Resource): string {
 		flagChips.push(flagChip('Face Tracking', m.has_face_tracking));
 		flagChips.push(flagChip('DPS', m.has_dps));
 		flagChips.push(flagChip('GoGo Loco', m.has_gogoloco));
-		flagChips.push(flagChip(t('meta.extras.toggles').replace(/\s*\*/g, ''), m.has_toggles));
-		flagChips.push(flagChip(t('meta.extras.questOptimized').replace(/\s*\*/g, ''), m.is_quest_optimized));
+		flagChips.push(flagChip(t('meta.features.toggles').replace(/\s*\*/g, ''), m.has_toggles));
+		flagChips.push(flagChip(t('meta.features.questOptimized').replace(/\s*\*/g, ''), m.is_quest_optimized));
 	} else if (res.category === 'assets') {
 		const m = res.meta as AssetMeta;
-		if (m.asset_type) textRows.push(metaRow(t('meta.asset.type').replace(/\s*\*/g, ''), chip(t('meta.assetType.' + m.asset_type.replace('-', '')) || m.asset_type)));
-		if (m.platform) textRows.push(metaRow(t('meta.platform.title').replace(/\s*\*/g, ''), chip(t('meta.platform.' + m.platform) || m.platform)));
+		if (m.asset_type)
+			textRows.push(
+				metaRow(t('meta.asset.type').replace(/\s*\*/g, ''), chip(t('meta.assetType.' + m.asset_type.replace('-', '')) || m.asset_type)),
+			);
+		if (m.platform)
+			textRows.push(metaRow(t('meta.platform.title').replace(/\s*\*/g, ''), chip(t('meta.platform.' + m.platform) || m.platform)));
 		if (m.sdk_version) textRows.push(metaRow('SDK', chip(m.sdk_version.toUpperCase())));
 		if (m.unity_version) textRows.push(metaRow('Unity', chip(m.unity_version)));
 
 		flagChips.push(flagChip('NSFW', m.is_nsfw));
 	} else if (res.category === 'clothes') {
 		const m = res.meta as ClothesMeta;
-		if (m.clothing_type) textRows.push(metaRow(t('meta.clothes.type').replace(/\s*\*/g, ''), chip(t('meta.clothesType.' + m.clothing_type.replace('-', '')) || m.clothing_type)));
-		if (m.gender_fit) textRows.push(metaRow(t('meta.clothes.gender').replace(/\s*\*/g, ''), chip(t('meta.gender.' + m.gender_fit) || m.gender_fit)));
-		if (m.platform) textRows.push(metaRow(t('meta.platform.title').replace(/\s*\*/g, ''), chip(t('meta.platform.' + m.platform) || m.platform)));
+		if (m.clothing_type)
+			textRows.push(
+				metaRow(
+					t('meta.clothes.type').replace(/\s*\*/g, ''),
+					chip(t('meta.clothesType.' + m.clothing_type.replace('-', '')) || m.clothing_type),
+				),
+			);
+		if (m.gender_fit)
+			textRows.push(metaRow(t('meta.clothes.gender').replace(/\s*\*/g, ''), chip(t('meta.avatar_gender.' + m.gender_fit) || m.gender_fit)));
+		if (m.platform)
+			textRows.push(metaRow(t('meta.platform.title').replace(/\s*\*/g, ''), chip(t('meta.platform.' + m.platform) || m.platform)));
 		if (m.base_avatar_name_raw) textRows.push(metaRow(t('meta.clothes.baseAvatar').replace(/\s*\*/g, ''), chip(m.base_avatar_name_raw)));
 
 		flagChips.push(flagChip(t('meta.clothes.isBase').replace(/\s*\*/g, ''), m.is_base));
@@ -116,20 +133,24 @@ function downloadSection(res: Resource): string {
 			</div>`;
 	}
 
+	console.log(res)
 	const downloadLinks: ResourceLink[] = (res.links ?? []).filter((l) => l.link_type === 'download');
+	console.log('Download links:', downloadLinks);
 	if (downloadLinks.length > 0) {
-		const linksHtml = downloadLinks.map((link, i) => {
-			const text = link.link_title ?? `${t('item.backup')} ${downloadLinks.slice(0, i).filter((l) => !l.link_title).length + 1}`;
-			const style = link.link_title ? '' : ' style="background:#555"';
-			return `<a href="${link.link_url}" target="_blank" class="btn"${style}>${text}</a>`;
-		}).join('');
+		const linksHtml = downloadLinks
+			.map((link, i) => {
+				const text = link.link_title ?? `${t('item.backup')} ${downloadLinks.slice(0, i).filter((l) => !l.link_title).length + 1}`;
+				const style = link.link_title ? '' : ' style="background:#555"';
+				return `<a href="${link.link_url}" target="_blank" class="btn"${style}>${text}</a>`;
+			})
+			.join('');
 		return `<div style="display:flex;gap:10px;flex-wrap:wrap">${linksHtml}</div>`;
 	}
 
 	// Legacy fallback
-	const backups = (res.backupUrls ?? []).map((url, i) =>
-		`<a href="${url}" target="_blank" class="btn" style="background:#666">${t('item.backup')} ${i + 1}</a>`
-	).join('');
+	const backups = (res.backupUrls ?? [])
+		.map((url, i) => `<a href="${url}" target="_blank" class="btn" style="background:#666">${t('item.backup')} ${i + 1}</a>`)
+		.join('');
 	return `
 		<div style="display:flex;gap:10px;flex-wrap:wrap">
 			<a href="${res.downloadUrl}" target="_blank" class="btn">${t('item.downloadMain')}</a>
@@ -229,10 +250,11 @@ function adminActionsHtml(res: Resource): string {
 function renderCommentsList(comments: Comment[], isAdmin: boolean): string {
 	if (!comments?.length) return `<p>${t('item.noComments')}</p>`;
 
-	return comments.map((c) => {
-		const content = DOMPurify.sanitize(marked.parse(c.text) as string);
+	return comments
+		.map((c) => {
+			const content = DOMPurify.sanitize(marked.parse(c.text) as string);
 
-		return `
+			return `
 			<div id="comment-${c.uuid}" class="comment" style="display:flex;gap:10px">
 				<div style="flex-shrink:0">
 					<img src="${c.author_avatar}" alt="${c.author}" class="comment-avatar">
@@ -245,7 +267,8 @@ function renderCommentsList(comments: Comment[], isAdmin: boolean): string {
 					<div class="markdown-body" style="word-break:break-word">${content}</div>
 				</div>
 			</div>`;
-	}).join('');
+		})
+		.join('');
 }
 
 function setupLightbox(images: string[]): void {
@@ -284,7 +307,12 @@ function setupLightbox(images: string[]): void {
 			imgEl.style.cursor = 'zoom-out';
 		} else {
 			imgEl.style.transform = 'scale(1)';
-			setTimeout(() => { if (!isZoomed) { imgWrap.style.width = ''; imgWrap.style.height = ''; } }, 250);
+			setTimeout(() => {
+				if (!isZoomed) {
+					imgWrap.style.width = '';
+					imgWrap.style.height = '';
+				}
+			}, 250);
 			imgWrap.style.cursor = 'zoom-in';
 			imgEl.style.cursor = 'zoom-in';
 		}
@@ -310,12 +338,25 @@ function setupLightbox(images: string[]): void {
 		el.addEventListener('click', () => open(parseInt(el.dataset.lightboxIndex!, 10)));
 	});
 
-	imgWrap.addEventListener('click', (e) => { e.stopPropagation(); setZoom(!isZoomed, e as MouseEvent); });
-	imgEl.addEventListener('mousemove', (e) => { if (isZoomed) updateOrigin(e as MouseEvent); });
-	overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+	imgWrap.addEventListener('click', (e) => {
+		e.stopPropagation();
+		setZoom(!isZoomed, e as MouseEvent);
+	});
+	imgEl.addEventListener('mousemove', (e) => {
+		if (isZoomed) updateOrigin(e as MouseEvent);
+	});
+	overlay.addEventListener('click', (e) => {
+		if (e.target === overlay) close();
+	});
 	btnClose.addEventListener('click', close);
-	btnPrev.addEventListener('click', (e) => { e.stopPropagation(); open(current - 1); });
-	btnNext.addEventListener('click', (e) => { e.stopPropagation(); open(current + 1); });
+	btnPrev.addEventListener('click', (e) => {
+		e.stopPropagation();
+		open(current - 1);
+	});
+	btnNext.addEventListener('click', (e) => {
+		e.stopPropagation();
+		open(current + 1);
+	});
 
 	document.addEventListener('keydown', (e) => {
 		if (!overlay.classList.contains('active')) return;
@@ -324,7 +365,9 @@ function setupLightbox(images: string[]): void {
 		if (e.key === 'ArrowRight') open(current + 1);
 	});
 
-	window.addEventListener('popstate', () => { document.body.style.overflow = ''; });
+	window.addEventListener('popstate', () => {
+		document.body.style.overflow = '';
+	});
 }
 
 // =========================================================================
@@ -345,7 +388,7 @@ export async function itemView(ctx: RouteContext): Promise<string> {
 	document.title = `VRCStorage — ${res.title}`;
 
 	const { user, isAdmin } = window.appState;
-	const category = res.category ? (t('cats.' + res.category) || res.category) : t('common.unknown');
+	const category = res.category ? t('cats.' + res.category) || res.category : t('common.unknown');
 	const date = new Date(res.created_at * 1000).toLocaleString();
 	const { html: galleryHtml, images: lightboxImages } = buildGallery(res);
 	const isOwner = user && res.author && user.username === res.author.username;
@@ -360,11 +403,15 @@ export async function itemView(ctx: RouteContext): Promise<string> {
 	// Header tools
 	const headerTools = `
 		<div style="display:flex;gap:10px;flex-shrink:0;margin-top:5px;align-items:center">
-			${user ? `
+			${
+				user
+					? `
 				<button type="button" class="btn-favorite" id="btn-favorite" data-uuid="${uuid}" style="display:flex;align-items:center;gap:5px;background:transparent;border:1px solid var(--border-color);padding:5px 12px;cursor:pointer">
 					${icons.heart(18, 'class="favorite-icon"')}
 					<span class="hide-mobile">${t('nav.favorites')}</span>
-				</button>` : ''}
+				</button>`
+					: ''
+			}
 			${canEdit ? `<a href="/resource/${uuid}/edit" data-link class="btn" style="display:flex;align-items:center;gap:5px;background:#17a2b8;padding:5px 15px">${icons.edit(18)}<span class="hide-mobile">${t('item.edit')}</span></a>` : ''}
 			<a href="/resource/${uuid}/history" data-link class="btn" style="display:flex;align-items:center;gap:5px;background:#6c757d;padding:5px 15px">${icons.history(18)}<span class="hide-mobile">${t('item.history')}</span></a>
 		</div>`;
@@ -397,9 +444,11 @@ export async function itemView(ctx: RouteContext): Promise<string> {
 			<div id="comments-section" style="margin-top:40px">
 				<h2>${t('item.comments')}</h2>
 				<div id="comments-container"><p>${t('common.loadingComments')}</p></div>
-				${user
-			? commentEditorHtml({ formId: 'comment-form', textareaId: 'comment-text', turnstileId: 'turnstile-comment' })
-			: `<hr><h3>${t('item.loginToComment')}</h3>`}
+				${
+					user
+						? commentEditorHtml({ formId: 'comment-form', textareaId: 'comment-text', turnstileId: 'turnstile-comment' })
+						: `<hr><h3>${t('item.loginToComment')}</h3>`
+				}
 			</div>
 		</div>
 
@@ -442,12 +491,14 @@ export async function itemAfter(ctx: RouteContext): Promise<void> {
 		const icon = btnFavorite.querySelector<SVGElement>('.favorite-icon');
 		try {
 			const res = await fetch(`/api/favorites/check/${uuid}`);
-			const data = await res.json() as { is_favorite?: boolean };
+			const data = (await res.json()) as { is_favorite?: boolean };
 			if (data.is_favorite) {
 				icon?.setAttribute('fill', 'currentColor');
 				btnFavorite.classList.add('is-favorite');
 			}
-		} catch { /* ignore */ }
+		} catch {
+			/* ignore */
+		}
 
 		btnFavorite.addEventListener('click', async (e) => {
 			e.preventDefault();
@@ -455,7 +506,7 @@ export async function itemAfter(ctx: RouteContext): Promise<void> {
 			if (isFavorite) {
 				icon?.removeAttribute('fill');
 				btnFavorite.classList.remove('is-favorite');
-				fetch(`/api/favorites/${uuid}`, { method: 'DELETE' }).catch(() => { });
+				fetch(`/api/favorites/${uuid}`, { method: 'DELETE' }).catch(() => {});
 			} else {
 				icon?.setAttribute('fill', 'currentColor');
 				btnFavorite.classList.add('is-favorite');
@@ -463,7 +514,7 @@ export async function itemAfter(ctx: RouteContext): Promise<void> {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify({ resource_uuid: uuid }),
-				}).catch(() => { });
+				}).catch(() => {});
 			}
 		});
 	}
@@ -489,17 +540,15 @@ export async function itemAfter(ctx: RouteContext): Promise<void> {
 				body: JSON.stringify({ text, token }),
 			});
 			if (!res.ok) {
-				const data = await res.json() as { error?: string; details?: { message: string }[] };
+				const data = (await res.json()) as { error?: string; details?: { message: string }[] };
 				let msg = data.error ?? 'Unknown';
 				if (data.details?.length) msg += ': ' + data.details.map((d) => d.message).join(', ');
 				throw new Error(msg);
 			}
 		},
 		onSuccess: async () => {
-			const updated = await fetch(`/api/comments/${uuid}`).then((r) => r.json()) as Comment[];
+			const updated = (await fetch(`/api/comments/${uuid}`).then((r) => r.json())) as Comment[];
 			commentsContainer.innerHTML = renderCommentsList(updated, window.appState.isAdmin);
 		},
 	});
 }
-
-

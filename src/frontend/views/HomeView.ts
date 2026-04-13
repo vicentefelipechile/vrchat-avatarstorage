@@ -22,14 +22,16 @@ function resourceCard(res: Resource): string {
 	return `
 		<div class="card">
 			<a href="/item/${res.uuid}" data-link class="card-link">
-				${res.thumbnail_key
-			? `<div class="card-image">
+				${
+					res.thumbnail_key
+						? `<div class="card-image">
 						<img src="/api/download/${res.thumbnail_key}" alt="${title}" loading="lazy">
 						<span class="card-badge">${categoryLabel}</span>
 					</div>`
-			: `<div class="card-image card-image-placeholder">
+						: `<div class="card-image card-image-placeholder">
 						<span class="card-badge">${categoryLabel}</span>
-					</div>`}
+					</div>`
+				}
 			</a>
 			<div class="card-body">
 				<h3>${title}${res.title.length > 50 ? '...' : ''}</h3>
@@ -58,13 +60,13 @@ export async function homeView(_ctx: RouteContext): Promise<string> {
 
 	let resources: Resource[] = [];
 	try {
-		resources = (await DataCache.fetch('/api/resources/latest', { ttl: 60_000, persistent: true })) as Resource[];
+		resources = (await DataCache.fetch('/api/resources/latest', { ttl: 60_000 })) as Resource[];
 	} catch {
 		/* show empty grid */
 	}
 
 	const categoriesHtml = apiCategories
-		.map((cat) => `<a href="/category/${cat}" data-link class="category-btn">${t('cats.' + cat)}</a>`)
+		.map((cat) => `<a href="/${cat}" data-link class="category-btn">${t('cats.' + cat)}</a>`)
 		.join('');
 
 	return `
@@ -75,9 +77,11 @@ export async function homeView(_ctx: RouteContext): Promise<string> {
 		</section>
 		<section class="latest-section">
 			<h2>${t('home.latest')}</h2>
-			${resources.length === 0
-			? `<p class="empty-message">${t('home.noResources') || 'No resources found.'}</p>`
-			: `<div class="grid">${resources.map(resourceCard).join('')}</div>`}
+			${
+				resources.length === 0
+					? `<p class="empty-message">${t('common.noResourcesFound') || 'No resources found.'}</p>`
+					: `<div class="grid">${resources.map(resourceCard).join('')}</div>`
+			}
 		</section>`;
 }
 

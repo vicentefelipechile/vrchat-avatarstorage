@@ -7,7 +7,7 @@ const isWatch = process.argv.includes('--watch');
 const isDev = process.argv.includes('--dev');
 
 const buildOptions = {
-	entryPoints: [path.join(__dirname, 'app.ts')],
+	entryPoints: [path.join(__dirname, '../frontend/app.ts')],
 	bundle: true,
 	outfile: path.join(__dirname, '../../public/js/bundle.js'),
 	format: /** @type {'iife'} */ ('iife'),

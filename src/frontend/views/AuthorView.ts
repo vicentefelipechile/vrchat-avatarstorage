@@ -36,12 +36,18 @@ interface AuthorProfileResponse {
 		thumbnail_key: string | null;
 		download_count: number;
 		created_at: number;
-		gender: string;
+		avatar_gender: string;
 		avatar_type: string;
 		platform: string;
 		is_nsfw: number;
 	}[];
-	pagination: { page: number; limit: number; total: number; hasNextPage: boolean; hasPrevPage: boolean };
+	pagination: {
+		page: number;
+		limit: number;
+		total: number;
+		hasNextPage: boolean;
+		hasPrevPage: boolean
+	};
 }
 
 // =========================================================================
@@ -87,7 +93,7 @@ export async function authorView(ctx: RouteContext): Promise<string> {
 	let data: AuthorProfileResponse | null = null;
 	try {
 		const res = await fetch(`/api/authors/${slug}?page=${page}`);
-		if (res.ok) data = await res.json() as AuthorProfileResponse;
+		if (res.ok) data = (await res.json()) as AuthorProfileResponse;
 		else if (res.status === 404) {
 			document.title = t('authorProfile.notFoundTitle');
 			return `<p class="error-message">${t('authorProfile.notFound')}</p>`;
@@ -115,25 +121,25 @@ export async function authorView(ctx: RouteContext): Promise<string> {
 		socialLink(author.discord_url, 'Discord', 'message-circle'),
 	].filter(Boolean);
 
-	const socialsHtml = socials.length
-		? `<ul class="author-socials">${socials.join('')}</ul>`
-		: '';
+	const socialsHtml = socials.length ? `<ul class="author-socials">${socials.join('')}</ul>` : '';
 
 	const prevBtn = pagination.hasPrevPage
-		? `<a href="/authors/${slug}?page=${page - 1}" data-link class="btn">${t('filterPanel.prev')}</a>`
+		? `<a href="/authors/${slug}?page=${page - 1}" data-link class="btn">← ${t('filterPanel.prev')}</a>`
 		: '';
 	const nextBtn = pagination.hasNextPage
-		? `<a href="/authors/${slug}?page=${page + 1}" data-link class="btn">${t('filterPanel.next')}</a>`
+		? `<a href="/authors/${slug}?page=${page + 1}" data-link class="btn">${t('filterPanel.next')} →</a>`
 		: '';
-	const pagCtrls = (prevBtn || nextBtn)
-		? `<div class="pagination" style="display:flex;gap:10px;justify-content:center;margin-top:30px;">
+	const pagCtrls =
+		prevBtn || nextBtn
+			? `<div class="pagination" style="display:flex;gap:10px;justify-content:center;margin-top:30px;">
 			${prevBtn}<span style="align-self:center;">${t('filterPanel.pagePrefix')} ${pagination.page}</span>${nextBtn}
 		  </div>`
-		: '';
+			: '';
 
-	const gridHtml = avatars.length === 0
-		? `<div class="author-no-resources">${t('authorProfile.noResources')}</div>`
-		: `<div class="grid">${avatars.map(avatarMiniCard).join('')}</div>${pagCtrls}`;
+	const gridHtml =
+		avatars.length === 0
+			? `<div class="author-no-resources">${t('authorProfile.noResources')}</div>`
+			: `<div class="grid">${avatars.map(avatarMiniCard).join('')}</div>${pagCtrls}`;
 
 	return `<div class="author-profile-header">
 		${avatarHtml}

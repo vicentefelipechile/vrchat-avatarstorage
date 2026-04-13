@@ -77,10 +77,10 @@ export default {
 	home: {
 		welcome: 'Welcome to VRCStorage',
 		browse: 'Browse resources by category:',
-		latest: 'Latest Resources'
+		latest: 'Latest Resources',
 	},
 	card: {
-		view: 'View Details'
+		view: 'View Details',
 	},
 	avatar: {
 		options: 'Avatar Options',
@@ -100,13 +100,13 @@ export default {
 		of: 'of',
 		resources: 'resources',
 		prev: 'Previous',
-		next: 'Next'
+		next: 'Next',
 	},
 	pagination: {
 		prev: 'Previous',
 		next: 'Next',
 		page: 'Page',
-		of: 'of'
+		of: 'of',
 	},
 	admin: {
 		title: 'Admin Panel',
@@ -114,7 +114,8 @@ export default {
 		delete: 'Delete',
 		deleteConfirm: 'Are you sure you want to delete this comment?',
 		cleanupOrphaned: 'Cleanup Unassociated Files',
-		cleanupConfirm: 'Cleanup unassociated files? This will delete files uploaded more than 24 hours ago that are not associated with any resource.',
+		cleanupConfirm:
+			'Cleanup unassociated files? This will delete files uploaded more than 24 hours ago that are not associated with any resource.',
 		cleaning: 'Cleaning...',
 		cleanupSuccess: 'Cleanup successful: {count} files deleted',
 		error: 'Error',
@@ -194,7 +195,7 @@ export default {
 			title: 'Title',
 			desc: 'Description',
 			cat: 'Category',
-			tags: 'Tags'
+			tags: 'Tags',
 		},
 		noVisibleChanges: 'No visible content changes.',
 		types: {
@@ -317,79 +318,79 @@ export default {
 	wiki: {
 		title: 'Wiki - Dependencies Guide',
 		poiyomi: {
-			title: 'Poiyomi Toon Shader'
+			title: 'Poiyomi Toon Shader',
 		},
 		vrcfury: {
-			title: 'VRCFury'
+			title: 'VRCFury',
 		},
 		modularAvatar: {
-			title: 'Modular Avatar'
+			title: 'Modular Avatar',
 		},
 		physbones: {
-			title: 'PhysBones'
+			title: 'PhysBones',
 		},
 		syncdances: {
-			title: 'SyncDances'
+			title: 'SyncDances',
 		},
 		vrcquesttools: {
-			title: 'VRCQuestTools'
+			title: 'VRCQuestTools',
 		},
 		setup: {
-			title: 'Setup Guide'
+			title: 'Setup Guide',
 		},
 		faq: {
-			title: 'FAQ'
+			title: 'FAQ',
 		},
 		gogoloco: {
-			title: 'GoGo Loco'
+			title: 'GoGo Loco',
 		},
 		gogolocoNsfw: {
-			title: 'NSFW Locomotion'
+			title: 'NSFW Locomotion',
 		},
 		sps: {
-			title: 'SPS (Super Plug Shader)'
+			title: 'SPS (Super Plug Shader)',
 		},
 		dps: {
-			title: 'DPS (Dynamic Penetration System)'
+			title: 'DPS (Dynamic Penetration System)',
 		},
 		insideView: {
-			title: 'Inside View'
+			title: 'Inside View',
 		},
 		pcs: {
-			title: 'PCS (Penetration Contact System)'
+			title: 'PCS (Penetration Contact System)',
 		},
 		parameter: {
-			title: 'Avatar Parameters'
+			title: 'Avatar Parameters',
 		},
 		actionMenu: {
-			title: 'Action Menu'
+			title: 'Action Menu',
 		},
 		gestureManager: {
-			title: 'Gesture Manager Emulator'
+			title: 'Gesture Manager Emulator',
 		},
 		nsfwEssentials: {
-			title: 'NSFW Essentials'
+			title: 'NSFW Essentials',
 		},
 		haptics: {
-			title: 'Haptics Guide'
+			title: 'Haptics Guide',
 		},
 		comments: {
-			title: 'Wiki Comments'
+			title: 'Wiki Comments',
 		},
 		desktopPuppeteer: {
-			title: 'Desktop Puppeteer'
+			title: 'Desktop Puppeteer',
 		},
 		unityhubError: {
-			title: 'Unity Hub Error'
+			title: 'Unity Hub Error',
 		},
 		justkisssfx: {
-			title: 'JustKissSFX'
+			title: 'JustKissSFX',
 		},
 		categories: {
 			vrchat: 'VRChat',
 			dependencies: 'Dependencies',
 			erp: 'ERP',
-			informative: 'Informative'
+			informative: 'Informative',
 		},
 	},
 	dmca: {
@@ -441,7 +442,8 @@ export default {
 			bodyThirdReporterClaim: 'am reporting a possible copyright infringement in the specified resource.',
 			bodyDemand: 'Therefore, I demand:',
 			bodyProof: 'Proof of authenticity',
-			bodyDeclaration: 'I declare under penalty of perjury that the information provided is correct and that I am the rights holder or authorized to act on behalf of the rights holder.',
+			bodyDeclaration:
+				'I declare under penalty of perjury that the information provided is correct and that I am the rights holder or authorized to act on behalf of the rights holder.',
 			bodyDate: 'Date',
 		},
 		advanced: {
@@ -502,14 +504,16 @@ export default {
 			quest: 'Quest Only',
 			sdk: 'SDK',
 		},
-		sdk: {
+		sdk_version: {
+			title: 'SDK Version',
 			v3Default: 'SDK 3.0 (default)',
 			v3: 'SDK 3.0',
 			v2: 'SDK 2.0',
 			extras: 'Extras',
 			unityVersion: 'Unity Version',
 		},
-		gender: {
+		avatar_gender: {
+			title: 'Gender',
 			male: 'Male',
 			female: 'Female',
 			androgynous: 'Androgynous',
@@ -517,14 +521,16 @@ export default {
 			unisex: 'Unisex',
 			kemono: 'Kemono',
 		},
-		size: {
+		avatar_size: {
+			title: 'Size',
 			tiny: 'Tiny',
 			small: 'Small',
 			medium: 'Medium',
 			tall: 'Tall',
 			giant: 'Giant',
 		},
-		type: {
+		avatar_type: {
+			title: 'Type',
 			anime: 'Anime',
 			kemono: 'Kemono',
 			furry: 'Furry',
@@ -538,7 +544,8 @@ export default {
 			vtuber: 'VTuber',
 			other: 'Other',
 		},
-		extras: {
+		features: {
+			title: 'Features',
 			nsfw: 'NSFW',
 			physbones: 'PhysBones',
 			dps: 'DPS',
@@ -554,7 +561,7 @@ export default {
 			size: 'Avatar Size *',
 			type: 'Avatar Type *',
 			author: 'Original Author',
-			authorHint: '(avatar creator\'s name)',
+			authorHint: "(avatar creator's name)",
 			authorPlaceholder: 'Search author... or type name',
 			extras: 'Avatar Extras',
 		},
@@ -563,7 +570,8 @@ export default {
 			titleAdmin: 'Asset Meta',
 			type: 'Asset Type *',
 		},
-		assetType: {
+		asset_type: {
+			title: 'Asset Type',
 			prop: 'Prop',
 			shader: 'Shader',
 			particle: 'Particle FX',
@@ -588,7 +596,8 @@ export default {
 			baseAvatarHint: '(autocomplete or free name)',
 			baseAvatarPlaceholder: 'Search base avatar...',
 		},
-		clothesType: {
+		clothing_type: {
+			title: 'Clothing Type',
 			top: 'Top',
 			jacket: 'Jacket',
 			bottom: 'Bottom',
@@ -607,5 +616,30 @@ export default {
 			underwear: 'Underwear',
 			other: 'Other',
 		},
+	},
+	sort: {
+		newest: 'Newest',
+		mostDownloaded: 'Oldest',
+		aZ: 'A-Z',
+	},
+	filterPanel: {
+		noAssets: 'No assets found with these filters.',
+		noAvatars: 'No avatars found with these filters.',
+		prev: 'Previous',
+		next: 'Next',
+		pagePrefix: 'Page',
+		assetCountStr: 'asset(s)',
+		avatarCountStr: 'avatar(s)',
+		sortLabel: 'Sort by',
+		titleAssets: 'VRCStorage — Assets',
+		titleAvatars: 'VRCStorage — Avatars',
+		filterTitle: 'Filters',
+		reset: 'Reset Filters',
+	},
+	autorProfile: {
+		notFound: 'There is no author with this name.',
+		notFoundTitle: 'Author Not Found',
+		noResources: 'This author has not any resources related yet.',
+		avatarsTitle: 'Avatares',
 	},
 };

@@ -25,14 +25,34 @@ function buildAssetFilters(params: URLSearchParams): { clauses: string[]; bindin
 
 	const str = (key: string, col: string, allowed: string[]) => {
 		const v = params.get(key);
-		if (v && allowed.includes(v)) { clauses.push(`am.${col} = ?`); bindings.push(v); }
+		if (v && allowed.includes(v)) {
+			clauses.push(`am.${col} = ?`);
+			bindings.push(v);
+		}
 	};
 	const bool = (key: string, col: string) => {
 		const v = params.get(key);
-		if (v === '0' || v === '1') { clauses.push(`am.${col} = ?`); bindings.push(Number(v)); }
+		if (v === '0' || v === '1') {
+			clauses.push(`am.${col} = ?`);
+			bindings.push(Number(v));
+		}
 	};
 
-	str('asset_type', 'asset_type', ['prop', 'shader', 'particle', 'vfx', 'prefab', 'script', 'animation', 'avatar-base', 'texture-pack', 'sound', 'tool', 'hud', 'other']);
+	str('asset_type', 'asset_type', [
+		'prop',
+		'shader',
+		'particle',
+		'vfx',
+		'prefab',
+		'script',
+		'animation',
+		'avatar-base',
+		'texture-pack',
+		'sound',
+		'tool',
+		'hud',
+		'other',
+	]);
 	str('platform', 'platform', ['pc', 'quest', 'cross']);
 	str('sdk_version', 'sdk_version', ['sdk3', 'sdk2']);
 	str('unity_version', 'unity_version', ['2019', '2022']);
@@ -153,7 +173,11 @@ assets.post('/', async (c) => {
 	if (!user) return c.json({ error: 'Unauthorized' }, 401);
 
 	let body: unknown;
-	try { body = await c.req.json(); } catch { return c.json({ error: 'Invalid JSON' }, 400); }
+	try {
+		body = await c.req.json();
+	} catch {
+		return c.json({ error: 'Invalid JSON' }, 400);
+	}
 
 	const resourceParsed = ResourceSchema.safeParse(body);
 	if (!resourceParsed.success) return c.json({ error: 'Validation error', details: resourceParsed.error.issues }, 400);
@@ -167,9 +191,7 @@ assets.post('/', async (c) => {
 	const now = Math.floor(Date.now() / 1000);
 
 	try {
-		const dbUser = await c.env.DB.prepare('SELECT uuid FROM users WHERE username = ?')
-			.bind(user.username)
-			.first<{ uuid: string }>();
+		const dbUser = await c.env.DB.prepare('SELECT uuid FROM users WHERE username = ?').bind(user.username).first<{ uuid: string }>();
 		if (!dbUser) return c.json({ error: 'User not found' }, 404);
 
 		const insertResource = c.env.DB.prepare(
@@ -204,24 +226,24 @@ assets.put('/:uuid', async (c) => {
 	const uuid = c.req.param('uuid');
 
 	let body: unknown;
-	try { body = await c.req.json(); } catch { return c.json({ error: 'Invalid JSON' }, 400); }
+	try {
+		body = await c.req.json();
+	} catch {
+		return c.json({ error: 'Invalid JSON' }, 400);
+	}
 
 	const metaParsed = AssetMetaSchema.partial().safeParse(body);
 	if (!metaParsed.success) return c.json({ error: 'Validation error', details: metaParsed.error.issues }, 400);
 
 	try {
-		const existing = await c.env.DB.prepare('SELECT * FROM asset_meta WHERE resource_uuid = ?')
-			.bind(uuid)
-			.first<AssetMeta>();
+		const existing = await c.env.DB.prepare('SELECT * FROM asset_meta WHERE resource_uuid = ?').bind(uuid).first<AssetMeta>();
 		if (!existing) return c.json({ error: 'Asset metadata not found' }, 404);
 
 		const m = metaParsed.data;
 		const historyUuid = crypto.randomUUID();
 		const now = Math.floor(Date.now() / 1000);
 
-		const dbUser = await c.env.DB.prepare('SELECT uuid FROM users WHERE username = ?')
-			.bind(user.username)
-			.first<{ uuid: string }>();
+		const dbUser = await c.env.DB.prepare('SELECT uuid FROM users WHERE username = ?').bind(user.username).first<{ uuid: string }>();
 		if (!dbUser) return c.json({ error: 'User not found' }, 404);
 
 		const previousData = JSON.stringify({ meta_type: 'asset_meta', fields: existing });
@@ -235,13 +257,17 @@ assets.put('/:uuid', async (c) => {
 		const setClauses: string[] = [];
 		const setBindings: unknown[] = [];
 		for (const f of fields) {
-			if (m[f] !== undefined) { setClauses.push(`${f} = ?`); setBindings.push(m[f] ?? null); }
+			if (m[f] !== undefined) {
+				setClauses.push(`${f} = ?`);
+				setBindings.push(m[f] ?? null);
+			}
 		}
 		if (setClauses.length === 0) return c.json({ error: 'No fields to update' }, 400);
 
-		const updateMeta = c.env.DB.prepare(
-			`UPDATE asset_meta SET ${setClauses.join(', ')} WHERE resource_uuid = ?`,
-		).bind(...setBindings, uuid);
+		const updateMeta = c.env.DB.prepare(`UPDATE asset_meta SET ${setClauses.join(', ')} WHERE resource_uuid = ?`).bind(
+			...setBindings,
+			uuid,
+		);
 
 		await c.env.DB.batch([insertHistory, updateMeta]);
 

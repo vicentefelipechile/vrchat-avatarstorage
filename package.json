@@ -4,15 +4,15 @@
 	"type": "module",
 	"private": true,
 	"scripts": {
-		"deploy": "node src/frontend/build-frontend.mjs && wrangler deploy",
-		"deploy:test": "node src/frontend/build-frontend.mjs && wrangler versions upload",
-		"dev": "concurrently --kill-others --names \"esbuild,wrangler\" --prefix-colors \"cyan,yellow\" --delay \"0,3000\" \"node src/frontend/build-frontend.mjs --watch --dev\" \"wrangler dev\"",
+		"deploy": "node src/tools/build-frontend.mjs && wrangler deploy",
+		"deploy:test": "node src/tools/build-frontend.mjs && wrangler versions upload",
+		"dev": "concurrently --kill-others --names \"esbuild,wrangler\" --prefix-colors \"cyan,yellow\" --delay \"0,3000\" \"node src/tools/build-frontend.mjs --watch --dev\" \"wrangler dev\"",
 		"start": "wrangler dev",
 		"cf-typegen": "wrangler types",
 		"seed": "tsx src/test/setup/populate.ts",
-		"build-frontend": "node src/frontend/build-frontend.mjs",
-		"build-frontend:dev": "node src/frontend/build-frontend.mjs --dev",
-		"build-frontend:watch": "node src/frontend/build-frontend.mjs --watch --dev",
+		"build-frontend": "node src/tools/build-frontend.mjs",
+		"build-frontend:dev": "node src/tools/build-frontend.mjs --dev",
+		"build-frontend:watch": "node src/tools/build-frontend.mjs --watch --dev",
 		"i18n-manager": "node src/tools/i18n-manager.mjs"
 	},
 	"devDependencies": {

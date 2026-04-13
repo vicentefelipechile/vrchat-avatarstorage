@@ -5,6 +5,7 @@ A fast, scalable, and secure backend and frontend architecture for managing and 
 ## 🚀 Tech Stack
 
 This project leverages the Cloudflare developer ecosystem for edge execution and scalable resources:
+
 - **Framework**: [Hono](https://hono.dev/) (v4+) for routing and middleware.
 - **Language**: [TypeScript](https://www.typescriptlang.org/) for strong typing.
 - **Database**: **Cloudflare D1** (Serverless SQLite) for relational data (`c.env.DB`).
@@ -21,7 +22,7 @@ This project leverages the Cloudflare developer ecosystem for edge execution and
   - Secure login/registration (with Bcrypt for passwords).
   - Multi-Factor Authentication (2FA) via OTPAuth.
   - OAuth login support.
-- **File Upload & Downloads**: 
+- **File Upload & Downloads**:
   - Validates files securely using magic bytes instead of just extensions.
   - Efficient file serving through Cloudflare R2 via custom endpoints.
 - **Interactions**: Allows users to comment, tag, and add items to favorites.
@@ -54,30 +55,39 @@ This project leverages the Cloudflare developer ecosystem for edge execution and
 Ensure you have Node.js and npm installed. The whole environment runs effectively through `wrangler`.
 
 ### Installation
+
 ```bash
 npm install
 ```
 
 ### Local Development
+
 Starts a local development server mirroring Cloudflare architecture (D1, R2, KV).
+
 ```bash
 npm run dev
 ```
 
 ### Database Seeding
+
 Populates the local D1 database with initial data or mock users:
+
 ```bash
 npm run seed
 ```
 
 ### Generate Types
+
 Automatically updates `worker-configuration.d.ts` from `wrangler.jsonc` whenever bindings change:
+
 ```bash
 npm run cf-typegen
 ```
 
 ### Testing
+
 VRCStorage uses Vitest configured to run inside a Cloudflare Worker environment.
+
 ```bash
 # Run all tests
 npm test
@@ -87,7 +97,9 @@ npx vitest run path/to/file.test.ts
 ```
 
 ### Deployment
+
 Deploys the application directly to Cloudflare production:
+
 ```bash
 npm run deploy
 
@@ -96,10 +108,12 @@ npm run deploy:test
 ```
 
 ## 🛡️ Best Practices & Rules
+
 - **Validation**: All incoming requests inputs must be verified with Zod schemas and validated in `src/validators.ts`.
 - **Sanitization**: Uses `sanitizeHtml` Regex utilities (no DOMPurify) to secure inputs.
 - **Database Rules**: Uses prepared statements (`.bind(val)`) to prevent SQL Injection.
 - **Code Formatting**: Ensure to run `npx prettier --check .` for lint checks.
 
 ## 📄 License
+
 Check the root for details. All VRCStorage codebase runs as a Cloudflare Worker proxy.

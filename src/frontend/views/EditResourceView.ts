@@ -2,11 +2,11 @@
 // views/EditResourceView.ts — Edit resource metadata and add files
 // =========================================================================
 
-import { DataCache } from '../cache';
-import { t } from '../i18n';
+import type { RouteContext, Resource } from '../types';
 import { renderMarkdown, showToast } from '../utils';
 import { navigateTo } from '../router';
-import type { RouteContext, Resource } from '../types';
+import { DataCache } from '../cache';
+import { t } from '../i18n';
 
 // =========================================================================
 // Helpers
@@ -18,12 +18,19 @@ function uploadWithProgress(url: string, fd: FormData, onProgress: (p: number) =
 	return new Promise((resolve, reject) => {
 		const xhr = new XMLHttpRequest();
 		xhr.open('PUT', url);
-		xhr.upload.onprogress = (ev) => { if (ev.lengthComputable) onProgress((ev.loaded / ev.total) * 100); };
+		xhr.upload.onprogress = (ev) => {
+			if (ev.lengthComputable) onProgress((ev.loaded / ev.total) * 100);
+		};
 		xhr.onload = () => {
 			if (xhr.status >= 200 && xhr.status < 300) {
-				try { resolve(JSON.parse(xhr.responseText) as { r2_key: string; media_uuid: string }); }
-				catch { reject(new Error('Invalid JSON')); }
-			} else { reject(new Error(`Upload failed ${xhr.status}`)); }
+				try {
+					resolve(JSON.parse(xhr.responseText) as { r2_key: string; media_uuid: string });
+				} catch {
+					reject(new Error('Invalid JSON'));
+				}
+			} else {
+				reject(new Error(`Upload failed ${xhr.status}`));
+			}
 		};
 		xhr.onerror = () => reject(new Error('Network error'));
 		xhr.send(fd);
@@ -38,7 +45,7 @@ async function uploadLargeFile(file: File, onProgress: (p: number) => void): Pro
 		body: JSON.stringify({ filename: file.name, media_type: 'file' }),
 	});
 	if (!initRes.ok) throw new Error('Failed to initialize upload');
-	const { uploadId, key } = await initRes.json() as { uploadId: string; key: string };
+	const { uploadId, key } = (await initRes.json()) as { uploadId: string; key: string };
 
 	const parts: object[] = [];
 	let loaded = 0;
@@ -82,20 +89,20 @@ function buildAvatarMetaFields(): string {
 			<div class="form-group">
 				<label><strong>${t('meta.avatar.gender')}</strong></label>
 				<div class="radio-group" style="display:flex;gap:12px;flex-wrap:wrap;margin-top:6px">
-					<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="av-gender" value="male"> ${t('meta.gender.male')}</label>
-					<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="av-gender" value="female"> ${t('meta.gender.female')}</label>
-					<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="av-gender" value="androgynous"> ${t('meta.gender.androgynous')}</label>
-					<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="av-gender" value="undefined"> ${t('meta.gender.undefined')}</label>
+					<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="av-gender" value="male"> ${t('meta.avatar_gender.male')}</label>
+					<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="av-gender" value="female"> ${t('meta.avatar_gender.female')}</label>
+					<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="hidden" name="av-gender" value="androgynous" hide> ${t('meta.avatar_gender.androgynous')}</label>
+					<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="hidden" name="av-gender" value="undefined"> ${t('meta.avatar_gender.undefined')}</label>
 				</div>
 			</div>
 			<div class="form-group">
 				<label><strong>${t('meta.avatar.size')}</strong></label>
 				<div class="radio-group" style="display:flex;gap:12px;flex-wrap:wrap;margin-top:6px">
-					<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="av-body-size" value="tiny"> ${t('meta.size.tiny')}</label>
-					<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="av-body-size" value="small"> ${t('meta.size.small')}</label>
-					<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="av-body-size" value="medium"> ${t('meta.size.medium')}</label>
-					<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="av-body-size" value="tall"> ${t('meta.size.tall')}</label>
-					<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="av-body-size" value="giant"> ${t('meta.size.giant')}</label>
+					<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="av-body-size" value="tiny"> ${t('meta.avatar_size.tiny')}</label>
+					<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="av-body-size" value="small"> ${t('meta.avatar_size.small')}</label>
+					<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="av-body-size" value="medium"> ${t('meta.avatar_size.medium')}</label>
+					<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="av-body-size" value="tall"> ${t('meta.avatar_size.tall')}</label>
+					<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="av-body-size" value="giant"> ${t('meta.avatar_size.giant')}</label>
 				</div>
 			</div>
 		</div>
@@ -105,18 +112,18 @@ function buildAvatarMetaFields(): string {
 				<label><strong>${t('meta.avatar.type')}</strong></label>
 				<select id="av-avatar-type" class="form-control">
 					<option value="">${t('meta.select')}</option>
-					<option value="anime">${t('meta.type.anime')}</option>
-					<option value="kemono">${t('meta.type.kemono')}</option>
-					<option value="furry">${t('meta.type.furry')}</option>
-					<option value="human">${t('meta.type.human')}</option>
-					<option value="semi-realistic">${t('meta.type.semiRealistic')}</option>
-					<option value="chibi">${t('meta.type.chibi')}</option>
-					<option value="mecha">${t('meta.type.mecha')}</option>
-					<option value="monster">${t('meta.type.monster')}</option>
-					<option value="fantasy">${t('meta.type.fantasy')}</option>
-					<option value="sci-fi">${t('meta.type.sciFi')}</option>
-					<option value="vtuber">${t('meta.type.vtuber')}</option>
-					<option value="other">${t('meta.type.other')}</option>
+					<option value="anime">${t('meta.avatar_type.anime')}</option>
+					<option value="kemono">${t('meta.avatar_type.kemono')}</option>
+					<option value="furry">${t('meta.avatar_type.furry')}</option>
+					<option value="human">${t('meta.avatar_type.human')}</option>
+					<option value="semi-realistic">${t('meta.avatar_type.semiRealistic')}</option>
+					<option value="chibi">${t('meta.avatar_type.chibi')}</option>
+					<option value="mecha">${t('meta.avatar_type.mecha')}</option>
+					<option value="monster">${t('meta.avatar_type.monster')}</option>
+					<option value="fantasy">${t('meta.avatar_type.fantasy')}</option>
+					<option value="sci-fi">${t('meta.avatar_type.sciFi')}</option>
+					<option value="vtuber">${t('meta.avatar_type.vtuber')}</option>
+					<option value="other">${t('meta.avatar_type.other')}</option>
 				</select>
 			</div>
 			<div class="form-group">
@@ -149,13 +156,13 @@ function buildAvatarMetaFields(): string {
 			<div class="form-group">
 				<label><strong>${t('meta.avatar.extras')}</strong></label>
 				<div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:6px">
-					<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="av-nsfw"> ${t('meta.extras.nsfw')}</label>
-					<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="av-physbones"> ${t('meta.extras.physbones')}</label>
-					<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="av-dps"> ${t('meta.extras.dps')}</label>
-					<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="av-facetracking"> ${t('meta.extras.facetracking')}</label>
-					<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="av-gogoloco"> ${t('meta.extras.gogoloco')}</label>
-					<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="av-toggles"> ${t('meta.extras.toggles')}</label>
-					<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="av-questoptimized"> ${t('meta.extras.questOptimized')}</label>
+					<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="av-nsfw"> ${t('meta.features.nsfw')}</label>
+					<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="av-physbones"> ${t('meta.features.physbones')}</label>
+					<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="av-dps"> ${t('meta.features.dps')}</label>
+					<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="av-facetracking"> ${t('meta.features.facetracking')}</label>
+					<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="av-gogoloco"> ${t('meta.features.gogoloco')}</label>
+					<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="av-toggles"> ${t('meta.features.toggles')}</label>
+					<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="av-questoptimized"> ${t('meta.features.questOptimized')}</label>
 				</div>
 			</div>
 		</div>
@@ -198,10 +205,10 @@ function buildAssetMetaFields(): string {
 
 		<div class="upload-grid">
 			<div class="form-group">
-				<label><strong>${t('meta.sdk.title')}</strong></label>
+				<label><strong>${t('meta.sdk_version.title')}</strong></label>
 				<select id="asset-sdk" class="form-control">
-					<option value="sdk3">${t('meta.sdk.v3')}</option>
-					<option value="sdk2">${t('meta.sdk.v2')}</option>
+					<option value="sdk3">${t('meta.sdk_version.v3')}</option>
+					<option value="sdk2">${t('meta.sdk_version.v2')}</option>
 				</select>
 			</div>
 			<div class="form-group">
@@ -214,9 +221,9 @@ function buildAssetMetaFields(): string {
 		</div>
 
 		<div class="form-group" style="margin-top:8px">
-			<label><strong>${t('meta.extras')}</strong></label>
+			<label><strong>${t('meta.features')}</strong></label>
 			<div style="display:flex;gap:12px;margin-top:6px">
-				<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="asset-nsfw"> ${t('meta.extras.nsfw')}</label>
+				<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="asset-nsfw"> ${t('meta.features.nsfw')}</label>
 			</div>
 		</div>
 	</div>`;
@@ -271,10 +278,10 @@ function buildClothesMetaFields(): string {
 				</select>
 			</div>
 			<div class="form-group" style="margin-top:8px">
-				<label><strong>${t('meta.extras')}</strong></label>
+				<label><strong>${t('meta.features')}</strong></label>
 				<div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:6px">
-					<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="clothes-nsfw"> ${t('meta.extras.nsfw')}</label>
-					<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="clothes-physbones"> ${t('meta.extras.physbones')}</label>
+					<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="clothes-nsfw"> ${t('meta.features.nsfw')}</label>
+					<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="clothes-physbones"> ${t('meta.features.physbones')}</label>
 					<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="clothes-is-base"> ${t('meta.clothes.isBase')}</label>
 				</div>
 			</div>
@@ -449,10 +456,10 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 			try {
 				const metaRes = await fetch(metaEndpoint);
 				if (metaRes.ok) {
-					const meta = await metaRes.json() as Record<string, unknown>;
+					const meta = (await metaRes.json()) as Record<string, unknown>;
 					if (cat === 'avatars') {
 						setRadioValue('av-gender', meta.gender as string);
-						setRadioValue('av-body-size', meta.body_size as string);
+						setRadioValue('av-body-size', meta.avatar_size as string);
 						setSelectValue('av-avatar-type', meta.avatar_type as string);
 						setSelectValue('av-platform', meta.platform as string);
 						setSelectValue('av-sdk', meta.sdk_version as string);
@@ -494,7 +501,9 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 						}
 					}
 				}
-			} catch { /* ignore, meta may not exist yet */ }
+			} catch {
+				/* ignore, meta may not exist yet */
+			}
 		}
 	}
 
@@ -526,15 +535,24 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 			clearTimeout(authorDebounce);
 			if (authorUuidInput) authorUuidInput.value = '';
 			const q = authorInput.value.trim();
-			if (q.length < 2) { authorSuggestions.style.display = 'none'; return; }
+			if (q.length < 2) {
+				authorSuggestions.style.display = 'none';
+				return;
+			}
 			authorDebounce = setTimeout(async () => {
 				try {
 					const res = await fetch(`/api/authors/search?q=${encodeURIComponent(q)}`);
-					const data = await res.json() as { uuid: string; name: string; slug: string }[];
-					if (!data.length) { authorSuggestions.style.display = 'none'; return; }
-					authorSuggestions.innerHTML = data.map((a) =>
-						`<div class="suggestion-item" data-uuid="${a.uuid}" data-name="${a.name}" style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border-color)">${a.name}</div>`,
-					).join('');
+					const data = (await res.json()) as { uuid: string; name: string; slug: string }[];
+					if (!data.length) {
+						authorSuggestions.style.display = 'none';
+						return;
+					}
+					authorSuggestions.innerHTML = data
+						.map(
+							(a) =>
+								`<div class="suggestion-item" data-uuid="${a.uuid}" data-name="${a.name}" style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border-color)">${a.name}</div>`,
+						)
+						.join('');
 					authorSuggestions.style.display = 'block';
 					authorSuggestions.querySelectorAll<HTMLElement>('.suggestion-item').forEach((item) => {
 						item.addEventListener('click', () => {
@@ -543,7 +561,9 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 							authorSuggestions.style.display = 'none';
 						});
 					});
-				} catch { authorSuggestions.style.display = 'none'; }
+				} catch {
+					authorSuggestions.style.display = 'none';
+				}
 			}, 300);
 		});
 		document.addEventListener('click', (e) => {
@@ -565,16 +585,25 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 			clearTimeout(baseDebounce);
 			if (clothesBaseUuid) clothesBaseUuid.value = '';
 			const q = clothesBaseInput.value.trim();
-			if (q.length < 2) { clothesBaseSuggestions.style.display = 'none'; return; }
+			if (q.length < 2) {
+				clothesBaseSuggestions.style.display = 'none';
+				return;
+			}
 			baseDebounce = setTimeout(async () => {
 				try {
 					const res = await fetch(`/api/resources?category=avatars&q=${encodeURIComponent(q)}&limit=10`);
-					const data = await res.json() as { resources?: { uuid: string; title: string }[] };
+					const data = (await res.json()) as { resources?: { uuid: string; title: string }[] };
 					const items = data.resources ?? [];
-					if (!items.length) { clothesBaseSuggestions.style.display = 'none'; return; }
-					clothesBaseSuggestions.innerHTML = items.map((r) =>
-						`<div class="suggestion-item" data-uuid="${r.uuid}" data-name="${r.title}" style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border-color)">${r.title}</div>`,
-					).join('');
+					if (!items.length) {
+						clothesBaseSuggestions.style.display = 'none';
+						return;
+					}
+					clothesBaseSuggestions.innerHTML = items
+						.map(
+							(r) =>
+								`<div class="suggestion-item" data-uuid="${r.uuid}" data-name="${r.title}" style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border-color)">${r.title}</div>`,
+						)
+						.join('');
 					clothesBaseSuggestions.style.display = 'block';
 					clothesBaseSuggestions.querySelectorAll<HTMLElement>('.suggestion-item').forEach((item) => {
 						item.addEventListener('click', () => {
@@ -583,7 +612,9 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 							clothesBaseSuggestions.style.display = 'none';
 						});
 					});
-				} catch { clothesBaseSuggestions.style.display = 'none'; }
+				} catch {
+					clothesBaseSuggestions.style.display = 'none';
+				}
 			}, 300);
 		});
 		document.addEventListener('click', (e) => {
@@ -611,7 +642,10 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 	form.addEventListener('submit', async (e) => {
 		e.preventDefault();
 		const btn = form.querySelector<HTMLButtonElement>('#edit-submit-btn')!;
-		const restore = () => { btn.disabled = false; btn.textContent = t('settings.save'); };
+		const restore = () => {
+			btn.disabled = false;
+			btn.textContent = t('settings.save');
+		};
 
 		btn.disabled = true;
 		btn.textContent = t('edit.saving');
@@ -653,7 +687,10 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 			}
 
 			const tagsRaw = (document.getElementById('tags') as HTMLInputElement).value;
-			const tags = tagsRaw.split(',').map((s) => s.trim()).filter(Boolean);
+			const tags = tagsRaw
+				.split(',')
+				.map((s) => s.trim())
+				.filter(Boolean);
 			const categoryVal = (document.getElementById('category') as HTMLSelectElement).value;
 			const description = descEl.value;
 			const title = (document.getElementById('title') as HTMLInputElement).value;
@@ -672,7 +709,7 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 			});
 
 			if (!resourceRes.ok) {
-				const data = await resourceRes.json() as { error?: string };
+				const data = (await resourceRes.json()) as { error?: string };
 				throw new Error(data.error ?? 'Update failed');
 			}
 
@@ -690,7 +727,7 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 
 					if (categoryVal === 'avatars') {
 						const gender = (document.querySelector('input[name="av-gender"]:checked') as HTMLInputElement | null)?.value;
-						const body_size = (document.querySelector('input[name="av-body-size"]:checked') as HTMLInputElement | null)?.value;
+						const avatar_size = (document.querySelector('input[name="av-body-size"]:checked') as HTMLInputElement | null)?.value;
 						const avatar_type = (document.getElementById('av-avatar-type') as HTMLSelectElement).value;
 						const platform = (document.getElementById('av-platform') as HTMLSelectElement).value;
 						const sdk_version = (document.getElementById('av-sdk') as HTMLSelectElement).value;
@@ -705,11 +742,19 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 						const author_uuid = (document.getElementById('av-author-uuid') as HTMLInputElement).value.trim() || null;
 						metaBody = {
 							...(gender && { gender }),
-							...(body_size && { body_size }),
+							...(avatar_size && { avatar_size }),
 							...(avatar_type && { avatar_type }),
-							platform, sdk_version,
-							is_nsfw, has_physbones, has_dps, has_face_tracking, has_gogoloco, has_toggles, is_quest_optimized,
-							author_name_raw, author_uuid,
+							platform,
+							sdk_version,
+							is_nsfw,
+							has_physbones,
+							has_dps,
+							has_face_tracking,
+							has_gogoloco,
+							has_toggles,
+							is_quest_optimized,
+							author_name_raw,
+							author_uuid,
 						};
 					} else if (categoryVal === 'assets') {
 						metaBody = {
@@ -731,7 +776,12 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 						metaBody = {
 							...(gender_fit && { gender_fit }),
 							...(clothing_type && { clothing_type }),
-							platform, is_nsfw, has_physbones, is_base, base_avatar_uuid, base_avatar_name_raw,
+							platform,
+							is_nsfw,
+							has_physbones,
+							is_base,
+							base_avatar_uuid,
+							base_avatar_name_raw,
 						};
 					}
 
@@ -742,7 +792,7 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 							body: JSON.stringify(metaBody),
 						});
 						if (!metaRes.ok) {
-							const data = await metaRes.json() as { error?: string };
+							const data = (await metaRes.json()) as { error?: string };
 							// Non-fatal: meta update failed but resource was saved
 							showToast(`Meta update: ${data.error ?? 'failed'}`, 'warning');
 						}

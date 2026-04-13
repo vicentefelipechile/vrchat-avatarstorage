@@ -101,9 +101,9 @@ resources.get('/', async (c) => {
 	const orderColumn = SORT_COLUMNS[sortBy ?? ''] ?? 'r.created_at';
 	const tagsList = tagsParam
 		? tagsParam
-			.split(',')
-			.map((t) => t.trim())
-			.filter(Boolean)
+				.split(',')
+				.map((t) => t.trim())
+				.filter(Boolean)
 		: [];
 
 	try {
@@ -178,7 +178,7 @@ resources.get('/:uuid', async (c) => {
             rm_ref.r2_key     AS reference_image_key,
             -- Avatar metadata
             am.gender            AS av_gender,
-            am.body_size         AS av_body_size,
+            am.avatar_size       AS av_avatar_size,
             am.avatar_type       AS av_avatar_type,
             am.is_nsfw           AS av_is_nsfw,
             am.has_physbones     AS av_has_physbones,
@@ -276,8 +276,8 @@ resources.get('/:uuid', async (c) => {
 			const cat = row.category as string;
 			if (cat === 'avatars' && row.av_gender !== null && row.av_gender !== undefined) {
 				return {
-					gender: row.av_gender,
-					body_size: row.av_body_size,
+					avatar_gender: row.av_gender,
+					avatar_size: row.av_avatar_size,
 					avatar_type: row.av_avatar_type,
 					is_nsfw: row.av_is_nsfw,
 					has_physbones: row.av_has_physbones,
@@ -494,9 +494,7 @@ resources.put('/:uuid', async (c) => {
 	const description = parsed.data.description ?? resource.description;
 	const category = parsed.data.category ?? resource.category;
 	const isActive =
-		isAdmin && typeof body.is_active === 'number' && (body.is_active === 0 || body.is_active === 1)
-			? body.is_active
-			: resource.is_active;
+		isAdmin && typeof body.is_active === 'number' && (body.is_active === 0 || body.is_active === 1) ? body.is_active : resource.is_active;
 	const tags: string[] = parsed.data.tags ?? [];
 
 	if (isAdmin && tags.length > 20) {

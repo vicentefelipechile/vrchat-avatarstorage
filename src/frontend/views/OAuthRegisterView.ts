@@ -89,7 +89,7 @@ export function oauthRegisterAfter(ctx: RouteContext): void {
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ token, username }),
 			});
-			const data = await res.json() as { success?: boolean; error?: string };
+			const data = (await res.json()) as { success?: boolean; error?: string };
 
 			if (res.ok && data.success) {
 				localStorage.removeItem('auth_state');

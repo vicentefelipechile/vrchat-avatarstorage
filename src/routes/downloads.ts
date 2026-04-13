@@ -28,7 +28,16 @@ import { Media } from '../types';
  * This prevents the attack chain: upload malicious .html/.svg → share R2 link
  * → victim opens link → XSS via R2 content.
  */
-const SAFE_CONTENT_TYPE_PREFIXES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif', 'video/mp4', 'video/webm', 'video/ogg'];
+const SAFE_CONTENT_TYPE_PREFIXES = [
+	'image/jpeg',
+	'image/png',
+	'image/gif',
+	'image/webp',
+	'image/avif',
+	'video/mp4',
+	'video/webm',
+	'video/ogg',
+];
 
 function safeContentType(raw: string | undefined | null): string {
 	const ct = (raw ?? '').toLowerCase().split(';')[0].trim();

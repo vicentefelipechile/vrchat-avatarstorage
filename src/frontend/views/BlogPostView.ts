@@ -93,7 +93,7 @@ export async function blogPostView(ctx: RouteContext): Promise<string> {
 		const res = await fetch(`/api/blog/${id}`);
 		if (res.status === 404) return `<p class="error-text">${t('blog.notFound')}</p>`;
 		if (!res.ok) throw new Error();
-		post = await res.json() as BlogPost;
+		post = (await res.json()) as BlogPost;
 	} catch {
 		return `<p class="error-text">${t('common.error')}</p>`;
 	}
@@ -116,7 +116,12 @@ export async function blogPostView(ctx: RouteContext): Promise<string> {
 		: '';
 
 	const commentFormHtml = window.appState.isLoggedIn
-		? commentEditorHtml({ formId: 'blog-comment-form', textareaId: 'blog-comment-text', turnstileId: 'blog-turnstile-container', placeholder: t('blog.commentPlaceholder') })
+		? commentEditorHtml({
+				formId: 'blog-comment-form',
+				textareaId: 'blog-comment-text',
+				turnstileId: 'blog-turnstile-container',
+				placeholder: t('blog.commentPlaceholder'),
+			})
 		: `<p class="login-prompt"><a href="/login" data-link>${t('blog.loginToComment')}</a></p>`;
 
 	return `
@@ -154,9 +159,11 @@ export async function blogPostAfter(ctx: RouteContext): Promise<void> {
 	if (contentEl) {
 		try {
 			const res = await fetch(`/api/blog/${id}`);
-			const post = await res.json() as BlogPost;
+			const post = (await res.json()) as BlogPost;
 			renderMarkdown(contentEl, post.content);
-		} catch { /* ignore — content already shown */ }
+		} catch {
+			/* ignore — content already shown */
+		}
 	}
 
 	// Delete button
@@ -182,7 +189,7 @@ export async function blogPostAfter(ctx: RouteContext): Promise<void> {
 				body: JSON.stringify({ text, token }),
 			});
 			if (!res.ok) {
-				const err = await res.json() as { error?: string };
+				const err = (await res.json()) as { error?: string };
 				throw new Error(err.error ?? t('common.error'));
 			}
 		},

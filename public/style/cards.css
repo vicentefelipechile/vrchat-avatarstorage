@@ -5,7 +5,7 @@
 /* ---- Grid ---- */
 .grid {
 	display: grid;
-	grid-template-columns: repeat(5, 1fr);
+	grid-template-columns: repeat(3, 1fr);
 	gap: 15px;
 }
 
@@ -77,8 +77,13 @@
 }
 
 @keyframes shimmer {
-	0% { background-position: 200% 0; }
-	100% { background-position: -200% 0; }
+	0% {
+		background-position: 200% 0;
+	}
+
+	100% {
+		background-position: -200% 0;
+	}
 }
 
 .card-badge {
@@ -203,15 +208,21 @@
 }
 
 @media (max-width: 1200px) {
-	.loading-skeleton { grid-template-columns: repeat(3, 1fr); }
+	.loading-skeleton {
+		grid-template-columns: repeat(3, 1fr);
+	}
 }
 
 @media (max-width: 768px) {
-	.loading-skeleton { grid-template-columns: repeat(2, 1fr); }
+	.loading-skeleton {
+		grid-template-columns: repeat(2, 1fr);
+	}
 }
 
 @media (max-width: 480px) {
-	.loading-skeleton { grid-template-columns: 1fr; }
+	.loading-skeleton {
+		grid-template-columns: 1fr;
+	}
 }
 
 .skeleton-card {
@@ -231,8 +242,13 @@
 }
 
 @keyframes skeleton-loading {
-	0% { background-position: 200% 0; }
-	100% { background-position: -200% 0; }
+	0% {
+		background-position: 200% 0;
+	}
+
+	100% {
+		background-position: -200% 0;
+	}
 }
 
 /* ---- Hero section (home) ---- */

@@ -45,8 +45,11 @@ interface CachedAuth {
 const cachedAuth = localStorage.getItem('auth_state');
 let initialAuth: CachedAuth = { isLoggedIn: false, isAdmin: false, user: null };
 if (cachedAuth) {
-	try { initialAuth = JSON.parse(cachedAuth) as CachedAuth; }
-	catch { /* ignore */ }
+	try {
+		initialAuth = JSON.parse(cachedAuth) as CachedAuth;
+	} catch {
+		/* ignore */
+	}
 }
 
 window.appState = {
@@ -88,12 +91,14 @@ route('/assets', assetsView, { after: assetsAfter });
 route('/clothes', clothesView, { after: clothesAfter });
 route('/authors/:slug', authorView, { after: authorAfter });
 
-notFound(async () => `
+notFound(
+	async () => `
 	<div style="padding:60px;text-align:center">
 		<h2>404 — ${t('common.notFound') || 'Page not found'}</h2>
 		<a href="/" data-link style="color:var(--accent)">${t('nav.home') || 'Go home'}</a>
 	</div>
-`);
+`,
+);
 
 // =========================================================================
 // Nav DOM
@@ -141,11 +146,14 @@ async function updateNav(): Promise<void> {
 		window.appState.isLoggedIn = data.loggedIn;
 		window.appState.isAdmin = data.is_admin;
 		window.appState.user = data.loggedIn ? data : null;
-		localStorage.setItem('auth_state', JSON.stringify({
-			isLoggedIn: data.loggedIn,
-			isAdmin: data.is_admin,
-			user: data.loggedIn ? data : null,
-		}));
+		localStorage.setItem(
+			'auth_state',
+			JSON.stringify({
+				isLoggedIn: data.loggedIn,
+				isAdmin: data.is_admin,
+				user: data.loggedIn ? data : null,
+			}),
+		);
 	} catch {
 		localStorage.removeItem('auth_state');
 		window.appState = { isLoggedIn: false, isAdmin: false, user: null };
@@ -219,7 +227,7 @@ function initVersionModal(): void {
 		try {
 			const res = await fetch('/api/version');
 			if (!res.ok) throw new Error();
-			populateVersionInfo(await res.json() as VersionInfo);
+			populateVersionInfo((await res.json()) as VersionInfo);
 			loading?.style.setProperty('display', 'none');
 			dataEl?.style.setProperty('display', 'block');
 			loaded = true;
@@ -229,12 +237,18 @@ function initVersionModal(): void {
 		}
 	};
 
-	const close = () => { modal.style.display = 'none'; };
+	const close = () => {
+		modal.style.display = 'none';
+	};
 
 	btn.addEventListener('click', open);
 	closeBtn?.addEventListener('click', close);
-	modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
-	document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && modal.style.display === 'flex') close(); });
+	modal.addEventListener('click', (e) => {
+		if (e.target === modal) close();
+	});
+	document.addEventListener('keydown', (e) => {
+		if (e.key === 'Escape' && modal.style.display === 'flex') close();
+	});
 }
 
 // =========================================================================
@@ -281,12 +295,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 		});
 
 		// Block Escape key and backdrop clicks while gate is visible
-		document.addEventListener('keydown', (e) => {
-			if (ageGateOverlay.style.display !== 'none' && e.key === 'Escape') {
-				e.preventDefault();
-				e.stopPropagation();
-			}
-		}, true);
+		document.addEventListener(
+			'keydown',
+			(e) => {
+				if (ageGateOverlay.style.display !== 'none' && e.key === 'Escape') {
+					e.preventDefault();
+					e.stopPropagation();
+				}
+			},
+			true,
+		);
 	}
 
 	// Mobile menu
@@ -385,7 +403,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 			const flash = JSON.parse(flashRaw) as { message: string; type?: string };
 			// Slight delay so the page content renders first
 			setTimeout(() => showToast(flash.message, (flash.type as 'info' | 'success' | 'error' | 'warning') ?? 'info', 4000), 300);
-		} catch { /* ignore */ }
+		} catch {
+			/* ignore */
+		}
 	}
 
 	// OAuth login toast — shown after Google redirects to /?login=google

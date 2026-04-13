@@ -11,8 +11,8 @@ CREATE TABLE IF NOT EXISTS avatar_meta (
 	resource_uuid        TEXT PRIMARY KEY,
 	author_uuid          TEXT,
 	author_name_raw      TEXT,
-	gender               TEXT NOT NULL DEFAULT 'undefined',
-	body_size            TEXT NOT NULL DEFAULT 'medium',
+	gender        		NOT NULL DEFAULT 'undefined',
+	avatar_size          TEXT NOT NULL DEFAULT 'medium',
 	avatar_type          TEXT NOT NULL DEFAULT 'other',
 	is_nsfw              INTEGER NOT NULL DEFAULT 0,
 	has_physbones        INTEGER NOT NULL DEFAULT 0,
@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS avatar_meta (
 
 CREATE INDEX IF NOT EXISTS idx_avatar_meta_gender            ON avatar_meta (gender);
 CREATE INDEX IF NOT EXISTS idx_avatar_meta_avatar_type       ON avatar_meta (avatar_type);
-CREATE INDEX IF NOT EXISTS idx_avatar_meta_body_size         ON avatar_meta (body_size);
+CREATE INDEX IF NOT EXISTS idx_avatar_meta_avatar_size       ON avatar_meta (avatar_size);
 CREATE INDEX IF NOT EXISTS idx_avatar_meta_is_nsfw           ON avatar_meta (is_nsfw);
 CREATE INDEX IF NOT EXISTS idx_avatar_meta_platform          ON avatar_meta (platform);
 CREATE INDEX IF NOT EXISTS idx_avatar_meta_author_uuid       ON avatar_meta (author_uuid);

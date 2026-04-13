@@ -45,18 +45,18 @@ function normalizeTags(tags: unknown): string[] {
 // =========================================================================
 
 const META_FIELD_LABELS: Record<string, string> = {
-	gender: 'Género',
-	body_size: 'Tamaño',
-	avatar_type: 'Tipo de avatar',
-	is_nsfw: 'NSFW',
-	has_physbones: 'PhysBones',
-	has_face_tracking: 'Face Tracking',
-	has_dps: 'DPS',
-	has_gogoloco: 'GoGo Loco',
-	has_toggles: 'Toggles',
-	is_quest_optimized: 'Quest Optimized',
-	sdk_version: 'SDK',
-	platform: 'Plataforma',
+	avatar_gender: 'meta.avatar.gender',
+	avatar_size: 'meta.avatar.size',
+	avatar_type: 'meta.avatar.type',
+	is_nsfw: 'meta.features.nsfw',
+	has_physbones: 'meta.features.physbones',
+	has_face_tracking: 'meta.features.face_tracking',
+	has_dps: 'meta.features.dps',
+	has_gogoloco: 'meta.features.gogoloco',
+	has_toggles: 'meta.features.toggles',
+	is_quest_optimized: 'meta.features.questOptimized',
+	sdk_version: 'meta.sdk_version.title',
+	platform: 'meta.platform.target',
 	author_name_raw: 'Autor (texto)',
 	author_uuid: 'Autor vinculado',
 	asset_type: 'Tipo de asset',
@@ -67,12 +67,11 @@ const META_FIELD_LABELS: Record<string, string> = {
 	base_avatar_uuid: 'Avatar base',
 	base_avatar_name_raw: 'Avatar base (texto)',
 	has_physbones_clothes: 'PhysBones',
-};
+} as const;
 
 function formatMetaValue(key: string, value: unknown): string {
 	if (value === null || value === undefined) return '—';
-	if (typeof value === 'number' && (key.startsWith('has_') || key.startsWith('is_')))
-		return value === 1 ? '✓ Sí' : '✗ No';
+	if (typeof value === 'number' && (key.startsWith('has_') || key.startsWith('is_'))) return value === 1 ? '✓ Sí' : '✗ No';
 	return String(value);
 }
 
@@ -87,7 +86,7 @@ async function fetchCurrentMeta(uuid: string, metaType: MetaEditSnapshot['meta_t
 	try {
 		const res = await fetch(url);
 		if (!res.ok) return null;
-		const data = await res.json() as Record<string, unknown>;
+		const data = (await res.json()) as Record<string, unknown>;
 		// The endpoint returns a flat object where meta fields are top-level or nested
 		// assets/avatars/clothes routes return flat rows, extract everything except uuid/title/is_active
 		const ignored = new Set(['uuid', 'title', 'is_active', 'resource_uuid']);
@@ -108,7 +107,7 @@ function renderMetaDiff(snapshot: MetaEditSnapshot, current: MetaEditFields | nu
 		// Can't fetch current state — just show the snapshot as-is
 		const rows = Object.entries(prev)
 			.map(([k, v]) => {
-				const label = META_FIELD_LABELS[k] || k;
+				const label = t(META_FIELD_LABELS[k] || k);
 				return `<tr>
 					<td style="color:var(--text-muted);font-size:0.85em">${label}</td>
 					<td><del style="color:#b31d28;background:#ffeef0;padding:1px 4px">${formatMetaValue(k, v)}</del></td>
@@ -186,9 +185,11 @@ async function historyCard(entry: HistoryEntry, current: Resource, resourceUuid:
 	if (entry.change_type === 'meta_edit') {
 		let snapshot: MetaEditSnapshot | null = null;
 		try {
-			const raw = (entry.previous_data as unknown) as string;
-			snapshot = typeof raw === 'string' ? JSON.parse(raw) as MetaEditSnapshot : (raw as unknown as MetaEditSnapshot);
-		} catch { snapshot = null; }
+			const raw = entry.previous_data as unknown as string;
+			snapshot = typeof raw === 'string' ? (JSON.parse(raw) as MetaEditSnapshot) : (raw as unknown as MetaEditSnapshot);
+		} catch {
+			snapshot = null;
+		}
 
 		if (!snapshot) {
 			changesHtml = `<em style="color:#666">Snapshot de metadatos inválido</em>`;
@@ -203,10 +204,12 @@ async function historyCard(entry: HistoryEntry, current: Resource, resourceUuid:
 				try {
 					const authorRes = await fetch(`/api/authors/${currAuthorUuid}`);
 					if (authorRes.ok) {
-						const a = await authorRes.json() as { name?: string; slug?: string };
+						const a = (await authorRes.json()) as { name?: string; slug?: string };
 						authorName = a.name ?? a.slug;
 					}
-				} catch { /* fallback to UUID */ }
+				} catch {
+					/* fallback to UUID */
+				}
 			}
 
 			changesHtml = renderMetaDiff(snapshot, currentMeta, authorName);
@@ -269,11 +272,7 @@ async function historyCard(entry: HistoryEntry, current: Resource, resourceUuid:
 		if (!changesHtml) changesHtml = `<em style="color:#666">${t('history.noVisibleChanges')}</em>`;
 	}
 
-	const badgeColor = entry.change_type === 'meta_edit'
-		? 'badge-purple'
-		: entry.change_type === 'approval'
-			? 'badge-green'
-			: 'badge-blue';
+	const badgeColor = entry.change_type === 'meta_edit' ? 'badge-purple' : entry.change_type === 'approval' ? 'badge-green' : 'badge-blue';
 
 	return `
 		<div class="history-card" style="background:var(--bg-card);border:1px solid var(--border-color);padding:20px;margin-bottom:20px">

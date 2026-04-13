@@ -79,9 +79,7 @@ authors.get('/search', async (c) => {
 	if (!q.trim()) return c.json([]);
 
 	try {
-		const rows = await c.env.DB.prepare(
-			`SELECT uuid, name, slug FROM avatar_authors WHERE name LIKE ? LIMIT 10`,
-		)
+		const rows = await c.env.DB.prepare(`SELECT uuid, name, slug FROM avatar_authors WHERE name LIKE ? LIMIT 10`)
 			.bind(`%${q}%`)
 			.all<{ uuid: string; name: string; slug: string }>();
 
@@ -104,15 +102,11 @@ authors.get('/:slug', async (c) => {
 	const offset = (page - 1) * limit;
 
 	try {
-		const author = await c.env.DB.prepare('SELECT * FROM avatar_authors WHERE slug = ?')
-			.bind(slug)
-			.first<AvatarAuthor>();
+		const author = await c.env.DB.prepare('SELECT * FROM avatar_authors WHERE slug = ?').bind(slug).first<AvatarAuthor>();
 
 		if (!author) return c.json({ error: 'Author not found' }, 404);
 
-		const countResult = await c.env.DB.prepare(
-			`SELECT COUNT(*) as total FROM avatar_meta WHERE author_uuid = ?`,
-		)
+		const countResult = await c.env.DB.prepare(`SELECT COUNT(*) as total FROM avatar_meta WHERE author_uuid = ?`)
 			.bind(author.uuid)
 			.first<{ total: number }>();
 		const total = countResult?.total ?? 0;
@@ -152,7 +146,11 @@ authors.post('/', async (c) => {
 	if (!user.is_admin) return c.json({ error: 'Forbidden' }, 403);
 
 	let body: unknown;
-	try { body = await c.req.json(); } catch { return c.json({ error: 'Invalid JSON' }, 400); }
+	try {
+		body = await c.req.json();
+	} catch {
+		return c.json({ error: 'Invalid JSON' }, 400);
+	}
 
 	const parsed = AvatarAuthorSchema.safeParse(body);
 	if (!parsed.success) return c.json({ error: 'Validation error', details: parsed.error.issues }, 400);
@@ -166,11 +164,23 @@ authors.post('/', async (c) => {
 		await c.env.DB.prepare(
 			`INSERT INTO avatar_authors (uuid, name, slug, description, avatar_url, website_url, twitter_url, booth_url, gumroad_url, patreon_url, discord_url, created_at, updated_at)
 			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		).bind(
-			uuid, d.name, slug, d.description ?? null, d.avatar_url ?? null, d.website_url ?? null,
-			d.twitter_url ?? null, d.booth_url ?? null, d.gumroad_url ?? null, d.patreon_url ?? null,
-			d.discord_url ?? null, now, now,
-		).run();
+		)
+			.bind(
+				uuid,
+				d.name,
+				slug,
+				d.description ?? null,
+				d.avatar_url ?? null,
+				d.website_url ?? null,
+				d.twitter_url ?? null,
+				d.booth_url ?? null,
+				d.gumroad_url ?? null,
+				d.patreon_url ?? null,
+				d.discord_url ?? null,
+				now,
+				now,
+			)
+			.run();
 
 		return c.json({ uuid, slug }, 201);
 	} catch (e: unknown) {
@@ -195,30 +205,45 @@ authors.put('/:slug', async (c) => {
 	const slug = c.req.param('slug');
 
 	let body: unknown;
-	try { body = await c.req.json(); } catch { return c.json({ error: 'Invalid JSON' }, 400); }
+	try {
+		body = await c.req.json();
+	} catch {
+		return c.json({ error: 'Invalid JSON' }, 400);
+	}
 
 	const parsed = AvatarAuthorSchema.partial().safeParse(body);
 	if (!parsed.success) return c.json({ error: 'Validation error', details: parsed.error.issues }, 400);
 
-	const author = await c.env.DB.prepare('SELECT uuid FROM avatar_authors WHERE slug = ?')
-		.bind(slug)
-		.first<{ uuid: string }>();
+	const author = await c.env.DB.prepare('SELECT uuid FROM avatar_authors WHERE slug = ?').bind(slug).first<{ uuid: string }>();
 	if (!author) return c.json({ error: 'Author not found' }, 404);
 
 	const d = parsed.data;
 	const now = Math.floor(Date.now() / 1000);
 
-	const fields = ['name', 'description', 'avatar_url', 'website_url', 'twitter_url', 'booth_url', 'gumroad_url', 'patreon_url', 'discord_url'] as const;
+	const fields = [
+		'name',
+		'description',
+		'avatar_url',
+		'website_url',
+		'twitter_url',
+		'booth_url',
+		'gumroad_url',
+		'patreon_url',
+		'discord_url',
+	] as const;
 	const setClauses: string[] = ['updated_at = ?'];
 	const setBindings: unknown[] = [now];
 	for (const f of fields) {
-		if (d[f] !== undefined) { setClauses.push(`${f} = ?`); setBindings.push(d[f] ?? null); }
+		if (d[f] !== undefined) {
+			setClauses.push(`${f} = ?`);
+			setBindings.push(d[f] ?? null);
+		}
 	}
 
 	try {
-		await c.env.DB.prepare(
-			`UPDATE avatar_authors SET ${setClauses.join(', ')} WHERE uuid = ?`,
-		).bind(...setBindings, author.uuid).run();
+		await c.env.DB.prepare(`UPDATE avatar_authors SET ${setClauses.join(', ')} WHERE uuid = ?`)
+			.bind(...setBindings, author.uuid)
+			.run();
 
 		return c.json({ success: true });
 	} catch (e) {
@@ -240,9 +265,7 @@ authors.delete('/:slug', async (c) => {
 	const slug = c.req.param('slug');
 
 	try {
-		const author = await c.env.DB.prepare('SELECT uuid FROM avatar_authors WHERE slug = ?')
-			.bind(slug)
-			.first<{ uuid: string }>();
+		const author = await c.env.DB.prepare('SELECT uuid FROM avatar_authors WHERE slug = ?').bind(slug).first<{ uuid: string }>();
 		if (!author) return c.json({ error: 'Author not found' }, 404);
 
 		const linked = await c.env.DB.prepare('SELECT COUNT(*) as count FROM avatar_meta WHERE author_uuid = ?')
@@ -275,7 +298,11 @@ authors.post('/:slug/link-resource', async (c) => {
 	const slug = c.req.param('slug');
 
 	let body: { resource_uuid?: unknown };
-	try { body = await c.req.json(); } catch { return c.json({ error: 'Invalid JSON' }, 400); }
+	try {
+		body = await c.req.json();
+	} catch {
+		return c.json({ error: 'Invalid JSON' }, 400);
+	}
 
 	const resourceUuid = body.resource_uuid;
 	if (typeof resourceUuid !== 'string' || !/^[0-9a-f-]{36}$/i.test(resourceUuid)) {
@@ -283,9 +310,7 @@ authors.post('/:slug/link-resource', async (c) => {
 	}
 
 	try {
-		const author = await c.env.DB.prepare('SELECT uuid FROM avatar_authors WHERE slug = ?')
-			.bind(slug)
-			.first<{ uuid: string }>();
+		const author = await c.env.DB.prepare('SELECT uuid FROM avatar_authors WHERE slug = ?').bind(slug).first<{ uuid: string }>();
 		if (!author) return c.json({ error: 'Author not found' }, 404);
 
 		const existing = await c.env.DB.prepare('SELECT author_uuid, author_name_raw FROM avatar_meta WHERE resource_uuid = ?')
@@ -297,9 +322,7 @@ authors.post('/:slug/link-resource', async (c) => {
 		const historyUuid = crypto.randomUUID();
 		const now = Math.floor(Date.now() / 1000);
 
-		const dbUser = await c.env.DB.prepare('SELECT uuid FROM users WHERE username = ?')
-			.bind(user.username)
-			.first<{ uuid: string }>();
+		const dbUser = await c.env.DB.prepare('SELECT uuid FROM users WHERE username = ?').bind(user.username).first<{ uuid: string }>();
 		if (!dbUser) return c.json({ error: 'User not found' }, 404);
 
 		const previousData = JSON.stringify({
@@ -312,9 +335,7 @@ authors.post('/:slug/link-resource', async (c) => {
 			VALUES (?, ?, ?, 'meta_edit', ?, ?)`,
 		).bind(historyUuid, resourceUuid, dbUser.uuid, previousData, now);
 
-		const updateMeta = c.env.DB.prepare(
-			`UPDATE avatar_meta SET author_uuid = ? WHERE resource_uuid = ?`,
-		).bind(author.uuid, resourceUuid);
+		const updateMeta = c.env.DB.prepare(`UPDATE avatar_meta SET author_uuid = ? WHERE resource_uuid = ?`).bind(author.uuid, resourceUuid);
 
 		await c.env.DB.batch([insertHistory, updateMeta]);
 

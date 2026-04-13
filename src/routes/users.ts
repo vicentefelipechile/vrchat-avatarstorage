@@ -48,22 +48,8 @@
 // Imports
 // =========================================================================================================
 
-import {
-	hashPassword,
-	verifyPassword,
-	createSession,
-	getAuthUser,
-	deleteSession,
-	getUserWith2FA,
-	getDecrypted2FASecret
-} from '../auth';
-import {
-	RegisterSchema,
-	LoginSchema,
-	UserUpdateSchema,
-	TwoFactorLoginSchema,
-	ChangePasswordSchema
-} from '../validators';
+import { hashPassword, verifyPassword, createSession, getAuthUser, deleteSession, getUserWith2FA, getDecrypted2FASecret } from '../auth';
+import { RegisterSchema, LoginSchema, UserUpdateSchema, TwoFactorLoginSchema, ChangePasswordSchema } from '../validators';
 import { verifyTwoFactorCode, verifyBackupCode, useBackupCode } from '../auth/2fa';
 import { verifyTurnstile } from '../helpers/turnstile';
 import { User } from '../types';
@@ -232,7 +218,7 @@ users.get('/status', async (c) => {
 			loggedIn: false,
 			username: null,
 			is_admin: false,
-			avatar_url: null
+			avatar_url: null,
 		});
 	}
 

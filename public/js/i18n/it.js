@@ -77,10 +77,10 @@ export default {
 	home: {
 		welcome: 'Benvenuto su VRCStorage',
 		browse: 'Sfoglia le risorse per categoria:',
-		latest: 'Ultime risorse'
+		latest: 'Ultime risorse',
 	},
 	card: {
-		view: 'Vedi dettagli'
+		view: 'Vedi dettagli',
 	},
 	avatar: {
 		options: 'Opzioni avatar',
@@ -100,13 +100,13 @@ export default {
 		of: 'di',
 		resources: 'risorse',
 		prev: 'Precedente',
-		next: 'Successivo'
+		next: 'Successivo',
 	},
 	pagination: {
 		prev: 'Precedente',
 		next: 'Successivo',
 		page: 'Pagina',
-		of: 'di'
+		of: 'di',
 	},
 	admin: {
 		title: 'Pannello Admin',
@@ -204,7 +204,7 @@ export default {
 			title: 'Titolo',
 			desc: 'Descrizione',
 			cat: 'Categoria',
-			tags: 'Tag'
+			tags: 'Tag',
 		},
 		noVisibleChanges: 'Nessuna modifica visibile al contenuto.',
 		types: {
@@ -300,7 +300,16 @@ export default {
 		errorFileTooLarge: 'File troppo grande',
 		errorImageDimensions: 'Dimensioni immagine troppo grandi',
 		errorInvalidFileType: 'Tipo di file non valido',
-	},
+		val: {
+			avatarGender: 'Seleziona genere avatar',
+			avatarSize: 'Seleziona dimensione avatar',
+			avatarType: 'Seleziona tipo avatar',
+			assetType: 'Seleziona tipo asset',
+			platform: 'Seleziona piattaforma',
+			clothesGender: 'Seleziona genere design',
+			clothesType: 'Seleziona tipo abbigliamento',
+		},
+},
 	cats: {
 		avatars: 'Avatar',
 		worlds: 'Mondi',
@@ -312,87 +321,90 @@ export default {
 			worlds: 'Mondi virtuali da esplorare',
 			assets: 'Risorse e strumenti',
 			clothes: 'Abbigliamento e accessori',
-			others: 'Altre risorse varie'
+			others: 'Altre risorse varie',
 		},
 	},
 	wiki: {
 		title: 'Wiki - Guida alle dipendenze',
 		poiyomi: {
-			title: 'Poiyomi Toon Shader'
+			title: 'Poiyomi Toon Shader',
 		},
 		vrcfury: {
-			title: 'VRCFury'
+			title: 'VRCFury',
 		},
 		modularAvatar: {
-			title: 'Modular Avatar'
+			title: 'Modular Avatar',
 		},
 		physbones: {
-			title: 'PhysBones'
+			title: 'PhysBones',
 		},
 		syncdances: {
-			title: 'SyncDances'
+			title: 'SyncDances',
 		},
 		vrcquesttools: {
-			title: 'VRCQuestTools'
+			title: 'VRCQuestTools',
 		},
 		setup: {
-			title: "Guida all'installazione"
+			title: "Guida all'installazione",
 		},
 		fq: {
-			title: 'FAQ'
+			title: 'FAQ',
 		},
 		gogoloco: {
-			title: 'GoGo Loco'
+			title: 'GoGo Loco',
 		},
 		gogolocoNsfw: {
-			title: 'NSFW Locomotion'
+			title: 'NSFW Locomotion',
 		},
 		sps: {
-			title: 'SPS (Super Plug Shader)'
+			title: 'SPS (Super Plug Shader)',
 		},
 		dps: {
-			title: 'DPS (Dynamic Penetration System)'
+			title: 'DPS (Dynamic Penetration System)',
 		},
 		insideView: {
-			title: 'Inside View'
+			title: 'Inside View',
 		},
 		pcs: {
-			title: 'PCS (Penetration Contact System)'
+			title: 'PCS (Penetration Contact System)',
 		},
 		parameter: {
-			title: 'Parametri avatar'
+			title: 'Parametri avatar',
 		},
 		actionMenu: {
-			title: 'Menu azioni'
+			title: 'Menu azioni',
 		},
 		gestureManager: {
-			title: 'Gesture Manager Emulator'
+			title: 'Gesture Manager Emulator',
 		},
 		nsfwEssentials: {
-			title: 'NSFW Essenziali'
+			title: 'NSFW Essenziali',
 		},
 		haptics: {
-			title: "Guida all'aptica"
+			title: "Guida all'aptica",
 		},
 		comments: {
-			title: 'Commenti Wiki'
+			title: 'Commenti Wiki',
 		},
 		desktopPuppeteer: {
-			title: 'Desktop Puppeteer'
+			title: 'Desktop Puppeteer',
 		},
 		unityhubError: {
-			title: 'Errore Unity Hub'
+			title: 'Errore Unity Hub',
 		},
 		justkisssfx: {
-			title: 'JustKissSFX'
+			title: 'JustKissSFX',
 		},
 		categories: {
 			vrchat: 'VRChat',
 			dependencies: 'Dipendenze',
 			erp: 'ERP',
-			informative: 'Informativo'
+			informative: 'Informativo',
 		},
-	},
+		faq: {
+			title: 'FAQ',
+		},
+},
 	dmca: {
 		title: 'Avviso DMCA',
 		subtitle: 'Segnala una violazione del copyright di risorse ospitate su vrcstorage.lat',
@@ -404,42 +416,44 @@ export default {
 		claimantAddress: 'Indirizzo fisico',
 		claimantAddressHint: 'Richiesto per avvisi DMCA formali ai sensi del 17 U.S.C. §512.',
 		claimantAddressPlaceholder: 'Via, Città, Stato, Paese...',
-		originalWork: 'Identificazione dell\'opera originale',
-		originalWorkHint: 'Descrivi o collega l\'opera originale protetta da copyright che affermi sia stata violata.',
-		originalWorkPlaceholder: 'Link all\'opera originale o descrizione dettagliata...',
-		declarationText: 'Dichiaro sotto pena di spergiuro che le informazioni in questa notifica sono accurate, che sono il titolare dei diritti d\'autore o autorizzato ad agire per suo conto, e che credo in buona fede che l\'uso del materiale non sia autorizzato.',
-		informalNotice: 'Come segnalatore terzo, il tuo invio sarà elaborato come segnalazione informale. Lo esamineremo ma non possiamo garantire azioni senza conferma del titolare dei diritti.',
+		originalWork: "Identificazione dell'opera originale",
+		originalWorkHint: "Descrivi o collega l'opera originale protetta da copyright che affermi sia stata violata.",
+		originalWorkPlaceholder: "Link all'opera originale o descrizione dettagliata...",
+		declarationText:
+			"Dichiaro sotto pena di spergiuro che le informazioni in questa notifica sono accurate, che sono il titolare dei diritti d'autore o autorizzato ad agire per suo conto, e che credo in buona fede che l'uso del materiale non sia autorizzato.",
+		informalNotice:
+			'Come segnalatore terzo, il tuo invio sarà elaborato come segnalazione informale. Lo esamineremo ma non possiamo garantire azioni senza conferma del titolare dei diritti.',
 		submit: 'Invia reclamo',
 		submitting: 'Invio in corso...',
 		submitSuccess: 'Il tuo reclamo è stato inviato con successo. Lo esamineremo entro 72 ore.',
 		submitError: 'Invio del reclamo fallito',
 		errorName: 'Inserisci il tuo nome legale completo.',
-		errorEmail: 'Inserisci un\'email di contatto valida.',
+		errorEmail: "Inserisci un'email di contatto valida.",
 		errorUrls: 'Specifica almeno un URL di risorsa in violazione.',
 		errorDeclaration: 'Devi accettare la dichiarazione giurata per inviare un avviso DMCA formale.',
 		simple: {
 			iAmA: 'Io, essendo',
-			optAuthor: 'L\'autore',
+			optAuthor: "L'autore",
 			optRepresentative: 'Rappresentante',
 			optThirdReporter: 'Terza parte (non proprietario)',
 			reporterReason: 'Motivo della segnalazione',
 			reporterReasonPlaceholder: 'Descrivi la situazione in dettaglio...',
 			reason_recognized: 'Riconosco questo contenuto come opera di un altro creatore',
-			reason_shared: 'Il contenuto è stato condiviso senza il permesso dell\'autore',
+			reason_shared: "Il contenuto è stato condiviso senza il permesso dell'autore",
 			reason_asked: 'Il creatore originale mi ha chiesto di segnalarlo',
 			reason_paid: 'Il contenuto è stato preso da una piattaforma a pagamento senza autorizzazione',
 			reason_other: 'Altro',
-			representing: 'dell\'organizzazione / studio',
-			companyPlaceholder: 'Nome dell\'azienda...',
+			representing: "dell'organizzazione / studio",
+			companyPlaceholder: "Nome dell'azienda...",
 			claimThat: 'reclamo che la risorsa viola',
-			optMyRights: 'i miei diritti d\'autore',
-			optThirdParty: 'i diritti d\'autore di un\'altra persona',
+			optMyRights: "i miei diritti d'autore",
+			optThirdParty: "i diritti d'autore di un'altra persona",
 			originalOwner: 'riconosciuto come',
 			ownerPlaceholder: 'Nome del creatore originale...',
 			resourceUrls: 'Risorsa/e in violazione',
 			resourceUrlsHint: 'Un link per riga.',
 			proofLabel: 'Prova di autenticità (opzionale)',
-			proofHint: 'Link all\'opera originale o altra prova di proprietà.',
+			proofHint: "Link all'opera originale o altra prova di proprietà.",
 			proofPlaceholder: 'https://link-opera-originale.com o descrizione...',
 			intro: 'Compila le opzioni sottostanti per generare il tuo reclamo:',
 			reporterName: 'Identificato come',
@@ -450,7 +464,7 @@ export default {
 			andDemand: 'e richiedo',
 			optImmediateTermination: 'Cessazione immediata della risorsa',
 			optImmediateRemoval: 'Rimozione immediata della risorsa',
-			optNotifyUser: 'Notifica all\'utente responsabile',
+			optNotifyUser: "Notifica all'utente responsabile",
 			resourceUrl: 'URL della risorsa in violazione:',
 			preview: 'Anteprima del reclamo:',
 			urlNotSpecified: '(URL non specificato)',
@@ -460,14 +474,15 @@ export default {
 			bodyThirdReporterClaim: 'sto segnalando una possibile violazione del copyright nella risorsa specificata.',
 			bodyDemand: 'Pertanto, richiedo:',
 			bodyProof: 'Prova di autenticitÃ',
-			bodyDeclaration: 'Dichiaro sotto pena di spergiuro che le informazioni fornite sono corrette e di essere il titolare dei diritti o autorizzato ad agire per conto del titolare dei diritti.',
+			bodyDeclaration:
+				'Dichiaro sotto pena di spergiuro che le informazioni fornite sono corrette e di essere il titolare dei diritti o autorizzato ad agire per conto del titolare dei diritti.',
 			bodyDate: 'Data',
 		},
 		info: {
 			title: 'Informazioni importanti',
 			l1: 'Tutti i reclami vengono esaminati dal nostro team entro 72 ore.',
 			l2: 'Fornire informazioni false in un avviso DMCA può avere conseguenze legali.',
-			l3: 'Il contenuto può essere rimosso preventivamente durante l\'indagine.',
+			l3: "Il contenuto può essere rimosso preventivamente durante l'indagine.",
 			l4: 'Se il tuo contenuto è stato rimosso per errore, puoi inviare una contro-notifica.',
 			modeSimple: 'ModalitÃ  Semplice',
 			modeAdvanced: 'ModalitÃ  Avanzata',
@@ -479,4 +494,122 @@ export default {
 		subtitle: 'Articoli e notizie di VRCStorage',
 		noPostsYet: 'Nessun articolo ancora.',
 	},
+	meta: {
+		required: '* richiesto',
+		adminOnly: '* solo admin',
+		select: '-- Seleziona --',
+		platform: {
+			title: 'Piattaforma',
+			cross: 'Cross-Platform (PC + Quest)',
+			crossSimple: 'Cross-Platform',
+			pc: 'Solo PC',
+			quest: 'Solo Quest',
+			sdk: 'SDK',
+		},
+		sdk_version: {
+			v3Default: 'SDK 3.0 (predefinito)',
+			v3: 'SDK 3.0',
+			v2: 'SDK 2.0',
+			extras: 'Extra',
+			unityVersion: 'Versione Unity',
+		},
+		avatar_gender: {
+			male: 'Maschio',
+			female: 'Femmina',
+			androgynous: 'Androgino',
+			undefined: 'Non definito',
+			unisex: 'Unisex',
+			kemono: 'Kemono',
+		},
+		avatar_size: {
+			tiny: 'Minuscolo',
+			small: 'Piccolo',
+			medium: 'Medio',
+			tall: 'Alto',
+			giant: 'Gigante',
+		},
+		avatar_type: {
+			anime: 'Anime',
+			kemono: 'Kemono',
+			furry: 'Furry',
+			human: 'Human',
+			semiRealistic: 'Semi-Realistic',
+			chibi: 'Chibi',
+			mecha: 'Mecha',
+			monster: 'Monster',
+			fantasy: 'Fantasy',
+			sciFi: 'Sci-Fi',
+			vtuber: 'VTuber',
+			other: 'Other',
+		},
+		features: {
+			nsfw: 'NSFW',
+			physbones: 'PhysBones',
+			dps: 'DPS',
+			facetracking: 'Face Tracking',
+			gogoloco: 'GoGo Loco',
+			toggles: 'Toggles',
+			questOptimized: 'Quest Optimized',
+		},
+		avatar: {
+			title: 'Dettagli avatar',
+			titleAdmin: 'Metadati avatar',
+			gender: 'Genere avatar *',
+			size: 'Dimensione avatar *',
+			type: 'Tipo avatar *',
+			author: 'Autore originale',
+			authorHint: '(nome del creatore dell\'avatar)',
+			authorPlaceholder: 'Cerca autore... o digita nome',
+			extras: 'Extra avatar',
+		},
+		asset: {
+			title: 'Dettagli asset',
+			titleAdmin: 'Metadati asset',
+			type: 'Tipo asset *',
+		},
+		asset_type: {
+			prop: 'Prop',
+			shader: 'Shader',
+			particle: 'Particle FX',
+			vfx: 'VFX',
+			prefab: 'Prefab',
+			script: 'Script',
+			animation: 'Animation',
+			avatarBase: 'Avatar Base',
+			texturePack: 'Texture Pack',
+			sound: 'Sound',
+			tool: 'Tool',
+			hud: 'HUD',
+			other: 'Other',
+		},
+		clothes: {
+			title: 'Dettagli abbigliamento',
+			titleAdmin: 'Metadati abbigliamento',
+			gender: 'Genere design *',
+			type: 'Tipo abbigliamento *',
+			isBase: 'È base (include avatar base)',
+			baseAvatar: 'Per quale avatar base?',
+			baseAvatarHint: '(autocompletamento o nome libero)',
+			baseAvatarPlaceholder: 'Cerca avatar base...',
+		},
+		clothing_type: {
+			top: 'Top',
+			jacket: 'Jacket',
+			bottom: 'Bottom',
+			dress: 'Dress',
+			fullbody: 'Full Body',
+			swimwear: 'Swimwear',
+			shoes: 'Shoes',
+			legwear: 'Legwear',
+			hat: 'Hat',
+			hair: 'Hair',
+			accessory: 'Accessory',
+			tail: 'Tail',
+			ears: 'Ears',
+			wings: 'Wings',
+			bodyPart: 'Body Part',
+			underwear: 'Underwear',
+			other: 'Other',
+		},
+},
 };

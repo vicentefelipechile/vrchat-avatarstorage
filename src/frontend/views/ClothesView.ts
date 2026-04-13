@@ -7,7 +7,7 @@
 // =========================================================================
 
 import { t } from '../i18n';
-import { buildFilterPanel, initFilterPanel } from '../filter-panel';
+import { buildFilterPanel, FilterType, initFilterPanel } from '../filter-panel';
 import { navigateTo } from '../router';
 import type { RouteContext } from '../types';
 
@@ -69,57 +69,53 @@ const CLOTHES_FILTER_CONFIG = {
 	groups: [
 		{
 			name: 'clothing_type',
-			label: 'Tipo de Ropa',
-			type: 'checkbox' as const,
+			type: FilterType.CheckBox,
 			options: [
-				{ value: 'top', label: 'Top' },
-				{ value: 'jacket', label: 'Jacket' },
-				{ value: 'bottom', label: 'Bottom' },
-				{ value: 'dress', label: 'Dress' },
-				{ value: 'fullbody', label: 'Full Body' },
-				{ value: 'swimwear', label: 'Swimwear' },
-				{ value: 'shoes', label: 'Shoes' },
-				{ value: 'legwear', label: 'Legwear' },
-				{ value: 'hat', label: 'Hat' },
-				{ value: 'hair', label: 'Hair' },
-				{ value: 'accessory', label: 'Accessory' },
-				{ value: 'tail', label: 'Tail' },
-				{ value: 'ears', label: 'Ears' },
-				{ value: 'wings', label: 'Wings' },
-				{ value: 'body-part', label: 'Body Part' },
-				{ value: 'underwear', label: 'Underwear' },
-				{ value: 'other', label: 'Otro' },
+				{ value: 'top' },
+				{ value: 'jacket' },
+				{ value: 'bottom' },
+				{ value: 'dress' },
+				{ value: 'fullbody' },
+				{ value: 'swimwear' },
+				{ value: 'shoes' },
+				{ value: 'legwear' },
+				{ value: 'hat' },
+				{ value: 'hair' },
+				{ value: 'accessory' },
+				{ value: 'tail' },
+				{ value: 'ears' },
+				{ value: 'wings' },
+				{ value: 'body-part', label: 'bodyPart' },
+				{ value: 'underwear' },
+				{ value: 'other' },
 			],
 		},
 		{
 			name: 'gender_fit',
-			label: 'Talla / Fit',
-			type: 'checkbox' as const,
+			label: 'avatar_gender',
+			type: FilterType.CheckBox,
 			options: [
-				{ value: 'male', label: 'Male' },
-				{ value: 'female', label: 'Female' },
-				{ value: 'unisex', label: 'Unisex' },
-				{ value: 'kemono', label: 'Kemono' },
+				{ value: 'male' },
+				{ value: 'female' },
+				{ value: 'unisex' },
+				{ value: 'kemono' },
 			],
 		},
 		{
 			name: 'platform',
-			label: 'Plataforma',
-			type: 'checkbox' as const,
+			type: FilterType.CheckBox,
 			options: [
-				{ value: 'pc', label: 'PC Only' },
-				{ value: 'quest', label: 'Quest Only' },
-				{ value: 'cross', label: 'Cross-Platform' },
+				{ value: 'pc' },
+				{ value: 'quest' },
+				{ value: 'cross' },
 			],
 		},
 		{
-			name: 'toggles',
-			label: 'Filtros',
-			type: 'toggle' as const,
+			name: 'features',
+			type: FilterType.Toggle,
 			options: [
-				{ value: 'is_nsfw', label: 'NSFW' },
-				{ value: 'has_physbones', label: 'PhysBones' },
-				{ value: 'is_base', label: 'Es base (incluye avatar)' },
+				{ value: 'is_nsfw', label: 'nsfw' },
+				{ value: 'has_physbones', label: 'physbones' },
 			],
 		},
 	],
@@ -151,27 +147,31 @@ export async function clothesView(ctx: RouteContext): Promise<string> {
 	let data: ClothesListResponse | null = null;
 	try {
 		const res = await fetch(`/api/clothes?${qs}`);
-		if (res.ok) data = await res.json() as ClothesListResponse;
-	} catch { /* empty */ }
+		if (res.ok) data = (await res.json()) as ClothesListResponse;
+	} catch {
+		/* empty */
+	}
 
 	const resources = data?.resources ?? [];
 	const pagination = data?.pagination ?? { page: 1, total: 0, hasNextPage: false, hasPrevPage: false };
 
-	const cardsHtml = resources.length === 0
-		? `<div class="category-empty"><p>No se encontraron prendas con estos filtros.</p></div>`
-		: `<div class="grid">${resources.map(clothesCard).join('')}</div>`;
+	const cardsHtml =
+		resources.length === 0
+			? `<div class="category-empty"><p>No se encontraron prendas con estos filtros.</p></div>`
+			: `<div class="grid">${resources.map(clothesCard).join('')}</div>`;
 
 	const prevBtn = pagination.hasPrevPage
-		? `<a href="/clothes?${buildPageParams(params, page - 1)}" data-link class="btn">← Anterior</a>`
+		? `<a href="/clothes?${buildPageParams(params, page - 1)}" data-link class="btn">${t('filterPanel.prev')}</a>`
 		: '';
 	const nextBtn = pagination.hasNextPage
-		? `<a href="/clothes?${buildPageParams(params, page + 1)}" data-link class="btn">Siguiente →</a>`
+		? `<a href="/clothes?${buildPageParams(params, page + 1)}" data-link class="btn">${t('filterPanel.next')}</a>`
 		: '';
-	const pagCtrls = (prevBtn || nextBtn)
-		? `<div class="pagination" style="display:flex;gap:10px;justify-content:center;margin-top:30px;">
+	const pagCtrls =
+		prevBtn || nextBtn
+			? `<div class="pagination" style="display:flex;gap:10px;justify-content:center;margin-top:30px;">
 			${prevBtn}<span style="align-self:center;">Página ${pagination.page}</span>${nextBtn}
 		  </div>`
-		: '';
+			: '';
 
 	return `<div class="category-layout">
 		${buildFilterPanel(CLOTHES_FILTER_CONFIG)}

@@ -151,7 +151,7 @@ export async function blogCreateAfter(ctx: RouteContext): Promise<void> {
 		try {
 			const res = await fetch(`/api/blog/${editId}`);
 			if (!res.ok) throw new Error('Not found');
-			existingPost = await res.json() as BlogPost;
+			existingPost = (await res.json()) as BlogPost;
 		} catch {
 			container.innerHTML = `<p class="error-text">${t('blog.notFound')}</p>`;
 			return;
@@ -163,7 +163,9 @@ export async function blogCreateAfter(ctx: RouteContext): Promise<void> {
 	// Slug auto-generation
 	const titleInput = document.getElementById('blog-title') as HTMLInputElement;
 	const slugPreview = document.getElementById('blog-slug-preview') as HTMLInputElement;
-	titleInput.addEventListener('input', () => { slugPreview.value = slugify(titleInput.value); });
+	titleInput.addEventListener('input', () => {
+		slugPreview.value = slugify(titleInput.value);
+	});
 
 	// Live markdown preview (split view)
 	const contentTextarea = document.getElementById('blog-content') as HTMLTextAreaElement;
@@ -186,7 +188,7 @@ export async function blogCreateAfter(ctx: RouteContext): Promise<void> {
 			fd.append('file', file);
 			const res = await fetch('/api/upload', { method: 'PUT', body: fd });
 			if (!res.ok) throw new Error();
-			const data = await res.json() as { media_uuid?: string };
+			const data = (await res.json()) as { media_uuid?: string };
 			const newUuid = data.media_uuid ?? '';
 			(document.getElementById('blog-cover-uuid') as HTMLInputElement).value = newUuid;
 			console.log('[blog] cover uploaded, media_uuid =', newUuid);
@@ -213,14 +215,17 @@ export async function blogCreateAfter(ctx: RouteContext): Promise<void> {
 		const content = (document.getElementById('blog-content') as HTMLTextAreaElement).value.trim();
 		const excerpt = (document.getElementById('blog-excerpt') as HTMLTextAreaElement).value.trim() || null;
 		const cover_image_uuid = (document.getElementById('blog-cover-uuid') as HTMLInputElement).value || null;
-		const author_display = (document.querySelector<HTMLInputElement>('input[name="author_display"]:checked'))?.value ?? 'personal';
+		const author_display = document.querySelector<HTMLInputElement>('input[name="author_display"]:checked')?.value ?? 'personal';
 
 		console.log('[blog] submit — editId:', editId, 'cover_image_uuid:', cover_image_uuid);
 
 		if (!title || !content) return;
 
 		const btn = document.getElementById('blog-submit-btn') as HTMLButtonElement;
-		const restore = () => { btn.disabled = false; btn.textContent = t('blog.savePost'); };
+		const restore = () => {
+			btn.disabled = false;
+			btn.textContent = t('blog.savePost');
+		};
 
 		btn.disabled = true;
 		btn.textContent = t('item.sending');
@@ -232,9 +237,13 @@ export async function blogCreateAfter(ctx: RouteContext): Promise<void> {
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ title, content, excerpt, cover_image_uuid, author_display }),
 			});
-			const data = await res.json() as { uuid?: string; error?: string };
+			const data = (await res.json()) as { uuid?: string; error?: string };
 
-			if (!res.ok) { showError(data.error ?? t('common.error')); restore(); return; }
+			if (!res.ok) {
+				showError(data.error ?? t('common.error'));
+				restore();
+				return;
+			}
 
 			navigateTo(`/blog/${editId ?? data.uuid}`);
 		} catch {

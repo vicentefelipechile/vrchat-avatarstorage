@@ -57,7 +57,10 @@ export function registerAfter(_ctx: RouteContext): void {
 	form?.addEventListener('submit', async (e) => {
 		e.preventDefault();
 		const btn = form.querySelector<HTMLButtonElement>('button[type="submit"]')!;
-		const restore = () => { btn.disabled = false; btn.textContent = t('register.btn'); };
+		const restore = () => {
+			btn.disabled = false;
+			btn.textContent = t('register.btn');
+		};
 
 		const username = (document.getElementById('username') as HTMLInputElement).value;
 		const password = (document.getElementById('password') as HTMLInputElement).value;
@@ -71,7 +74,7 @@ export function registerAfter(_ctx: RouteContext): void {
 		btn.disabled = true;
 		btn.textContent = t('common.loading');
 
-		const token = (new FormData(form)).get('cf-turnstile-response') as string;
+		const token = new FormData(form).get('cf-turnstile-response') as string;
 
 		try {
 			const res = await fetch('/api/register', {
@@ -79,7 +82,7 @@ export function registerAfter(_ctx: RouteContext): void {
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ username, password, token }),
 			});
-			const data = await res.json() as { error?: string };
+			const data = (await res.json()) as { error?: string };
 
 			if (res.ok) {
 				localStorage.removeItem('auth_state');

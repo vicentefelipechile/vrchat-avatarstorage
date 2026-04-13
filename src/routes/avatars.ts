@@ -13,7 +13,8 @@
 import { Hono } from 'hono';
 import { getAuthUser } from '../auth';
 import { ResourceSchema, AvatarMetaSchema } from '../validators';
-import { Resource, AvatarMeta } from '../types';
+import { AvatarMeta } from '../types';
+import z from 'zod';
 
 // =========================================================================================================
 // Helpers
@@ -29,16 +30,35 @@ function buildAvatarFilters(params: URLSearchParams): { clauses: string[]; bindi
 
 	const str = (key: string, col: string, allowed: string[]) => {
 		const v = params.get(key);
-		if (v && allowed.includes(v)) { clauses.push(`am.${col} = ?`); bindings.push(v); }
+		if (v && allowed.includes(v)) {
+			clauses.push(`am.${col} = ?`);
+			bindings.push(v);
+		}
 	};
 	const bool = (key: string, col: string) => {
 		const v = params.get(key);
-		if (v === '0' || v === '1') { clauses.push(`am.${col} = ?`); bindings.push(Number(v)); }
+		if (v === '0' || v === '1') {
+			clauses.push(`am.${col} = ?`);
+			bindings.push(Number(v));
+		}
 	};
 
-	str('gender', 'gender', ['male', 'female', 'androgynous', 'undefined']);
-	str('body_size', 'body_size', ['tiny', 'small', 'medium', 'tall', 'giant']);
-	str('avatar_type', 'avatar_type', ['anime', 'kemono', 'furry', 'human', 'semi-realistic', 'chibi', 'mecha', 'monster', 'fantasy', 'sci-fi', 'vtuber', 'other']);
+	str('avatar_gender', 'gender', ['male', 'female', 'androgynous', 'undefined']);
+	str('avatar_size', 'avatar_size', ['tiny', 'small', 'medium', 'tall', 'giant']);
+	str('avatar_type', 'avatar_type', [
+		'anime',
+		'kemono',
+		'furry',
+		'human',
+		'semi-realistic',
+		'chibi',
+		'mecha',
+		'monster',
+		'fantasy',
+		'sci-fi',
+		'vtuber',
+		'other',
+	]);
 	str('platform', 'platform', ['pc', 'quest', 'cross']);
 	str('sdk_version', 'sdk_version', ['sdk3', 'sdk2']);
 	bool('is_nsfw', 'is_nsfw');
@@ -50,7 +70,7 @@ function buildAvatarFilters(params: URLSearchParams): { clauses: string[]; bindi
 	bool('is_quest_optimized', 'is_quest_optimized');
 
 	const authorUuid = params.get('author_uuid');
-	if (authorUuid && /^[0-9a-f-]{36}$/i.test(authorUuid)) {
+	if (authorUuid && z.uuid().safeParse(authorUuid)) {
 		clauses.push('am.author_uuid = ?');
 		bindings.push(authorUuid);
 	}
@@ -98,7 +118,7 @@ avatars.get('/', async (c) => {
 		const rows = await c.env.DB.prepare(
 			`SELECT r.uuid, r.title, r.download_count, r.created_at,
 				m.r2_key as thumbnail_key,
-				am.gender, am.body_size, am.avatar_type, am.is_nsfw,
+				am.gender, am.avatar_size, am.avatar_type, am.is_nsfw,
 				am.has_physbones, am.has_face_tracking, am.has_dps,
 				am.has_gogoloco, am.has_toggles, am.is_quest_optimized,
 				am.sdk_version, am.platform, am.author_uuid, am.author_name_raw,
@@ -121,8 +141,8 @@ avatars.get('/', async (c) => {
 			download_count: row.download_count,
 			created_at: row.created_at,
 			meta: {
-				gender: row.gender,
-				body_size: row.body_size,
+				avatar_gender: row.gender,
+				avatar_size: row.avatar_size,
 				avatar_type: row.avatar_type,
 				is_nsfw: row.is_nsfw,
 				has_physbones: row.has_physbones,
@@ -166,7 +186,7 @@ avatars.get('/:uuid', async (c) => {
 	try {
 		const row = await c.env.DB.prepare(
 			`SELECT r.uuid, r.title, r.is_active,
-				am.gender, am.body_size, am.avatar_type, am.is_nsfw,
+				am.gender, am.avatar_size, am.avatar_type, am.is_nsfw,
 				am.has_physbones, am.has_face_tracking, am.has_dps,
 				am.has_gogoloco, am.has_toggles, am.is_quest_optimized,
 				am.sdk_version, am.platform, am.author_uuid, am.author_name_raw
@@ -195,7 +215,11 @@ avatars.post('/', async (c) => {
 	if (!user) return c.json({ error: 'Unauthorized' }, 401);
 
 	let body: unknown;
-	try { body = await c.req.json(); } catch { return c.json({ error: 'Invalid JSON' }, 400); }
+	try {
+		body = await c.req.json();
+	} catch {
+		return c.json({ error: 'Invalid JSON' }, 400);
+	}
 
 	const resourceParsed = ResourceSchema.safeParse(body);
 	if (!resourceParsed.success) return c.json({ error: 'Validation error', details: resourceParsed.error.issues }, 400);
@@ -209,9 +233,7 @@ avatars.post('/', async (c) => {
 	const now = Math.floor(Date.now() / 1000);
 
 	try {
-		const dbUser = await c.env.DB.prepare('SELECT uuid FROM users WHERE username = ?')
-			.bind(user.username)
-			.first<{ uuid: string }>();
+		const dbUser = await c.env.DB.prepare('SELECT uuid FROM users WHERE username = ?').bind(user.username).first<{ uuid: string }>();
 		if (!dbUser) return c.json({ error: 'User not found' }, 404);
 
 		const insertResource = c.env.DB.prepare(
@@ -220,15 +242,15 @@ avatars.post('/', async (c) => {
 		).bind(resourceUuid, d.title, d.description ?? null, d.thumbnail_uuid, d.reference_image_uuid ?? null, dbUser.uuid, now, now);
 
 		const insertMeta = c.env.DB.prepare(
-			`INSERT INTO avatar_meta (resource_uuid, author_uuid, author_name_raw, gender, body_size, avatar_type,
+			`INSERT INTO avatar_meta (resource_uuid, author_uuid, author_name_raw, gender, avatar_size, avatar_type,
 				is_nsfw, has_physbones, has_face_tracking, has_dps, has_gogoloco, has_toggles, is_quest_optimized, sdk_version, platform)
 			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		).bind(
 			resourceUuid,
 			m.author_uuid ?? null,
 			m.author_name_raw ?? null,
-			m.gender,
-			m.body_size,
+			m.avatar_gender,
+			m.avatar_size,
 			m.avatar_type,
 			m.is_nsfw,
 			m.has_physbones,
@@ -271,24 +293,24 @@ avatars.put('/:uuid', async (c) => {
 	const uuid = c.req.param('uuid');
 
 	let body: unknown;
-	try { body = await c.req.json(); } catch { return c.json({ error: 'Invalid JSON' }, 400); }
+	try {
+		body = await c.req.json();
+	} catch {
+		return c.json({ error: 'Invalid JSON' }, 400);
+	}
 
 	const metaParsed = AvatarMetaSchema.partial().safeParse(body);
 	if (!metaParsed.success) return c.json({ error: 'Validation error', details: metaParsed.error.issues }, 400);
 
 	try {
-		const existing = await c.env.DB.prepare('SELECT * FROM avatar_meta WHERE resource_uuid = ?')
-			.bind(uuid)
-			.first<AvatarMeta>();
+		const existing = await c.env.DB.prepare('SELECT * FROM avatar_meta WHERE resource_uuid = ?').bind(uuid).first<AvatarMeta>();
 		if (!existing) return c.json({ error: 'Avatar metadata not found' }, 404);
 
 		const m = metaParsed.data;
 		const historyUuid = crypto.randomUUID();
 		const now = Math.floor(Date.now() / 1000);
 
-		const dbUser = await c.env.DB.prepare('SELECT uuid FROM users WHERE username = ?')
-			.bind(user.username)
-			.first<{ uuid: string }>();
+		const dbUser = await c.env.DB.prepare('SELECT uuid FROM users WHERE username = ?').bind(user.username).first<{ uuid: string }>();
 		if (!dbUser) return c.json({ error: 'User not found' }, 404);
 
 		const previousData = JSON.stringify({ meta_type: 'avatar_meta', fields: existing });
@@ -298,19 +320,36 @@ avatars.put('/:uuid', async (c) => {
 			VALUES (?, ?, ?, 'meta_edit', ?, ?)`,
 		).bind(historyUuid, uuid, dbUser.uuid, previousData, now);
 
-		const fields = ['gender', 'body_size', 'avatar_type', 'is_nsfw', 'has_physbones', 'has_face_tracking',
-			'has_dps', 'has_gogoloco', 'has_toggles', 'is_quest_optimized', 'sdk_version', 'platform',
-			'author_uuid', 'author_name_raw'] as const;
+		const fields = [
+			'avatar_gender',
+			'avatar_size',
+			'avatar_type',
+			'is_nsfw',
+			'has_physbones',
+			'has_face_tracking',
+			'has_dps',
+			'has_gogoloco',
+			'has_toggles',
+			'is_quest_optimized',
+			'sdk_version',
+			'platform',
+			'author_uuid',
+			'author_name_raw',
+		] as const;
 		const setClauses: string[] = [];
 		const setBindings: unknown[] = [];
 		for (const f of fields) {
-			if (m[f] !== undefined) { setClauses.push(`${f} = ?`); setBindings.push(m[f] ?? null); }
+			if (m[f] !== undefined) {
+				setClauses.push(`${f} = ?`);
+				setBindings.push(m[f] ?? null);
+			}
 		}
 		if (setClauses.length === 0) return c.json({ error: 'No fields to update' }, 400);
 
-		const updateMeta = c.env.DB.prepare(
-			`UPDATE avatar_meta SET ${setClauses.join(', ')} WHERE resource_uuid = ?`,
-		).bind(...setBindings, uuid);
+		const updateMeta = c.env.DB.prepare(`UPDATE avatar_meta SET ${setClauses.join(', ')} WHERE resource_uuid = ?`).bind(
+			...setBindings,
+			uuid,
+		);
 
 		await c.env.DB.batch([insertHistory, updateMeta]);
 

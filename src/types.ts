@@ -370,9 +370,21 @@ export interface AvatarMeta {
 	resource_uuid: string;
 	author_uuid: string | null;
 	author_name_raw: string | null;
-	gender: 'male' | 'female' | 'androgynous' | 'undefined';
-	body_size: 'tiny' | 'small' | 'medium' | 'tall' | 'giant';
-	avatar_type: 'anime' | 'kemono' | 'furry' | 'human' | 'semi-realistic' | 'chibi' | 'mecha' | 'monster' | 'fantasy' | 'sci-fi' | 'vtuber' | 'other';
+	avatar_gender: 'male' | 'female' | 'androgynous' | 'undefined';
+	avatar_size: 'tiny' | 'small' | 'medium' | 'tall' | 'giant';
+	avatar_type:
+		| 'anime'
+		| 'kemono'
+		| 'furry'
+		| 'human'
+		| 'semi-realistic'
+		| 'chibi'
+		| 'mecha'
+		| 'monster'
+		| 'fantasy'
+		| 'sci-fi'
+		| 'vtuber'
+		| 'other';
 	is_nsfw: number;
 	has_physbones: number;
 	has_face_tracking: number;
@@ -386,7 +398,20 @@ export interface AvatarMeta {
 
 export interface AssetMeta {
 	resource_uuid: string;
-	asset_type: 'prop' | 'shader' | 'particle' | 'vfx' | 'prefab' | 'script' | 'animation' | 'avatar-base' | 'texture-pack' | 'sound' | 'tool' | 'hud' | 'other';
+	asset_type:
+		| 'prop'
+		| 'shader'
+		| 'particle'
+		| 'vfx'
+		| 'prefab'
+		| 'script'
+		| 'animation'
+		| 'avatar-base'
+		| 'texture-pack'
+		| 'sound'
+		| 'tool'
+		| 'hud'
+		| 'other';
 	is_nsfw: number;
 	unity_version: '2019' | '2022';
 	platform: 'pc' | 'quest' | 'cross';
@@ -396,7 +421,24 @@ export interface AssetMeta {
 export interface ClothesMeta {
 	resource_uuid: string;
 	gender_fit: 'male' | 'female' | 'unisex' | 'kemono';
-	clothing_type: 'top' | 'jacket' | 'bottom' | 'dress' | 'fullbody' | 'swimwear' | 'shoes' | 'legwear' | 'hat' | 'hair' | 'accessory' | 'tail' | 'ears' | 'wings' | 'body-part' | 'underwear' | 'other';
+	clothing_type:
+		| 'top'
+		| 'jacket'
+		| 'bottom'
+		| 'dress'
+		| 'fullbody'
+		| 'swimwear'
+		| 'shoes'
+		| 'legwear'
+		| 'hat'
+		| 'hair'
+		| 'accessory'
+		| 'tail'
+		| 'ears'
+		| 'wings'
+		| 'body-part'
+		| 'underwear'
+		| 'other';
 	is_base: number;
 	base_avatar_uuid: string | null;
 	base_avatar_name_raw: string | null;

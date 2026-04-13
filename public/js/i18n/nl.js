@@ -77,10 +77,10 @@ export default {
 	home: {
 		welcome: 'Welkom bij VRCStorage',
 		browse: 'Blader door bronnen per categorie:',
-		latest: 'Nieuwste bronnen'
+		latest: 'Nieuwste bronnen',
 	},
 	card: {
-		view: 'Details bekijken'
+		view: 'Details bekijken',
 	},
 	avatar: {
 		options: 'Avatar-opties',
@@ -100,13 +100,13 @@ export default {
 		of: 'van',
 		resources: 'bronnen',
 		prev: 'Vorige',
-		next: 'Volgende'
+		next: 'Volgende',
 	},
 	pagination: {
 		prev: 'Vorige',
 		next: 'Volgende',
 		page: 'Pagina',
-		of: 'van'
+		of: 'van',
 	},
 	admin: {
 		title: 'Admin-paneel',
@@ -114,7 +114,8 @@ export default {
 		delete: 'Verwijderen',
 		deleteConfirm: 'Weet je zeker dat je deze reactie wilt verwijderen?',
 		cleanupOrphaned: 'Verweesde bestanden opschonen',
-		cleanupConfirm: 'Verweesde bestanden opschonen? Dit verwijdert bestanden die meer dan 24 uur geleden zijn geüpload en niet aan een bron zijn gekoppeld.',
+		cleanupConfirm:
+			'Verweesde bestanden opschonen? Dit verwijdert bestanden die meer dan 24 uur geleden zijn geüpload en niet aan een bron zijn gekoppeld.',
 		cleaning: 'Opschonen...',
 		cleanupSuccess: 'Opschoning succesvol: {count} bestanden verwijderd',
 		error: 'Fout',
@@ -204,7 +205,7 @@ export default {
 			title: 'Titel',
 			desc: 'Beschrijving',
 			cat: 'Categorie',
-			tags: 'Tags'
+			tags: 'Tags',
 		},
 		noVisibleChanges: 'Geen zichtbare inhoudswijzigingen.',
 		types: {
@@ -300,7 +301,16 @@ export default {
 		errorFileTooLarge: 'Bestand te groot',
 		errorImageDimensions: 'Afbeeldingsafmetingen te groot',
 		errorInvalidFileType: 'Ongeldig bestandstype',
-	},
+		val: {
+			avatarGender: 'Selecteer avatar geslacht',
+			avatarSize: 'Selecteer avatar grootte',
+			avatarType: 'Selecteer avatar type',
+			assetType: 'Selecteer asset type',
+			platform: 'Selecteer platform',
+			clothesGender: 'Selecteer ontwerp geslacht',
+			clothesType: 'Selecteer kledingtype',
+		},
+},
 	cats: {
 		avatars: 'Avatars',
 		worlds: 'Werelden',
@@ -312,87 +322,90 @@ export default {
 			worlds: 'Virtuele werelden om te verkennen',
 			assets: 'Bronnen en tools',
 			clothes: 'Kleding en accessoires',
-			others: 'Diverse andere bronnen'
+			others: 'Diverse andere bronnen',
 		},
 	},
 	wiki: {
 		title: 'Wiki - Afhankelijkheidsgids',
 		poiyomi: {
-			title: 'Poiyomi Toon Shader'
+			title: 'Poiyomi Toon Shader',
 		},
 		vrcfury: {
-			title: 'VRCFury'
+			title: 'VRCFury',
 		},
 		modularAvatar: {
-			title: 'Modular Avatar'
+			title: 'Modular Avatar',
 		},
 		physbones: {
-			title: 'PhysBones'
+			title: 'PhysBones',
 		},
 		syncdances: {
-			title: 'SyncDances'
+			title: 'SyncDances',
 		},
 		vrcquesttools: {
-			title: 'VRCQuestTools'
+			title: 'VRCQuestTools',
 		},
 		setup: {
-			title: 'Installatiegids'
+			title: 'Installatiegids',
 		},
 		fq: {
-			title: 'FAQ'
+			title: 'FAQ',
 		},
 		gogoloco: {
-			title: 'GoGo Loco'
+			title: 'GoGo Loco',
 		},
 		gogolocoNsfw: {
-			title: 'NSFW Locomotion'
+			title: 'NSFW Locomotion',
 		},
 		sps: {
-			title: 'SPS (Super Plug Shader)'
+			title: 'SPS (Super Plug Shader)',
 		},
 		dps: {
-			title: 'DPS (Dynamic Penetration System)'
+			title: 'DPS (Dynamic Penetration System)',
 		},
 		insideView: {
-			title: 'Inside View'
+			title: 'Inside View',
 		},
 		pcs: {
-			title: 'PCS (Penetration Contact System)'
+			title: 'PCS (Penetration Contact System)',
 		},
 		parameter: {
-			title: 'Avatar-parameters'
+			title: 'Avatar-parameters',
 		},
 		actionMenu: {
-			title: 'Actiemenu'
+			title: 'Actiemenu',
 		},
 		gestureManager: {
-			title: 'Gesture Manager Emulator'
+			title: 'Gesture Manager Emulator',
 		},
 		nsfwEssentials: {
-			title: 'NSFW Basisgids'
+			title: 'NSFW Basisgids',
 		},
 		haptics: {
-			title: 'Haptics-gids'
+			title: 'Haptics-gids',
 		},
 		comments: {
-			title: 'Wiki-reacties'
+			title: 'Wiki-reacties',
 		},
 		desktopPuppeteer: {
-			title: 'Desktop Puppeteer'
+			title: 'Desktop Puppeteer',
 		},
 		unityhubError: {
-			title: 'Unity Hub-fout'
+			title: 'Unity Hub-fout',
 		},
 		justkisssfx: {
-			title: 'JustKissSFX'
+			title: 'JustKissSFX',
 		},
 		categories: {
 			vrchat: 'VRChat',
 			dependencies: 'Afhankelijkheden',
 			erp: 'ERP',
-			informative: 'Informatief'
+			informative: 'Informatief',
 		},
-	},
+		faq: {
+			title: 'FAQ',
+		},
+},
 	dmca: {
 		title: 'DMCA-verwijderingsverzoek',
 		subtitle: 'Meld een auteursrechtschending van bronnen gehost op vrcstorage.lat',
@@ -407,8 +420,10 @@ export default {
 		originalWork: 'Identificatie van het originele werk',
 		originalWorkHint: 'Beschrijf of link naar het originele auteursrechtelijk beschermde werk.',
 		originalWorkPlaceholder: 'Link naar het originele werk of gedetailleerde beschrijving...',
-		declarationText: 'Ik verklaar op straffe van meineed dat de informatie in deze kennisgeving juist is, dat ik de auteursrechthebbende ben of gemachtigd om namens de eigenaar te handelen, en dat ik te goeder trouw geloof dat het gebruik van het materiaal niet is geautoriseerd.',
-		informalNotice: 'Als externe melder wordt uw inzending verwerkt als een informeel rapport. We zullen het beoordelen maar kunnen geen actie garanderen zonder bevestiging van de rechthebbende.',
+		declarationText:
+			'Ik verklaar op straffe van meineed dat de informatie in deze kennisgeving juist is, dat ik de auteursrechthebbende ben of gemachtigd om namens de eigenaar te handelen, en dat ik te goeder trouw geloof dat het gebruik van het materiaal niet is geautoriseerd.',
+		informalNotice:
+			'Als externe melder wordt uw inzending verwerkt als een informeel rapport. We zullen het beoordelen maar kunnen geen actie garanderen zonder bevestiging van de rechthebbende.',
 		submit: 'Claim indienen',
 		submitting: 'Verzenden...',
 		submitSuccess: 'Uw claim is succesvol ingediend. We beoordelen deze binnen 72 uur.',
@@ -460,7 +475,8 @@ export default {
 			bodyThirdReporterClaim: 'meld een mogelijke auteursrechtinbreuk in de gespecificeerde bron.',
 			bodyDemand: 'Daarom eis ik:',
 			bodyProof: 'Bewijs van echtheid',
-			bodyDeclaration: 'Ik verklaar op straffe van meineed dat de verstrekte informatie correct is en dat ik de rechthebbende ben of gemachtigd ben om namens de rechthebbende op te treden.',
+			bodyDeclaration:
+				'Ik verklaar op straffe van meineed dat de verstrekte informatie correct is en dat ik de rechthebbende ben of gemachtigd ben om namens de rechthebbende op te treden.',
 			bodyDate: 'Datum',
 		},
 		info: {
@@ -503,4 +519,122 @@ export default {
 		preview: 'Voorbeeld',
 		write: 'Schrijven',
 	},
+	meta: {
+		required: '* verplicht',
+		adminOnly: '* alleen admin',
+		select: '-- Selecteer --',
+		platform: {
+			title: 'Platform',
+			cross: 'Cross-Platform (PC + Quest)',
+			crossSimple: 'Cross-Platform',
+			pc: 'Alleen PC',
+			quest: 'Alleen Quest',
+			sdk: 'SDK',
+		},
+		sdk_version: {
+			v3Default: 'SDK 3.0 (standaard)',
+			v3: 'SDK 3.0',
+			v2: 'SDK 2.0',
+			extras: 'Extra\'s',
+			unityVersion: 'Unity-versie',
+		},
+		avatar_gender: {
+			male: 'Mannelijk',
+			female: 'Vrouwelijk',
+			androgynous: 'Androgyn',
+			undefined: 'Ongedefinieerd',
+			unisex: 'Unisex',
+			kemono: 'Kemono',
+		},
+		avatar_size: {
+			tiny: 'Minuscuul',
+			small: 'Klein',
+			medium: 'Middel',
+			tall: 'Lang',
+			giant: 'Reusachtig',
+		},
+		avatar_type: {
+			anime: 'Anime',
+			kemono: 'Kemono',
+			furry: 'Furry',
+			human: 'Human',
+			semiRealistic: 'Semi-Realistic',
+			chibi: 'Chibi',
+			mecha: 'Mecha',
+			monster: 'Monster',
+			fantasy: 'Fantasy',
+			sciFi: 'Sci-Fi',
+			vtuber: 'VTuber',
+			other: 'Other',
+		},
+		features: {
+			nsfw: 'NSFW',
+			physbones: 'PhysBones',
+			dps: 'DPS',
+			facetracking: 'Face Tracking',
+			gogoloco: 'GoGo Loco',
+			toggles: 'Toggles',
+			questOptimized: 'Quest Optimized',
+		},
+		avatar: {
+			title: 'Avatar details',
+			titleAdmin: 'Avatar metadata',
+			gender: 'Avatar geslacht *',
+			size: 'Avatar grootte *',
+			type: 'Avatar type *',
+			author: 'Originele auteur',
+			authorHint: '(naam van avatar maker)',
+			authorPlaceholder: 'Zoek auteur... of typ naam',
+			extras: 'Avatar extra\'s',
+		},
+		asset: {
+			title: 'Asset details',
+			titleAdmin: 'Asset metadata',
+			type: 'Asset type *',
+		},
+		asset_type: {
+			prop: 'Prop',
+			shader: 'Shader',
+			particle: 'Particle FX',
+			vfx: 'VFX',
+			prefab: 'Prefab',
+			script: 'Script',
+			animation: 'Animation',
+			avatarBase: 'Avatar Base',
+			texturePack: 'Texture Pack',
+			sound: 'Sound',
+			tool: 'Tool',
+			hud: 'HUD',
+			other: 'Other',
+		},
+		clothes: {
+			title: 'Kleding details',
+			titleAdmin: 'Kleding metadata',
+			gender: 'Ontwerp geslacht *',
+			type: 'Kledingtype *',
+			isBase: 'Is basis (inclusief basis avatar)',
+			baseAvatar: 'Voor welke basis avatar?',
+			baseAvatarHint: '(autocomplete of vrije naam)',
+			baseAvatarPlaceholder: 'Zoek basis avatar...',
+		},
+		clothing_type: {
+			top: 'Top',
+			jacket: 'Jacket',
+			bottom: 'Bottom',
+			dress: 'Dress',
+			fullbody: 'Full Body',
+			swimwear: 'Swimwear',
+			shoes: 'Shoes',
+			legwear: 'Legwear',
+			hat: 'Hat',
+			hair: 'Hair',
+			accessory: 'Accessory',
+			tail: 'Tail',
+			ears: 'Ears',
+			wings: 'Wings',
+			bodyPart: 'Body Part',
+			underwear: 'Underwear',
+			other: 'Other',
+		},
+},
 };

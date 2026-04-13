@@ -25,12 +25,24 @@ const translations: Record<string, Translations> = { es, en, ru, jp, cn, fr, pt,
 
 let currentLang: string = localStorage.getItem('lang') || 'es';
 
-export function t(path: string): string {
+// ============================================================================
+// resolve — walks the dot-path in a given locale, returns string or undefined
+// ============================================================================
+
+function resolve(lang: string, path: string): string | undefined {
 	const result = path.split('.').reduce((obj: unknown, key: string) => {
 		if (obj && typeof obj === 'object') return (obj as Record<string, unknown>)[key];
 		return undefined;
-	}, translations[currentLang] as unknown);
-	return (result as string) ?? path;
+	}, translations[lang] as unknown);
+	return typeof result === 'string' ? result : undefined;
+}
+
+// ============================================================================
+// t — returns translation for current locale, falls back to 'en', then path
+// ============================================================================
+
+export function t(path: string): string {
+	return resolve(currentLang, path) ?? resolve('en', path) ?? path;
 }
 
 export function setLanguage(lang: string): void {
