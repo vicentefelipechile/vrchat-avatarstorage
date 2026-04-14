@@ -8,7 +8,6 @@
 
 import { t } from '../i18n';
 import { buildFilterPanel, FilterType, initFilterPanel } from '../filter-panel';
-import { navigateTo } from '../router';
 import type { RouteContext } from '../types';
 import { DataCache } from '../cache';
 import { TimeUnit } from '../utils';
@@ -80,8 +79,8 @@ const ASSET_FILTER_CONFIG = {
 				{ value: 'avatar-base', label: 'avatarBase' },
 				{ value: 'texture-pack', label: 'texturePack' },
 				{ value: 'sound' },
-				{ value: 'tool'},
-				{ value: 'hud'},
+				{ value: 'tool' },
+				{ value: 'hud' },
 				{ value: 'other' },
 			],
 		},
@@ -116,7 +115,7 @@ const ASSET_FILTER_CONFIG = {
 			name: 'features',
 			type: FilterType.Toggle,
 			options: [
-				{ value: 'is_nsfw', label: 'nsfw' }
+				{ value: 'is_nsfw', label: 'nsfw' },
 			],
 		},
 	],
@@ -134,20 +133,21 @@ function buildSortSelect(current: string): string {
 }
 
 // =========================================================================
-// View
+// buildResults
+// Builds only the results section HTML (no filter panel).
+// Called on initial load and on every filter/sort change.
 // =========================================================================
 
-export async function assetsView(ctx: RouteContext): Promise<string> {
-	document.title = t('filterPanel.titleAssets');
-
-	const params = ctx.query;
+async function buildResults(params: URLSearchParams): Promise<string> {
 	const page = parseInt(params.get('page') || '1', 10);
 	const sortBy = params.get('sort_by') || 'created_at';
 
-	const qs = params.toString();
 	let data: AssetListResponse | null = null;
 	try {
-		const res = await DataCache.fetch<AssetListResponse>(`/api/assets?${qs}`, { ttl: TimeUnit.Minute * 30, persistent: true });
+		const res = await DataCache.fetch<AssetListResponse>(`/api/assets?${params.toString()}`, {
+			ttl: TimeUnit.Minute * 30,
+			persistent: true,
+		});
 		if (res) data = res;
 	} catch {
 		/* empty */
@@ -174,18 +174,28 @@ export async function assetsView(ctx: RouteContext): Promise<string> {
 		  </div>`
 			: '';
 
+	return `<div class="filter-results-header">
+		<span class="filter-results-count">${pagination.total} ${t('filterPanel.assetCountStr')}</span>
+		<div class="filter-sort-row">
+			<span>${t('filterPanel.sortLabel')}</span>
+			${buildSortSelect(sortBy)}
+		</div>
+	</div>
+	${cardsHtml}
+	${pagCtrls}`;
+}
+
+// =========================================================================
+// View
+// =========================================================================
+
+export async function assetsView(ctx: RouteContext): Promise<string> {
+	document.title = t('filterPanel.titleAssets');
+
 	return `<div class="category-layout">
 		${buildFilterPanel(ASSET_FILTER_CONFIG)}
-		<div class="category-results">
-			<div class="filter-results-header">
-				<span class="filter-results-count">${pagination.total} ${t('filterPanel.assetCountStr')}</span>
-				<div class="filter-sort-row">
-					<span>${t('filterPanel.sortLabel')}</span>
-					${buildSortSelect(sortBy)}
-				</div>
-			</div>
-			${cardsHtml}
-			${pagCtrls}
+		<div class="category-results" id="asset-results">
+			${await buildResults(ctx.query)}
 		</div>
 	</div>`;
 }
@@ -198,22 +208,36 @@ export function assetsAfter(ctx: RouteContext): void {
 	const panel = document.getElementById('filter-panel');
 	if (!panel) return;
 
+	async function refreshResults(newParams: URLSearchParams): Promise<void> {
+		const resultsEl = document.getElementById('asset-results');
+		if (!resultsEl) return;
+
+		history.replaceState(null, '', `/assets?${newParams.toString()}`);
+		resultsEl.style.opacity = '0.5';
+		resultsEl.innerHTML = await buildResults(newParams);
+		resultsEl.style.opacity = '1';
+
+		bindSortSelect(newParams);
+	}
+
 	initFilterPanel(panel, (newParams) => {
 		const sortEl = document.getElementById('asset-sort-select') as HTMLSelectElement | null;
 		if (sortEl?.value) newParams.set('sort_by', sortEl.value);
 		newParams.delete('page');
-		history.replaceState(null, '', `/assets?${newParams.toString()}`);
-		navigateTo(`/assets?${newParams.toString()}`);
+		refreshResults(newParams);
 	});
 
-	document.getElementById('asset-sort-select')?.addEventListener('change', (e) => {
-		const sortBy = (e.target as HTMLSelectElement).value;
-		const p = ctx.query;
-		p.set('sort_by', sortBy);
-		p.delete('page');
-		history.replaceState(null, '', `/assets?${p.toString()}`);
-		navigateTo(`/assets?${p.toString()}`);
-	});
+	function bindSortSelect(currentParams: URLSearchParams): void {
+		document.getElementById('asset-sort-select')?.addEventListener('change', (e) => {
+			const sortBy = (e.target as HTMLSelectElement).value;
+			const p = new URLSearchParams(currentParams.toString());
+			p.set('sort_by', sortBy);
+			p.delete('page');
+			refreshResults(p);
+		});
+	}
+
+	bindSortSelect(ctx.query);
 }
 
 // =========================================================================

@@ -9,6 +9,8 @@
 import { getIcon } from '../icons';
 import { t } from '../i18n';
 import type { RouteContext } from '../types';
+import { DataCache } from '../cache';
+import { TimeUnit } from '../utils';
 
 interface AvatarAuthor {
 	uuid: string;
@@ -92,9 +94,11 @@ export async function authorView(ctx: RouteContext): Promise<string> {
 
 	let data: AuthorProfileResponse | null = null;
 	try {
-		const res = await fetch(`/api/authors/${slug}?page=${page}`);
-		if (res.ok) data = (await res.json()) as AuthorProfileResponse;
-		else if (res.status === 404) {
+		// const res = await fetch(`/api/authors/${slug}?page=${page}`);
+		const res = await DataCache.fetch<AuthorProfileResponse>(`/api/authors/${slug}?page=${page}`, { ttl: 5 * TimeUnit.Minute });
+		if (res) {
+			data = res;
+		} else {
 			document.title = t('authorProfile.notFoundTitle');
 			return `<p class="error-message">${t('authorProfile.notFound')}</p>`;
 		}

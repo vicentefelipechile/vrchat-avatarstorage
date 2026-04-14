@@ -6,6 +6,13 @@
 import { t } from './i18n';
 
 // =========================================================================
+// Constants
+// =========================================================================
+
+// ms to wait after filter change before navigating (to allow URL to update and avoid jank)
+const DELAY_BEFORE_NAVIGATE = 120;
+
+// =========================================================================
 // Types
 // =========================================================================
 
@@ -172,7 +179,7 @@ export function initFilterPanel(panelEl: HTMLElement, onFilter: (p: URLSearchPar
 		if (_debounceTimer) clearTimeout(_debounceTimer);
 		_debounceTimer = setTimeout(() => {
 			onFilter(collectParams(panelEl));
-		}, 550);
+		}, DELAY_BEFORE_NAVIGATE);
 	});
 
 	// Reset button

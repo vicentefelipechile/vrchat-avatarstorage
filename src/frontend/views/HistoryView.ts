@@ -85,7 +85,6 @@ async function fetchCurrentMeta(uuid: string, metaType: MetaEditSnapshot['meta_t
 	const url = endpointMap[metaType];
 	if (!url) return null;
 	try {
-		// const res = await fetch(url);
 		const res = await DataCache.fetch<HistoryEntry>(url, { ttl: TimeUnit.Minute * 30, persistent: true });
 		if (!res) return null;
 

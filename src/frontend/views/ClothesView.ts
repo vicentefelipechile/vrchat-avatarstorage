@@ -8,7 +8,6 @@
 
 import { t } from '../i18n';
 import { buildFilterPanel, FilterType, initFilterPanel } from '../filter-panel';
-import { navigateTo } from '../router';
 import type { RouteContext } from '../types';
 import { DataCache } from '../cache';
 import { TimeUnit } from '../utils';
@@ -125,9 +124,9 @@ const CLOTHES_FILTER_CONFIG = {
 
 function buildSortSelect(current: string): string {
 	const opts = [
-		{ value: 'created_at', label: 'Más recientes' },
-		{ value: 'download_count', label: 'Más descargados' },
-		{ value: 'title', label: 'A–Z' },
+		{ value: 'created_at', label: t('sort.newest') },
+		{ value: 'download_count', label: t('sort.mostDownloaded') },
+		{ value: 'title', label: t('sort.aZ') },
 	];
 	return `<select class="filter-select" id="clothes-sort-select" style="width:auto;">
 		${opts.map((o) => `<option value="${o.value}"${current === o.value ? ' selected' : ''}>${o.label}</option>`).join('')}
@@ -135,20 +134,21 @@ function buildSortSelect(current: string): string {
 }
 
 // =========================================================================
-// View
+// buildResults
+// Builds only the results section HTML (no filter panel).
+// Called on initial load and on every filter/sort change.
 // =========================================================================
 
-export async function clothesView(ctx: RouteContext): Promise<string> {
-	document.title = 'VRCStorage — Ropa';
-
-	const params = ctx.query;
+async function buildResults(params: URLSearchParams): Promise<string> {
 	const page = parseInt(params.get('page') || '1', 10);
 	const sortBy = params.get('sort_by') || 'created_at';
 
-	const qs = params.toString();
 	let data: ClothesListResponse | null = null;
 	try {
-		const res = await DataCache.fetch<ClothesListResponse>(`/api/clothes?${qs}`, { ttl: TimeUnit.Minute * 30, persistent: true });
+		const res = await DataCache.fetch<ClothesListResponse>(`/api/clothes?${params.toString()}`, {
+			ttl: TimeUnit.Minute * 30,
+			persistent: true,
+		});
 		if (res) data = res;
 	} catch {
 		/* empty */
@@ -159,7 +159,7 @@ export async function clothesView(ctx: RouteContext): Promise<string> {
 
 	const cardsHtml =
 		resources.length === 0
-			? `<div class="category-empty"><p>No se encontraron prendas con estos filtros.</p></div>`
+			? `<div class="category-empty"><p>${t('filterPanel.noClothes')}</p></div>`
 			: `<div class="grid">${resources.map(clothesCard).join('')}</div>`;
 
 	const prevBtn = pagination.hasPrevPage
@@ -171,22 +171,32 @@ export async function clothesView(ctx: RouteContext): Promise<string> {
 	const pagCtrls =
 		prevBtn || nextBtn
 			? `<div class="pagination" style="display:flex;gap:10px;justify-content:center;margin-top:30px;">
-			${prevBtn}<span style="align-self:center;">Página ${pagination.page}</span>${nextBtn}
+			${prevBtn}<span style="align-self:center;">${t('filterPanel.pagePrefix')} ${pagination.page}</span>${nextBtn}
 		  </div>`
 			: '';
 
+	return `<div class="filter-results-header">
+		<span class="filter-results-count">${pagination.total} ${t('filterPanel.clothesCountStr')}</span>
+		<div class="filter-sort-row">
+			<span>${t('filterPanel.sortLabel')}</span>
+			${buildSortSelect(sortBy)}
+		</div>
+	</div>
+	${cardsHtml}
+	${pagCtrls}`;
+}
+
+// =========================================================================
+// View
+// =========================================================================
+
+export async function clothesView(ctx: RouteContext): Promise<string> {
+	document.title = t('filterPanel.titleClothes');
+
 	return `<div class="category-layout">
 		${buildFilterPanel(CLOTHES_FILTER_CONFIG)}
-		<div class="category-results">
-			<div class="filter-results-header">
-				<span class="filter-results-count">${pagination.total} prenda${pagination.total !== 1 ? 's' : ''}</span>
-				<div class="filter-sort-row">
-					<span>Ordenar:</span>
-					${buildSortSelect(sortBy)}
-				</div>
-			</div>
-			${cardsHtml}
-			${pagCtrls}
+		<div class="category-results" id="clothes-results">
+			${await buildResults(ctx.query)}
 		</div>
 	</div>`;
 }
@@ -199,22 +209,36 @@ export function clothesAfter(ctx: RouteContext): void {
 	const panel = document.getElementById('filter-panel');
 	if (!panel) return;
 
+	async function refreshResults(newParams: URLSearchParams): Promise<void> {
+		const resultsEl = document.getElementById('clothes-results');
+		if (!resultsEl) return;
+
+		history.replaceState(null, '', `/clothes?${newParams.toString()}`);
+		resultsEl.style.opacity = '0.5';
+		resultsEl.innerHTML = await buildResults(newParams);
+		resultsEl.style.opacity = '1';
+
+		bindSortSelect(newParams);
+	}
+
 	initFilterPanel(panel, (newParams) => {
 		const sortEl = document.getElementById('clothes-sort-select') as HTMLSelectElement | null;
 		if (sortEl?.value) newParams.set('sort_by', sortEl.value);
 		newParams.delete('page');
-		history.replaceState(null, '', `/clothes?${newParams.toString()}`);
-		navigateTo(`/clothes?${newParams.toString()}`);
+		refreshResults(newParams);
 	});
 
-	document.getElementById('clothes-sort-select')?.addEventListener('change', (e) => {
-		const sortBy = (e.target as HTMLSelectElement).value;
-		const p = ctx.query;
-		p.set('sort_by', sortBy);
-		p.delete('page');
-		history.replaceState(null, '', `/clothes?${p.toString()}`);
-		navigateTo(`/clothes?${p.toString()}`);
-	});
+	function bindSortSelect(currentParams: URLSearchParams): void {
+		document.getElementById('clothes-sort-select')?.addEventListener('change', (e) => {
+			const sortBy = (e.target as HTMLSelectElement).value;
+			const p = new URLSearchParams(currentParams.toString());
+			p.set('sort_by', sortBy);
+			p.delete('page');
+			refreshResults(p);
+		});
+	}
+
+	bindSortSelect(ctx.query);
 }
 
 // =========================================================================

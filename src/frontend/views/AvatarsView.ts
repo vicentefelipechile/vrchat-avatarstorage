@@ -170,57 +170,66 @@ function buildSortSelect(current: string): string {
 // View
 // =========================================================================
 
+// Extrae solo la parte de resultados como función separada
+async function buildResults(params: URLSearchParams): Promise<string> {
+    const page = parseInt(params.get('page') || '1', 10);
+    const sortBy = params.get('sort_by') || 'created_at';
+
+    const qs = params.toString();
+    let data: AvatarListResponse | null = null;
+    try {
+        const res = await DataCache.fetch<AvatarListResponse>(
+            `/api/avatars?${qs}`, 
+            { ttl: TimeUnit.Minute * 30, persistent: true }
+        );
+        if (res !== null) data = res;
+    } catch { /* empty */ }
+
+    const resources = data?.resources ?? [];
+    const pagination = data?.pagination ?? { 
+        page: 1, total: 0, hasNextPage: false, hasPrevPage: false 
+    };
+
+    const cardsHtml =
+        resources.length === 0
+            ? `<div class="category-empty"><p>${t('filterPanel.noAvatars')}</p></div>`
+            : `<div class="grid">${resources.map(avatarCard).join('')}</div>`;
+
+    const prevBtn = pagination.hasPrevPage
+        ? `<a href="/avatars?${buildPageParams(params, page - 1)}" data-link class="btn">${t('filterPanel.prev')}</a>`
+        : '';
+    const nextBtn = pagination.hasNextPage
+        ? `<a href="/avatars?${buildPageParams(params, page + 1)}" data-link class="btn">${t('filterPanel.next')}</a>`
+        : '';
+    const pagCtrls = prevBtn || nextBtn
+        ? `<div class="pagination" style="display:flex;gap:10px;justify-content:center;margin-top:30px;">
+            ${prevBtn}<span style="align-self:center;">${t('filterPanel.pagePrefix')} ${pagination.page}</span>${nextBtn}
+          </div>`
+        : '';
+
+    return `<div class="filter-results-header">
+        <span class="filter-results-count">${pagination.total} ${t('filterPanel.avatarCountStr')}</span>
+        <div class="filter-sort-row">
+            <span>${t('filterPanel.sortLabel')}</span>
+            ${buildSortSelect(sortBy)}
+        </div>
+    </div>
+    ${cardsHtml}
+    ${pagCtrls}`;
+}
+
+// avatarsView solo se llama en la carga inicial
 export async function avatarsView(ctx: RouteContext): Promise<string> {
-	document.title = t('filterPanel.titleAvatars');
+    document.title = t('filterPanel.titleAvatars');
 
-	const params = ctx.query;
-	const page = parseInt(params.get('page') || '1', 10);
-	const sortBy = params.get('sort_by') || 'created_at';
+    const resultsHtml = await buildResults(ctx.query);
 
-	const qs = params.toString();
-	let data: AvatarListResponse | null = null;
-	try {
-		const res = await DataCache.fetch<AvatarListResponse>(`/api/avatars?${qs}`, { ttl: TimeUnit.Minute * 30, persistent: true });
-		if (res !== null) data = res;
-	} catch {
-		/* empty */
-	}
-
-	const resources = data?.resources ?? [];
-	const pagination = data?.pagination ?? { page: 1, total: 0, hasNextPage: false, hasPrevPage: false };
-
-	const cardsHtml =
-		resources.length === 0
-			? `<div class="category-empty"><p>${t('filterPanel.noAvatars')}</p></div>`
-			: `<div class="grid">${resources.map(avatarCard).join('')}</div>`;
-
-	const prevBtn = pagination.hasPrevPage
-		? `<a href="/avatars?${buildPageParams(params, page - 1)}" data-link class="btn">${t('filterPanel.prev')}</a>`
-		: '';
-	const nextBtn = pagination.hasNextPage
-		? `<a href="/avatars?${buildPageParams(params, page + 1)}" data-link class="btn">${t('filterPanel.next')}</a>`
-		: '';
-	const pagCtrls =
-		prevBtn || nextBtn
-			? `<div class="pagination" style="display:flex;gap:10px;justify-content:center;margin-top:30px;">
-			${prevBtn}<span style="align-self:center;">${t('filterPanel.pagePrefix')} ${pagination.page}</span>${nextBtn}
-		  </div>`
-			: '';
-
-	return `<div class="category-layout">
-		${buildFilterPanel(AVATAR_FILTER_CONFIG)}
-		<div class="category-results">
-			<div class="filter-results-header">
-				<span class="filter-results-count">${pagination.total} ${t('filterPanel.avatarCountStr')}</span>
-				<div class="filter-sort-row">
-					<span>${t('filterPanel.sortLabel')}</span>
-					${buildSortSelect(sortBy)}
-				</div>
-			</div>
-			${cardsHtml}
-			${pagCtrls}
-		</div>
-	</div>`;
+    return `<div class="category-layout">
+        ${buildFilterPanel(AVATAR_FILTER_CONFIG)}
+        <div class="category-results" id="avatar-results">
+            ${resultsHtml}
+        </div>
+    </div>`;
 }
 
 // =========================================================================
@@ -228,27 +237,45 @@ export async function avatarsView(ctx: RouteContext): Promise<string> {
 // =========================================================================
 
 export function avatarsAfter(ctx: RouteContext): void {
-	const panel = document.getElementById('filter-panel');
-	if (!panel) return;
+    const panel = document.getElementById('filter-panel');
+    if (!panel) return;
 
-	initFilterPanel(panel, (newParams) => {
-		// Preserve sort_by
-		const sortEl = document.getElementById('avatar-sort-select') as HTMLSelectElement | null;
-		if (sortEl?.value) newParams.set('sort_by', sortEl.value);
-		newParams.delete('page');
-		history.replaceState(null, '', `/avatars?${newParams.toString()}`);
-		navigateTo(`/avatars?${newParams.toString()}`);
-	});
+    // Función que actualiza SOLO los resultados, sin tocar el panel
+    async function refreshResults(newParams: URLSearchParams) {
+        const resultsEl = document.getElementById('avatar-results');
+        if (!resultsEl) return;
 
-	// Sort select change
-	document.getElementById('avatar-sort-select')?.addEventListener('change', (e) => {
-		const sortBy = (e.target as HTMLSelectElement).value;
-		const p = ctx.query;
-		p.set('sort_by', sortBy);
-		p.delete('page');
-		history.replaceState(null, '', `/avatars?${p.toString()}`);
-		navigateTo(`/avatars?${p.toString()}`);
-	});
+        // Actualiza la URL sin navegar
+        history.replaceState(null, '', `/avatars?${newParams.toString()}`);
+
+        // Muestra loading sutil (opcional, sin blanquear)
+        resultsEl.style.opacity = '0.5';
+
+        resultsEl.innerHTML = await buildResults(newParams);
+        resultsEl.style.opacity = '1';
+
+        // Re-bindear el sort select porque fue recreado
+        bindSortSelect(newParams);
+    }
+
+    initFilterPanel(panel, (newParams) => {
+        const sortEl = document.getElementById('avatar-sort-select') as HTMLSelectElement | null;
+        if (sortEl?.value) newParams.set('sort_by', sortEl.value);
+        newParams.delete('page');
+        refreshResults(newParams);
+    });
+
+    function bindSortSelect(currentParams: URLSearchParams) {
+        document.getElementById('avatar-sort-select')?.addEventListener('change', (e) => {
+            const sortBy = (e.target as HTMLSelectElement).value;
+            const p = new URLSearchParams(currentParams.toString());
+            p.set('sort_by', sortBy);
+            p.delete('page');
+            refreshResults(p);
+        });
+    }
+
+    bindSortSelect(ctx.query);
 }
 
 // =========================================================================
