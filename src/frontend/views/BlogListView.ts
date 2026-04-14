@@ -34,7 +34,7 @@ function esc(str: string): string {
 }
 
 function blogCard(post: BlogPost): string {
-	const date = new Date(post.created_at * 1000).toLocaleDateString();
+	const date = new Date(post.created_at).toLocaleDateString();
 	const authorName = post.author_display === 'team' ? t('blog.team') : (post.author_username ?? '');
 	const coverHtml = post.cover_image_key
 		? `<div class="blog-card-cover"><img src="/api/download/${post.cover_image_key}" alt="${esc(post.title)}" loading="lazy"></div>`

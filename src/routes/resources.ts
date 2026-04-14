@@ -172,10 +172,10 @@ resources.get('/:uuid', async (c) => {
             r.category,
             r.download_count,
             r.is_active,
-            r.created_at,
-            r.updated_at,
-            tm.r2_key         AS thumbnail_key,
-            rm_ref.r2_key     AS reference_image_key,
+            r.created_at * 1000 AS created_at,
+            r.updated_at * 1000 AS updated_at,
+            tm.r2_key         	AS thumbnail_key,
+            rm_ref.r2_key     	AS reference_image_key,
             -- Avatar metadata
             am.gender            AS av_gender,
             am.avatar_size       AS av_avatar_size,
@@ -206,6 +206,7 @@ resources.get('/:uuid', async (c) => {
             cm.has_physbones        AS cl_has_physbones,
             cm.platform             AS cl_platform,
             cm.base_avatar_name_raw AS cl_base_avatar_name_raw,
+			cm.base_avatar_uuid     AS cl_base_avatar_uuid,
             COALESCE((
                 SELECT json_group_array(json_object(
                     'uuid',       m.uuid,
@@ -249,7 +250,6 @@ resources.get('/:uuid', async (c) => {
 		.first<Record<string, unknown>>();
 
 	if (!row) return c.json({ error: 'Not found' }, 404);
-
 	const isLoggedIn = !!(await getAuthUser(c));
 
 	const mediaFiles = JSON.parse(row.media_files_json as string) as Pick<Media, 'uuid' | 'r2_key' | 'media_type'>[];
@@ -311,6 +311,7 @@ resources.get('/:uuid', async (c) => {
 					has_physbones: row.cl_has_physbones,
 					platform: row.cl_platform,
 					base_avatar_name_raw: row.cl_base_avatar_name_raw,
+					base_avatar_uuid: row.cl_base_avatar_uuid,
 				};
 			}
 			return null;
@@ -341,7 +342,10 @@ resources.get('/:uuid/history', async (c) => {
 	try {
 		const history = await c.env.DB.prepare(
 			`
-            SELECT h.*, u.username, u.avatar_url 
+            SELECT
+			h.*,
+			u.username,
+			u.avatar_url 
             FROM resource_history h
             LEFT JOIN users u ON h.actor_uuid = u.uuid
             WHERE h.resource_uuid = ?
@@ -353,6 +357,7 @@ resources.get('/:uuid/history', async (c) => {
 
 		const mapped = history.results.map((h) => ({
 			...h,
+			created_at: h.created_at * 1000,
 			actor: {
 				username: h.username,
 				avatar_url: h.avatar_url,

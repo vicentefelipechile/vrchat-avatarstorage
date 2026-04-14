@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS avatar_meta (
 	resource_uuid        TEXT PRIMARY KEY,
 	author_uuid          TEXT,
 	author_name_raw      TEXT,
-	gender        		NOT NULL DEFAULT 'undefined',
+	gender        		 NOT NULL DEFAULT 'undefined',
 	avatar_size          TEXT NOT NULL DEFAULT 'medium',
 	avatar_type          TEXT NOT NULL DEFAULT 'other',
 	is_nsfw              INTEGER NOT NULL DEFAULT 0,

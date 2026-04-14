@@ -4,7 +4,7 @@
 
 import { t, getCurrentLang } from '../i18n';
 import { DataCache } from '../cache';
-import { renderTurnstile, renderMarkdown, showToast } from '../utils';
+import { renderTurnstile, renderMarkdown, showToast, TimeUnit } from '../utils';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import type { RouteContext } from '../types';
@@ -195,7 +195,7 @@ export async function wikiAfter(ctx: RouteContext): Promise<void> {
 		const lang = getCurrentLang();
 
 		async function fetchWikiContent(langCode: string): Promise<string> {
-			const text = (await DataCache.fetch(`/wiki/${langCode}/${topicId}.md`, { type: 'text', ttl: 300_000 })) as string;
+			const text = (await DataCache.fetch(`/wiki/${langCode}/${topicId}.md`, { type: 'text', ttl: TimeUnit.Day })) as string;
 			// Cloudflare returns the SPA shell (index.html) with 200 when a static file doesn't exist.
 			// Detect this by checking if the response is HTML instead of Markdown.
 			const trimmed = text.trimStart().toLowerCase();
@@ -361,7 +361,7 @@ export async function wikiAfter(ctx: RouteContext): Promise<void> {
 		link.addEventListener('mouseenter', () => {
 			const tp = link.dataset.topic;
 			if (!tp || tp === 'comments') return;
-			DataCache.prefetch(`/wiki/${getCurrentLang()}/${tp}.md`, { type: 'text', ttl: 300_000 });
+			DataCache.prefetch(`/wiki/${getCurrentLang()}/${tp}.md`, { type: 'text', ttl: TimeUnit.Day });
 		});
 	});
 

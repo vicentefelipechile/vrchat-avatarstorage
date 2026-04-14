@@ -278,7 +278,7 @@ export const AvatarMetaSchema = z.object({
 		.optional()
 		.nullable()
 		.transform((v) => (v ? sanitizeHtml(v) : v)),
-	avatar_gender: 		z.enum(AVATAR_GENDER),
+	gender: 			z.enum(AVATAR_GENDER),
 	avatar_size: 		z.enum(AVATAR_SIZE),
 	avatar_type: 		z.enum(AVATAR_TYPE),
 	is_nsfw: 			z.number().int().min(0).max(1).default(0),
@@ -307,7 +307,7 @@ export const AssetMetaSchema = z.object({
  */
 export const AvatarFilterSchema = z.object({
 	// Faceted filters — reuse the same enums as AvatarMetaSchema
-	avatar_gender: 		AvatarMetaSchema.shape.avatar_gender.optional(),
+	avatar_gender: 		AvatarMetaSchema.shape.gender.optional(),
 	avatar_size: 		AvatarMetaSchema.shape.avatar_size.optional(),
 	avatar_type: 		AvatarMetaSchema.shape.avatar_type.optional(),
 	platform: 			AvatarMetaSchema.shape.platform.optional(),

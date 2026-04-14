@@ -313,6 +313,11 @@ export default {
 			approval: 'Aprobación',
 			meta_edit: 'Metadatos Editados',
 		},
+		meta: {
+			field: 'Campo',
+			before: 'Antes',
+			after: 'Después',
+		}
 	},
 	login: {
 		title: 'Login',
@@ -406,7 +411,7 @@ export default {
 			avatarType: 'Selecciona el tipo de avatar',
 			assetType: 'Selecciona el tipo de asset',
 			platform: 'Selecciona la plataforma',
-			clothesGender: 'Selecciona el género del diseño',
+			clothesGender: 'Selecciona el género de la ropa',
 			clothesType: 'Selecciona el tipo de prenda',
 		},
 	},
@@ -671,7 +676,8 @@ export default {
 			type: 'Tipo de avatar *',
 			author: 'Autor original',
 			authorHint: '(nombre del creador del avatar)',
-			authorPlaceholder: 'Buscar autor… o escribir nombre libre',
+			authorPlaceholder: 'Buscar autor o colocar cualquier nombre',
+			authorLinked: 'Autor vinculado',
 			extras: 'Extras del avatar',
 		},
 		asset: {
@@ -698,7 +704,7 @@ export default {
 		clothes: {
 			title: 'Detalles de la Prenda',
 			titleAdmin: 'Clothes Meta',
-			gender: 'Género del diseño *',
+			gender: 'Género de la ropa *',
 			type: 'Tipo de prenda *',
 			isBase: 'Es base (incluye avatar base)',
 			baseAvatar: '¿Para qué avatar base?',

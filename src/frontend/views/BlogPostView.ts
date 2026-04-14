@@ -100,7 +100,7 @@ export async function blogPostView(ctx: RouteContext): Promise<string> {
 
 	document.title = `VRCStorage — ${post.title}`;
 
-	const date = new Date(post.created_at * 1000).toLocaleDateString();
+	const date = new Date(post.created_at).toLocaleDateString();
 	const authorName = post.author_display === 'team' ? t('blog.team') : (post.author_username ?? '');
 	const { isAdmin } = window.appState;
 

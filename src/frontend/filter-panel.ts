@@ -61,7 +61,7 @@ function resolveGroupLabel(g: FilterGroupConfig): string {
  * Examples:
  *   ns='avatar_gender', value='male'                  → t('meta.avatar_gender.male')
  *   ns='features',      value='is_nsfw', label='nsfw' → t('meta.features.nsfw')
- *   ns='clothesType',   value='body-part', label='bodyPart' → t('meta.clothesType.bodyPart')
+ *   ns='clothesType',   value='body-part', label='bodyPart' → t('meta.clothing_type.bodyPart')
  */
 function resolveOptionLabel(g: FilterGroupConfig, o: FilterOption): string {
 	const ns = groupNs(g);
@@ -172,7 +172,7 @@ export function initFilterPanel(panelEl: HTMLElement, onFilter: (p: URLSearchPar
 		if (_debounceTimer) clearTimeout(_debounceTimer);
 		_debounceTimer = setTimeout(() => {
 			onFilter(collectParams(panelEl));
-		}, 850);
+		}, 550);
 	});
 
 	// Reset button

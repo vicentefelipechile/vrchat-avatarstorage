@@ -12,6 +12,8 @@
 // Persistent entries skip the TTL check and are kept until explicitly cleared via `clear()`.
 // =========================================================================================================
 
+import { TimeUnit } from "./utils";
+
 // =========================================================================================================
 // Interfaces
 // =========================================================================================================
@@ -19,7 +21,7 @@
 export interface CacheOptions {
 	/** Time-to-live in milliseconds. Defaults to 60 000 ms (1 minute). */
 	ttl?: number;
-	/** When true, the entry is never considered expired and survives until `clear()` is called. */
+	/** When true, the entry is written to localStorage and survives page reloads. TTL is still enforced. */
 	persistent?: boolean;
 	/** Expected response body format. Defaults to `'json'`. */
 	type?: 'json' | 'text';
@@ -37,6 +39,14 @@ interface ResolvedOptions {
 	ttl: number;
 	persistent: boolean;
 	type: 'json' | 'text';
+}
+
+export enum CacheErrorType {
+	StorageFull,
+	StorageUnavailable,
+	NetworkError,
+	HTTPError,
+	ParseError,
 }
 
 // =========================================================================================================
@@ -130,7 +140,7 @@ export const DataCache = {
 	 *
 	 * After a successful network response the result is stored in:
 	 *   - `this.cache` (always)
-	 *   - `localStorage` (only when `persistent: true`)
+	 *   - `localStorage` (only when `persistent: true`; TTL is still enforced on subsequent reads)
 	 *
 	 * @param url - The URL to fetch. Used as the cache key.
 	 * @param options - Either a `CacheOptions` object or a plain TTL number in milliseconds.
@@ -169,15 +179,17 @@ export const DataCache = {
 	 * 	type: 'text',
 	 * });
 	 */
-	async fetch<T = unknown>(url: string, options: CacheOptions | number = 60000): Promise<T> {
+	async fetch<T = unknown>(url: string, options: CacheOptions | number = 60000 | TimeUnit.Minute): Promise<T> {
 		const now = Date.now();
 		const { ttl, persistent, type } = resolveOptions(options);
 
 		// 1. Memory cache — fastest path, no I/O required.
 		if (this.cache.has(url)) {
 			const { data, timestamp } = this.cache.get(url)!;
-			// Persistent entries never expire; otherwise compare age against TTL.
-			if (persistent || now - timestamp < ttl) return data as T;
+			// `persistent` only controls storage location, not expiry — TTL is always enforced.
+			if (now - timestamp < ttl) return data as T;
+			// Entry has expired — evict from memory so the network fetch can refresh it.
+			this.cache.delete(url);
 		}
 
 		// 2. localStorage cache — survives page reloads but requires JSON parsing.
@@ -186,7 +198,7 @@ export const DataCache = {
 			if (cached) {
 				const parsed: CacheEntry = JSON.parse(cached);
 				const age = now - parsed.timestamp;
-				if (persistent || age < ttl) {
+				if (age < ttl) {
 					// Promote the valid entry to in-memory so subsequent reads skip localStorage.
 					this.cache.set(url, parsed);
 					return parsed.data as T;
@@ -254,7 +266,9 @@ export const DataCache = {
 		// 1. In-memory check — nothing to do if the entry is still valid.
 		if (this.cache.has(url)) {
 			const { timestamp } = this.cache.get(url)!;
-			if (persistent || now - timestamp < ttl) return;
+			if (now - timestamp < ttl) return;
+			// Entry has expired — evict so the fire-and-forget fetch can refresh it.
+			this.cache.delete(url);
 		}
 
 		// 2. localStorage check — promote to memory if the entry is still valid (avoids a network round-trip).
@@ -262,7 +276,7 @@ export const DataCache = {
 			const cached = localStorage.getItem(`${CACHE_PREFIX}${url}`);
 			if (cached) {
 				const parsed: CacheEntry = JSON.parse(cached);
-				if (persistent || now - parsed.timestamp < ttl) {
+				if (now - parsed.timestamp < ttl) {
 					this.cache.set(url, parsed);
 					return;
 				} else {

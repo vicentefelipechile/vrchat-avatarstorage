@@ -116,13 +116,28 @@ avatars.get('/', async (c) => {
 		const total = countResult?.total ?? 0;
 
 		const rows = await c.env.DB.prepare(
-			`SELECT r.uuid, r.title, r.download_count, r.created_at,
+			`SELECT
+				r.uuid,
+				r.title,
+				r.download_count,
+				r.created_at * 1000 AS created_at,
 				m.r2_key as thumbnail_key,
-				am.gender, am.avatar_size, am.avatar_type, am.is_nsfw,
-				am.has_physbones, am.has_face_tracking, am.has_dps,
-				am.has_gogoloco, am.has_toggles, am.is_quest_optimized,
-				am.sdk_version, am.platform, am.author_uuid, am.author_name_raw,
-				aa.name as author_name, aa.slug as author_slug
+				am.gender,
+				am.avatar_size,
+				am.avatar_type,
+				am.is_nsfw,
+				am.has_physbones,
+				am.has_face_tracking,
+				am.has_dps,
+				am.has_gogoloco,
+				am.has_toggles,
+				am.is_quest_optimized,
+				am.sdk_version,
+				am.platform,
+				am.author_uuid,
+				am.author_name_raw,
+				aa.name as author_name,
+				aa.slug as author_slug
 			FROM resources r
 			INNER JOIN avatar_meta am ON r.uuid = am.resource_uuid
 			LEFT JOIN media m ON r.thumbnail_uuid = m.uuid
@@ -174,6 +189,44 @@ avatars.get('/', async (c) => {
 		console.error('Avatars list error:', e);
 		return c.json({ error: 'Failed to fetch avatars' }, 500);
 	}
+});
+
+// =========================================================================================================
+// GET /api/avatars/search
+// Lightweight avatar name search for autocomplete fields (e.g. clothes base avatar selector).
+// Query params:
+//   q      Required. Partial name to match (min 2 chars).
+//   limit  Max results — default: 10, max: 20
+// Returns: { uuid: string; title: string }[]
+// =========================================================================================================
+
+avatars.get('/search', async (c) => {
+    const q = c.req.query('q')?.trim();
+    if (!q || q.length < 2) {
+        return c.json([] as { uuid: string; title: string }[]);
+    }
+
+    const limit = Math.min(20, Math.max(1, parseInt(c.req.query('limit') || '10', 10) || 10));
+    const pattern = `%${q}%`;
+
+    try {
+        const { results } = await c.env.DB.prepare(
+            `SELECT r.uuid, r.title
+             FROM resources r
+             INNER JOIN avatar_meta am ON r.uuid = am.resource_uuid
+             WHERE r.is_active = 1
+               AND r.title LIKE ?
+             ORDER BY r.title ASC
+             LIMIT ?`,
+        )
+            .bind(pattern, limit)
+            .all<{ uuid: string; title: string }>();
+
+        return c.json(results);
+    } catch (e) {
+        console.error('[GET /api/avatars/search] error:', e);
+        return c.json({ error: 'Search failed' }, 500);
+    }
 });
 
 // =========================================================================================================
@@ -249,7 +302,7 @@ avatars.post('/', async (c) => {
 			resourceUuid,
 			m.author_uuid ?? null,
 			m.author_name_raw ?? null,
-			m.avatar_gender,
+			m.gender,
 			m.avatar_size,
 			m.avatar_type,
 			m.is_nsfw,
@@ -272,6 +325,23 @@ avatars.post('/', async (c) => {
 		);
 
 		await c.env.DB.batch([insertResource, insertMeta, ...tagStatements]);
+
+		// Insert download links
+		const links = (body as Record<string, unknown>).links as Array<Record<string, unknown>> ?? [];
+		for (let i = 0; i < links.length; i++) {
+			const link = links[i];
+			await c.env.DB.prepare(
+				'INSERT INTO resource_links (uuid, resource_uuid, link_url, link_title, link_type, display_order) VALUES (?, ?, ?, ?, ?, ?)',
+			).bind(crypto.randomUUID(), resourceUuid, link.link_url, link.link_title ?? null, link.link_type ?? 'general', link.display_order ?? i).run();
+		}
+
+		// Insert media associations
+		const mediaFiles = (body as Record<string, unknown>).media_files as string[] ?? [];
+		for (const mediaUuid of mediaFiles) {
+			await c.env.DB.prepare(
+				'INSERT INTO resource_n_media (uuid, resource_uuid, media_uuid) VALUES (?, ?, ?)',
+			).bind(crypto.randomUUID(), resourceUuid, mediaUuid).run();
+		}
 
 		return c.json({ uuid: resourceUuid }, 201);
 	} catch (e) {
@@ -321,7 +391,7 @@ avatars.put('/:uuid', async (c) => {
 		).bind(historyUuid, uuid, dbUser.uuid, previousData, now);
 
 		const fields = [
-			'avatar_gender',
+			'gender',
 			'avatar_size',
 			'avatar_type',
 			'is_nsfw',

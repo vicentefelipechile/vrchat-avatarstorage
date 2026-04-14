@@ -5,7 +5,7 @@
 import { route, notFound, navigateTo, initRouter } from './router';
 import { setLanguage, getCurrentLang, t } from './i18n';
 import { DataCache } from './cache';
-import { showToast } from './utils';
+import { showToast, TimeUnit } from './utils';
 import type { AuthUser } from './types';
 
 // Views
@@ -142,7 +142,7 @@ async function updateNav(): Promise<void> {
 	};
 
 	try {
-		const data = (await DataCache.fetch('/api/auth/status', 60_000)) as AuthUser & { loggedIn: boolean; is_admin: boolean };
+		const data = (await DataCache.fetch('/api/auth/status', TimeUnit.Hour)) as AuthUser & { loggedIn: boolean; is_admin: boolean };
 		window.appState.isLoggedIn = data.loggedIn;
 		window.appState.isAdmin = data.is_admin;
 		window.appState.user = data.loggedIn ? data : null;
@@ -268,8 +268,8 @@ function initPrefetch(): void {
 		const uuid = href.split('/item/')[1];
 		if (!uuid) return;
 
-		DataCache.prefetch(`/api/resources/${uuid}`, { ttl: 300_000, persistent: true });
-		DataCache.prefetch(`/api/comments/${uuid}`, { ttl: 300_000 });
+		DataCache.prefetch(`/api/resources/${uuid}`, { ttl: TimeUnit.Minute * 5, persistent: true });
+		DataCache.prefetch(`/api/comments/${uuid}`, { ttl: TimeUnit.Minute * 5 });
 	});
 }
 

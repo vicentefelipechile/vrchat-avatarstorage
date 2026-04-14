@@ -204,6 +204,11 @@ export default {
 			approval: 'Approval',
 			meta_edit: 'Metadata Edited',
 		},
+		meta: {
+			field: 'Field Changed',
+			before: 'Before',
+			after: 'After',
+		},
 	},
 	login: {
 		title: 'Login',
@@ -563,6 +568,7 @@ export default {
 			author: 'Original Author',
 			authorHint: "(avatar creator's name)",
 			authorPlaceholder: 'Search author... or type name',
+			authorLinked: 'Author Linked UUID',
 			extras: 'Avatar Extras',
 		},
 		asset: {

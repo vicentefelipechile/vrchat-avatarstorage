@@ -3,7 +3,7 @@
 // =========================================================================
 
 import type { RouteContext, Resource } from '../types';
-import { renderMarkdown, showToast } from '../utils';
+import { htmlDecode, renderMarkdown, showToast } from '../utils';
 import { navigateTo } from '../router';
 import { DataCache } from '../cache';
 import { t } from '../i18n';
@@ -91,8 +91,8 @@ function buildAvatarMetaFields(): string {
 				<div class="radio-group" style="display:flex;gap:12px;flex-wrap:wrap;margin-top:6px">
 					<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="av-gender" value="male"> ${t('meta.avatar_gender.male')}</label>
 					<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="av-gender" value="female"> ${t('meta.avatar_gender.female')}</label>
-					<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="hidden" name="av-gender" value="androgynous" hide> ${t('meta.avatar_gender.androgynous')}</label>
-					<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="hidden" name="av-gender" value="undefined"> ${t('meta.avatar_gender.undefined')}</label>
+					<!-- <label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="hidden" name="av-gender" value="androgynous" hide> ${t('meta.avatar_gender.androgynous')}</label> -->
+					<!-- <label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="hidden" name="av-gender" value="undefined"> ${t('meta.avatar_gender.undefined')}</label> -->
 				</div>
 			</div>
 			<div class="form-group">
@@ -138,10 +138,10 @@ function buildAvatarMetaFields(): string {
 
 		<div class="upload-grid">
 			<div class="form-group">
-				<label><strong>${t('meta.sdk.title')}</strong></label>
+				<label><strong>${t('meta.sdk_version.title')}</strong></label>
 				<select id="av-sdk" class="form-control">
-					<option value="sdk3">${t('meta.sdk.v3Default')}</option>
-					<option value="sdk2">${t('meta.sdk.v2')}</option>
+					<option value="sdk3">${t('meta.sdk_version.v3Default')}</option>
+					<option value="sdk2">${t('meta.sdk_version.v2')}</option>
 				</select>
 			</div>
 			<div class="form-group">
@@ -178,19 +178,19 @@ function buildAssetMetaFields(): string {
 				<label><strong>${t('meta.asset.type')}</strong></label>
 				<select id="asset-type" class="form-control">
 					<option value="">${t('meta.select')}</option>
-					<option value="prop">${t('meta.assetType.prop')}</option>
-					<option value="shader">${t('meta.assetType.shader')}</option>
-					<option value="particle">${t('meta.assetType.particle')}</option>
-					<option value="vfx">${t('meta.assetType.vfx')}</option>
-					<option value="prefab">${t('meta.assetType.prefab')}</option>
-					<option value="script">${t('meta.assetType.script')}</option>
-					<option value="animation">${t('meta.assetType.animation')}</option>
-					<option value="avatar-base">${t('meta.assetType.avatarBase')}</option>
-					<option value="texture-pack">${t('meta.assetType.texturePack')}</option>
-					<option value="sound">${t('meta.assetType.sound')}</option>
-					<option value="tool">${t('meta.assetType.tool')}</option>
-					<option value="hud">${t('meta.assetType.hud')}</option>
-					<option value="other">${t('meta.assetType.other')}</option>
+					<option value="prop">${t('meta.asset_type.prop')}</option>
+					<option value="shader">${t('meta.asset_type.shader')}</option>
+					<option value="particle">${t('meta.asset_type.particle')}</option>
+					<option value="vfx">${t('meta.asset_type.vfx')}</option>
+					<option value="prefab">${t('meta.asset_type.prefab')}</option>
+					<option value="script">${t('meta.asset_type.script')}</option>
+					<option value="animation">${t('meta.asset_type.animation')}</option>
+					<option value="avatar-base">${t('meta.asset_type.avatarBase')}</option>
+					<option value="texture-pack">${t('meta.asset_type.texturePack')}</option>
+					<option value="sound">${t('meta.asset_type.sound')}</option>
+					<option value="tool">${t('meta.asset_type.tool')}</option>
+					<option value="hud">${t('meta.asset_type.hud')}</option>
+					<option value="other">${t('meta.asset_type.other')}</option>
 				</select>
 			</div>
 			<div class="form-group">
@@ -221,7 +221,7 @@ function buildAssetMetaFields(): string {
 		</div>
 
 		<div class="form-group" style="margin-top:8px">
-			<label><strong>${t('meta.features')}</strong></label>
+			<label><strong>${t('meta.features.title')}</strong></label>
 			<div style="display:flex;gap:12px;margin-top:6px">
 				<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="asset-nsfw"> ${t('meta.features.nsfw')}</label>
 			</div>
@@ -237,33 +237,33 @@ function buildClothesMetaFields(): string {
 			<div class="form-group">
 				<label><strong>${t('meta.clothes.gender')}</strong></label>
 				<div class="radio-group" style="display:flex;gap:12px;flex-wrap:wrap;margin-top:6px">
-					<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="cl-gender" value="male"> ${t('meta.gender.male')}</label>
-					<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="cl-gender" value="female"> ${t('meta.gender.female')}</label>
-					<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="cl-gender" value="unisex"> ${t('meta.gender.unisex')}</label>
-					<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="cl-gender" value="kemono"> ${t('meta.gender.kemono')}</label>
+					<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="cl-gender" value="male"> ${t('meta.avatar_gender.male')}</label>
+					<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="cl-gender" value="female"> ${t('meta.avatar_gender.female')}</label>
+					<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="cl-gender" value="unisex"> ${t('meta.avatar_gender.unisex')}</label>
+					<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="cl-gender" value="kemono"> ${t('meta.avatar_gender.kemono')}</label>
 				</div>
 			</div>
 			<div class="form-group">
 				<label><strong>${t('meta.clothes.type')}</strong></label>
 				<select id="clothes-type" class="form-control">
 					<option value="">${t('meta.select')}</option>
-					<option value="top">${t('meta.clothesType.top')}</option>
-					<option value="jacket">${t('meta.clothesType.jacket')}</option>
-					<option value="bottom">${t('meta.clothesType.bottom')}</option>
-					<option value="dress">${t('meta.clothesType.dress')}</option>
-					<option value="fullbody">${t('meta.clothesType.fullbody')}</option>
-					<option value="swimwear">${t('meta.clothesType.swimwear')}</option>
-					<option value="shoes">${t('meta.clothesType.shoes')}</option>
-					<option value="legwear">${t('meta.clothesType.legwear')}</option>
-					<option value="hat">${t('meta.clothesType.hat')}</option>
-					<option value="hair">${t('meta.clothesType.hair')}</option>
-					<option value="accessory">${t('meta.clothesType.accessory')}</option>
-					<option value="tail">${t('meta.clothesType.tail')}</option>
-					<option value="ears">${t('meta.clothesType.ears')}</option>
-					<option value="wings">${t('meta.clothesType.wings')}</option>
-					<option value="body-part">${t('meta.clothesType.bodyPart')}</option>
-					<option value="underwear">${t('meta.clothesType.underwear')}</option>
-					<option value="other">${t('meta.clothesType.other')}</option>
+					<option value="top">${t('meta.clothing_type.top')}</option>
+					<option value="jacket">${t('meta.clothing_type.jacket')}</option>
+					<option value="bottom">${t('meta.clothing_type.bottom')}</option>
+					<option value="dress">${t('meta.clothing_type.dress')}</option>
+					<option value="fullbody">${t('meta.clothing_type.fullbody')}</option>
+					<option value="swimwear">${t('meta.clothing_type.swimwear')}</option>
+					<option value="shoes">${t('meta.clothing_type.shoes')}</option>
+					<option value="legwear">${t('meta.clothing_type.legwear')}</option>
+					<option value="hat">${t('meta.clothing_type.hat')}</option>
+					<option value="hair">${t('meta.clothing_type.hair')}</option>
+					<option value="accessory">${t('meta.clothing_type.accessory')}</option>
+					<option value="tail">${t('meta.clothing_type.tail')}</option>
+					<option value="ears">${t('meta.clothing_type.ears')}</option>
+					<option value="wings">${t('meta.clothing_type.wings')}</option>
+					<option value="body-part">${t('meta.clothing_type.bodyPart')}</option>
+					<option value="underwear">${t('meta.clothing_type.underwear')}</option>
+					<option value="other">${t('meta.clothing_type.other')}</option>
 				</select>
 			</div>
 		</div>
@@ -278,7 +278,7 @@ function buildClothesMetaFields(): string {
 				</select>
 			</div>
 			<div class="form-group" style="margin-top:8px">
-				<label><strong>${t('meta.features')}</strong></label>
+				<label><strong>${t('meta.features.title')}</strong></label>
 				<div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:6px">
 					<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="clothes-nsfw"> ${t('meta.features.nsfw')}</label>
 					<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="clothes-physbones"> ${t('meta.features.physbones')}</label>
@@ -317,11 +317,6 @@ function editFormHtml(id: string): string {
 						<option value="assets">${t('cats.assets')}</option>
 						<option value="clothes">${t('cats.clothes')}</option>
 					</select>
-				</div>
-
-				<div class="form-group">
-					<label><strong>${t('upload.tags')}</strong> <small>(${t('upload.tagsHint')})</small></label>
-					<input type="text" id="tags" placeholder="anime, horror, quest, nsfw">
 				</div>
 
 				${buildAvatarMetaFields()}
@@ -410,7 +405,7 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 
 	let resource: Resource;
 	try {
-		resource = (await DataCache.fetch(`/api/resources/${id}`, 0)) as Resource;
+		resource = (await DataCache.fetch(`/api/resources/${id}`)) as Resource;
 		if (!resource) throw new Error('Not found');
 		document.title = `VRCStorage — Edit ${resource.title}`;
 	} catch (e) {
@@ -419,10 +414,12 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 	}
 
 	// Populate base fields
-	(document.getElementById('title') as HTMLInputElement).value = resource.title;
+	const decodedTitle = htmlDecode(resource.title);
+	const decodedDescription = htmlDecode(resource.description ?? '');
+	document.title = `VRCStorage — Edit ${decodedTitle}`;
+	(document.getElementById('title') as HTMLInputElement).value = decodedTitle;
 	(document.getElementById('category') as HTMLSelectElement).value = resource.category;
-	(document.getElementById('tags') as HTMLInputElement).value = resource.tags?.map((tag) => tag.name).join(', ') ?? '';
-	(document.getElementById('description') as HTMLTextAreaElement).value = resource.description ?? '';
+	(document.getElementById('description') as HTMLTextAreaElement).value = decodedDescription;
 
 	// -----------------------------------------------------------------------
 	// Category → meta block toggle + load existing meta (admin-only)
@@ -471,7 +468,7 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 						setCheckbox('av-toggles', meta.has_toggles as number);
 						setCheckbox('av-questoptimized', meta.is_quest_optimized as number);
 						if (meta.author_name_raw) {
-							(document.getElementById('av-author-input') as HTMLInputElement).value = meta.author_name_raw as string;
+							(document.getElementById('av-author-input') as HTMLInputElement).value = htmlDecode(meta.author_name_raw as string);
 						}
 						if (meta.author_uuid) {
 							(document.getElementById('av-author-uuid') as HTMLInputElement).value = meta.author_uuid as string;
@@ -493,7 +490,7 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 						if (isBase) {
 							document.getElementById('clothes-base-fields')!.style.display = 'block';
 							if (meta.base_avatar_name_raw) {
-								(document.getElementById('clothes-base-avatar-input') as HTMLInputElement).value = meta.base_avatar_name_raw as string;
+								(document.getElementById('clothes-base-avatar-input') as HTMLInputElement).value = htmlDecode(meta.base_avatar_name_raw as string);
 							}
 							if (meta.base_avatar_uuid) {
 								(document.getElementById('clothes-base-avatar-uuid') as HTMLInputElement).value = meta.base_avatar_uuid as string;
@@ -591,9 +588,8 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 			}
 			baseDebounce = setTimeout(async () => {
 				try {
-					const res = await fetch(`/api/resources?category=avatars&q=${encodeURIComponent(q)}&limit=10`);
-					const data = (await res.json()) as { resources?: { uuid: string; title: string }[] };
-					const items = data.resources ?? [];
+					const res = await fetch(`/api/avatars/search?q=${encodeURIComponent(q)}&limit=10`);
+					const items = (await res.json()) as { uuid: string; title: string }[];
 					if (!items.length) {
 						clothesBaseSuggestions.style.display = 'none';
 						return;
@@ -686,11 +682,6 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 				});
 			}
 
-			const tagsRaw = (document.getElementById('tags') as HTMLInputElement).value;
-			const tags = tagsRaw
-				.split(',')
-				.map((s) => s.trim())
-				.filter(Boolean);
 			const categoryVal = (document.getElementById('category') as HTMLSelectElement).value;
 			const description = descEl.value;
 			const title = (document.getElementById('title') as HTMLInputElement).value;
@@ -703,7 +694,6 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 					title,
 					category: categoryVal,
 					description,
-					tags,
 					new_links: uploadedFileLinks.length ? uploadedFileLinks : undefined,
 				}),
 			});

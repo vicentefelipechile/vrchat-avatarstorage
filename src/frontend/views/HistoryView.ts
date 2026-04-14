@@ -6,6 +6,7 @@ import { DataCache } from '../cache';
 import { t } from '../i18n';
 import { diffString } from '../diff';
 import type { RouteContext, Resource } from '../types';
+import { TimeUnit } from '../utils';
 
 // =========================================================================
 // Types
@@ -56,17 +57,17 @@ const META_FIELD_LABELS: Record<string, string> = {
 	has_toggles: 'meta.features.toggles',
 	is_quest_optimized: 'meta.features.questOptimized',
 	sdk_version: 'meta.sdk_version.title',
-	platform: 'meta.platform.target',
-	author_name_raw: 'Autor (texto)',
-	author_uuid: 'Autor vinculado',
-	asset_type: 'Tipo de asset',
-	unity_version: 'Unity',
-	gender_fit: 'Fit / Género',
-	clothing_type: 'Tipo de prenda',
-	is_base: 'Es base',
-	base_avatar_uuid: 'Avatar base',
-	base_avatar_name_raw: 'Avatar base (texto)',
-	has_physbones_clothes: 'PhysBones',
+	platform: 'meta.platform.title',
+	author_name_raw: 'meta.avatar.author',
+	author_uuid: 'meta.avatar.authorLinked',
+	asset_type: 'meta.asset_type.title',
+	unity_version: 'meta.sdk_version.unityVersion',
+	gender_fit: 'meta.avatar_gender.title',
+	clothing_type: 'meta.clothes_type.title',
+	is_base: 'meta.clothes.isBase',
+	base_avatar_uuid: 'meta.asset_type.avatarBase',
+	base_avatar_name_raw: 'meta.asset_type.avatarBase',
+	has_physbones_clothes: 'meta.features.physbones',
 } as const;
 
 function formatMetaValue(key: string, value: unknown): string {
@@ -84,14 +85,15 @@ async function fetchCurrentMeta(uuid: string, metaType: MetaEditSnapshot['meta_t
 	const url = endpointMap[metaType];
 	if (!url) return null;
 	try {
-		const res = await fetch(url);
-		if (!res.ok) return null;
-		const data = (await res.json()) as Record<string, unknown>;
+		// const res = await fetch(url);
+		const res = await DataCache.fetch<HistoryEntry>(url, { ttl: TimeUnit.Minute * 30, persistent: true });
+		if (!res) return null;
+
 		// The endpoint returns a flat object where meta fields are top-level or nested
 		// assets/avatars/clothes routes return flat rows, extract everything except uuid/title/is_active
 		const ignored = new Set(['uuid', 'title', 'is_active', 'resource_uuid']);
 		const out: MetaEditFields = {};
-		for (const [k, v] of Object.entries(data)) {
+		for (const [k, v] of Object.entries(res)) {
 			if (!ignored.has(k)) out[k] = v;
 		}
 		return out;
@@ -100,12 +102,15 @@ async function fetchCurrentMeta(uuid: string, metaType: MetaEditSnapshot['meta_t
 	}
 }
 
+const IGNORED_META_KEYS = new Set(['resource_uuid', 'uuid']);
+
 function renderMetaDiff(snapshot: MetaEditSnapshot, current: MetaEditFields | null, authorName?: string): string {
 	const prev = snapshot.fields;
 
 	if (!current) {
 		// Can't fetch current state — just show the snapshot as-is
 		const rows = Object.entries(prev)
+			.filter(([k]) => !IGNORED_META_KEYS.has(k))
 			.map(([k, v]) => {
 				const label = t(META_FIELD_LABELS[k] || k);
 				return `<tr>
@@ -118,25 +123,26 @@ function renderMetaDiff(snapshot: MetaEditSnapshot, current: MetaEditFields | nu
 		return rows
 			? `<table style="width:100%;border-collapse:collapse;font-size:0.88em">
 				<thead><tr>
-					<th style="text-align:left;padding:4px 8px;border-bottom:1px solid var(--border-color);width:40%">Campo</th>
-					<th style="text-align:left;padding:4px 8px;border-bottom:1px solid var(--border-color)">Antes</th>
-					<th style="text-align:left;padding:4px 8px;border-bottom:1px solid var(--border-color)">Después</th>
+					<th style="text-align:left;padding:4px 8px;border-bottom:1px solid var(--border-color);width:40%">${t('history.meta.field')}</th>
+					<th style="text-align:left;padding:4px 8px;border-bottom:1px solid var(--border-color)">${t('history.meta.before')}</th>
+					<th style="text-align:left;padding:4px 8px;border-bottom:1px solid var(--border-color)">${t('history.meta.after')}</th>
 				</tr></thead>
 				<tbody>${rows}</tbody>
 			</table>`
-			: `<em style="color:#666">Sin campos registrados</em>`;
+			: `<em style="color:#666">${t('history.meta.noFields')}</em>`;
 	}
 
 	const changedRows: string[] = [];
 
 	for (const [k, prevVal] of Object.entries(prev)) {
+		if (IGNORED_META_KEYS.has(k)) continue;
 		const currVal = current[k];
 		const prevStr = formatMetaValue(k, prevVal);
 		const currStr = formatMetaValue(k, currVal);
 
 		if (prevStr === currStr) continue;
 
-		const label = META_FIELD_LABELS[k] || k;
+		const label = t(META_FIELD_LABELS[k] || k);
 
 		// Special case: author_uuid changed from null to a UUID
 		if (k === 'author_uuid' && !prevVal && currVal) {
@@ -144,7 +150,7 @@ function renderMetaDiff(snapshot: MetaEditSnapshot, current: MetaEditFields | nu
 			changedRows.push(`<tr style="background:var(--bg-hover)">
 				<td style="padding:5px 8px;border-bottom:1px solid var(--border-color);font-weight:500">${label}</td>
 				<td style="padding:5px 8px;border-bottom:1px solid var(--border-color)"><span style="color:var(--text-muted)">—</span></td>
-				<td style="padding:5px 8px;border-bottom:1px solid var(--border-color)"><ins style="color:#22863a;background:#e6ffec;padding:1px 4px;text-decoration:none">Autor vinculado: ${displayName}</ins></td>
+				<td style="padding:5px 8px;border-bottom:1px solid var(--border-color)"><ins style="color:#22863a;background:#e6ffec;padding:1px 4px;text-decoration:none">${displayName}</ins></td>
 			</tr>`);
 			continue;
 		}
@@ -157,14 +163,14 @@ function renderMetaDiff(snapshot: MetaEditSnapshot, current: MetaEditFields | nu
 	}
 
 	if (changedRows.length === 0) {
-		return `<em style="color:#666">Sin cambios detectados</em>`;
+		return `<em style="color:#666">${t('history.meta.noChanges')}</em>`;
 	}
 
 	return `<table style="width:100%;border-collapse:collapse;font-size:0.88em">
 		<thead><tr>
-			<th style="text-align:left;padding:4px 8px;border-bottom:1px solid var(--border-color);width:35%">Campo</th>
-			<th style="text-align:left;padding:4px 8px;border-bottom:1px solid var(--border-color)">Antes</th>
-			<th style="text-align:left;padding:4px 8px;border-bottom:1px solid var(--border-color)">Después</th>
+			<th style="text-align:left;padding:4px 8px;border-bottom:1px solid var(--border-color);width:35%">${t('history.meta.field')}</th>
+			<th style="text-align:left;padding:4px 8px;border-bottom:1px solid var(--border-color)">${t('history.meta.before')}</th>
+			<th style="text-align:left;padding:4px 8px;border-bottom:1px solid var(--border-color)">${t('history.meta.after')}</th>
 		</tr></thead>
 		<tbody>${changedRows.join('')}</tbody>
 	</table>`;
@@ -175,7 +181,7 @@ function renderMetaDiff(snapshot: MetaEditSnapshot, current: MetaEditFields | nu
 // =========================================================================
 
 async function historyCard(entry: HistoryEntry, current: Resource, resourceUuid: string): Promise<string> {
-	const date = new Date(entry.created_at * 1000).toLocaleString();
+	const date = new Date(entry.created_at).toLocaleString();
 	const actorName = entry.actor?.username ?? 'Unknown';
 	const actorAvatar = entry.actor?.avatar_url ?? '';
 	const changeTypeLabel = t(`history.types.${entry.change_type}`) || entry.change_type;
@@ -197,6 +203,7 @@ async function historyCard(entry: HistoryEntry, current: Resource, resourceUuid:
 			const currentMeta = await fetchCurrentMeta(resourceUuid, snapshot.meta_type);
 
 			// Try to resolve author name if author_uuid changed
+			/*
 			let authorName: string | undefined;
 			const prevAuthorUuid = snapshot.fields.author_uuid;
 			const currAuthorUuid = currentMeta?.['author_uuid'];
@@ -208,11 +215,12 @@ async function historyCard(entry: HistoryEntry, current: Resource, resourceUuid:
 						authorName = a.name ?? a.slug;
 					}
 				} catch {
-					/* fallback to UUID */
+					// fallback to UUID
 				}
 			}
+			*/
 
-			changesHtml = renderMetaDiff(snapshot, currentMeta, authorName);
+			changesHtml = renderMetaDiff(snapshot, currentMeta);
 		}
 	} else if (entry.change_type === 'approval') {
 		const prev = entry.previous_data as unknown as { is_active?: boolean };
@@ -320,8 +328,8 @@ export async function historyAfter(ctx: RouteContext): Promise<void> {
 
 	try {
 		const [entries, currentRes] = await Promise.all([
-			fetch(`/api/resources/${id}/history`).then((r) => r.json()) as Promise<HistoryEntry[]>,
-			DataCache.fetch(`/api/resources/${id}`, { ttl: 300_000, persistent: true }) as Promise<Resource>,
+			DataCache.fetch(`/api/resources/${id}/history`, { ttl: TimeUnit.Minute * 5, persistent: true }) as Promise<HistoryEntry[]>,
+			DataCache.fetch(`/api/resources/${id}`, { ttl: TimeUnit.Minute * 5, persistent: true }) as Promise<Resource>,
 		]);
 
 		if (!entries || entries.length === 0) {

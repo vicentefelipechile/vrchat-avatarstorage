@@ -8,7 +8,7 @@
 
 import { DataCache } from '../cache';
 import { t } from '../i18n';
-import { stripMarkdown } from '../utils';
+import { stripMarkdown, TimeUnit } from '../utils';
 import type { RouteContext, Resource } from '../types';
 
 // =========================================================================
@@ -95,7 +95,7 @@ export async function categoryView(ctx: RouteContext): Promise<string> {
 	let hasMore = false;
 
 	try {
-		const data = await DataCache.fetch<CategoryViewData>(cacheKey, { ttl: 900_000 });
+		const data = await DataCache.fetch<CategoryViewData>(cacheKey, { ttl: TimeUnit.Minute * 15 });
 		resources = data.resources;
 		hasMore = data.pagination.hasNextPage;
 	} catch {

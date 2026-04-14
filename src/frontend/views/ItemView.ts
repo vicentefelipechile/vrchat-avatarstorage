@@ -4,7 +4,7 @@
 
 import { t } from '../i18n';
 import { DataCache } from '../cache';
-import { showToast } from '../utils';
+import { showToast, TimeUnit } from '../utils';
 import { deleteComment, approveResource, rejectResource, deactivateResource } from '../admin';
 import { icons } from '../icons';
 import { commentEditorHtml, initCommentEditor } from '../comment-editor';
@@ -79,7 +79,7 @@ function renderCategoryMeta(res: Resource): string {
 		const m = res.meta as AssetMeta;
 		if (m.asset_type)
 			textRows.push(
-				metaRow(t('meta.asset.type').replace(/\s*\*/g, ''), chip(t('meta.assetType.' + m.asset_type.replace('-', '')) || m.asset_type)),
+				metaRow(t('meta.asset.type').replace(/\s*\*/g, ''), chip(t('meta.asset_type.' + m.asset_type.replace('-', '')) || m.asset_type)),
 			);
 		if (m.platform)
 			textRows.push(metaRow(t('meta.platform.title').replace(/\s*\*/g, ''), chip(t('meta.platform.' + m.platform) || m.platform)));
@@ -93,14 +93,20 @@ function renderCategoryMeta(res: Resource): string {
 			textRows.push(
 				metaRow(
 					t('meta.clothes.type').replace(/\s*\*/g, ''),
-					chip(t('meta.clothesType.' + m.clothing_type.replace('-', '')) || m.clothing_type),
+					chip(t('meta.clothing_type.' + m.clothing_type.replace('-', '')) || m.clothing_type),
 				),
 			);
 		if (m.gender_fit)
 			textRows.push(metaRow(t('meta.clothes.gender').replace(/\s*\*/g, ''), chip(t('meta.avatar_gender.' + m.gender_fit) || m.gender_fit)));
 		if (m.platform)
 			textRows.push(metaRow(t('meta.platform.title').replace(/\s*\*/g, ''), chip(t('meta.platform.' + m.platform) || m.platform)));
-		if (m.base_avatar_name_raw) textRows.push(metaRow(t('meta.clothes.baseAvatar').replace(/\s*\*/g, ''), chip(m.base_avatar_name_raw)));
+		if (m.base_avatar_name_raw) {
+			const name = m.base_avatar_name_raw;
+			const val = m.base_avatar_uuid
+				? `<a href="/item/${m.base_avatar_uuid}" data-link class="meta-chip meta-chip--link">${name}</a>`
+				: chip(name);
+			textRows.push(metaRow(t('meta.clothes.baseAvatar').replace(/\s*\*/g, ''), val));
+		}
 
 		flagChips.push(flagChip(t('meta.clothes.isBase').replace(/\s*\*/g, ''), m.is_base));
 		flagChips.push(flagChip('NSFW', m.is_nsfw));
@@ -133,9 +139,7 @@ function downloadSection(res: Resource): string {
 			</div>`;
 	}
 
-	console.log(res)
 	const downloadLinks: ResourceLink[] = (res.links ?? []).filter((l) => l.link_type === 'download');
-	console.log('Download links:', downloadLinks);
 	if (downloadLinks.length > 0) {
 		const linksHtml = downloadLinks
 			.map((link, i) => {
@@ -163,7 +167,8 @@ function buildGallery(res: Resource): { html: string; images: string[] } {
 	let html = '';
 
 	const hasMedia = (res.mediaFiles?.length ?? 0) > 0;
-	const hasThumbnail = !!res.thumbnail_key;
+	// const hasThumbnail = !!res.thumbnail_key;
+	const hasThumbnail = false;
 
 	if (!hasMedia && !hasThumbnail) return { html, images };
 
@@ -379,7 +384,7 @@ export async function itemView(ctx: RouteContext): Promise<string> {
 
 	let res: Resource;
 	try {
-		res = (await DataCache.fetch(`/api/resources/${uuid}`, { ttl: 60_000, persistent: true })) as Resource;
+		res = (await DataCache.fetch(`/api/resources/${uuid}`, { ttl: TimeUnit.Hour, persistent: true })) as Resource;
 		if (!res) throw new Error('Not found');
 	} catch {
 		return `<h1>${t('item.notFound')}</h1>`;
@@ -389,7 +394,7 @@ export async function itemView(ctx: RouteContext): Promise<string> {
 
 	const { user, isAdmin } = window.appState;
 	const category = res.category ? t('cats.' + res.category) || res.category : t('common.unknown');
-	const date = new Date(res.created_at * 1000).toLocaleString();
+	const date = new Date(res.created_at).toLocaleString();
 	const { html: galleryHtml, images: lightboxImages } = buildGallery(res);
 	const isOwner = user && res.author && user.username === res.author.username;
 	const canEdit = isAdmin || (isOwner && res.is_active === 0);

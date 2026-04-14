@@ -106,7 +106,7 @@ export async function favoritesView(ctx: RouteContext): Promise<string> {
 	let data: FavoritesResponse = { favorites: [] };
 
 	try {
-		data = (await DataCache.fetch(`/api/favorites?page=${page}&_=${Date.now()}`, 0)) as FavoritesResponse;
+		data = (await DataCache.fetch(`/api/favorites?page=${page}&_=${Date.now()}`)) as FavoritesResponse;
 	} catch {
 		/* show empty */
 	}

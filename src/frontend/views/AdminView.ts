@@ -94,7 +94,7 @@ export async function adminView(_ctx: RouteContext): Promise<string> {
 	const sectionsHtml = NAV_ITEMS.map(
 		(item) =>
 			`<div class="admin-section" id="section-${item.id}">
-			<div class="admin-loading" id="loading-${item.id}">${t('admin.loading')}</div>
+			<div class="admin-loading" id="loading-${item.id}">${t('common.loading')}</div>
 		</div>`,
 	).join('');
 
@@ -277,7 +277,7 @@ async function loadResources(el: HTMLElement, page = 1, category = '', status = 
 					<option value="0" ${status === '0' ? 'selected' : ''}>${t('admin.resources.pending')}</option>
 				</select>
 			</div>
-			<div id="res-table-wrap" class="admin-loading">${t('admin.loading')}</div>
+			<div id="res-table-wrap" class="admin-loading">${t('common.loading')}</div>
 		</div>`;
 
 	const qp = new URLSearchParams({ page: String(page) });
@@ -363,7 +363,7 @@ async function loadUsers(el: HTMLElement, page = 1, q = ''): Promise<void> {
 			<div class="admin-action-bar">
 				<input type="text" id="user-search" class="admin-search-input" placeholder="${t('admin.users.searchPlaceholder')}" value="${q}">
 			</div>
-			<div id="user-table-wrap" class="admin-loading">${t('admin.loading')}</div>
+			<div id="user-table-wrap" class="admin-loading">${t('common.loading')}</div>
 		</div>`;
 
 	try {
@@ -441,7 +441,7 @@ async function loadAuthors(el: HTMLElement, page = 1): Promise<void> {
 			<div class="admin-action-bar">
 				<button class="btn" id="authors-create-btn">${t('admin.authors.btnNew')}</button>
 			</div>
-			<div id="authors-table-wrap" class="admin-loading">${t('admin.loading')}</div>
+			<div id="authors-table-wrap" class="admin-loading">${t('common.loading')}</div>
 		</div>`;
 
 	try {
@@ -694,7 +694,7 @@ function showAuthorForm(sectionEl: HTMLElement, mode: AuthorFormMode, author?: A
 
 async function loadMedia(el: HTMLElement): Promise<void> {
 	el.innerHTML = `<h2 class="admin-section-title">${t('admin.media.title')}</h2>
-		<div id="media-stats-wrap" class="admin-loading">${t('admin.loading')}</div>`;
+		<div id="media-stats-wrap" class="admin-loading">${t('common.loading')}</div>`;
 
 	try {
 		const res = await fetch('/api/admin/stats/orphaned-media');

@@ -10,6 +10,8 @@ import { t } from '../i18n';
 import { buildFilterPanel, initFilterPanel, FilterType } from '../filter-panel';
 import { navigateTo } from '../router';
 import type { RouteContext } from '../types';
+import { DataCache } from '../cache';
+import { TimeUnit } from '../utils';
 
 // =========================================================================
 // Types
@@ -178,8 +180,8 @@ export async function avatarsView(ctx: RouteContext): Promise<string> {
 	const qs = params.toString();
 	let data: AvatarListResponse | null = null;
 	try {
-		const res = await fetch(`/api/avatars?${qs}`);
-		if (res.ok) data = (await res.json()) as AvatarListResponse;
+		const res = await DataCache.fetch<AvatarListResponse>(`/api/avatars?${qs}`, { ttl: TimeUnit.Minute * 30, persistent: true });
+		if (res !== null) data = res;
 	} catch {
 		/* empty */
 	}

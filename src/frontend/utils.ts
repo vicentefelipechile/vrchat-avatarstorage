@@ -1,13 +1,13 @@
-// =========================================================================
+// =========================================================================================================
 // utils.ts — Shared frontend utilities
-// =========================================================================
+// =========================================================================================================
 
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 
-// -------------------------------------------------------------------------
+// =========================================================================================================
 // Image resizing
-// -------------------------------------------------------------------------
+// =========================================================================================================
 
 export function resizeImage(file: File, maxWidth: number, maxHeight: number): Promise<File> {
 	return new Promise((resolve, reject) => {
@@ -50,9 +50,9 @@ export function resizeImage(file: File, maxWidth: number, maxHeight: number): Pr
 	});
 }
 
-// -------------------------------------------------------------------------
+// =========================================================================================================
 // Markdown stripping
-// -------------------------------------------------------------------------
+// =========================================================================================================
 
 export function stripMarkdown(md: string): string {
 	if (!md) return '';
@@ -67,9 +67,9 @@ export function stripMarkdown(md: string): string {
 		.replace(/`([^`]+)`/g, '$1');
 }
 
-// -------------------------------------------------------------------------
+// =========================================================================================================
 // Markdown rendering (with GitHub-style alert post-processing)
-// -------------------------------------------------------------------------
+// =========================================================================================================
 
 export function renderMarkdown(container: HTMLElement, raw: string): void {
 	const html = DOMPurify.sanitize(marked.parse(raw) as string);
@@ -93,9 +93,9 @@ export function renderMarkdown(container: HTMLElement, raw: string): void {
 	});
 }
 
-// -------------------------------------------------------------------------
+// =========================================================================================================
 // Turnstile
-// -------------------------------------------------------------------------
+// =========================================================================================================
 
 let _cachedSiteKey: string | null = null;
 
@@ -130,9 +130,9 @@ export async function renderTurnstile(selector: string): Promise<void> {
 	window.turnstile.render(selector, { sitekey: key.trim() });
 }
 
-// -------------------------------------------------------------------------
+// =========================================================================================================
 // DOM helpers
-// -------------------------------------------------------------------------
+// =========================================================================================================
 
 /** Query a typed element, throws if missing. */
 export function $<T extends HTMLElement>(selector: string, root: ParentNode = document): T {
@@ -146,6 +146,13 @@ export function $$<T extends HTMLElement>(selector: string, root: ParentNode = d
 	return root.querySelector<T>(selector);
 }
 
+/** Decode HTML entities into normal text. */
+export function htmlDecode(input: string): string {
+	const textarea = document.createElement('textarea');
+	textarea.innerHTML = input;
+	return textarea.value;
+}
+
 /** Set button to loading state, returns restore function. */
 export function loadingBtn(btn: HTMLButtonElement, text = '…'): () => void {
 	const orig = btn.innerHTML;
@@ -157,9 +164,9 @@ export function loadingBtn(btn: HTMLButtonElement, text = '…'): () => void {
 	};
 }
 
-// -------------------------------------------------------------------------
+// =========================================================================================================
 // Toast notifications
-// -------------------------------------------------------------------------
+// =========================================================================================================
 
 export type ToastType = 'info' | 'success' | 'error' | 'warning';
 
@@ -208,4 +215,16 @@ export function showToast(message: string, type: ToastType = 'info', duration = 
 	});
 
 	return dismiss;
+}
+
+// =========================================================================================================
+// Time Definitions
+// =========================================================================================================
+
+export enum TimeUnit {
+	Second = 1000,
+	Minute = 60 * 1000,
+	Hour = 60 * 60 * 1000,
+	Day = 24 * 60 * 60 * 1000,
+	Week = 7 * 24 * 60 * 60 * 1000,
 }

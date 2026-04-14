@@ -4,7 +4,7 @@
 
 import { DataCache } from '../cache';
 import { t } from '../i18n';
-import { stripMarkdown } from '../utils';
+import { stripMarkdown, TimeUnit } from '../utils';
 import type { RouteContext, Resource } from '../types';
 
 // =========================================================================
@@ -60,7 +60,7 @@ export async function homeView(_ctx: RouteContext): Promise<string> {
 
 	let resources: Resource[] = [];
 	try {
-		resources = (await DataCache.fetch('/api/resources/latest', { ttl: 60_000 })) as Resource[];
+		resources = (await DataCache.fetch('/api/resources/latest', { ttl: TimeUnit.Minute * 15 })) as Resource[];
 	} catch {
 		/* show empty grid */
 	}

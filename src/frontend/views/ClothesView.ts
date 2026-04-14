@@ -10,6 +10,8 @@ import { t } from '../i18n';
 import { buildFilterPanel, FilterType, initFilterPanel } from '../filter-panel';
 import { navigateTo } from '../router';
 import type { RouteContext } from '../types';
+import { DataCache } from '../cache';
+import { TimeUnit } from '../utils';
 
 // =========================================================================
 // Types
@@ -44,7 +46,7 @@ interface ClothesListResponse {
 
 function clothesCard(res: ClothesResource): string {
 	const title = res.title.substring(0, 50);
-	const date = new Date(res.created_at * 1000).toLocaleDateString();
+	const date = new Date(res.created_at).toLocaleDateString();
 
 	const imgHtml = res.thumbnail_key
 		? `<div class="card-image"><img src="/api/download/${res.thumbnail_key}" alt="${title}" loading="lazy"><span class="card-badge">${res.meta.clothing_type}</span></div>`
@@ -146,8 +148,8 @@ export async function clothesView(ctx: RouteContext): Promise<string> {
 	const qs = params.toString();
 	let data: ClothesListResponse | null = null;
 	try {
-		const res = await fetch(`/api/clothes?${qs}`);
-		if (res.ok) data = (await res.json()) as ClothesListResponse;
+		const res = await DataCache.fetch<ClothesListResponse>(`/api/clothes?${qs}`, { ttl: TimeUnit.Minute * 30, persistent: true });
+		if (res) data = res;
 	} catch {
 		/* empty */
 	}
