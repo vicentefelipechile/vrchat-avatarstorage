@@ -42,6 +42,7 @@ const CATEGORIES: WikiCategory[] = [
 			{ id: 'home', label: 'nav.home' },
 			{ id: 'faq', label: 'wiki.faq.title' },
 			{ id: 'comments', label: 'wiki.comments.title' },
+			{ id: 'avatar-categories', label: 'wiki.avatarCategories.title' },
 		],
 	},
 	{
