@@ -180,16 +180,17 @@ function buildAvatarMetaFields(): string {
 				<select id="av-avatar-type" class="form-control">
 					<option value="">${t('meta.select')}</option>
 					<option value="human">${t('meta.avatar_type.human')}</option>
-					<option value="anime">${t('meta.avatar_type.anime')}</option>
-					<option value="kemono">${t('meta.avatar_type.kemono')}</option>
 					<option value="furry">${t('meta.avatar_type.furry')}</option>
-					<option value="semi-realistic">${t('meta.avatar_type.semiRealistic')}</option>
+					<option value="anime">${t('meta.avatar_type.anime')}</option>
 					<option value="chibi">${t('meta.avatar_type.chibi')}</option>
-					<option value="mecha">${t('meta.avatar_type.mecha')}</option>
+					<option value="cartoon">${t('meta.avatar_type.cartoon')}</option>
+					<option value="semi-realistic">${t('meta.avatar_type.semiRealistic')}</option>
 					<option value="monster">${t('meta.avatar_type.monster')}</option>
 					<option value="fantasy">${t('meta.avatar_type.fantasy')}</option>
-					<option value="sci-fi">${t('meta.avatar_type.sciFi')}</option>
-					<option value="vtuber">${t('meta.avatar_type.vtuber')}</option>
+					<!-- <option value="kemono">${t('meta.avatar_type.kemono')}</option> -->
+					<!-- <option value="mecha">${t('meta.avatar_type.mecha')}</option> -->
+					<!-- <option value="sci-fi">${t('meta.avatar_type.sciFi')}</option> -->
+					<!-- <option value="vtuber">${t('meta.avatar_type.vtuber')}</option> -->
 					<option value="other">${t('meta.avatar_type.other')}</option>
 				</select>
 			</div>
@@ -821,7 +822,7 @@ export async function uploadAfter(_ctx: RouteContext): Promise<void> {
 			const authorInput = (document.getElementById('av-author-input') as HTMLInputElement).value.trim();
 			const authorUuid = (document.getElementById('av-author-uuid') as HTMLInputElement).value.trim() || null;
 			return {
-				avatar_gender,
+				gender: avatar_gender,
 				avatar_size,
 				avatar_type,
 				platform,

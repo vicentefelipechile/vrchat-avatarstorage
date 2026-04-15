@@ -222,12 +222,20 @@ const BOOLEAN_STRING = ['0', '1'] as const;
 const AVATAR_GENDER = ['male', 'female', 'androgynous', 'undefined'] as const;
 const AVATAR_SIZE = ['tiny', 'small', 'medium', 'tall', 'giant'] as const;
 const AVATAR_TYPE = [
-	'anime',		'kemono',		'furry',
-	'human',		'semi-realistic',
-	'chibi',		'mecha',		'monster',
-	'fantasy',		'sci-fi',		'vtuber',
-	'other',
+	'human',
+	'anime',
+	'furry',
+	'chibi',
+	'cartoon',
+	'semi-realistic',
+	'monster',
+	'fantasy',
+	'mecha',
+	'kemono',
+	'other'
 ] as const;
+
+
 
 // Assets
 const ASSETS_TYPE = [
