@@ -43,18 +43,19 @@ function buildAvatarFilters(params: URLSearchParams): { clauses: string[]; bindi
 		}
 	};
 
-	str('avatar_gender', 'gender', ['male', 'female', 'androgynous', 'undefined']);
+	str('avatar_gender', 'gender', ['male', 'female', 'androgynous', 'undefined', 'both']);
 	str('avatar_size', 'avatar_size', ['tiny', 'small', 'medium', 'tall', 'giant']);
 	str('avatar_type', 'avatar_type', [
-		'anime',
-		'kemono',
-		'furry',
 		'human',
-		'semi-realistic',
+		'furry',
+		'anime',
 		'chibi',
-		'mecha',
+		'cartoon',
+		'semi-realistic',
 		'monster',
 		'fantasy',
+		'mecha',
+		'kemono',
 		'sci-fi',
 		'vtuber',
 		'other',
@@ -345,7 +346,6 @@ avatars.post('/', async (c) => {
 
 		return c.json({ uuid: resourceUuid }, 201);
 	} catch (e) {
-		console.error('Avatar create error:', e);
 		return c.json({ error: 'Failed to create avatar' }, 500);
 	}
 });
@@ -422,6 +422,7 @@ avatars.put('/:uuid', async (c) => {
 		);
 
 		await c.env.DB.batch([insertHistory, updateMeta]);
+		await c.env.VRCSTORAGE_KV.delete(`resource:${uuid}`); // Invalidate cached diff
 
 		return c.json({ success: true });
 	} catch (e) {

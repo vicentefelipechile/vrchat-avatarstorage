@@ -25,7 +25,7 @@ INSERT INTO avatar_meta (
     has_toggles,
     is_quest_optimized,
     sdk_version,        -- SDK3 es el estándar actual de VRChat
-    platform            -- 'cross' es el más permisivo como default
+    platform            -- 'pc' es el más común y seguro como default para avatares
 )
 SELECT
     uuid,
@@ -42,7 +42,7 @@ SELECT
     0,
     0,
     'sdk3',
-    'cross'
+    'pc'
 FROM resources
 WHERE category = 'avatars'
 AND uuid NOT IN (SELECT resource_uuid FROM avatar_meta);
@@ -56,7 +56,7 @@ INSERT INTO asset_meta (
     asset_type,     -- 'other' hasta que el admin lo clasifique
     is_nsfw,
     unity_version,  -- 2022 es la versión actual requerida por VRChat
-    platform,       -- 'cross' es el más permisivo como default
+    platform,       -- 'pc' es el más común y seguro como default para assets
     sdk_version     -- SDK3 es el estándar actual de VRChat
 )
 SELECT
@@ -64,7 +64,7 @@ SELECT
     'other',
     0,
     '2022',
-    'cross',
+    'pc',
     'sdk3'
 FROM resources
 WHERE category = 'assets'

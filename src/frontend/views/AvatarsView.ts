@@ -108,6 +108,7 @@ const AVATAR_FILTER_CONFIG = {
 			options: [
 				{ value: 'male' },
 				{ value: 'female' },
+				{ value: 'both' },
 				// { value: 'androgynous' },
 				// { value: 'undefined' },
 			],

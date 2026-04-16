@@ -219,8 +219,22 @@ const UNITY_VERSION = ['2019', '2022'] as const;
 const BOOLEAN_STRING = ['0', '1'] as const;
 
 // Avatars
-const AVATAR_GENDER = ['male', 'female', 'androgynous', 'undefined'] as const;
-const AVATAR_SIZE = ['tiny', 'small', 'medium', 'tall', 'giant'] as const;
+const AVATAR_GENDER = [
+	'male',
+	'female',
+	'androgynous',
+	'undefined',
+	'both'
+] as const;
+
+const AVATAR_SIZE = [
+	'tiny',
+	'small',
+	'medium',
+	'tall',
+	'giant'
+] as const;
+
 const AVATAR_TYPE = [
 	'human',
 	'anime',

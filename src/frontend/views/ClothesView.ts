@@ -146,7 +146,7 @@ async function buildResults(params: URLSearchParams): Promise<string> {
 	let data: ClothesListResponse | null = null;
 	try {
 		const res = await DataCache.fetch<ClothesListResponse>(`/api/clothes?${params.toString()}`, {
-			ttl: TimeUnit.Minute * 30,
+			ttl: TimeUnit.Hour,
 			persistent: true,
 		});
 		if (res) data = res;

@@ -637,6 +637,7 @@ export default {
 			undefined: 'Indefinido',
 			unisex: 'Unisex',
 			kemono: 'Kemono',
+			both: 'Ambos (Paquete)',
 		},
 		avatar_size: {
 			title: 'Tamaño',

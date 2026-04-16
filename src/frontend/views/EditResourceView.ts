@@ -91,6 +91,7 @@ function buildAvatarMetaFields(): string {
 				<div class="radio-group" style="display:flex;gap:12px;flex-wrap:wrap;margin-top:6px">
 					<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="av-gender" value="male"> ${t('meta.avatar_gender.male')}</label>
 					<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="av-gender" value="female"> ${t('meta.avatar_gender.female')}</label>
+					<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="av-gender" value="both"> ${t('meta.avatar_gender.both')}</label>
 					<!-- <label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="hidden" name="av-gender" value="androgynous" hide> ${t('meta.avatar_gender.androgynous')}</label> -->
 					<!-- <label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="hidden" name="av-gender" value="undefined"> ${t('meta.avatar_gender.undefined')}</label> -->
 				</div>

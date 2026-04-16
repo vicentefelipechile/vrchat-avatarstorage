@@ -196,7 +196,7 @@ export async function wikiAfter(ctx: RouteContext): Promise<void> {
 		const lang = getCurrentLang();
 
 		async function fetchWikiContent(langCode: string): Promise<string> {
-			const text = (await DataCache.fetch(`/wiki/${langCode}/${topicId}.md`, { type: 'text', ttl: TimeUnit.Day })) as string;
+			const text = (await DataCache.fetch(`/wiki/${langCode}/${topicId}.md`, { type: 'text', ttl: TimeUnit.Week })) as string;
 			// Cloudflare returns the SPA shell (index.html) with 200 when a static file doesn't exist.
 			// Detect this by checking if the response is HTML instead of Markdown.
 			const trimmed = text.trimStart().toLowerCase();

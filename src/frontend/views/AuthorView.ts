@@ -95,7 +95,7 @@ export async function authorView(ctx: RouteContext): Promise<string> {
 	let data: AuthorProfileResponse | null = null;
 	try {
 		// const res = await fetch(`/api/authors/${slug}?page=${page}`);
-		const res = await DataCache.fetch<AuthorProfileResponse>(`/api/authors/${slug}?page=${page}`, { ttl: 5 * TimeUnit.Minute });
+		const res = await DataCache.fetch<AuthorProfileResponse>(`/api/authors/${slug}?page=${page}`, { ttl: TimeUnit.Day });
 		if (res) {
 			data = res;
 		} else {

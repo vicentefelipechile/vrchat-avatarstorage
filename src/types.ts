@@ -370,18 +370,19 @@ export interface AvatarMeta {
 	resource_uuid: string;
 	author_uuid: string | null;
 	author_name_raw: string | null;
-	avatar_gender: 'male' | 'female' | 'androgynous' | 'undefined';
+	avatar_gender: 'male' | 'female' | 'androgynous' | 'undefined' | 'both';
 	avatar_size: 'tiny' | 'small' | 'medium' | 'tall' | 'giant';
 	avatar_type:
-		| 'anime'
-		| 'kemono'
-		| 'furry'
 		| 'human'
-		| 'semi-realistic'
+		| 'furry'
+		| 'anime'
 		| 'chibi'
-		| 'mecha'
+		| 'cartoon'
+		| 'semi-realistic'
 		| 'monster'
 		| 'fantasy'
+		| 'kemono'
+		| 'mecha'
 		| 'sci-fi'
 		| 'vtuber'
 		| 'other';
