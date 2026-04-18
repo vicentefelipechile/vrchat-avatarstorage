@@ -22,6 +22,15 @@ interface AdminStats {
 	assets: number;
 	clothes: number;
 	pending: number;
+}
+
+function escapeHtml(value: string): string {
+	return value
+		.replace(/&/g, '&amp;')
+		.replace(/</g, '&lt;')
+		.replace(/>/g, '&gt;')
+		.replace(/"/g, '&quot;')
+		.replace(/'/g, '&#39;');
 	authors: number;
 	media: number;
 	orphaned_media: number;
@@ -358,10 +367,11 @@ async function loadResources(el: HTMLElement, page = 1, category = '', status = 
 // ---- Users ----
 
 async function loadUsers(el: HTMLElement, page = 1, q = ''): Promise<void> {
+	const safeQ = escapeHtml(q);
 	el.innerHTML = `<h2 class="admin-section-title">${t('admin.users.title')}</h2>
 		<div class="admin-form-panel" style="padding: 16px;">
 			<div class="admin-action-bar">
-				<input type="text" id="user-search" class="admin-search-input" placeholder="${t('admin.users.searchPlaceholder')}" value="${q}">
+				<input type="text" id="user-search" class="admin-search-input" placeholder="${t('admin.users.searchPlaceholder')}" value="${safeQ}">
 			</div>
 			<div id="user-table-wrap" class="admin-loading">${t('common.loading')}</div>
 		</div>`;
