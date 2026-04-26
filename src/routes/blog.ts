@@ -67,7 +67,7 @@ async function uniqueSlug(db: D1Database, base: string, excludeUuid?: string): P
 async function invalidateBlogListCache(kv: KVNamespace): Promise<void> {
 	// We can't enumerate all page/limit combinations, so we use a suffix pattern approach:
 	// Delete the most common pages. For production, a cache key version bump could be used.
-	const keys = ['blog:list:1:10', 'blog:list:1:20', 'blog:list:2:10', 'blog:list:2:20', 'blog:list:3:10'];
+	const keys =['blog:list:1:10', 'blog:list:1:20', 'blog:list:2:10', 'blog:list:2:20', 'blog:list:3:10'] as const;
 	await Promise.all(keys.map((k) => kv.delete(k)));
 }
 
@@ -102,6 +102,7 @@ blog.get('/', async (c) => {
 			c.env.DB.prepare(
 				`SELECT
 					bp.*,
+					bp.created_at * 1000 as created_at,
 					u.username as author_username,
 					u.avatar_url as author_avatar,
 					m.r2_key as cover_image_key
@@ -128,7 +129,7 @@ blog.get('/', async (c) => {
 		};
 
 		// Cache for 5 minutes
-		c.env.VRCSTORAGE_KV.put(cacheKey, JSON.stringify({ data: postsResult.results, total }), { expirationTtl: 300 });
+		c.env.VRCSTORAGE_KV.put(cacheKey, JSON.stringify({ data: postsResult.results, total }), { expirationTtl: 1 * 60 * 60 });
 
 		return c.json(result);
 	} catch (e) {
@@ -149,6 +150,7 @@ blog.get('/:uuid', async (c) => {
 		const post = await c.env.DB.prepare(
 			`SELECT
 				bp.*,
+				bp.created_at * 1000 as created_at,
 				u.username as author_username,
 				u.avatar_url as author_avatar,
 				m.r2_key as cover_image_key
@@ -161,6 +163,7 @@ blog.get('/:uuid', async (c) => {
 			.first<BlogPostWithAuthor>();
 
 		if (!post) return c.json({ error: 'Post not found' }, 404);
+		await c.env.VRCSTORAGE_KV.put(`blog:post:${uuid}`, JSON.stringify(post), { expirationTtl: 1 * 60 * 60 }); // Cache for 1 hour
 
 		return c.json(post);
 	} catch (e) {
