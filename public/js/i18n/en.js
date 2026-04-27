@@ -165,6 +165,8 @@ export default {
 			toastDeactivated: 'Ad deactivated.',
 			toastWeightSaved: 'Weight updated.',
 			toastSlotSaved: 'Slot config updated.',
+			preview: 'Preview',
+			previewTitle: 'Ad Preview',
 		},
 	},
 	item: {
@@ -210,6 +212,9 @@ export default {
 			image: 'Upload image',
 			uploading: 'Uploading image...',
 			uploadError: 'Upload failed. Please try again.',
+			tabWrite: 'Write',
+			tabPreview: 'Preview',
+			previewEmpty: 'Nothing to preview yet.',
 		},
 		specifications: 'Specifications',
 	},

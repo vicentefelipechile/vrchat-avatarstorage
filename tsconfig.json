@@ -34,7 +34,7 @@
 		"types": [
 			"./worker-configuration.d.ts",
 			"node"
-		]
+		],
 	},
 	"exclude": [
 		"test",
