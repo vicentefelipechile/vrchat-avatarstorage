@@ -11,6 +11,8 @@ import { commentEditorHtml, initCommentEditor } from '../comment-editor';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import type { RouteContext, Resource, Comment, ResourceLink, AvatarMeta, AssetMeta, ClothesMeta } from '../types';
+import { fetchAdsForSlot, renderDetailBanner, wireAdZoneEvents, trackVisibleAdImpressions } from '../ad-components';
+import { renderAdPrefsPanel, wireAdPrefsPanel } from '../ad-prefs';
 
 // =========================================================================
 // Helpers
@@ -425,6 +427,7 @@ export async function itemView(ctx: RouteContext): Promise<string> {
 	const lightboxData = encodeURIComponent(JSON.stringify(lightboxImages));
 
 	return `
+		${renderAdPrefsPanel()}
 		<div class="details-box" data-lightbox="${lightboxData}">
 			<div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:15px;margin-bottom:15px">
 				<h1 style="margin:0;line-height:1.2;word-break:break-word">${res.title}</h1>
@@ -455,6 +458,7 @@ export async function itemView(ctx: RouteContext): Promise<string> {
 						: `<hr><h3>${t('item.loginToComment')}</h3>`
 				}
 			</div>
+			<div id="item-detail-ad-zone"></div>
 		</div>
 
 		<!-- Lightbox -->
@@ -474,6 +478,19 @@ export async function itemView(ctx: RouteContext): Promise<string> {
 export async function itemAfter(ctx: RouteContext): Promise<void> {
 	const uuid = ctx.params.id;
 	const commentsContainer = document.getElementById('comments-container')!;
+
+	// Wire ad preferences panel
+	wireAdPrefsPanel();
+	wireAdZoneEvents();
+
+	// Fetch & inject detail banner (non-blocking, after comments load)
+	fetchAdsForSlot('detail_banner').then((ads) => {
+		const zone = document.getElementById('item-detail-ad-zone');
+		if (zone && ads.length) {
+			zone.innerHTML = renderDetailBanner(ads);
+			trackVisibleAdImpressions();
+		}
+	}).catch(() => {});
 
 	// Recover lightbox images from data attribute
 	const box = document.querySelector<HTMLElement>('.details-box');

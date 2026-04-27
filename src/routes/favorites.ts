@@ -24,11 +24,8 @@ const favorites = new Hono<{ Bindings: Env }>();
 // =========================================================================================================
 
 favorites.get('/', async (c) => {
-	const authUser = await getAuthUser(c);
-	if (!authUser) return c.json({ error: 'Unauthorized' }, 401);
-
-	const user = await c.env.DB.prepare('SELECT uuid FROM users WHERE username = ?').bind(authUser.username).first<{ uuid: string }>();
-	if (!user) return c.json({ error: 'User not found' }, 404);
+	const user = await getAuthUser(c);
+	if (!user) return c.json({ error: 'Unauthorized' }, 401);
 
 	const page = Math.max(1, parseInt(c.req.query('page') || '1'));
 	const limit = Math.min(Math.max(1, parseInt(c.req.query('limit') || '20')), 60);
@@ -85,10 +82,7 @@ favorites.get('/', async (c) => {
 // =========================================================================================================
 
 favorites.get('/check/:resourceUuid', async (c) => {
-	const authUser = await getAuthUser(c);
-	if (!authUser) return c.json({ is_favorite: false });
-
-	const user = await c.env.DB.prepare('SELECT uuid FROM users WHERE username = ?').bind(authUser.username).first<{ uuid: string }>();
+	const user = await getAuthUser(c);
 	if (!user) return c.json({ is_favorite: false });
 
 	const resourceUuid = c.req.param('resourceUuid');
@@ -106,11 +100,8 @@ favorites.get('/check/:resourceUuid', async (c) => {
 // =========================================================================================================
 
 favorites.post('/', async (c) => {
-	const authUser = await getAuthUser(c);
-	if (!authUser) return c.json({ error: 'Unauthorized' }, 401);
-
-	const user = await c.env.DB.prepare('SELECT uuid FROM users WHERE username = ?').bind(authUser.username).first<{ uuid: string }>();
-	if (!user) return c.json({ error: 'User not found' }, 404);
+	const user = await getAuthUser(c);
+	if (!user) return c.json({ error: 'Unauthorized' }, 401);
 
 	const body = await c.req.json();
 	const { resource_uuid } = AddFavoriteSchema.parse(body);
@@ -148,11 +139,8 @@ favorites.post('/', async (c) => {
 // =========================================================================================================
 
 favorites.delete('/:resourceUuid', async (c) => {
-	const authUser = await getAuthUser(c);
-	if (!authUser) return c.json({ error: 'Unauthorized' }, 401);
-
-	const user = await c.env.DB.prepare('SELECT uuid FROM users WHERE username = ?').bind(authUser.username).first<{ uuid: string }>();
-	if (!user) return c.json({ error: 'User not found' }, 404);
+	const user = await getAuthUser(c);
+	if (!user) return c.json({ error: 'Unauthorized' }, 401);
 
 	const resourceUuid = c.req.param('resourceUuid');
 
@@ -173,11 +161,8 @@ favorites.delete('/:resourceUuid', async (c) => {
 // =========================================================================================================
 
 favorites.post('/reorder', async (c) => {
-	const authUser = await getAuthUser(c);
-	if (!authUser) return c.json({ error: 'Unauthorized' }, 401);
-
-	const user = await c.env.DB.prepare('SELECT uuid FROM users WHERE username = ?').bind(authUser.username).first<{ uuid: string }>();
-	if (!user) return c.json({ error: 'User not found' }, 404);
+	const user = await getAuthUser(c);
+	if (!user) return c.json({ error: 'Unauthorized' }, 401);
 
 	const body = await c.req.json();
 	const { resource_uuid, move_to_top } = FavoriteOrderSchema.parse(body);
@@ -211,10 +196,7 @@ favorites.post('/reorder', async (c) => {
 // =========================================================================================================
 
 favorites.get('/ids', async (c) => {
-	const authUser = await getAuthUser(c);
-	if (!authUser) return c.json({ favorites: [] });
-
-	const user = await c.env.DB.prepare('SELECT uuid FROM users WHERE username = ?').bind(authUser.username).first<any>();
+	const user = await getAuthUser(c);
 	if (!user) return c.json({ favorites: [] });
 
 	const { results } = await c.env.DB.prepare('SELECT resource_uuid FROM user_favorites WHERE user_uuid = ?')

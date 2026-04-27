@@ -102,8 +102,8 @@ wiki.post('/comments', async (c) => {
 // =========================================================================================================
 
 wiki.delete('/comments/:uuid', async (c) => {
-	const authUser = await getAuthUser(c);
-	if (!authUser) return c.json({ error: 'Unauthorized' }, 401);
+	const user = await getAuthUser(c);
+	if (!user) return c.json({ error: 'Unauthorized' }, 401);
 
 	const commentUuid = c.req.param('uuid');
 
@@ -112,12 +112,7 @@ wiki.delete('/comments/:uuid', async (c) => {
 	if (!comment) return c.json({ error: 'Comment not found' }, 404);
 
 	// If not admin, verify ownership
-	if (!authUser.is_admin) {
-		const user = await c.env.DB.prepare('SELECT uuid FROM users WHERE username = ?').bind(authUser.username).first<any>();
-		if (!user || user.uuid !== comment.author_uuid) {
-			return c.json({ error: 'Forbidden' }, 403);
-		}
-	}
+	if (!user.is_admin && user.uuid !== comment.author_uuid) return c.json({ error: 'Forbidden' }, 403);
 
 	try {
 		await c.env.DB.prepare('DELETE FROM wiki_comments WHERE uuid = ?').bind(commentUuid).run();

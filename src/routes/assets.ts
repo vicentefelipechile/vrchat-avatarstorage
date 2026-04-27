@@ -199,13 +199,10 @@ assets.post('/', async (c) => {
 	const now = Math.floor(Date.now() / 1000);
 
 	try {
-		const dbUser = await c.env.DB.prepare('SELECT uuid FROM users WHERE username = ?').bind(user.username).first<{ uuid: string }>();
-		if (!dbUser) return c.json({ error: 'User not found' }, 404);
-
 		const insertResource = c.env.DB.prepare(
 			`INSERT INTO resources (uuid, title, description, category, thumbnail_uuid, reference_image_uuid, author_uuid, is_active, created_at, updated_at)
 			VALUES (?, ?, ?, 'assets', ?, ?, ?, 0, ?, ?)`,
-		).bind(resourceUuid, d.title, d.description ?? null, d.thumbnail_uuid, d.reference_image_uuid ?? null, dbUser.uuid, now, now);
+		).bind(resourceUuid, d.title, d.description ?? null, d.thumbnail_uuid, d.reference_image_uuid ?? null, user.uuid, now, now);
 
 		const insertMeta = c.env.DB.prepare(
 			`INSERT INTO asset_meta (resource_uuid, asset_type, is_nsfw, unity_version, platform, sdk_version)
@@ -268,15 +265,12 @@ assets.put('/:uuid', async (c) => {
 		const historyUuid = crypto.randomUUID();
 		const now = Math.floor(Date.now() / 1000);
 
-		const dbUser = await c.env.DB.prepare('SELECT uuid FROM users WHERE username = ?').bind(user.username).first<{ uuid: string }>();
-		if (!dbUser) return c.json({ error: 'User not found' }, 404);
-
 		const previousData = JSON.stringify({ meta_type: 'asset_meta', fields: existing });
 
 		const insertHistory = c.env.DB.prepare(
 			`INSERT INTO resource_history (uuid, resource_uuid, actor_uuid, change_type, previous_data, created_at)
 			VALUES (?, ?, ?, 'meta_edit', ?, ?)`,
-		).bind(historyUuid, uuid, dbUser.uuid, previousData, now);
+		).bind(historyUuid, uuid, user.uuid, previousData, now);
 
 		const fields = ['asset_type', 'is_nsfw', 'unity_version', 'platform', 'sdk_version'] as const;
 		const setClauses: string[] = [];

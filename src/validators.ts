@@ -368,3 +368,65 @@ export const ClothesMetaSchema = z.object({
 	has_physbones: 		z.number().int().min(0).max(1).default(0),
 	platform: 			z.enum(PLATFORM).default(PLATFORM[0]),
 });
+
+// ============================================================================
+// Community Ads Schemas
+// ============================================================================
+
+const AD_SERVICE_TYPES = [
+	'avatar_creator',
+	'3d_artist',
+	'illustrator',
+	'world_builder',
+	'texture_artist',
+	'rigger',
+	'shader_dev',
+	'animator',
+	'voice_actor',
+	'commissioner',
+] as const;
+
+export const AdSubmitSchema = z.object({
+	title: z
+		.string()
+		.min(2, 'Title too short')
+		.max(80, 'Title too long')
+		.transform((v) => sanitizeHtml(v)),
+	tagline: z
+		.string()
+		.min(2, 'Tagline too short')
+		.max(80, 'Tagline too long')
+		.transform((v) => sanitizeHtml(v)),
+	description: z
+		.string()
+		.max(5000, 'Description too long')
+		.optional()
+		.nullable()
+		.transform((v) => (v ? sanitizeHtml(v) : v)),
+	service_type: z.enum(AD_SERVICE_TYPES),
+	destination_type: z.enum(['internal', 'external']).default('internal'),
+	external_url: z.url('Invalid URL').optional().nullable(),
+	banner_media_uuid: z.uuid('Invalid banner media UUID').optional().nullable(),
+	card_media_uuid: z.uuid('Invalid card media UUID').optional().nullable(),
+});
+
+export const AdUpdateSchema = AdSubmitSchema.partial();
+
+export const AdRejectSchema = z.object({
+	reason: z
+		.string()
+		.min(3, 'Reason too short')
+		.max(500, 'Reason too long')
+		.transform((v) => sanitizeHtml(v)),
+});
+
+export const AdSlotConfigUpdateSchema = z.object({
+	max_concurrent: z.number().int().min(1).max(20).optional(),
+	rotation_hours: z.number().int().min(1).max(168).optional(),
+	is_enabled: z.number().int().min(0).max(1).optional(),
+});
+
+export const AdWeightUpdateSchema = z.object({
+	display_weight: z.number().int().min(1).max(100),
+});
+

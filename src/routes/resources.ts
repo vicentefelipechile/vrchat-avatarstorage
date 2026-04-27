@@ -101,9 +101,9 @@ resources.get('/', async (c) => {
 	const orderColumn = SORT_COLUMNS[sortBy ?? ''] ?? 'r.created_at';
 	const tagsList = tagsParam
 		? tagsParam
-				.split(',')
-				.map((t) => t.trim())
-				.filter(Boolean)
+			.split(',')
+			.map((t) => t.trim())
+			.filter(Boolean)
 		: [];
 
 	try {
@@ -378,12 +378,8 @@ resources.get('/:uuid/history', async (c) => {
 // =========================================================================================================
 
 resources.post('/', async (c) => {
-	const authUser = await getAuthUser(c);
-	if (!authUser) return c.json({ error: 'Unauthorized' }, 401);
-
-	// Get author
-	const user = await c.env.DB.prepare('SELECT uuid FROM users WHERE username = ?').bind(authUser.username).first<User>();
-	if (!user) return c.json({ error: 'User not found' }, 404);
+	const user = await getAuthUser(c);
+	if (!user) return c.json({ error: 'Unauthorized' }, 401);
 
 	const body = await c.req.json();
 

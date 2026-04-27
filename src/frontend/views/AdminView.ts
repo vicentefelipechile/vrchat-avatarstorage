@@ -74,6 +74,7 @@ const NAV_ITEMS = [
 	{ id: 'authors', label: t('admin.nav.authors') },
 	{ id: 'media', label: t('admin.nav.media') },
 	{ id: 'cache', label: t('admin.nav.cache') },
+	{ id: 'community-ads', label: t('admin.nav.communityAds') },
 ];
 
 // =========================================================================
@@ -173,6 +174,8 @@ async function loadSection(id: string): Promise<void> {
 			return loadMedia(el);
 		case 'cache':
 			return loadCache(el);
+		case 'community-ads':
+			return loadCommunityAds(el);
 	}
 }
 
@@ -798,3 +801,227 @@ function loadCache(el: HTMLElement): void {
 		}
 	});
 }
+
+// ---- Community Ads ----
+
+
+interface AdRow {
+	uuid: string;
+	title: string;
+	tagline: string;
+	service_type: string;
+	destination_type: string;
+	is_active: number;
+	is_approved: number;
+	rejected_reason: string | null;
+	display_weight: number;
+	created_at: number;
+	author_username: string | null;
+}
+
+interface AdSlot {
+	slot_name: string;
+	max_concurrent: number;
+	rotation_hours: number;
+	is_enabled: number;
+}
+
+interface AdStatRow {
+	uuid: string;
+	title: string;
+	service_type: string;
+	is_active: number;
+	total_impressions: number;
+	total_clicks: number;
+	ctr: string;
+}
+
+async function loadCommunityAds(el: HTMLElement, activeTab = 'pending'): Promise<void> {
+	el.innerHTML = `<h2 class="admin-section-title">${t('admin.communityAds.title')}</h2>
+		<div class="admin-ads-tabs">
+			<button class="admin-ads-tab ${activeTab === 'pending' ? 'active' : ''}" data-ads-tab="pending">${t('admin.communityAds.tabPending')}</button>
+			<button class="admin-ads-tab ${activeTab === 'active' ? 'active' : ''}" data-ads-tab="active">${t('admin.communityAds.tabActive')}</button>
+			<button class="admin-ads-tab ${activeTab === 'slots' ? 'active' : ''}" data-ads-tab="slots">${t('admin.communityAds.tabSlots')}</button>
+			<button class="admin-ads-tab ${activeTab === 'stats' ? 'active' : ''}" data-ads-tab="stats">${t('admin.communityAds.tabStats')}</button>
+		</div>
+		<div id="ads-tab-content" class="admin-loading">${t('common.loading')}</div>`;
+
+	document.querySelectorAll<HTMLButtonElement>('[data-ads-tab]').forEach((btn) => {
+		btn.addEventListener('click', () => {
+			const tab = btn.dataset.adsTab!;
+			document.querySelectorAll('.admin-ads-tab').forEach((b) => b.classList.remove('active'));
+			btn.classList.add('active');
+			loadAdsTab(tab);
+		});
+	});
+
+	loadAdsTab(activeTab);
+}
+
+async function loadAdsTab(tab: string): Promise<void> {
+	const wrap = document.getElementById('ads-tab-content');
+	if (!wrap) return;
+	wrap.innerHTML = `<div class="admin-loading">${t('common.loading')}</div>`;
+
+	try {
+		if (tab === 'pending' || tab === 'active') {
+			const status = tab === 'pending' ? 'pending' : 'active';
+			const res = await fetch(`/api/admin/ads?status=${status}`);
+			const data = (await res.json()) as { ads: AdRow[] };
+
+			const tbody = data.ads.map((a) => `<tr>
+				<td><strong>${a.title}</strong><br><span style="font-size:0.75rem;color:var(--text-muted)">${a.tagline.substring(0, 50)}</span></td>
+				<td>${a.service_type}</td>
+				<td>${a.author_username ?? '—'}</td>
+				<td>${a.destination_type}</td>
+				<td>${new Date(a.created_at * 1000).toLocaleDateString()}</td>
+				<td class="admin-row-actions">
+					${tab === 'pending'
+						? `<button class="btn" data-ad-approve="${a.uuid}">${t('admin.communityAds.approve')}</button>
+						   <button class="btn" data-ad-reject="${a.uuid}">${t('admin.communityAds.reject')}</button>`
+						: `<button class="btn" data-ad-deactivate="${a.uuid}">${t('admin.communityAds.deactivate')}</button>
+						   <input type="number" min="1" max="100" value="${a.display_weight}" class="form-input" style="width:60px" data-ad-weight-input="${a.uuid}">
+						   <button class="btn" data-ad-save-weight="${a.uuid}">${t('admin.communityAds.saveWeight')}</button>`
+					}
+				</td>
+			</tr>`).join('');
+
+			wrap.innerHTML = `<div class="admin-form-panel" style="padding:16px">
+				<table class="admin-data-table">
+					<thead><tr>
+						<th>${t('admin.communityAds.colAd')}</th>
+						<th>${t('admin.communityAds.colType')}</th>
+						<th>${t('admin.overview.colAuthor')}</th>
+						<th>${t('admin.communityAds.colDest')}</th>
+						<th>${t('admin.overview.colDate')}</th>
+						<th></th>
+					</tr></thead>
+					<tbody>${tbody || `<tr><td colspan="6">${t('admin.communityAds.noAds')}</td></tr>`}</tbody>
+				</table>
+			</div>`;
+
+			// Approve buttons
+			document.querySelectorAll<HTMLButtonElement>('[data-ad-approve]').forEach((btn) => {
+				btn.addEventListener('click', async () => {
+					const r = await fetch(`/api/admin/ads/${btn.dataset.adApprove}/approve`, { method: 'POST' });
+					if (r.ok) { showToast(t('admin.communityAds.toastApproved'), 'success'); loadAdsTab('pending'); }
+					else showToast(t('admin.networkError'), 'error');
+				});
+			});
+
+			// Reject buttons
+			document.querySelectorAll<HTMLButtonElement>('[data-ad-reject]').forEach((btn) => {
+				btn.addEventListener('click', () => {
+					const reason = prompt(t('admin.communityAds.rejectReasonPrompt'));
+					if (!reason) return;
+					fetch(`/api/admin/ads/${btn.dataset.adReject}/reject`, {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({ reason }),
+					}).then((r) => {
+						if (r.ok) { showToast(t('admin.communityAds.toastRejected'), 'success'); loadAdsTab('pending'); }
+						else showToast(t('admin.networkError'), 'error');
+					}).catch(() => showToast(t('admin.networkError'), 'error'));
+				});
+			});
+
+			// Deactivate buttons
+			document.querySelectorAll<HTMLButtonElement>('[data-ad-deactivate]').forEach((btn) => {
+				btn.addEventListener('click', async () => {
+					if (!confirm(t('admin.communityAds.confirmDeactivate'))) return;
+					const r = await fetch(`/api/admin/ads/${btn.dataset.adDeactivate}/deactivate`, { method: 'POST' });
+					if (r.ok) { showToast(t('admin.communityAds.toastDeactivated'), 'success'); loadAdsTab('active'); }
+					else showToast(t('admin.networkError'), 'error');
+				});
+			});
+
+			// Save weight buttons
+			document.querySelectorAll<HTMLButtonElement>('[data-ad-save-weight]').forEach((btn) => {
+				btn.addEventListener('click', async () => {
+					const uuid = btn.dataset.adSaveWeight!;
+					const input = document.querySelector<HTMLInputElement>(`[data-ad-weight-input="${uuid}"]`);
+					const weight = parseInt(input?.value ?? '1', 10);
+					const r = await fetch(`/api/admin/ads/${uuid}/weight`, {
+						method: 'PUT',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({ display_weight: weight }),
+					});
+					if (r.ok) showToast(t('admin.communityAds.toastWeightSaved'), 'success');
+					else showToast(t('admin.networkError'), 'error');
+				});
+			});
+
+		} else if (tab === 'slots') {
+			const res = await fetch('/api/admin/ads/slots');
+			const data = (await res.json()) as { slots: AdSlot[] };
+
+			const tbody = data.slots.map((s) => `<tr>
+				<td><strong>${s.slot_name}</strong></td>
+				<td><input type="number" class="form-input" style="width:70px" value="${s.max_concurrent}" data-slot-max="${s.slot_name}"></td>
+				<td><input type="number" class="form-input" style="width:70px" value="${s.rotation_hours}" data-slot-hours="${s.slot_name}"></td>
+				<td><input type="checkbox" ${s.is_enabled ? 'checked' : ''} data-slot-enabled="${s.slot_name}"></td>
+				<td class="admin-row-actions"><button class="btn" data-slot-save="${s.slot_name}">${t('admin.communityAds.saveSlot')}</button></td>
+			</tr>`).join('');
+
+			wrap.innerHTML = `<div class="admin-form-panel" style="padding:16px">
+				<table class="admin-data-table">
+					<thead><tr>
+						<th>${t('admin.communityAds.colSlot')}</th>
+						<th>${t('admin.communityAds.colMaxConcurrent')}</th>
+						<th>${t('admin.communityAds.colRotationHours')}</th>
+						<th>${t('admin.communityAds.colEnabled')}</th>
+						<th></th>
+					</tr></thead>
+					<tbody>${tbody}</tbody>
+				</table>
+			</div>`;
+
+			document.querySelectorAll<HTMLButtonElement>('[data-slot-save]').forEach((btn) => {
+				btn.addEventListener('click', async () => {
+					const slot = btn.dataset.slotSave!;
+					const max = parseInt((document.querySelector<HTMLInputElement>(`[data-slot-max="${slot}"]`)?.value ?? '3'), 10);
+					const hours = parseInt((document.querySelector<HTMLInputElement>(`[data-slot-hours="${slot}"]`)?.value ?? '24'), 10);
+					const enabled = (document.querySelector<HTMLInputElement>(`[data-slot-enabled="${slot}"]`)?.checked ? 1 : 0);
+					const r = await fetch(`/api/admin/ads/slots/${slot}`, {
+						method: 'PUT',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({ max_concurrent: max, rotation_hours: hours, is_enabled: enabled }),
+					});
+					if (r.ok) showToast(t('admin.communityAds.toastSlotSaved'), 'success');
+					else showToast(t('admin.networkError'), 'error');
+				});
+			});
+
+		} else if (tab === 'stats') {
+			const res = await fetch('/api/admin/ads/stats');
+			const data = (await res.json()) as { stats: AdStatRow[] };
+
+			const tbody = data.stats.map((s) => `<tr>
+				<td>${s.title}</td>
+				<td>${s.service_type}</td>
+				<td><span class="admin-badge-status ${s.is_active ? 'active' : 'inactive'}">${s.is_active ? t('admin.resources.approved') : t('admin.resources.pending')}</span></td>
+				<td>${s.total_impressions}</td>
+				<td>${s.total_clicks}</td>
+				<td>${s.ctr}</td>
+			</tr>`).join('');
+
+			wrap.innerHTML = `<div class="admin-form-panel" style="padding:16px">
+				<p style="font-size:0.82rem;color:var(--text-muted);margin:0 0 12px">${t('admin.communityAds.statsNote')}</p>
+				<table class="admin-data-table">
+					<thead><tr>
+						<th>${t('admin.overview.colTitle')}</th>
+						<th>${t('admin.communityAds.colType')}</th>
+						<th>${t('admin.resources.colStatus')}</th>
+						<th>${t('admin.communityAds.colImpressions')}</th>
+						<th>${t('admin.communityAds.colClicks')}</th>
+						<th>CTR</th>
+					</tr></thead>
+					<tbody>${tbody || `<tr><td colspan="6">${t('admin.communityAds.noStats')}</td></tr>`}</tbody>
+				</table>
+			</div>`;
+		}
+	} catch {
+		wrap.innerHTML = `<p class="error-message">${t('admin.statsError')}</p>`;
+	}
+}
+

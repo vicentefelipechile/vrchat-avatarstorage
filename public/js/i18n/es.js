@@ -147,6 +147,7 @@ export default {
 			desktopWarningTitle: 'Solo disponible en escritorio',
 			desktopWarningDesc: 'El panel de administración requiere una ventana de al menos 1024px de ancho.',
 			statsError: 'Error al cargar estadísticas.',
+			community: 'Comunidad',
 		},
 		stats: {
 			users: 'Usuarios',

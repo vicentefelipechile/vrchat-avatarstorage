@@ -17,6 +17,8 @@
 @import url('./style/search.css');
 @import url('./style/authors.css');
 @import url('./style/admin-dashboard.css');
+@import url('./style/community.css');
+
 
 /* ---- Shared utilities ---- */
 .text-center {

@@ -6,6 +6,7 @@ import QRCode from 'qrcode';
 import { t } from '../i18n';
 import { renderTurnstile, resizeImage, showToast, loadingBtn } from '../utils';
 import type { RouteContext } from '../types';
+import { renderAdPrefsPanel, wireAdPrefsPanel, getAdPrefs, setShowAds, AD_SLOTS, AD_SERVICE_TYPES, toggleSlot, toggleType } from '../ad-prefs';
 
 // =========================================================================
 // View
@@ -145,6 +146,19 @@ export async function settingsView(_ctx: RouteContext): Promise<string> {
 					</div>
 				</div>
 			</details>
+
+			<hr style="margin:30px 0">
+
+			<!-- Community Ads Preferences -->
+			<details id="community-ads-details">
+				<summary style="cursor:pointer;padding:10px;background:#f5f5f5;border-radius:5px">
+					<h2 style="margin:0;display:inline">${t('settings.communityAds') || 'Community Ads'}</h2>
+				</summary>
+				<div id="community-ads-prefs-section" style="padding:20px 0">
+					<!-- Inline prefs (no slide-in panel, simpler for settings page) -->
+					<div id="ads-prefs-settings-wrap"></div>
+				</div>
+			</details>
 		</div>`;
 }
 
@@ -154,6 +168,78 @@ export async function settingsView(_ctx: RouteContext): Promise<string> {
 
 export async function settingsAfter(_ctx: RouteContext): Promise<void> {
 	renderTurnstile('#turnstile-settings');
+
+	// Wire the slide-in prefs panel (if opened from elsewhere on the same page)
+	wireAdPrefsPanel();
+
+	// Render inline community ads preferences inside settings
+	const wrap = document.getElementById('ads-prefs-settings-wrap');
+	if (wrap) {
+		const prefs = getAdPrefs();
+
+		const rowStyle = 'display:grid;grid-template-columns:1fr auto;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border-color)';
+		const labelStyle = 'font-size:0.88rem;cursor:pointer;font-family:inherit';
+		const sectionTitle = (text: string) =>
+			`<p style="font-size:0.75rem;font-weight:bold;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin:16px 0 4px;font-family:inherit">${text}</p>`;
+
+		const slotsHtml = AD_SLOTS.map(
+			(s) => `
+			<div style="${rowStyle}">
+				<label for="settings-slot-${s.id}" style="${labelStyle}">${t(s.labelKey)}</label>
+				<input type="checkbox" id="settings-slot-${s.id}" class="ads-sub-control" data-settings-slot="${s.id}" ${!prefs.disabled_slots.includes(s.id) ? 'checked' : ''}>
+			</div>`,
+		).join('');
+
+		const typesHtml = AD_SERVICE_TYPES.map(
+			(st) => `
+			<div style="${rowStyle}">
+				<label for="settings-type-${st.id}" style="${labelStyle}">${t(st.labelKey)}</label>
+				<input type="checkbox" id="settings-type-${st.id}" class="ads-sub-control" data-settings-type="${st.id}" ${!prefs.blocked_types.includes(st.id) ? 'checked' : ''}>
+			</div>`,
+		).join('');
+
+		const masterRowStyle = rowStyle.replace('border-bottom:1px', 'border-bottom:2px');
+		const subsectionInitStyle = prefs.show_ads ? '' : 'opacity:0.4;pointer-events:none';
+
+		wrap.innerHTML = `
+			<div style="${masterRowStyle}">
+				<label for="settings-show-ads" style="${labelStyle};font-weight:bold">${t('community.prefs.showAds') || 'Show community promotions'}</label>
+				<input type="checkbox" id="settings-show-ads" ${prefs.show_ads ? 'checked' : ''}>
+			</div>
+			<div id="ads-subsections" style="transition:opacity 0.15s;${subsectionInitStyle}">
+				${sectionTitle(t('community.prefs.slotsTitle') || 'Placement Zones')}
+				${slotsHtml}
+				${sectionTitle(t('community.prefs.typesTitle') || 'Service Types')}
+				${typesHtml}
+			</div>`;
+
+		const masterToggle = document.getElementById('settings-show-ads') as HTMLInputElement;
+		const subsections = document.getElementById('ads-subsections')!;
+
+		function applyMasterState(enabled: boolean): void {
+			subsections.style.opacity = enabled ? '1' : '0.4';
+			subsections.style.pointerEvents = enabled ? '' : 'none';
+			subsections.querySelectorAll<HTMLInputElement>('.ads-sub-control').forEach((cb) => {
+				cb.disabled = !enabled;
+			});
+		}
+
+		// Apply on load in case ads are disabled
+		applyMasterState(prefs.show_ads);
+
+		masterToggle?.addEventListener('change', (e) => {
+			const enabled = (e.target as HTMLInputElement).checked;
+			setShowAds(enabled);
+			applyMasterState(enabled);
+		});
+
+		document.querySelectorAll<HTMLInputElement>('[data-settings-slot]').forEach((input) => {
+			input.addEventListener('change', () => toggleSlot(input.dataset.settingsSlot!, input.checked));
+		});
+		document.querySelectorAll<HTMLInputElement>('[data-settings-type]').forEach((input) => {
+			input.addEventListener('change', () => toggleType(input.dataset.settingsType!, !input.checked));
+		});
+	}
 
 	const form = document.getElementById('settings-form') as HTMLFormElement;
 	const avatarInput = document.getElementById('avatar') as HTMLInputElement;

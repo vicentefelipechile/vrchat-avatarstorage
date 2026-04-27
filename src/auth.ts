@@ -16,6 +16,16 @@ import { User } from './types';
 import { decryptSecret } from './auth/2fa';
 
 // =========================================================================================================
+// Types
+// =========================================================================================================
+
+type AuthUser = {
+	uuid: string;
+	username: string;
+	is_admin: boolean;
+};
+
+// =========================================================================================================
 // Password Hashing
 // =========================================================================================================
 
@@ -68,7 +78,7 @@ export async function createSession(c: Context<{ Bindings: Env }>, user: { usern
 // This function gets the authenticated user from the session
 // =========================================================================================================
 
-export async function getAuthUser(c: Context<{ Bindings: Env }>): Promise<{ username: string; is_admin: boolean } | null> {
+export async function getAuthUser(c: Context<{ Bindings: Env }>): Promise<AuthUser | null> {
 	const token = getCookie(c, COOKIE_NAME);
 	if (!token) return null;
 
@@ -86,7 +96,7 @@ export async function getAuthUser(c: Context<{ Bindings: Env }>): Promise<{ user
 		}
 
 		// 2. KV session cache
-		const cachedUser = (await c.env.VRCSTORAGE_KV.get(`user:${username}`, 'json')) as { username: string; is_admin: boolean } | null;
+		const cachedUser = (await c.env.VRCSTORAGE_KV.get(`user:${username}`, 'json')) as AuthUser | null;
 		if (cachedUser) {
 			return cachedUser;
 		}
@@ -96,6 +106,7 @@ export async function getAuthUser(c: Context<{ Bindings: Env }>): Promise<{ user
 		if (!user) return null;
 
 		const sessionUser = {
+			uuid: user.uuid,
 			username: user.username,
 			is_admin: user.is_admin === 1,
 		};

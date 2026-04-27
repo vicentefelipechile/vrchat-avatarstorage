@@ -419,6 +419,92 @@ export interface AssetMeta {
 	sdk_version: 'sdk3' | 'sdk2';
 }
 
+// =========================================================================
+// COMMUNITY ADS
+// =========================================================================
+
+export type AdServiceType =
+	| 'avatar_creator'
+	| '3d_artist'
+	| 'illustrator'
+	| 'world_builder'
+	| 'texture_artist'
+	| 'rigger'
+	| 'shader_dev'
+	| 'animator'
+	| 'voice_actor'
+	| 'commissioner';
+
+export const AD_SERVICE_TYPES: AdServiceType[] = [
+	'avatar_creator',
+	'3d_artist',
+	'illustrator',
+	'world_builder',
+	'texture_artist',
+	'rigger',
+	'shader_dev',
+	'animator',
+	'voice_actor',
+	'commissioner',
+];
+
+export type AdDestinationType = 'internal' | 'external';
+
+export interface CommunityAd {
+	uuid: string;
+	author_uuid: string;
+	title: string;
+	tagline: string;
+	description: string | null;
+	service_type: AdServiceType;
+	banner_media_uuid: string | null;
+	card_media_uuid: string | null;
+	destination_type: AdDestinationType;
+	external_url: string | null;
+	is_active: number;
+	is_approved: number;
+	rejected_reason: string | null;
+	display_weight: number;
+	created_at: number;
+	updated_at: number;
+	expires_at: number | null;
+}
+
+/** Extended view returned by GET /api/ads — includes resolved media keys */
+export interface CommunityAdPublic {
+	uuid: string;
+	title: string;
+	tagline: string;
+	service_type: AdServiceType;
+	destination_type: AdDestinationType;
+	external_url: string | null;
+	banner_r2_key: string | null;
+	card_r2_key: string | null;
+	display_weight: number;
+	author_username: string;
+}
+
+export interface AdSlotConfig {
+	slot_name: string;
+	max_concurrent: number;
+	rotation_hours: number;
+	is_enabled: number;
+	updated_at: number;
+}
+
+export interface AdStat {
+	uuid: string;
+	ad_uuid: string;
+	stat_date: string; // YYYY-MM-DD
+	impressions: number;
+	clicks: number;
+}
+
+export interface AdInternalPage {
+	ad_uuid: string;
+	content: string;
+}
+
 export interface ClothesMeta {
 	resource_uuid: string;
 	gender_fit: 'male' | 'female' | 'unisex' | 'kemono';

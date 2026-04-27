@@ -12,6 +12,8 @@ import { navigateTo } from '../router';
 import type { RouteContext } from '../types';
 import { DataCache } from '../cache';
 import { TimeUnit } from '../utils';
+import { fetchAdsForSlot, renderSidebarBanner, wireAdZoneEvents, trackVisibleAdImpressions } from '../ad-components';
+import { renderAdPrefsPanel, wireAdPrefsPanel } from '../ad-prefs';
 
 // =========================================================================
 // Types
@@ -224,14 +226,26 @@ async function buildResults(params: URLSearchParams): Promise<string> {
 export async function avatarsView(ctx: RouteContext): Promise<string> {
     document.title = t('filterPanel.titleAvatars');
 
-    const resultsHtml = await buildResults(ctx.query);
+    const [resultsHtml, sidebarAds] = await Promise.all([
+        buildResults(ctx.query),
+        fetchAdsForSlot('sidebar_left'),
+    ]);
 
-    return `<div class="category-layout">
-        ${buildFilterPanel(AVATAR_FILTER_CONFIG)}
-        <div class="category-results" id="avatar-results">
-            ${resultsHtml}
-        </div>
-    </div>`;
+    const sidebarBannerHtml = renderSidebarBanner(sidebarAds);
+
+    return `
+        ${renderAdPrefsPanel()}
+        <div style="display:flex;gap:20px;align-items:flex-start">
+            ${sidebarBannerHtml}
+            <div style="flex:1;min-width:0">
+                <div class="category-layout">
+                    ${buildFilterPanel(AVATAR_FILTER_CONFIG)}
+                    <div class="category-results" id="avatar-results">
+                        ${resultsHtml}
+                    </div>
+                </div>
+            </div>
+        </div>`;
 }
 
 // =========================================================================
@@ -241,6 +255,10 @@ export async function avatarsView(ctx: RouteContext): Promise<string> {
 export function avatarsAfter(ctx: RouteContext): void {
     const panel = document.getElementById('filter-panel');
     if (!panel) return;
+
+    wireAdPrefsPanel();
+    wireAdZoneEvents();
+    trackVisibleAdImpressions();
 
     // Función que actualiza SOLO los resultados, sin tocar el panel
     async function refreshResults(newParams: URLSearchParams) {

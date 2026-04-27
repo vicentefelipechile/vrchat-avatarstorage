@@ -31,6 +31,10 @@ import { avatarsView, avatarsAfter } from './views/AvatarsView';
 import { assetsView, assetsAfter } from './views/AssetsView';
 import { clothesView, clothesAfter } from './views/ClothesView';
 import { authorView, authorAfter } from './views/AuthorView';
+import { communityView, communityAfter } from './views/CommunityView';
+import { adCreateView, adCreateAfter } from './views/AdCreateView';
+import { adDetailView, adDetailAfter } from './views/AdDetailView';
+
 
 // =========================================================================
 // Global state
@@ -90,6 +94,10 @@ route('/avatars', avatarsView, { after: avatarsAfter });
 route('/assets', assetsView, { after: assetsAfter });
 route('/clothes', clothesView, { after: clothesAfter });
 route('/authors/:slug', authorView, { after: authorAfter });
+route('/community', communityView, { after: communityAfter });
+route('/community/create', adCreateView, { after: adCreateAfter });
+route('/community/:uuid/edit', adCreateView, { after: adCreateAfter });
+route('/community/:uuid', adDetailView, { after: adDetailAfter });
 
 notFound(
 	async () => `

@@ -67,7 +67,7 @@ async function uniqueSlug(db: D1Database, base: string, excludeUuid?: string): P
 async function invalidateBlogListCache(kv: KVNamespace): Promise<void> {
 	// We can't enumerate all page/limit combinations, so we use a suffix pattern approach:
 	// Delete the most common pages. For production, a cache key version bump could be used.
-	const keys =['blog:list:1:10', 'blog:list:1:20', 'blog:list:2:10', 'blog:list:2:20', 'blog:list:3:10'] as const;
+	const keys = ['blog:list:1:10', 'blog:list:1:20', 'blog:list:2:10', 'blog:list:2:20', 'blog:list:3:10'] as const;
 	await Promise.all(keys.map((k) => kv.delete(k)));
 }
 
@@ -178,9 +178,9 @@ blog.get('/:uuid', async (c) => {
 // =========================================================================================================
 
 blog.post('/', async (c) => {
-	const authUser = await getAuthUser(c);
-	if (!authUser) return c.json({ error: 'Unauthorized' }, 401);
-	if (!authUser.is_admin) return c.json({ error: 'Forbidden' }, 403);
+	const user = await getAuthUser(c);
+	if (!user) return c.json({ error: 'Unauthorized' }, 401);
+	if (!user.is_admin) return c.json({ error: 'Forbidden' }, 403);
 
 	const body = await c.req.json();
 	const parseResult = BlogPostSchema.safeParse(body);
@@ -189,10 +189,6 @@ blog.post('/', async (c) => {
 	}
 
 	const { title, content, excerpt, cover_image_uuid, author_display } = parseResult.data;
-
-	// Get the author's UUID from DB
-	const author = await c.env.DB.prepare('SELECT uuid FROM users WHERE username = ?').bind(authUser.username).first<{ uuid: string }>();
-	if (!author) return c.json({ error: 'Author not found' }, 404);
 
 	const uuid = crypto.randomUUID();
 	const baseSlug = slugify(title);
@@ -204,7 +200,7 @@ blog.post('/', async (c) => {
 			`INSERT INTO blog_posts (uuid, slug, title, content, excerpt, cover_image_uuid, author_uuid, author_display, created_at, updated_at)
 			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		)
-			.bind(uuid, slug, title, content, excerpt ?? null, cover_image_uuid ?? null, author.uuid, author_display, now, now)
+			.bind(uuid, slug, title, content, excerpt ?? null, cover_image_uuid ?? null, user.uuid, author_display, now, now)
 			.run();
 
 		// Invalidate blog list cache
@@ -416,20 +412,15 @@ blog.post('/:uuid/comments', async (c) => {
 // =========================================================================================================
 
 blog.delete('/comments/:commentId', async (c) => {
-	const authUser = await getAuthUser(c);
-	if (!authUser) return c.json({ error: 'Unauthorized' }, 401);
+	const user = await getAuthUser(c);
+	if (!user) return c.json({ error: 'Unauthorized' }, 401);
 
 	const commentId = c.req.param('commentId');
 
 	const comment = await c.env.DB.prepare('SELECT author_uuid FROM blog_comments WHERE uuid = ?').bind(commentId).first<any>();
 	if (!comment) return c.json({ error: 'Comment not found' }, 404);
 
-	if (!authUser.is_admin) {
-		const user = await c.env.DB.prepare('SELECT uuid FROM users WHERE username = ?').bind(authUser.username).first<any>();
-		if (!user || user.uuid !== comment.author_uuid) {
-			return c.json({ error: 'Forbidden' }, 403);
-		}
-	}
+	if (!user.is_admin && user.uuid !== comment.author_uuid) return c.json({ error: 'Forbidden' }, 403);
 
 	try {
 		await c.env.DB.prepare('DELETE FROM blog_comments WHERE uuid = ?').bind(commentId).run();

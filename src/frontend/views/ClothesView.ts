@@ -11,6 +11,8 @@ import { buildFilterPanel, FilterType, initFilterPanel } from '../filter-panel';
 import type { RouteContext } from '../types';
 import { DataCache } from '../cache';
 import { TimeUnit } from '../utils';
+import { fetchAdsForSlot, renderSidebarBanner, wireAdZoneEvents, trackVisibleAdImpressions } from '../ad-components';
+import { renderAdPrefsPanel, wireAdPrefsPanel } from '../ad-prefs';
 
 // =========================================================================
 // Types
@@ -193,12 +195,26 @@ async function buildResults(params: URLSearchParams): Promise<string> {
 export async function clothesView(ctx: RouteContext): Promise<string> {
 	document.title = t('filterPanel.titleClothes');
 
-	return `<div class="category-layout">
-		${buildFilterPanel(CLOTHES_FILTER_CONFIG)}
-		<div class="category-results" id="clothes-results">
-			${await buildResults(ctx.query)}
-		</div>
-	</div>`;
+	const [resultsHtml, sidebarAds] = await Promise.all([
+		buildResults(ctx.query),
+		fetchAdsForSlot('sidebar_left'),
+	]);
+
+	const sidebarBannerHtml = renderSidebarBanner(sidebarAds);
+
+	return `
+		${renderAdPrefsPanel()}
+		<div style="display:flex;gap:20px;align-items:flex-start">
+			${sidebarBannerHtml}
+			<div style="flex:1;min-width:0">
+				<div class="category-layout">
+					${buildFilterPanel(CLOTHES_FILTER_CONFIG)}
+					<div class="category-results" id="clothes-results">
+						${resultsHtml}
+					</div>
+				</div>
+			</div>
+		</div>`;
 }
 
 // =========================================================================
@@ -208,6 +224,10 @@ export async function clothesView(ctx: RouteContext): Promise<string> {
 export function clothesAfter(ctx: RouteContext): void {
 	const panel = document.getElementById('filter-panel');
 	if (!panel) return;
+
+	wireAdPrefsPanel();
+	wireAdZoneEvents();
+	trackVisibleAdImpressions();
 
 	async function refreshResults(newParams: URLSearchParams): Promise<void> {
 		const resultsEl = document.getElementById('clothes-results');

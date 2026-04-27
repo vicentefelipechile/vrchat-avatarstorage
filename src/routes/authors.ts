@@ -322,9 +322,6 @@ authors.post('/:slug/link-resource', async (c) => {
 		const historyUuid = crypto.randomUUID();
 		const now = Math.floor(Date.now() / 1000);
 
-		const dbUser = await c.env.DB.prepare('SELECT uuid FROM users WHERE username = ?').bind(user.username).first<{ uuid: string }>();
-		if (!dbUser) return c.json({ error: 'User not found' }, 404);
-
 		const previousData = JSON.stringify({
 			meta_type: 'avatar_meta',
 			fields: { author_uuid: existing.author_uuid, author_name_raw: existing.author_name_raw },
@@ -333,7 +330,7 @@ authors.post('/:slug/link-resource', async (c) => {
 		const insertHistory = c.env.DB.prepare(
 			`INSERT INTO resource_history (uuid, resource_uuid, actor_uuid, change_type, previous_data, created_at)
 			VALUES (?, ?, ?, 'meta_edit', ?, ?)`,
-		).bind(historyUuid, resourceUuid, dbUser.uuid, previousData, now);
+		).bind(historyUuid, resourceUuid, user.uuid, previousData, now);
 
 		const updateMeta = c.env.DB.prepare(`UPDATE avatar_meta SET author_uuid = ? WHERE resource_uuid = ?`).bind(author.uuid, resourceUuid);
 

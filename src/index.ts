@@ -31,6 +31,7 @@ import avatarsRoutes from './routes/avatars';
 import assetsRoutes from './routes/assets';
 import clothesRoutes from './routes/clothes';
 import authorsRoutes from './routes/authors';
+import adsRoutes from './routes/ads';
 
 // =========================================================================================================
 // Variables
@@ -127,6 +128,7 @@ app.route('/api/avatars', avatarsRoutes);
 app.route('/api/assets', assetsRoutes);
 app.route('/api/clothes', clothesRoutes);
 app.route('/api/authors', authorsRoutes);
+app.route('/api/ads', adsRoutes);
 
 // =========================================================================================================
 // SEO routes
@@ -299,6 +301,43 @@ app.get('/item/:uuid', async (c) => {
 	return c.env.ASSETS.fetch(new URL('/index.html', c.req.url));
 });
 
+// SEO route: /community/:uuid (internal advertiser page)
+app.get('/community/:uuid', async (c) => {
+	const uuid = c.req.param('uuid');
+	if (!uuid || uuid === 'create') {
+		return c.env.ASSETS.fetch(new URL('/index.html', c.req.url));
+	}
+
+	try {
+		const ad = await c.env.DB.prepare(
+			`SELECT ca.uuid, ca.title, ca.tagline, bm.r2_key as banner_r2_key
+			FROM community_ads ca
+			LEFT JOIN media bm ON ca.banner_media_uuid = bm.uuid
+			WHERE ca.uuid = ? AND ca.is_active = 1 AND ca.is_approved = 1`,
+		)
+			.bind(uuid)
+			.first<{ uuid: string; title: string; tagline: string; banner_r2_key: string | null }>();
+
+		if (ad) {
+			const indexResponse = await c.env.ASSETS.fetch(new URL('/index.html', c.req.url));
+			let html = await indexResponse.text();
+			const urlOrigin = new URL(c.req.url).origin;
+
+			const title = escapeHtml(`${ad.title} — VRCStorage Community`);
+			const description = escapeHtml(ad.tagline);
+			const imageUrl = ad.banner_r2_key ? `${urlOrigin}/api/download/${ad.banner_r2_key}` : `${urlOrigin}/favicon.svg`;
+			const url = `${urlOrigin}/community/${ad.uuid}`;
+
+			html = injectSEO(html, { title, description, url, imageUrl });
+			return c.html(html);
+		}
+	} catch (e) {
+		console.error('Error injecting Community Ad OG tags:', e);
+	}
+
+	return c.env.ASSETS.fetch(new URL('/index.html', c.req.url));
+});
+
 // =========================================================================================================
 // Serve Static Files (SPA Fallback)
 // =========================================================================================================
@@ -337,11 +376,16 @@ async function cleanupOrphanedMedia(env: Env) {
 				SELECT media_uuid FROM resource_n_media
 				UNION
 				SELECT cover_image_uuid FROM blog_posts WHERE cover_image_uuid IS NOT NULL
+				UNION
+				SELECT banner_media_uuid FROM community_ads WHERE banner_media_uuid IS NOT NULL
+				UNION
+				SELECT card_media_uuid FROM community_ads WHERE card_media_uuid IS NOT NULL
 			)
 			AND NOT EXISTS (SELECT 1 FROM users         WHERE INSTR(users.avatar_url,     m.r2_key) > 0)
 			AND NOT EXISTS (SELECT 1 FROM comments      WHERE INSTR(comments.text,        m.r2_key) > 0)
 			AND NOT EXISTS (SELECT 1 FROM blog_comments WHERE INSTR(blog_comments.text,   m.r2_key) > 0)
 			AND NOT EXISTS (SELECT 1 FROM blog_posts    WHERE INSTR(blog_posts.content,   m.r2_key) > 0)
+			AND NOT EXISTS (SELECT 1 FROM ad_internal_pages WHERE INSTR(ad_internal_pages.content, m.r2_key) > 0)
 		`,
 		)
 			.bind(cutoffTime)

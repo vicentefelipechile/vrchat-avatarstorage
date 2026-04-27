@@ -6,6 +6,8 @@ import { DataCache } from '../cache';
 import { t } from '../i18n';
 import { stripMarkdown, TimeUnit } from '../utils';
 import type { RouteContext, Resource } from '../types';
+import { fetchAdsForSlot, renderSidebarBanner, renderFeaturedArtistCard, wireAdZoneEvents, trackVisibleAdImpressions } from '../ad-components';
+import { renderAdPrefsPanel, wireAdPrefsPanel } from '../ad-prefs';
 
 // =========================================================================
 // Helpers
@@ -58,23 +60,27 @@ export async function homeView(_ctx: RouteContext): Promise<string> {
 
 	const apiCategories = ['avatars', 'assets', 'clothes'];
 
-	let resources: Resource[] = [];
-	try {
-		resources = (await DataCache.fetch('/api/resources/latest', { ttl: TimeUnit.Minute * 15 })) as Resource[];
-	} catch {
-		/* show empty grid */
-	}
+	// Fetch resources and ads in parallel
+	const [resources, sidebarAds, featuredAds] = await Promise.all([
+		DataCache.fetch('/api/resources/latest', { ttl: TimeUnit.Minute * 15 }).catch(() => []) as Promise<Resource[]>,
+		fetchAdsForSlot('sidebar_left'),
+		fetchAdsForSlot('featured_artist'),
+	]);
 
 	const categoriesHtml = apiCategories
 		.map((cat) => `<a href="/${cat}" data-link class="category-btn">${t('cats.' + cat)}</a>`)
 		.join('');
 
-	return `
+	const sidebarBannerHtml = renderSidebarBanner(sidebarAds);
+	const featuredCardHtml = renderFeaturedArtistCard(featuredAds);
+
+	const mainContent = `
 		<section class="hero-section">
 			<h1>${t('home.welcome')}</h1>
 			<p>${t('home.browse')}</p>
 			<div class="category-nav">${categoriesHtml}</div>
 		</section>
+		${featuredCardHtml}
 		<section class="latest-section">
 			<h2>${t('home.latest')}</h2>
 			${
@@ -83,6 +89,13 @@ export async function homeView(_ctx: RouteContext): Promise<string> {
 					: `<div class="grid">${resources.map(resourceCard).join('')}</div>`
 			}
 		</section>`;
+
+	return `
+		${renderAdPrefsPanel()}
+		<div style="display:flex;gap:20px;align-items:flex-start">
+			${sidebarBannerHtml}
+			<div style="flex:1;min-width:0">${mainContent}</div>
+		</div>`;
 }
 
 // =========================================================================
@@ -90,5 +103,7 @@ export async function homeView(_ctx: RouteContext): Promise<string> {
 // =========================================================================
 
 export function homeAfter(_ctx: RouteContext): void {
-	// No interactive elements in the home view
+	wireAdPrefsPanel();
+	wireAdZoneEvents();
+	trackVisibleAdImpressions();
 }

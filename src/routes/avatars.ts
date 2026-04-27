@@ -202,32 +202,32 @@ avatars.get('/', async (c) => {
 // =========================================================================================================
 
 avatars.get('/search', async (c) => {
-    const q = c.req.query('q')?.trim();
-    if (!q || q.length < 2) {
-        return c.json([] as { uuid: string; title: string }[]);
-    }
+	const q = c.req.query('q')?.trim();
+	if (!q || q.length < 2) {
+		return c.json([] as { uuid: string; title: string }[]);
+	}
 
-    const limit = Math.min(20, Math.max(1, parseInt(c.req.query('limit') || '10', 10) || 10));
-    const pattern = `%${q}%`;
+	const limit = Math.min(20, Math.max(1, parseInt(c.req.query('limit') || '10', 10) || 10));
+	const pattern = `%${q}%`;
 
-    try {
-        const { results } = await c.env.DB.prepare(
-            `SELECT r.uuid, r.title
+	try {
+		const { results } = await c.env.DB.prepare(
+			`SELECT r.uuid, r.title
              FROM resources r
              INNER JOIN avatar_meta am ON r.uuid = am.resource_uuid
              WHERE r.is_active = 1
                AND r.title LIKE ?
              ORDER BY r.title ASC
              LIMIT ?`,
-        )
-            .bind(pattern, limit)
-            .all<{ uuid: string; title: string }>();
+		)
+			.bind(pattern, limit)
+			.all<{ uuid: string; title: string }>();
 
-        return c.json(results);
-    } catch (e) {
-        console.error('[GET /api/avatars/search] error:', e);
-        return c.json({ error: 'Search failed' }, 500);
-    }
+		return c.json(results);
+	} catch (e) {
+		console.error('[GET /api/avatars/search] error:', e);
+		return c.json({ error: 'Search failed' }, 500);
+	}
 });
 
 // =========================================================================================================
@@ -287,13 +287,10 @@ avatars.post('/', async (c) => {
 	const now = Math.floor(Date.now() / 1000);
 
 	try {
-		const dbUser = await c.env.DB.prepare('SELECT uuid FROM users WHERE username = ?').bind(user.username).first<{ uuid: string }>();
-		if (!dbUser) return c.json({ error: 'User not found' }, 404);
-
 		const insertResource = c.env.DB.prepare(
 			`INSERT INTO resources (uuid, title, description, category, thumbnail_uuid, reference_image_uuid, author_uuid, is_active, created_at, updated_at)
 			VALUES (?, ?, ?, 'avatars', ?, ?, ?, 0, ?, ?)`,
-		).bind(resourceUuid, d.title, d.description ?? null, d.thumbnail_uuid, d.reference_image_uuid ?? null, dbUser.uuid, now, now);
+		).bind(resourceUuid, d.title, d.description ?? null, d.thumbnail_uuid, d.reference_image_uuid ?? null, user.uuid, now, now);
 
 		const insertMeta = c.env.DB.prepare(
 			`INSERT INTO avatar_meta (resource_uuid, author_uuid, author_name_raw, gender, avatar_size, avatar_type,
@@ -380,15 +377,12 @@ avatars.put('/:uuid', async (c) => {
 		const historyUuid = crypto.randomUUID();
 		const now = Math.floor(Date.now() / 1000);
 
-		const dbUser = await c.env.DB.prepare('SELECT uuid FROM users WHERE username = ?').bind(user.username).first<{ uuid: string }>();
-		if (!dbUser) return c.json({ error: 'User not found' }, 404);
-
 		const previousData = JSON.stringify({ meta_type: 'avatar_meta', fields: existing });
 
 		const insertHistory = c.env.DB.prepare(
 			`INSERT INTO resource_history (uuid, resource_uuid, actor_uuid, change_type, previous_data, created_at)
 			VALUES (?, ?, ?, 'meta_edit', ?, ?)`,
-		).bind(historyUuid, uuid, dbUser.uuid, previousData, now);
+		).bind(historyUuid, uuid, user.uuid, previousData, now);
 
 		const fields = [
 			'gender',

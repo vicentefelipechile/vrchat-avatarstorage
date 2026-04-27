@@ -522,7 +522,297 @@ admin.get('/resources', async (c) => {
 });
 
 // =========================================================================================================
+// GET /api/admin/ads
+// List all community ads with optional status filter (?status=pending|active|all).
+// =========================================================================================================
+
+admin.get('/ads', async (c) => {
+	const user = await getAuthUser(c);
+	if (!user) return c.json({ error: 'Unauthorized' }, 401);
+	if (!user.is_admin) return c.json({ error: 'Forbidden' }, 403);
+
+	const status = c.req.query('status') || 'all';
+	const page = Math.max(1, parseInt(c.req.query('page') || '1', 10));
+	const limit = 30;
+	const offset = (page - 1) * limit;
+
+	const clauses: string[] = [];
+	if (status === 'pending') {
+		clauses.push('ca.is_approved = 0 AND ca.is_active = 0');
+	} else if (status === 'active') {
+		clauses.push('ca.is_active = 1 AND ca.is_approved = 1');
+	}
+
+	const whereStr = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
+
+	try {
+		const countResult = await c.env.DB.prepare(`SELECT COUNT(*) as total FROM community_ads ca ${whereStr}`).first<{ total: number }>();
+		const total = countResult?.total ?? 0;
+
+		const rows = await c.env.DB.prepare(
+			`SELECT ca.uuid, ca.title, ca.tagline, ca.service_type, ca.destination_type,
+				ca.is_active, ca.is_approved, ca.rejected_reason, ca.display_weight,
+				ca.created_at, u.username as author_username
+			FROM community_ads ca
+			LEFT JOIN users u ON ca.author_uuid = u.uuid
+			${whereStr}
+			ORDER BY ca.created_at DESC LIMIT ? OFFSET ?`,
+		)
+			.bind(limit, offset)
+			.all<Record<string, unknown>>();
+
+		return c.json({
+			ads: rows.results,
+			pagination: { page, limit, total, hasNextPage: offset + limit < total, hasPrevPage: page > 1 },
+		});
+	} catch (e) {
+		console.error('Admin GET /ads error:', e);
+		return c.json({ error: 'Failed to fetch ads' }, 500);
+	}
+});
+
+// =========================================================================================================
+// POST /api/admin/ads/:uuid/approve
+// Approve a pending community ad.
+// =========================================================================================================
+
+admin.post('/ads/:uuid/approve', async (c) => {
+	const user = await getAuthUser(c);
+	if (!user) return c.json({ error: 'Unauthorized' }, 401);
+	if (!user.is_admin) return c.json({ error: 'Forbidden' }, 403);
+
+	const uuid = c.req.param('uuid');
+	try {
+		const ad = await c.env.DB.prepare('SELECT uuid FROM community_ads WHERE uuid = ?').bind(uuid).first<{ uuid: string }>();
+		if (!ad) return c.json({ error: 'Ad not found' }, 404);
+
+		await c.env.DB.prepare(
+			'UPDATE community_ads SET is_approved = 1, is_active = 1, rejected_reason = NULL, updated_at = ? WHERE uuid = ?',
+		)
+			.bind(Math.floor(Date.now() / 1000), uuid)
+			.run();
+
+		return c.json({ success: true });
+	} catch (e) {
+		console.error('Admin approve ad error:', e);
+		return c.json({ error: 'Failed to approve ad' }, 500);
+	}
+});
+
+// =========================================================================================================
+// POST /api/admin/ads/:uuid/reject
+// Reject a community ad with a reason.
+// =========================================================================================================
+
+admin.post('/ads/:uuid/reject', async (c) => {
+	const user = await getAuthUser(c);
+	if (!user) return c.json({ error: 'Unauthorized' }, 401);
+	if (!user.is_admin) return c.json({ error: 'Forbidden' }, 403);
+
+	const uuid = c.req.param('uuid');
+
+	let body: unknown;
+	try {
+		body = await c.req.json();
+	} catch {
+		return c.json({ error: 'Invalid JSON body' }, 400);
+	}
+
+	const { AdRejectSchema } = await import('../validators');
+	const parsed = AdRejectSchema.safeParse(body);
+	if (!parsed.success) return c.json({ error: 'Validation error', details: parsed.error.issues }, 400);
+
+	try {
+		const ad = await c.env.DB.prepare('SELECT uuid FROM community_ads WHERE uuid = ?').bind(uuid).first<{ uuid: string }>();
+		if (!ad) return c.json({ error: 'Ad not found' }, 404);
+
+		await c.env.DB.prepare(
+			'UPDATE community_ads SET is_approved = 0, is_active = 0, rejected_reason = ?, updated_at = ? WHERE uuid = ?',
+		)
+			.bind(parsed.data.reason, Math.floor(Date.now() / 1000), uuid)
+			.run();
+
+		return c.json({ success: true });
+	} catch (e) {
+		console.error('Admin reject ad error:', e);
+		return c.json({ error: 'Failed to reject ad' }, 500);
+	}
+});
+
+// =========================================================================================================
+// POST /api/admin/ads/:uuid/deactivate
+// Deactivate an approved community ad.
+// =========================================================================================================
+
+admin.post('/ads/:uuid/deactivate', async (c) => {
+	const user = await getAuthUser(c);
+	if (!user) return c.json({ error: 'Unauthorized' }, 401);
+	if (!user.is_admin) return c.json({ error: 'Forbidden' }, 403);
+
+	const uuid = c.req.param('uuid');
+	try {
+		const ad = await c.env.DB.prepare('SELECT uuid FROM community_ads WHERE uuid = ?').bind(uuid).first<{ uuid: string }>();
+		if (!ad) return c.json({ error: 'Ad not found' }, 404);
+
+		await c.env.DB.prepare('UPDATE community_ads SET is_active = 0, updated_at = ? WHERE uuid = ?')
+			.bind(Math.floor(Date.now() / 1000), uuid)
+			.run();
+
+		return c.json({ success: true });
+	} catch (e) {
+		console.error('Admin deactivate ad error:', e);
+		return c.json({ error: 'Failed to deactivate ad' }, 500);
+	}
+});
+
+// =========================================================================================================
+// PUT /api/admin/ads/:uuid/weight
+// Update display_weight for an ad.
+// =========================================================================================================
+
+admin.put('/ads/:uuid/weight', async (c) => {
+	const user = await getAuthUser(c);
+	if (!user) return c.json({ error: 'Unauthorized' }, 401);
+	if (!user.is_admin) return c.json({ error: 'Forbidden' }, 403);
+
+	const uuid = c.req.param('uuid');
+
+	let body: unknown;
+	try {
+		body = await c.req.json();
+	} catch {
+		return c.json({ error: 'Invalid JSON body' }, 400);
+	}
+
+	const { AdWeightUpdateSchema } = await import('../validators');
+	const parsed = AdWeightUpdateSchema.safeParse(body);
+	if (!parsed.success) return c.json({ error: 'Validation error', details: parsed.error.issues }, 400);
+
+	try {
+		await c.env.DB.prepare('UPDATE community_ads SET display_weight = ?, updated_at = ? WHERE uuid = ?')
+			.bind(parsed.data.display_weight, Math.floor(Date.now() / 1000), uuid)
+			.run();
+		return c.json({ success: true });
+	} catch (e) {
+		console.error('Admin weight update error:', e);
+		return c.json({ error: 'Failed to update weight' }, 500);
+	}
+});
+
+// =========================================================================================================
+// GET /api/admin/ads/slots
+// Get all slot configurations.
+// =========================================================================================================
+
+admin.get('/ads/slots', async (c) => {
+	const user = await getAuthUser(c);
+	if (!user) return c.json({ error: 'Unauthorized' }, 401);
+	if (!user.is_admin) return c.json({ error: 'Forbidden' }, 403);
+
+	try {
+		const slots = await c.env.DB.prepare('SELECT * FROM ad_slot_config ORDER BY slot_name').all();
+		return c.json({ slots: slots.results });
+	} catch (e) {
+		console.error('Admin GET slots error:', e);
+		return c.json({ error: 'Failed to fetch slot config' }, 500);
+	}
+});
+
+// =========================================================================================================
+// PUT /api/admin/ads/slots/:slot_name
+// Update a slot configuration.
+// =========================================================================================================
+
+admin.put('/ads/slots/:slot_name', async (c) => {
+	const user = await getAuthUser(c);
+	if (!user) return c.json({ error: 'Unauthorized' }, 401);
+	if (!user.is_admin) return c.json({ error: 'Forbidden' }, 403);
+
+	const slotName = c.req.param('slot_name');
+	const VALID_SLOTS = ['sidebar_left', 'featured_artist', 'grid_card', 'detail_banner'];
+	if (!VALID_SLOTS.includes(slotName)) return c.json({ error: 'Invalid slot name' }, 400);
+
+	let body: unknown;
+	try {
+		body = await c.req.json();
+	} catch {
+		return c.json({ error: 'Invalid JSON body' }, 400);
+	}
+
+	const { AdSlotConfigUpdateSchema } = await import('../validators');
+	const parsed = AdSlotConfigUpdateSchema.safeParse(body);
+	if (!parsed.success) return c.json({ error: 'Validation error', details: parsed.error.issues }, 400);
+
+	const data = parsed.data;
+	const sets: string[] = ['updated_at = ?'];
+	const bindings: unknown[] = [Math.floor(Date.now() / 1000)];
+
+	if (data.max_concurrent !== undefined) { sets.push('max_concurrent = ?'); bindings.push(data.max_concurrent); }
+	if (data.rotation_hours !== undefined) { sets.push('rotation_hours = ?'); bindings.push(data.rotation_hours); }
+	if (data.is_enabled !== undefined) { sets.push('is_enabled = ?'); bindings.push(data.is_enabled); }
+
+	bindings.push(slotName);
+
+	try {
+		await c.env.DB.prepare(`UPDATE ad_slot_config SET ${sets.join(', ')} WHERE slot_name = ?`).bind(...bindings).run();
+		return c.json({ success: true });
+	} catch (e) {
+		console.error('Admin PUT slot error:', e);
+		return c.json({ error: 'Failed to update slot config' }, 500);
+	}
+});
+
+// =========================================================================================================
+// GET /api/admin/ads/stats
+// Aggregated 7-day stats per ad (impressions, clicks, CTR).
+// =========================================================================================================
+
+admin.get('/ads/stats', async (c) => {
+	const user = await getAuthUser(c);
+	if (!user) return c.json({ error: 'Unauthorized' }, 401);
+	if (!user.is_admin) return c.json({ error: 'Forbidden' }, 403);
+
+	// Last 7 days
+	const cutoffDate = new Date();
+	cutoffDate.setUTCDate(cutoffDate.getUTCDate() - 7);
+	const cutoffStr = cutoffDate.toISOString().slice(0, 10);
+
+	try {
+		const rows = await c.env.DB.prepare(
+			`SELECT
+				ca.uuid, ca.title, ca.service_type, ca.is_active,
+				COALESCE(SUM(s.impressions), 0) as total_impressions,
+				COALESCE(SUM(s.clicks), 0) as total_clicks
+			FROM community_ads ca
+			LEFT JOIN ad_stats s ON s.ad_uuid = ca.uuid AND s.stat_date >= ?
+			GROUP BY ca.uuid
+			ORDER BY total_impressions DESC`,
+		)
+			.bind(cutoffStr)
+			.all<{
+				uuid: string;
+				title: string;
+				service_type: string;
+				is_active: number;
+				total_impressions: number;
+				total_clicks: number;
+			}>();
+
+		const stats = rows.results.map((r) => ({
+			...r,
+			ctr: r.total_impressions > 0 ? ((r.total_clicks / r.total_impressions) * 100).toFixed(2) + '%' : '0%',
+		}));
+
+		return c.json({ stats });
+	} catch (e) {
+		console.error('Admin GET ads stats error:', e);
+		return c.json({ error: 'Failed to fetch ad stats' }, 500);
+	}
+});
+
+// =========================================================================================================
 // Export
 // =========================================================================================================
 
 export default admin;
+
