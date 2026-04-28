@@ -1,0 +1,772 @@
+{
+	"common": {
+		"loading": "Loading...",
+		"loadingResources": "Loading resources...",
+		"loadingComments": "Loading comments...",
+		"loadingCleanup": "Loading cleanup info...",
+		"loadingPending": "Loading pending resources...",
+		"accessDenied": "Access Denied",
+		"noResourcesFound": "No resources found in this category.",
+		"error": "Error",
+		"cancel": "Cancel",
+		"unknown": "Unknown",
+		"noFavorites": "You have no favorites yet.",
+		"moveToTop": "Move to top",
+		"removeFavorite": "Remove from favorites",
+		"networkError": "Network error. Please try again."
+	},
+	"nav": {
+		"home": "Home",
+		"avatars": "Avatars",
+		"worlds": "Worlds",
+		"assets": "Assets",
+		"clothes": "Clothes",
+		"others": "Others",
+		"login": "Login",
+		"upload": "Upload",
+		"admin": "Admin",
+		"settings": "Settings",
+		"menu": "Menu",
+		"wiki": "Wiki",
+		"favorites": "Favorites",
+		"blog": "Blog",
+		"community": "Community"
+	},
+	"settings": {
+		"title": "User Settings",
+		"avatar": "Profile Picture",
+		"save": "Save Changes",
+		"success": "Profile updated successfully",
+		"logout": "Logout",
+		"change_password": "Change Password",
+		"current_password": "Current Password",
+		"new_password": "New Password",
+		"confirm_password": "Confirm New Password",
+		"current_password_required": "Enter your current password",
+		"password_too_short": "New password must be at least 8 characters",
+		"password_mismatch": "Passwords do not match",
+		"password_changed": "Password changed! Please log in again.",
+		"2fa_title": "Two-Factor Authentication",
+		"2fa_secret": "Manual Secret Key",
+		"2fa_verify": "Enter Code",
+		"2fa_enable": "Enable 2FA",
+		"2fa_password": "Password",
+		"2fa_password_required": "Password is required",
+		"2fa_code": "2FA Code",
+		"2fa_code_hint": "Required because your account has 2FA enabled. Enter a TOTP code or a backup code.",
+		"2fa_code_required": "2FA code is required",
+		"2fa_disable": "Disable 2FA",
+		"2fa_enabled": "2FA is enabled",
+		"2fa_disabled": "2FA is not enabled",
+		"2fa_success": "2FA enabled successfully!",
+		"2fa_enabled_success": "2FA enabled successfully!",
+		"2fa_disabled_success": "2FA disabled successfully!",
+		"2fa_backup_warning": "Save these backup codes! You will not see them again.",
+		"2fa_enter_password": "Enter your password to setup 2FA:",
+		"2fa_view_backup": "View Backup Codes",
+		"2fa_activate": "Activate 2FA",
+		"2fa_setup_instructions": "Scan the QR code with your authenticator app, then enter the code to enable 2FA.",
+		"2fa_cancel": "Cancel",
+		"2fa_confirm_disable": "Confirm Disable",
+		"2fa_backup_ok": "I have saved my codes",
+		"2fa_continue": "Continue"
+	},
+	"home": {
+		"welcome": "Welcome to VRCStorage",
+		"browse": "Browse resources by category:",
+		"latest": "Latest Resources"
+	},
+	"card": {
+		"view": "View Details"
+	},
+	"avatar": {
+		"options": "Avatar Options",
+		"platform": "Platform",
+		"sdk": "SDK",
+		"version": "Version",
+		"blend": "Contains .blend file?",
+		"poiyomi": "Uses Poiyomi?",
+		"vrcfury": "Uses VRCFury?",
+		"pcOnly": "PC Only",
+		"quest": "Quest",
+		"pcQuest": "PC / Quest",
+		"default": "Default"
+	},
+	"category": {
+		"showing": "Showing",
+		"of": "of",
+		"resources": "resources",
+		"prev": "Previous",
+		"next": "Next"
+	},
+	"pagination": {
+		"prev": "Previous",
+		"next": "Next",
+		"page": "Page",
+		"of": "of"
+	},
+	"admin": {
+		"title": "Admin Panel",
+		"noPending": "No resources pending approval.",
+		"delete": "Delete",
+		"deleteConfirm": "Are you sure you want to delete this comment?",
+		"cleanupOrphaned": "Cleanup Unassociated Files",
+		"cleanupConfirm": "Cleanup unassociated files? This will delete files uploaded more than 24 hours ago that are not associated with any resource.",
+		"cleaning": "Cleaning...",
+		"cleanupSuccess": "Cleanup successful: {count} files deleted",
+		"error": "Error",
+		"networkError": "Network error",
+		"orphanedFiles": "Unassociated Files",
+		"totalMedia": "Total Files",
+		"totalResources": "Total Resources",
+		"orphanedFilesFound": "Unassociated Files Found",
+		"orphanedFilesDesc": "Found {count} files uploaded more than {hours} hours ago that are not associated with any resource.",
+		"viewFileList": "View file list",
+		"noOrphanedFiles": "No Unassociated Files",
+		"noOrphanedFilesDesc": "There are no unassociated files at this time. The system is clean.",
+		"pendingResources": "Pending Resources",
+		"cacheClear": "Clear User Cache",
+		"usernamePlaceholder": "Username",
+		"clearCacheBtn": "Clear Cache",
+		"cacheClearSuccess": "Cache cleared for user: {user}",
+		"cacheClearError": "Failed to clear cache",
+		"communityAds": {
+			"title": "Community Ads",
+			"tabPending": "Pending Review",
+			"tabActive": "Active Ads",
+			"tabSlots": "Slot Config",
+			"tabStats": "Stats (7d)",
+			"approve": "Approve",
+			"reject": "Reject",
+			"deactivate": "Deactivate",
+			"saveWeight": "Save Weight",
+			"saveSlot": "Save",
+			"colAd": "Ad",
+			"colType": "Service Type",
+			"colDest": "Destination",
+			"colSlot": "Slot",
+			"colMaxConcurrent": "Max Concurrent",
+			"colRotationHours": "Rotation (hrs)",
+			"colEnabled": "Enabled",
+			"colImpressions": "Impressions",
+			"colClicks": "Clicks",
+			"noAds": "No ads in this state.",
+			"noStats": "No stats yet.",
+			"statsNote": "Showing aggregated impressions and clicks for the last 7 days.",
+			"rejectReasonPrompt": "Enter rejection reason:",
+			"confirmDeactivate": "Deactivate this ad?",
+			"toastApproved": "Ad approved.",
+			"toastRejected": "Ad rejected.",
+			"toastDeactivated": "Ad deactivated.",
+			"toastWeightSaved": "Weight updated.",
+			"toastSlotSaved": "Slot config updated.",
+			"preview": "Preview",
+			"previewTitle": "Ad Preview"
+		}
+	},
+	"item": {
+		"notFound": "Resource Not Found",
+		"category": "Category",
+		"uploaded": "Uploaded",
+		"uuid": "UUID",
+		"description": "Description",
+		"downloads": "Downloads",
+		"downloadMain": "Download (R2 Main)",
+		"backup": "Backup",
+		"loginReq": "Login Required",
+		"loginMsg": "You must be logged in to download resources.",
+		"goToLogin": "Go to Login",
+		"comments": "Comments",
+		"noComments": "No comments yet.",
+		"postComment": "Post Comment",
+		"commentPlaceholder": "Write your comment...",
+		"send": "Send",
+		"sending": "Sending...",
+		"deleting": "Deleting...",
+		"loginToComment": "Login to comment",
+		"underReview": "Waiting for admin approval",
+		"approve": "Approve",
+		"reject": "Reject",
+		"deactivate": "Deactivate",
+		"confirmDeactivate": "Are you sure you want to deactivate this resource?",
+		"confirmReject": "Are you sure you want to reject and delete this resource?",
+		"adminPanel": "Admin Panel",
+		"pendingApproval": "This resource is pending approval.",
+		"edit": "Edit",
+		"history": "History",
+		"errorLoadingComments": "Error loading comments.",
+		"md": {
+			"bold": "Bold",
+			"italic": "Italic",
+			"strike": "Strikethrough",
+			"code": "Inline code",
+			"codeblock": "Code block",
+			"link": "Link",
+			"quote": "Blockquote",
+			"ul": "Bullet list",
+			"image": "Upload image",
+			"uploading": "Uploading image...",
+			"uploadError": "Upload failed. Please try again.",
+			"tabWrite": "Write",
+			"tabPreview": "Preview",
+			"previewEmpty": "Nothing to preview yet."
+		},
+		"specifications": "Specifications"
+	},
+	"edit": {
+		"title": "Edit Resource",
+		"addFileHeader": "Add File (Update)",
+		"addFileDesc": "Upload a new file to add it to the download list (v1.1, v1.2, etc). Does not replace previous files.",
+		"saving": "Saving..."
+	},
+	"history": {
+		"title": "Change History",
+		"backToResource": "Back to Resource",
+		"noHistory": "No changes recorded for this resource.",
+		"field": {
+			"title": "Title",
+			"desc": "Description",
+			"cat": "Category",
+			"tags": "Tags"
+		},
+		"noVisibleChanges": "No visible content changes.",
+		"types": {
+			"content_edit": "Content Edited",
+			"create": "Created",
+			"approval": "Approval",
+			"meta_edit": "Metadata Edited"
+		},
+		"meta": {
+			"field": "Field Changed",
+			"before": "Before",
+			"after": "After"
+		}
+	},
+	"login": {
+		"title": "Login",
+		"username": "Username",
+		"password": "Password",
+		"btn": "Login",
+		"hint": "Hint: user / password",
+		"error": "Invalid credentials",
+		"success": "Logged in successfully!",
+		"enter2FA": "Enter the 6-digit code from your authenticator app",
+		"invalid2FA": "Code must be 6 numeric digits",
+		"logout_success": "Logged out successfully",
+		"register": "No account? Register",
+		"logout": "Logout",
+		"logoutConfirm": "Are you sure you want to log out?",
+		"2fa_code": "Authentication Code",
+		"2fa_hint": "Enter the 6-digit code from your authenticator app OR an 8-character backup code",
+		"back": "Back",
+		"or": "or",
+		"google": "Continue with Google"
+	},
+	"oauthRegister": {
+		"title": "Choose your username",
+		"subtitle": "You are about to create your account. Choose a unique username.",
+		"usernamePlaceholder": "username",
+		"btn": "Create Account",
+		"loading": "Creating account...",
+		"errorExpired": "Registration session expired. Please sign in with Google again.",
+		"errorTaken": "Username is already taken.",
+		"errorInvalid": "Username must be 3-32 characters and may only contain letters, numbers, and underscores."
+	},
+	"register": {
+		"title": "Register",
+		"btn": "Sign Up",
+		"loginLink": "Already have an account? Login",
+		"hasAccount": "Already have an account?",
+		"confirmPassword": "Confirm Password",
+		"passwordMismatch": "Passwords do not match",
+		"error": "Registration failed. Please try again.",
+		"success": "Registration successful. Please login."
+	},
+	"upload": {
+		"title": "Upload Resource",
+		"name": "Title",
+		"desc": "Description",
+		"cat": "Category",
+		"file": "File",
+		"btn": "Upload",
+		"success": "Upload successful",
+		"thumbnail": "Thumbnail",
+		"reference": "Gallery (Images/Videos)",
+		"mainFile": "Main File",
+		"preview": "Preview",
+		"optional": "Optional",
+		"required": "*",
+		"uploading": "Uploading files...",
+		"uploadingThumbnail": "Uploading thumbnail...",
+		"uploadingReference": "Uploading gallery files...",
+		"uploadingFile": "Uploading main file...",
+		"creating": "Creating resource...",
+		"error": "Error",
+		"fileTypes": "RAR, ZIP or UnityPackage files only",
+		"imageVideo": "Image or video for preview",
+		"imageVideoAdditional": "Max 8 files (Images/Videos)",
+		"validFile": "valid file",
+		"invalidFile": "Invalid file",
+		"markdownPlaceholder": "Write description using Markdown...",
+		"noContent": "No content",
+		"resourceName": "Resource name",
+		"errorMainFile": "Main file must be .rar, .zip, .unitypackage or .blend",
+		"errorThumbnail": "You must select a thumbnail",
+		"errorThumbnailUpload": "Error uploading thumbnail",
+		"errorReferenceUpload": "Error uploading gallery files",
+		"errorFileUpload": "Error uploading main file",
+		"errorCreateResource": "Failed to create resource",
+		"errorUnknown": "Unknown error",
+		"errorCaptcha": "Please complete the CAPTCHA",
+		"maxFiles": "Max 8 files allowed",
+		"backupLinks": "Backup Links (Optional)",
+		"backupLinksHint": "One URL per line (Google Drive, Dropbox, etc.). Also can be the original link of the product.",
+		"tags": "Tags",
+		"tagsHint": "Comma separated",
+		"captcha": "CAPTCHA *",
+		"errorMaxFiles": "Max 3 files allowed",
+		"errorFileTooLarge": "File too large",
+		"errorImageDimensions": "Image dimensions too large",
+		"errorInvalidFileType": "Invalid file type",
+		"val": {
+			"avatarGender": "Select avatar gender",
+			"avatarSize": "Select avatar size",
+			"avatarType": "Select avatar type",
+			"assetType": "Select asset type",
+			"platform": "Select platform",
+			"clothesGender": "Select design gender",
+			"clothesType": "Select clothing type"
+		}
+	},
+	"cats": {
+		"avatars": "Avatars",
+		"worlds": "Worlds",
+		"assets": "Assets",
+		"clothes": "Clothes",
+		"others": "Others",
+		"desc": {
+			"avatars": "3D avatars for VRChat",
+			"worlds": "Virtual worlds to explore",
+			"assets": "Resources and tools",
+			"clothes": "Clothing and accessories",
+			"others": "Various other resources"
+		}
+	},
+	"wiki": {
+		"title": "Wiki - Dependencies Guide",
+		"poiyomi": {
+			"title": "Poiyomi Toon Shader"
+		},
+		"vrcfury": {
+			"title": "VRCFury"
+		},
+		"modularAvatar": {
+			"title": "Modular Avatar"
+		},
+		"physbones": {
+			"title": "PhysBones"
+		},
+		"syncdances": {
+			"title": "SyncDances"
+		},
+		"vrcquesttools": {
+			"title": "VRCQuestTools"
+		},
+		"setup": {
+			"title": "Setup Guide"
+		},
+		"faq": {
+			"title": "FAQ"
+		},
+		"gogoloco": {
+			"title": "GoGo Loco"
+		},
+		"gogolocoNsfw": {
+			"title": "NSFW Locomotion"
+		},
+		"sps": {
+			"title": "SPS (Super Plug Shader)"
+		},
+		"dps": {
+			"title": "DPS (Dynamic Penetration System)"
+		},
+		"insideView": {
+			"title": "Inside View"
+		},
+		"pcs": {
+			"title": "PCS (Penetration Contact System)"
+		},
+		"parameter": {
+			"title": "Avatar Parameters"
+		},
+		"actionMenu": {
+			"title": "Action Menu"
+		},
+		"gestureManager": {
+			"title": "Gesture Manager Emulator"
+		},
+		"nsfwEssentials": {
+			"title": "NSFW Essentials"
+		},
+		"haptics": {
+			"title": "Haptics Guide"
+		},
+		"comments": {
+			"title": "Wiki Comments"
+		},
+		"desktopPuppeteer": {
+			"title": "Desktop Puppeteer"
+		},
+		"unityhubError": {
+			"title": "Unity Hub Error"
+		},
+		"justkisssfx": {
+			"title": "JustKissSFX"
+		},
+		"avatarCategories": {
+			"title": "Avatar Categories"
+		},
+		"categories": {
+			"vrchat": "VRChat",
+			"dependencies": "Dependencies",
+			"erp": "ERP",
+			"informative": "Informative"
+		}
+	},
+	"dmca": {
+		"title": "DMCA Takedown Notice",
+		"subtitle": "Report a copyright infringement of resources hosted on vrcstorage.lat",
+		"modeSimple": "Simple Mode",
+		"modeAdvanced": "Advanced Mode",
+		"sendEmail": "Send via Email",
+		"simple": {
+			"intro": "Fill out the options below to generate your claim:",
+			"iAmA": "I, being",
+			"optAuthor": "The Author",
+			"optRepresentative": "Representative",
+			"optThirdReporter": "Third party (non-owner)",
+			"reporterName": "Identified as",
+			"reporterNamePlaceholder": "Your name or alias...",
+			"reporterReason": "Reason for reporting",
+			"reporterReasonPlaceholder": "Describe the situation in more detail...",
+			"reason_recognized": "I recognize this content as another creator's work",
+			"reason_shared": "The content was shared without the original author's permission",
+			"reason_asked": "The original creator asked me to report it",
+			"reason_paid": "The content was taken from a paid platform without authorization",
+			"reason_other": "Other",
+			"bodyThirdReporterReason": "Reason for reporting",
+			"representing": "of the organization / studio",
+			"companyPlaceholder": "Company name...",
+			"of": "of",
+			"claimThat": "claim that the resource infringes",
+			"optMyRights": "my copyright",
+			"optThirdParty": "another person's copyright",
+			"originalOwner": "who is recognized as",
+			"ownerPlaceholder": "Original creator name...",
+			"recognizedAs": "recognized as",
+			"andDemand": "and demand",
+			"optImmediateTermination": "Immediate termination of the resource",
+			"optImmediateRemoval": "Immediate removal of the resource",
+			"optNotifyUser": "Notification to the responsible user",
+			"resourceUrl": "URL of the infringing resource:",
+			"resourceUrls": "Infringing Resource(s):",
+			"resourceUrlsHint": "One link per line.",
+			"proofLabel": "Proof of authenticity (optional):",
+			"proofHint": "Link to original work or other evidence proving your ownership.",
+			"proofPlaceholder": "https: //link-to-original-work.com or description...",
+			"preview": "Claim preview:",
+			"urlNotSpecified": "(URL not specified)",
+			"bodyI": "I,",
+			"bodyClaim": "claim that the resource hosted on \"vrcstorage.lat\"",
+			"bodyInfringe": "infringes",
+			"bodyThirdReporterClaim": "am reporting a possible copyright infringement in the specified resource.",
+			"bodyDemand": "Therefore, I demand:",
+			"bodyProof": "Proof of authenticity",
+			"bodyDeclaration": "I declare under penalty of perjury that the information provided is correct and that I am the rights holder or authorized to act on behalf of the rights holder.",
+			"bodyDate": "Date"
+		},
+		"advanced": {
+			"intro": "Write your DMCA notice in professional language. Make sure to include all required information.",
+			"claimLabel": "Claim (in professional language):",
+			"claimPlaceholder": "I, [your name], on behalf of [company/person], hereby notify that the infringing content...",
+			"resourcesLabel": "Infringing Resource(s):",
+			"resourcesHint": "Paste the URLs of the infringing resources (one per line):",
+			"evidenceLabel": "Proof of Ownership:",
+			"evidenceHint": "URL or description proving your ownership of the original content:",
+			"evidencePlaceholder": "https: //link-to-your-original-work.com or description..."
+		},
+		"info": {
+			"title": "Important Information",
+			"l1": "All DMCA notices are reviewed by our team within 72 hours.",
+			"l2": "Providing false information may have legal consequences.",
+			"l3": "Content may be removed preventatively while the claim is investigated."
+		}
+	},
+	"blog": {
+		"title": "Blog",
+		"subtitle": "VRCStorage articles and news",
+		"noPostsYet": "No articles yet.",
+		"readMore": "Read more",
+		"by": "By",
+		"team": "VRCStorage Team",
+		"publishedOn": "Published on",
+		"createPost": "New Article",
+		"editPost": "Edit Article",
+		"deletePost": "Delete Article",
+		"deleteConfirm": "Are you sure you want to delete this article?",
+		"titleLabel": "Title",
+		"contentLabel": "Content (Markdown)",
+		"excerptLabel": "Excerpt (Optional)",
+		"coverImageLabel": "Cover Image (Optional)",
+		"authorDisplayLabel": "Publish as",
+		"authorPersonal": "My username",
+		"authorTeam": "VRCStorage Team",
+		"savePost": "Save Article",
+		"comments": "Comments",
+		"noComments": "No comments yet.",
+		"commentPlaceholder": "Write your comment...",
+		"loginToComment": "Login to comment",
+		"loading": "Loading articles...",
+		"notFound": "Article not found.",
+		"preview": "Preview",
+		"write": "Write"
+	},
+	"meta": {
+		"required": "* required",
+		"adminOnly": "* admin only",
+		"select": "-- Select --",
+		"platform": {
+			"title": "Platform",
+			"cross": "Cross-Platform (PC + Quest)",
+			"crossSimple": "Cross-Platform",
+			"pc": "PC Only",
+			"quest": "Quest Only",
+			"sdk": "SDK"
+		},
+		"sdk_version": {
+			"title": "SDK Version",
+			"v3Default": "SDK 3.0 (default)",
+			"v3": "SDK 3.0",
+			"v2": "SDK 2.0",
+			"extras": "Extras",
+			"unityVersion": "Unity Version"
+		},
+		"avatar_gender": {
+			"title": "Gender",
+			"male": "Male",
+			"female": "Female",
+			"androgynous": "Androgynous",
+			"undefined": "Undefined",
+			"unisex": "Unisex",
+			"kemono": "Kemono",
+			"both": "Both (Pack)"
+		},
+		"avatar_size": {
+			"title": "Size",
+			"tiny": "Tiny",
+			"small": "Small",
+			"medium": "Medium",
+			"tall": "Tall",
+			"giant": "Giant"
+		},
+		"avatar_type": {
+			"title": "Type",
+			"human": "Human",
+			"anime": "Anime",
+			"furry": "Furry",
+			"chibi": "Chibi",
+			"cartoon": "Cartoon",
+			"semiRealistic": "Semi-Realistic",
+			"monster": "Monster",
+			"fantasy": "Fantasy",
+			"mecha": "Mecha",
+			"kemono": "Kemono",
+			"sciFi": "Sci-Fi",
+			"vtuber": "VTuber",
+			"other": "Other"
+		},
+		"features": {
+			"title": "Features",
+			"nsfw": "NSFW",
+			"physbones": "PhysBones",
+			"dps": "DPS",
+			"facetracking": "Face Tracking",
+			"gogoloco": "GoGo Loco",
+			"toggles": "Toggles",
+			"questOptimized": "Quest Optimized"
+		},
+		"avatar": {
+			"title": "Avatar Details",
+			"titleAdmin": "Avatar Meta",
+			"gender": "Avatar Gender *",
+			"size": "Avatar Size *",
+			"type": "Avatar Type *",
+			"author": "Original Author",
+			"authorHint": "(avatar creator's name)",
+			"authorPlaceholder": "Search author... or type name",
+			"authorLinked": "Author Linked UUID",
+			"extras": "Avatar Extras"
+		},
+		"asset": {
+			"title": "Asset Details",
+			"titleAdmin": "Asset Meta",
+			"type": "Asset Type *"
+		},
+		"asset_type": {
+			"title": "Asset Type",
+			"prop": "Prop",
+			"shader": "Shader",
+			"particle": "Particle FX",
+			"vfx": "VFX",
+			"prefab": "Prefab",
+			"script": "Script",
+			"animation": "Animation",
+			"avatarBase": "Avatar Base",
+			"texturePack": "Texture Pack",
+			"sound": "Sound",
+			"tool": "Tool",
+			"hud": "HUD",
+			"other": "Other"
+		},
+		"clothes": {
+			"title": "Clothing Details",
+			"titleAdmin": "Clothes Meta",
+			"gender": "Design Gender *",
+			"type": "Clothing Type *",
+			"isBase": "Is Base (includes base avatar)",
+			"baseAvatar": "For which base avatar?",
+			"baseAvatarHint": "(autocomplete or free name)",
+			"baseAvatarPlaceholder": "Search base avatar..."
+		},
+		"clothing_type": {
+			"title": "Clothing Type",
+			"top": "Top",
+			"jacket": "Jacket",
+			"bottom": "Bottom",
+			"dress": "Dress",
+			"fullbody": "Full Body",
+			"swimwear": "Swimwear",
+			"shoes": "Shoes",
+			"legwear": "Legwear",
+			"hat": "Hat",
+			"hair": "Hair",
+			"accessory": "Accessory",
+			"tail": "Tail",
+			"ears": "Ears",
+			"wings": "Wings",
+			"bodyPart": "Body Part",
+			"underwear": "Underwear",
+			"other": "Other"
+		}
+	},
+	"sort": {
+		"newest": "Newest",
+		"mostDownloaded": "Oldest",
+		"aZ": "A-Z"
+	},
+	"filterPanel": {
+		"noAssets": "No assets found with these filters.",
+		"noAvatars": "No avatars found with these filters.",
+		"prev": "Previous",
+		"next": "Next",
+		"pagePrefix": "Page",
+		"assetCountStr": "asset(s)",
+		"avatarCountStr": "avatar(s)",
+		"clothesCountStr": "clothe(s)",
+		"sortLabel": "Sort by",
+		"titleAssets": "VRCStorage — Assets",
+		"titleAvatars": "VRCStorage — Avatars",
+		"titleClothes": "VRCStorage — Clothes",
+		"filterTitle": "Filters",
+		"reset": "Reset Filters"
+	},
+	"autorProfile": {
+		"notFound": "There is no author with this name.",
+		"notFoundTitle": "Author Not Found",
+		"noResources": "This author has not any resources related yet.",
+		"avatarsTitle": "Avatares"
+	},
+	"community": {
+		"badge": "Community",
+		"visitProfile": "See Profile",
+		"visitWebsite": "Visit Website",
+		"by": "By",
+		"serviceTypes": {
+			"avatar_creator": "Avatar Creator",
+			"3d_artist": "3D Artist",
+			"illustrator": "Illustrator",
+			"world_builder": "World Builder",
+			"texture_artist": "Texture Artist",
+			"rigger": "Rigger",
+			"shader_dev": "Shader Developer",
+			"animator": "Animator",
+			"voice_actor": "Voice Actor",
+			"commissioner": "Commissioner"
+		},
+		"directory": {
+			"title": "Community",
+			"subtitle": "Discover VRChat creators and services",
+			"allTypes": "All Types",
+			"searchPlaceholder": "Search by name...",
+			"noAds": "No community promotions yet.",
+			"submitAd": "Promote Yourself",
+			"loginToSubmit": "Login to promote your services."
+		},
+		"detail": {
+			"notFound": "This promotion page was not found."
+		},
+		"createTitle": "Promote Yourself",
+		"editTitle": "Edit Promotion",
+		"form": {
+			"title": "Display Name",
+			"titlePlaceholder": "Your name or brand...",
+			"tagline": "Tagline",
+			"taglinePlaceholder": "What do you do? (max 80 chars)",
+			"serviceType": "Service Type",
+			"destType": "Destination",
+			"destInternal": "Internal Page (VRCStorage)",
+			"destExternal": "External Link",
+			"externalUrl": "External URL",
+			"description": "Page Content (Markdown)",
+			"descriptionHint": "Shown on your internal profile page. Supports Markdown.",
+			"descriptionPlaceholder": "Tell people about your work...",
+			"bannerImage": "Banner Image",
+			"bannerImageHint": "Tall portrait image, used in sidebars (160×196 recommended).",
+			"cardImage": "Card Image",
+			"cardImageHint": "Wide landscape image, used in grids (400×300 recommended).",
+			"noImage": "No image",
+			"uploadBanner": "Upload Banner",
+			"uploadCard": "Upload Card Image",
+			"uploading": "Uploading...",
+			"uploadError": "Upload failed.",
+			"submit": "Submit for Review",
+			"save": "Save Changes",
+			"submitting": "Submitting...",
+			"submitSuccess": "Submitted! Your promotion is under review.",
+			"updateSuccess": "Updated successfully.",
+			"updatedPendingReview": "Updated. Re-submitted for review.",
+			"errorTitle": "Display name is required.",
+			"errorTagline": "Tagline is required.",
+			"errorServiceType": "Please select a service type.",
+			"errorExternalUrl": "External URL is required."
+		},
+		"budget": {
+			"btnLabel": "I have a budget for ads",
+			"title": "This is a free platform.",
+			"body": "VRCStorage does not accept money for ad placements. All promotions are community-driven and free. If you want your work to be seen, just submit it — it will be reviewed like everyone else's.",
+			"ok": "Got it!"
+		},
+		"prefs": {
+			"title": "Ad Preferences",
+			"close": "Close",
+			"showAds": "Show community promotions",
+			"slotsTitle": "Placement Zones",
+			"typesTitle": "Service Types",
+			"adjust": "Adjust",
+			"slotSidebar": "Sidebar Banner",
+			"slotFeatured": "Featured Artist",
+			"slotGrid": "Grid Card",
+			"slotDetail": "Item Page Banner"
+		}
+	}
+}
