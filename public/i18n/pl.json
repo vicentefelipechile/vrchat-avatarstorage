@@ -805,6 +805,7 @@
 			"errorTagline": "Hasło jest wymagane.",
 			"errorServiceType": "Wybierz typ usługi.",
 			"errorExternalUrl": "Zewnętrzny URL jest wymagany."
-		}
+		},
+		"viewDetails": "Zobacz szczegóły"
 	}
 }

@@ -804,6 +804,7 @@
 			"errorTagline": "Lo slogan è obbligatorio.",
 			"errorServiceType": "Seleziona un tipo di servizio.",
 			"errorExternalUrl": "L'URL esterna è obbligatoria."
-		}
+		},
+		"viewDetails": "Vedi dettagli"
 	}
 }

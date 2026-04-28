@@ -769,6 +769,7 @@
 			"errorTagline": "O slogan é obrigatório.",
 			"errorServiceType": "Selecione um tipo de serviço.",
 			"errorExternalUrl": "O URL externo é obrigatório."
-		}
+		},
+		"viewDetails": "Ver detalhes"
 	}
 }

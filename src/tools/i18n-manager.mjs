@@ -41,104 +41,93 @@
 //   - After adding, always verify with: npm run i18n-manager CHECK
 // =============================================================================
 
-import { readFileSync, writeFileSync, mkdirSync, unlinkSync, existsSync } from 'fs';
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs';
 import { join, dirname, resolve } from 'path';
-import { fileURLToPath, pathToFileURL } from 'url';
+import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const I18N_DIR = join(__dirname, '../../public/js/i18n');
+const I18N_DIR = join(__dirname, '../../public/i18n');
 
 const KNOWN_LOCALES = new Set(['en', 'es', 'de', 'fr', 'it', 'jp', 'cn', 'nl', 'pl', 'pt', 'ru', 'tr']);
 const ALL_LOCALES = [...KNOWN_LOCALES];
 
 // =============================================================================
-// Section navigation
+// JSON I/O helpers
+// =============================================================================
+
+function loadLocale(locale) {
+	const filePath = join(I18N_DIR, `${locale}.json`);
+	try {
+		return JSON.parse(readFileSync(filePath, 'utf-8'));
+	} catch (e) {
+		console.error(`✘ Could not load ${locale}.json: ${e.message}`);
+		return null;
+	}
+}
+
+function saveLocale(locale, data, dryRun) {
+	const filePath = join(I18N_DIR, `${locale}.json`);
+	const content = JSON.stringify(data, null, '\t') + '\n';
+	if (dryRun) {
+		console.log(`  (dry — would write ${locale}.json)`);
+	} else {
+		writeFileSync(filePath, content, 'utf-8');
+	}
+}
+
+// =============================================================================
+// Object path helpers
 // =============================================================================
 
 /**
- * Find the content bounds of a named section starting at searchFrom,
- * constrained within [searchFrom, searchLimit].
- * Returns { contentStart, contentEnd } or null.
+ * Get nested value by dot-path. Returns undefined if not found.
  */
-function findSectionBounds(source, sectionName, searchFrom = 0, searchLimit = source.length) {
-	const re = new RegExp(`['"]?${sectionName}['"]?\\s*:\\s*\\{`, 'g');
-	re.lastIndex = searchFrom;
-	let found = null;
-	let match;
-	while ((match = re.exec(source)) !== null) {
-		if (match.index >= searchLimit) break;
-		found = match;
-	}
-	if (!found) return null;
-
-	const contentStart = found.index + found[0].length;
-	let depth = 1;
-	let pos = contentStart;
-	while (pos < source.length && depth > 0) {
-		if (source[pos] === '{') depth++;
-		else if (source[pos] === '}') depth--;
-		pos++;
-	}
-	return { contentStart, contentEnd: pos - 1 };
+function getByPath(obj, dotPath) {
+	return dotPath.split('.').reduce((acc, k) => acc?.[k], obj);
 }
 
 /**
- * Navigate an array of path parts through nested section boundaries.
- * Returns { contentStart, contentEnd } of the deepest section, or null.
+ * Set nested value by dot-path, creating intermediate objects as needed.
+ * Returns false if the key already exists (skip), true if inserted.
  */
-function navigatePath(source, pathParts) {
-	let searchFrom = 0;
-	let searchLimit = source.length;
-	let bounds = null;
-	for (const part of pathParts) {
-		bounds = findSectionBounds(source, part, searchFrom, searchLimit);
-		if (!bounds) return null;
-		searchFrom = bounds.contentStart;
-		searchLimit = bounds.contentEnd;
+function setByPath(obj, dotPath, value) {
+	const parts = dotPath.split('.');
+	const leafKey = parts[parts.length - 1];
+	let current = obj;
+
+	for (let i = 0; i < parts.length - 1; i++) {
+		const part = parts[i];
+		if (current[part] === undefined) {
+			current[part] = {};
+		} else if (typeof current[part] !== 'object' || current[part] === null) {
+			console.error(`  ✘ "${parts.slice(0, i + 1).join('.')}" exists but is not an object.`);
+			return false;
+		}
+		current = current[part];
 	}
-	return bounds;
-}
 
-/**
- * Extract all direct string key:value pairs from a section content string.
- * Does not recurse into nested sub-objects.
- */
-function extractStringKeys(sectionContent) {
-	const SINGLE = `'(?:[^'\\\\]|\\\\.)*'`;
-	const DOUBLE = `"(?:[^"\\\\]|\\\\.)*"`;
-	const re = new RegExp(`(\\w+)\\s*:\\s*(${SINGLE}|${DOUBLE})`, 'g');
-	const results = [];
-	let m;
-	while ((m = re.exec(sectionContent)) !== null) {
-		const raw = m[2];
-		const value = raw.slice(1, -1).replace(/\\'/g, "'").replace(/\\"/g, '"');
-		results.push({ key: m[1], value });
+	if (current[leafKey] !== undefined) {
+		return 'skip';
 	}
-	return results;
+
+	current[leafKey] = value;
+	return true;
 }
 
 /**
- * Extract all direct sub-section names (object-valued keys) from a section.
+ * Recursively collect all dot-paths for leaf (string/number) values in an object.
  */
-function extractSubSections(sectionContent) {
-	const re = /(\w+)\s*:\s*\{/g;
-	const names = [];
-	let m;
-	while ((m = re.exec(sectionContent)) !== null) names.push(m[1]);
-	return names;
-}
-
-/**
- * Read the value of a specific leaf key within a section content.
- * Returns the string value or null if not found.
- */
-function readLeafValue(sectionContent, leafKey) {
-	const SINGLE = `'(?:[^'\\\\]|\\\\.)*'`;
-	const DOUBLE = `"(?:[^"\\\\]|\\\\.)*"`;
-	const re = new RegExp(`['"]?${leafKey}['"]?\\s*:\\s*(${SINGLE}|${DOUBLE})`);
-	const m = sectionContent.match(re);
-	if (!m) return null;
-	return m[1].slice(1, -1).replace(/\\'/g, "'").replace(/\\"/g, '"');
+function collectPaths(obj, prefix = '') {
+	const paths = [];
+	for (const [key, val] of Object.entries(obj)) {
+		const full = prefix ? `${prefix}.${key}` : key;
+		if (val && typeof val === 'object') {
+			paths.push(...collectPaths(val, full));
+		} else {
+			paths.push(full);
+		}
+	}
+	return paths;
 }
 
 // =============================================================================
@@ -149,80 +138,44 @@ function runList(locale, paths) {
 	const targetLocales = locale ? [locale] : ALL_LOCALES;
 
 	if (!paths.length) {
-		// No paths given — list top-level sections per locale
+		// No paths — list top-level sections per locale
 		for (const loc of targetLocales) {
-			const source = loadSource(loc);
-			if (!source) continue;
-			const re = /(?:^|\n)\s*(\w+)\s*:\s*\{/g;
-			const sections = [];
-			let m;
-			while ((m = re.exec(source)) !== null) sections.push(m[1]);
+			const data = loadLocale(loc);
+			if (!data) continue;
+			const sections = Object.keys(data);
 			console.log(`[${loc.toUpperCase()}] sections: ${sections.join(', ')}`);
 		}
 		return;
 	}
 
 	for (const dotPath of paths) {
-		const parts = dotPath.split('.');
-		const isLeaf = parts.length >= 2;
-
 		console.log(`\n${'─'.repeat(60)}`);
 		console.log(`  ${dotPath}`);
 		console.log('─'.repeat(60));
 
 		for (const loc of targetLocales) {
-			const source = loadSource(loc);
-			if (!source) {
+			const data = loadLocale(loc);
+			if (!data) {
 				console.log(`  [${loc.toUpperCase()}] ✘ file not found`);
 				continue;
 			}
 
-			if (isLeaf) {
-				// Could be a leaf key (section.key) or a nested section (section.sub)
-				// Try as section first, then as leaf
-				const sectionBounds = navigatePath(source, parts);
-				if (sectionBounds) {
-					// It's a section — print all string keys in it
-					const content = source.slice(sectionBounds.contentStart, sectionBounds.contentEnd);
-					const keys = extractStringKeys(content);
-					const subs = extractSubSections(content);
-					if (!keys.length && !subs.length) {
-						console.log(`  [${loc.toUpperCase()}] (empty)`);
+			const val = getByPath(data, dotPath);
+
+			if (val === undefined) {
+				console.log(`  [${loc.toUpperCase()}] ✘ not found`);
+			} else if (typeof val === 'object' && val !== null) {
+				// It's a section — print its direct children
+				console.log(`  [${loc.toUpperCase()}]`);
+				for (const [k, v] of Object.entries(val)) {
+					if (typeof v === 'object') {
+						console.log(`    ${k}: { ... }`);
 					} else {
-						console.log(`  [${loc.toUpperCase()}]`);
-						for (const { key, value } of keys) console.log(`    ${key}: '${value}'`);
-						if (subs.length) console.log(`    subsections: ${subs.join(', ')}`);
-					}
-				} else {
-					// Try as a leaf: navigate to parent section, read key
-					const parentParts = parts.slice(0, -1);
-					const leafKey = parts[parts.length - 1];
-					const parentBounds = navigatePath(source, parentParts);
-					if (!parentBounds) {
-						console.log(`  [${loc.toUpperCase()}] ✘ section "${parentParts.join('.')}" not found`);
-						continue;
-					}
-					const parentContent = source.slice(parentBounds.contentStart, parentBounds.contentEnd);
-					const value = readLeafValue(parentContent, leafKey);
-					if (value === null) {
-						console.log(`  [${loc.toUpperCase()}] ✘ key "${leafKey}" not found`);
-					} else {
-						console.log(`  [${loc.toUpperCase()}] ${leafKey}: '${value}'`);
+						console.log(`    ${k}: '${v}'`);
 					}
 				}
 			} else {
-				// Top-level section name only
-				const bounds = findSectionBounds(source, parts[0]);
-				if (!bounds) {
-					console.log(`  [${loc.toUpperCase()}] ✘ not found`);
-					continue;
-				}
-				const content = source.slice(bounds.contentStart, bounds.contentEnd);
-				const keys = extractStringKeys(content);
-				const subs = extractSubSections(content);
-				console.log(`  [${loc.toUpperCase()}]`);
-				for (const { key, value } of keys) console.log(`    ${key}: '${value}'`);
-				if (subs.length) console.log(`    subsections: ${subs.join(', ')}`);
+				console.log(`  [${loc.toUpperCase()}] ${dotPath.split('.').pop()}: '${val}'`);
 			}
 		}
 	}
@@ -232,120 +185,6 @@ function runList(locale, paths) {
 // ADD mode
 // =============================================================================
 
-/**
- * Find the bounds of the top-level `export default { ... }` object.
- * Returns { contentStart, contentEnd } or null.
- */
-function findExportBounds(source) {
-	const match = source.match(/export\s+default\s*\{/);
-	if (!match) return null;
-	const contentStart = match.index + match[0].length;
-	let depth = 1;
-	let pos = contentStart;
-	while (pos < source.length && depth > 0) {
-		if (source[pos] === '{') depth++;
-		else if (source[pos] === '}') depth--;
-		pos++;
-	}
-	return { contentStart, contentEnd: pos - 1 };
-}
-
-/**
- * Ensure all sections in the given path exist, creating empty ones as needed.
- * Returns the (possibly modified) source string, or null on fatal error.
- */
-function ensureSectionPath(source, sectionParts) {
-	const eol = source.includes('\r\n') ? '\r\n' : '\n';
-
-	for (let i = 0; i < sectionParts.length; i++) {
-		const pathSoFar = sectionParts.slice(0, i + 1);
-		if (navigatePath(source, pathSoFar)) continue;
-
-		// Parent bounds: either the previous section or the export default
-		const parentPath = sectionParts.slice(0, i);
-		const parentBounds = parentPath.length ? navigatePath(source, parentPath) : findExportBounds(source);
-		if (!parentBounds) {
-			console.error(`  ✘ Cannot create section "${sectionParts[i]}": parent not found.`);
-			return null;
-		}
-
-		let { contentStart, contentEnd } = parentBounds;
-		const parentContent = source.slice(contentStart, contentEnd);
-
-		// Detect indent from parent content
-		const indentMatch = parentContent.match(/\n([ \t]+)\w/);
-		const indent = indentMatch ? indentMatch[1] : '\t'.repeat(i + 1);
-
-		// Find the last non-whitespace character before the parent's closing }
-		let lastNonWS = contentEnd - 1;
-		while (lastNonWS >= contentStart && /\s/.test(source[lastNonWS])) lastNonWS--;
-
-		// Ensure trailing comma on the previous sibling's closing }
-		if (lastNonWS >= contentStart && source[lastNonWS] === '}' && source[lastNonWS + 1] !== ',') {
-			source = source.slice(0, lastNonWS + 1) + ',' + source.slice(lastNonWS + 1);
-			contentEnd++;
-			lastNonWS++; // now points to the comma
-		}
-
-		// Build new section and splice it in, replacing any trailing whitespace
-		const newSection = `${eol}${indent}${sectionParts[i]}: {${eol}${indent}},${eol}`;
-		source = source.slice(0, lastNonWS + 1) + newSection + source.slice(contentEnd);
-	}
-	return source;
-}
-
-function insertKey(source, dotPath, value) {
-	const parts = dotPath.split('.');
-	const leafKey = parts[parts.length - 1];
-	const sectionParts = parts.slice(0, -1);
-
-	if (!sectionParts.length) {
-		console.error(`  ✘ "${dotPath}" has no section prefix. Use "section.key" format.`);
-		return null;
-	}
-
-	// Auto-create missing sections
-	source = ensureSectionPath(source, sectionParts);
-	if (source === null) return null;
-
-	const bounds = navigatePath(source, sectionParts);
-	if (!bounds) {
-		console.error(`  ✘ Section "${sectionParts.join('.')}" not found.`);
-		return null;
-	}
-
-	const { contentStart, contentEnd } = bounds;
-	const sectionContent = source.slice(contentStart, contentEnd);
-
-	// Detect indentation from the section itself
-	const firstPropMatch = sectionContent.match(/\n([ \t]+)\w/);
-	const leafIndent = firstPropMatch ? firstPropMatch[1] : source.includes('\t') ? '\t'.repeat(sectionParts.length + 1) : '        ';
-
-	if (new RegExp(`['"]?${leafKey}['"]?\\s*:`).test(sectionContent)) {
-		console.log(`  ↷ "${dotPath}" already exists — skipped.`);
-		return source;
-	}
-
-	const SINGLE = `'(?:[^'\\\\]|\\\\.)*'`;
-	const DOUBLE = `"(?:[^"\\\\]|\\\\.)*"`;
-	const propRe = new RegExp(`[^\\n]+:\\s*(?:${SINGLE}|${DOUBLE})\\s*,?`, 'g');
-	const allMatches = [...sectionContent.matchAll(propRe)];
-
-	if (!allMatches.length) {
-		// Empty section — insert as the first property right after the opening {
-		const escaped = value.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-		const newLine = `\n${leafIndent}${leafKey}: '${escaped}',`;
-		return source.slice(0, contentStart) + newLine + source.slice(contentStart);
-	}
-
-	const lastMatch = allMatches[allMatches.length - 1];
-	const insertAfterIdx = contentStart + lastMatch.index + lastMatch[0].length;
-	const escaped = value.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-	const newLine = `\n${leafIndent}${leafKey}: '${escaped}',`;
-
-	return source.slice(0, insertAfterIdx) + newLine + source.slice(insertAfterIdx);
-}
-
 function runAdd(map, dryRun) {
 	if (dryRun) console.log('Dry run — files will NOT be written.\n');
 
@@ -354,30 +193,31 @@ function runAdd(map, dryRun) {
 		totalFailed = 0;
 
 	for (const [locale, entries] of map) {
-		const filePath = join(I18N_DIR, `${locale}.js`);
-		let source = loadSource(locale);
-		if (!source) {
+		const data = loadLocale(locale);
+		if (!data) {
 			totalFailed++;
 			continue;
 		}
 
 		console.log(`[${locale.toUpperCase()}]`);
-		let updated = source;
+		let modified = false;
 
 		for (const { key, value } of entries) {
-			const result = insertKey(updated, key, value);
-			if (result === null) totalFailed++;
-			else if (result === updated) totalSkipped++;
-			else {
-				updated = result;
+			const result = setByPath(data, key, value);
+			if (result === false) {
+				totalFailed++;
+			} else if (result === 'skip') {
+				console.log(`  ↷ "${key}" already exists — skipped.`);
+				totalSkipped++;
+			} else {
 				console.log(`  ✓ ${key} = '${value}'`);
+				modified = true;
 				totalWritten++;
 			}
 		}
 
-		if (updated !== source) {
-			if (!dryRun) writeFileSync(filePath, updated, 'utf-8');
-			else console.log(`  (dry — would write ${locale}.js)`);
+		if (modified) {
+			saveLocale(locale, data, dryRun);
 		}
 		console.log('');
 	}
@@ -448,52 +288,16 @@ function runFill(filePath, dryRun) {
 // CHECK mode — compact missing-key report
 // =============================================================================
 
-/**
- * Recursively collect all dot-paths for leaf (string/number) values in an object.
- */
-function collectPaths(obj, prefix = '') {
-	const paths = [];
-	for (const [key, val] of Object.entries(obj)) {
-		const full = prefix ? `${prefix}.${key}` : key;
-		if (val && typeof val === 'object') {
-			paths.push(...collectPaths(val, full));
-		} else {
-			paths.push(full);
-		}
-	}
-	return paths;
-}
-
-/**
- * Get nested value by dot-path from an object. Returns undefined if not found.
- */
-function getByPath(obj, dotPath) {
-	return dotPath.split('.').reduce((acc, k) => acc?.[k], obj);
-}
-
-/**
- * Load all locale data as JS modules. Shared by both check modes.
- */
-async function loadAllLocaleData() {
+async function runCheck(jsonMode) {
 	const data = {};
 	for (const loc of ALL_LOCALES) {
-		const url = pathToFileURL(resolve(I18N_DIR, `${loc}.js`)).href;
-		try {
-			const mod = await import(url);
-			data[loc] = mod.default;
-		} catch {
-			console.warn(`  ✘ Could not load ${loc}.js — skipped.`);
-		}
+		const parsed = loadLocale(loc);
+		if (parsed) data[loc] = parsed;
 	}
-	return data;
-}
-
-async function runCheck(jsonMode) {
-	const data = await loadAllLocaleData();
 
 	const ref = data['en'];
 	if (!ref) {
-		console.error('Could not load en.js as reference.');
+		console.error('Could not load en.json as reference.');
 		process.exit(1);
 	}
 
@@ -551,17 +355,8 @@ async function runCheck(jsonMode) {
 }
 
 // =============================================================================
-// Helpers
+// Argument parsers
 // =============================================================================
-
-function loadSource(locale) {
-	try {
-		return readFileSync(join(I18N_DIR, `${locale}.js`), 'utf-8');
-	} catch {
-		console.error(`✘ File not found: ${locale}.js`);
-		return null;
-	}
-}
 
 function parseAddArgs(args) {
 	const map = new Map();
@@ -615,6 +410,7 @@ function parseListArgs(args) {
 // =============================================================================
 // Main
 // =============================================================================
+
 const args = process.argv.slice(2);
 const subcommand = args[0]?.toUpperCase();
 

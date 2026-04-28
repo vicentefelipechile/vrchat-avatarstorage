@@ -801,6 +801,7 @@
 			"errorTagline": "Slogan ist erforderlich.",
 			"errorServiceType": "Bitte wähle einen Diensttyp aus.",
 			"errorExternalUrl": "Externe URL ist erforderlich."
-		}
+		},
+		"viewDetails": "Details ansehen"
 	}
 }

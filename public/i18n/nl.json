@@ -804,6 +804,7 @@
 			"errorTagline": "Slogan is vereist.",
 			"errorServiceType": "Selecteer een servicetype.",
 			"errorExternalUrl": "Externe URL is vereist."
-		}
+		},
+		"viewDetails": "Details bekijken"
 	}
 }

@@ -6,18 +6,18 @@
 // swap these for dynamic fetch() calls instead.
 // ============================================================================
 
-import es from '../../public/js/i18n/es.js';
-import en from '../../public/js/i18n/en.js';
-import ru from '../../public/js/i18n/ru.js';
-import jp from '../../public/js/i18n/jp.js';
-import cn from '../../public/js/i18n/cn.js';
-import fr from '../../public/js/i18n/fr.js';
-import pt from '../../public/js/i18n/pt.js';
-import de from '../../public/js/i18n/de.js';
-import it from '../../public/js/i18n/it.js';
-import pl from '../../public/js/i18n/pl.js';
-import nl from '../../public/js/i18n/nl.js';
-import tr from '../../public/js/i18n/tr.js';
+import es from '../../public/i18n/es.json';
+import en from '../../public/i18n/en.json';
+import ru from '../../public/i18n/ru.json';
+import jp from '../../public/i18n/jp.json';
+import cn from '../../public/i18n/cn.json';
+import fr from '../../public/i18n/fr.json';
+import pt from '../../public/i18n/pt.json';
+import de from '../../public/i18n/de.json';
+import it from '../../public/i18n/it.json';
+import pl from '../../public/i18n/pl.json';
+import nl from '../../public/i18n/nl.json';
+import tr from '../../public/i18n/tr.json';
 
 type Translations = Record<string, unknown>;
 

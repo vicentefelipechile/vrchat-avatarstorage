@@ -157,7 +157,7 @@ function buildAvatarMetaFields(): string {
 		<div class="upload-grid" style="margin-top:8px">
 			<div class="form-group">
 				<label><strong>${t('meta.avatar.extras')}</strong></label>
-				<div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:6px">
+				<div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:6px;flex-direction:column">
 					<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="av-nsfw"> ${t('meta.features.nsfw')}</label>
 					<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="av-physbones"> ${t('meta.features.physbones')}</label>
 					<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="av-dps"> ${t('meta.features.dps')}</label>

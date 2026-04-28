@@ -700,7 +700,8 @@
 			"errorTagline": "キャッチフレーズは必須です。",
 			"errorServiceType": "サービスタイプを選択してください。",
 			"errorExternalUrl": "外部URLは必須です。"
-		}
+		},
+		"viewDetails": "詳細を見る"
 	},
 	"dmca": {
 		"simple": {

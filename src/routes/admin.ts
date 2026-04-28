@@ -537,28 +537,47 @@ admin.get('/ads', async (c) => {
 	const offset = (page - 1) * limit;
 
 	const clauses: string[] = [];
+	const clauseBindings: unknown[] = [];
 	if (status === 'pending') {
-		clauses.push('ca.is_approved = 0 AND ca.is_active = 0');
+		clauses.push('ca.is_approved = ? AND ca.is_active = ?');
+		clauseBindings.push(0, 0);
 	} else if (status === 'active') {
-		clauses.push('ca.is_active = 1 AND ca.is_approved = 1');
+		clauses.push('ca.is_active = ? AND ca.is_approved = ?');
+		clauseBindings.push(1, 1);
 	}
 
 	const whereStr = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
 
 	try {
-		const countResult = await c.env.DB.prepare(`SELECT COUNT(*) as total FROM community_ads ca ${whereStr}`).first<{ total: number }>();
+		const countResult = await c.env.DB.prepare(`SELECT COUNT(*) as total FROM community_ads ca ${whereStr}`)
+			.bind(...clauseBindings)
+			.first<{ total: number }>();
 		const total = countResult?.total ?? 0;
 
 		const rows = await c.env.DB.prepare(
-			`SELECT ca.uuid, ca.title, ca.tagline, ca.service_type, ca.destination_type,
-				ca.is_active, ca.is_approved, ca.rejected_reason, ca.display_weight,
-				ca.created_at, u.username as author_username
+			`SELECT
+				ca.uuid,
+				ca.title,
+				ca.tagline,
+				ca.service_type,
+				ca.destination_type,
+				ca.is_active,
+				ca.is_approved,
+				ca.rejected_reason,
+				ca.display_weight,
+				ca.created_at,
+				u.username as author_username,
+				bm.r2_key as banner_r2_key,
+				cm.r2_key as card_r2_key,
+				ca.external_url
 			FROM community_ads ca
 			LEFT JOIN users u ON ca.author_uuid = u.uuid
+			LEFT JOIN media bm ON ca.banner_media_uuid = bm.uuid
+			LEFT JOIN media cm ON ca.card_media_uuid = cm.uuid
 			${whereStr}
 			ORDER BY ca.created_at DESC LIMIT ? OFFSET ?`,
 		)
-			.bind(limit, offset)
+			.bind(...clauseBindings, limit, offset)
 			.all<Record<string, unknown>>();
 
 		return c.json({

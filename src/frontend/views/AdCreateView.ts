@@ -12,6 +12,9 @@ import { showToast } from '../utils';
 import { navigateTo } from '../router';
 import type { RouteContext } from '../types';
 import { hasBudgetEggBeenSeen, markBudgetEggSeen } from '../ad-prefs';
+import { markdownToolbarHtml, initMarkdownToolbar } from '../comment-editor';
+import { marked } from 'marked';
+import DOMPurify from 'dompurify';
 
 // =========================================================================
 // Types
@@ -130,9 +133,18 @@ export async function adCreateView(ctx: RouteContext): Promise<string> {
 
 			<div class="form-group">
 				<label class="form-label" for="ad-description">${t('community.form.description')}</label>
-				<p style="font-size:0.8rem;color:var(--text-muted);margin:0 0 6px">${t('community.form.descriptionHint')}</p>
-				<textarea id="ad-description" class="form-input" rows="8" style="width:100%;resize:vertical"
-					placeholder="${t('community.form.descriptionPlaceholder')}">${existing?.description ?? ''}</textarea>
+				<p style="font-size:0.8rem;color:var(--text-muted);margin:0 0 8px">${t('community.form.descriptionHint')}</p>
+				<div class="md-editor-wrap" id="ad-desc-editor-wrap">
+					<div class="md-editor-tabs">
+						<button type="button" class="md-editor-tab active" id="ad-desc-tab-write" data-desc-tab="write">${t('item.md.tabWrite')}</button>
+						<button type="button" class="md-editor-tab" id="ad-desc-tab-preview" data-desc-tab="preview">${t('item.md.tabPreview')}</button>
+					</div>
+					<div class="comment-editor" id="ad-desc-editor-pane">
+						${markdownToolbarHtml()}
+						<textarea id="ad-description" rows="12" placeholder="${t('community.form.descriptionPlaceholder')}" style="width:100%;resize:vertical">${existing?.description ?? ''}</textarea>
+					</div>
+					<div class="markdown-body" id="ad-desc-preview-pane" style="display:none;min-height:240px;padding:12px;background:var(--bg-card)"></div>
+				</div>
 			</div>
 
 			<div class="form-group">
@@ -190,6 +202,46 @@ export async function adCreateAfter(ctx: RouteContext): Promise<void> {
 	destSelect?.addEventListener('change', () => {
 		if (externalGroup) externalGroup.style.display = destSelect.value === 'external' ? '' : 'none';
 	});
+
+	// ---- Markdown toolbar + live preview ----
+	const descTextarea = document.getElementById('ad-description') as HTMLTextAreaElement | null;
+	const editorPane = document.getElementById('ad-desc-editor-pane');
+	const previewPane = document.getElementById('ad-desc-preview-pane');
+
+	if (descTextarea) {
+		// Wire up the formatting toolbar (bold, italic, link, etc.)
+		initMarkdownToolbar(descTextarea, document.getElementById('ad-desc-editor-wrap') ?? document);
+
+		// Tab switching: Write ↔ Preview
+		document.querySelectorAll<HTMLButtonElement>('[data-desc-tab]').forEach((tab) => {
+			tab.addEventListener('click', () => {
+				document.querySelectorAll('[data-desc-tab]').forEach((t) => t.classList.remove('active'));
+				tab.classList.add('active');
+
+				const mode = tab.dataset.descTab;
+				if (mode === 'preview') {
+					if (editorPane) editorPane.style.display = 'none';
+					if (previewPane) {
+						previewPane.style.display = '';
+						const raw = descTextarea.value.trim();
+						if (raw) {
+							try {
+								previewPane.innerHTML = DOMPurify.sanitize(marked.parse(raw) as string);
+							} catch {
+								previewPane.textContent = raw;
+							}
+						} else {
+							previewPane.innerHTML = `<p style="color:var(--text-muted);font-size:0.88rem">${t('item.md.previewEmpty')}</p>`;
+						}
+					}
+				} else {
+					if (previewPane) previewPane.style.display = 'none';
+					if (editorPane) editorPane.style.display = '';
+					descTextarea.focus();
+				}
+			});
+		});
+	}
 
 	// Image upload helper
 	async function uploadImage(file: File): Promise<{ uuid: string; r2_key: string } | null> {

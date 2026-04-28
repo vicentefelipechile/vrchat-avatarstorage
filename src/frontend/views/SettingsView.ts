@@ -17,7 +17,7 @@ export async function settingsView(_ctx: RouteContext): Promise<string> {
 
 	const user = window.appState.user ?? {};
 	const avatarUrl =
-		(user as { avatar_url?: string }).avatar_url ?? 'https://vrchat-avatarstorage.vicentefelipechile.workers.dev/avatar.png';
+		(user as { avatar_url?: string }).avatar_url ?? '/avatar.png';
 	const username = (user as { username?: string }).username ?? '';
 	const hasPassword = (user as { has_password?: boolean }).has_password !== false;
 
@@ -50,35 +50,35 @@ export async function settingsView(_ctx: RouteContext): Promise<string> {
 			<!-- Password change -->
 			<details id="password-details">
 				<summary style="cursor:pointer;padding:10px;background:#f5f5f5;border-radius:5px">
-					<h2 style="margin:0;display:inline">${t('settings.change_password') || 'Change Password'}</h2>
+					<h2 style="margin:0;display:inline">${t('settings.change_password')}</h2>
 				</summary>
 				<div style="padding:20px 0">
 					<div class="form-group" id="current-password-group" style="${hasPassword ? '' : 'display:none'}">
-						<label for="current-password">${t('settings.current_password') || 'Current Password'}</label>
+						<label for="current-password">${t('settings.current_password')}</label>
 						<input type="password" id="current-password" autocomplete="current-password" style="width:100%">
 					</div>
-					${!hasPassword ? `<p style="color:var(--text-muted);margin-bottom:15px">${t('settings.no_password_hint') || 'Your account uses OAuth login. Set a password here to also allow password-based login.'}</p>` : ''}
+					${!hasPassword ? `<p style="color:var(--text-muted);margin-bottom:15px">${t('settings.no_password_hint')}</p>` : ''}
 					<div class="form-group">
-						<label for="new-password">${t('settings.new_password') || 'New Password'}</label>
+						<label for="new-password">${t('settings.new_password')}</label>
 						<input type="password" id="new-password" autocomplete="new-password" minlength="8" maxlength="200" style="width:100%">
 					</div>
 					<div class="form-group">
-						<label for="confirm-password">${t('settings.confirm_password') || 'Confirm New Password'}</label>
+						<label for="confirm-password">${t('settings.confirm_password')}</label>
 						<input type="password" id="confirm-password" autocomplete="new-password" style="width:100%">
 					</div>
 					<!-- Shown only when user has 2FA enabled -->
 					<div id="pw-2fa-section" style="display:none">
 						<div class="form-group">
-							<label for="pw-2fa-code">${t('settings.2fa_code') || '2FA Code'}</label>
+							<label for="pw-2fa-code">${t('settings.2fa_code')}</label>
 							<input type="text" id="pw-2fa-code" maxlength="6" placeholder="000000"
 							       autocomplete="one-time-code" inputmode="numeric" style="width:100%;letter-spacing:0.3em;text-align:center">
 							<small style="color:#666;display:block;margin-top:4px">
-								${t('settings.2fa_code_hint') || 'Required because your account has 2FA enabled. Enter a TOTP code or a backup code.'}
+								${t('settings.2fa_code_hint')}
 							</small>
 						</div>
 					</div>
 					<button id="change-password-btn" class="btn" style="width:100%">
-						${t('settings.change_password') || 'Change Password'}
+						${t('settings.change_password')}
 					</button>
 				</div>
 			</details>
@@ -88,61 +88,61 @@ export async function settingsView(_ctx: RouteContext): Promise<string> {
 			<!-- 2FA -->
 			<details id="two-factor-details">
 				<summary style="cursor:pointer;padding:10px;background:#f5f5f5;border-radius:5px">
-					<h2 style="margin:0;display:inline">${t('settings.2fa_title') || 'Two-Factor Authentication'}</h2>
+					<h2 style="margin:0;display:inline">${t('settings.2fa_title')}</h2>
 				</summary>
 				<div id="two-factor-section" style="padding:20px 0">
 					<div id="2fa-status"></div>
 
 					<div id="2fa-enable-section" style="display:none;margin-top:15px">
-						<button id="2fa-enable-btn" class="btn" style="width:100%">${t('settings.2fa_activate') || 'Activate 2FA'}</button>
+						<button id="2fa-enable-btn" class="btn" style="width:100%">${t('settings.2fa_activate')}</button>
 					</div>
 
 					<div id="2fa-password-section" style="display:none;margin-top:20px">
 						<div class="form-group" id="2fa-password-group">
-							<label>${t('settings.2fa_password') || 'Password'}</label>
+							<label>${t('settings.2fa_password')}</label>
 							<input type="password" id="2fa-setup-password" style="width:100%">
 						</div>
-						<button id="2fa-confirm-password-btn" class="btn" style="width:100%">${t('settings.2fa_continue') || 'Continue'}</button>
-						<button type="button" id="2fa-cancel-password-btn" class="btn" style="width:100%;margin-top:10px;background:#666">${t('settings.2fa_cancel') || 'Cancel'}</button>
+						<button id="2fa-confirm-password-btn" class="btn" style="width:100%">${t('settings.2fa_continue')}</button>
+						<button type="button" id="2fa-cancel-password-btn" class="btn" style="width:100%;margin-top:10px;background:#666">${t('settings.2fa_cancel')}</button>
 					</div>
 
 					<div id="2fa-setup" style="display:none;margin-top:20px">
-						<p style="color:#666">${t('settings.2fa_setup_instructions') || 'Scan the QR code with your authenticator app, then enter the code to enable 2FA.'}</p>
+						<p style="color:#666">${t('settings.2fa_setup_instructions')}</p>
 						<div id="2fa-qr-container" style="text-align:center;margin:20px 0"></div>
 						<div class="form-group">
-							<label>${t('settings.2fa_secret') || 'Manual Secret Key'}</label>
+							<label>${t('settings.2fa_secret')}</label>
 							<code id="2fa-secret" style="display:block;word-break:break-all;background:#f5f5f5;padding:10px;margin:5px 0"></code>
 						</div>
 						<div class="form-group">
-							<label>${t('settings.2fa_verify') || 'Enter Code'}</label>
+							<label>${t('settings.2fa_verify')}</label>
 							<input type="text" id="2fa-code" maxlength="6" placeholder="000000" style="width:100%">
 						</div>
-						<button id="2fa-verify-btn" class="btn" style="width:100%">${t('settings.2fa_enable') || 'Enable 2FA'}</button>
-						<button type="button" id="2fa-cancel-setup-btn" class="btn" style="width:100%;margin-top:10px;background:#666">${t('settings.2fa_cancel') || 'Cancel'}</button>
+						<button id="2fa-verify-btn" class="btn" style="width:100%">${t('settings.2fa_enable')}</button>
+						<button type="button" id="2fa-cancel-setup-btn" class="btn" style="width:100%;margin-top:10px;background:#666">${t('settings.2fa_cancel')}</button>
 					</div>
 
 					<div id="2fa-backup-codes" style="display:none;margin-top:20px">
-						<p style="color:red;font-weight:bold">${t('settings.2fa_backup_warning') || 'Save these backup codes! You will not see them again.'}</p>
+						<p style="color:red;font-weight:bold">${t('settings.2fa_backup_warning')}</p>
 						<code id="backup-codes-list" style="display:block;word-break:break-all;background:#f5f5f5;padding:10px;margin:10px 0;white-space:pre-wrap"></code>
-						<button id="2fa-backup-ok-btn" class="btn" style="width:100%">${t('settings.2fa_backup_ok') || 'I have saved my codes'}</button>
+						<button id="2fa-backup-ok-btn" class="btn" style="width:100%">${t('settings.2fa_backup_ok')}</button>
 					</div>
 
 					<div id="2fa-enabled-section" style="display:none;margin-top:15px">
-						<p style="color:green">✓ ${t('settings.2fa_enabled') || '2FA is enabled'}</p>
-						<button id="2fa-disable-btn" class="btn" style="width:100%;background:#dc3545">${t('settings.2fa_disable') || 'Disable 2FA'}</button>
+						<p style="color:green">✓ ${t('settings.2fa_enabled')}</p>
+						<button id="2fa-disable-btn" class="btn" style="width:100%;background:#dc3545">${t('settings.2fa_disable')}</button>
 					</div>
 
 					<div id="2fa-disable-section" style="display:none;margin-top:20px">
 						<div class="form-group" id="2fa-disable-password-group">
-							<label>${t('settings.2fa_password') || 'Password'}</label>
+							<label>${t('settings.2fa_password')}</label>
 							<input type="password" id="2fa-disable-password" style="width:100%">
 						</div>
 						<div class="form-group">
-							<label>${t('settings.2fa_code') || '2FA Code'}</label>
+							<label>${t('settings.2fa_code')}</label>
 							<input type="text" id="2fa-disable-code" maxlength="6" placeholder="000000" style="width:100%">
 						</div>
-						<button id="2fa-confirm-disable-btn" class="btn" style="width:100%;background:#dc3545">${t('settings.2fa_confirm_disable') || 'Confirm Disable'}</button>
-						<button type="button" id="2fa-disable-cancel-btn" class="btn" style="width:100%;margin-top:10px;background:#666">${t('settings.2fa_cancel') || 'Cancel'}</button>
+						<button id="2fa-confirm-disable-btn" class="btn" style="width:100%;background:#dc3545">${t('settings.2fa_confirm_disable')}</button>
+						<button type="button" id="2fa-disable-cancel-btn" class="btn" style="width:100%;margin-top:10px;background:#666">${t('settings.2fa_cancel')}</button>
 					</div>
 				</div>
 			</details>
@@ -152,7 +152,7 @@ export async function settingsView(_ctx: RouteContext): Promise<string> {
 			<!-- Community Ads Preferences -->
 			<details id="community-ads-details">
 				<summary style="cursor:pointer;padding:10px;background:#f5f5f5;border-radius:5px">
-					<h2 style="margin:0;display:inline">${t('settings.communityAds') || 'Community Ads'}</h2>
+					<h2 style="margin:0;display:inline">${t('admin.communityAds.title')}</h2>
 				</summary>
 				<div id="community-ads-prefs-section" style="padding:20px 0">
 					<!-- Inline prefs (no slide-in panel, simpler for settings page) -->
@@ -170,7 +170,7 @@ export async function settingsAfter(_ctx: RouteContext): Promise<void> {
 	renderTurnstile('#turnstile-settings');
 
 	// Wire the slide-in prefs panel (if opened from elsewhere on the same page)
-	wireAdPrefsPanel();
+	wireAdPrefsPanel({ reloadOnSave: false });
 
 	// Render inline community ads preferences inside settings
 	const wrap = document.getElementById('ads-prefs-settings-wrap');
@@ -203,13 +203,13 @@ export async function settingsAfter(_ctx: RouteContext): Promise<void> {
 
 		wrap.innerHTML = `
 			<div style="${masterRowStyle}">
-				<label for="settings-show-ads" style="${labelStyle};font-weight:bold">${t('community.prefs.showAds') || 'Show community promotions'}</label>
+				<label for="settings-show-ads" style="${labelStyle};font-weight:bold">${t('community.prefs.showAds')}</label>
 				<input type="checkbox" id="settings-show-ads" ${prefs.show_ads ? 'checked' : ''}>
 			</div>
 			<div id="ads-subsections" style="transition:opacity 0.15s;${subsectionInitStyle}">
-				${sectionTitle(t('community.prefs.slotsTitle') || 'Placement Zones')}
+				${sectionTitle(t('community.prefs.slotsTitle'))}
 				${slotsHtml}
-				${sectionTitle(t('community.prefs.typesTitle') || 'Service Types')}
+				${sectionTitle(t('community.prefs.typesTitle'))}
 				${typesHtml}
 			</div>`;
 
@@ -335,22 +335,22 @@ async function loadPasswordSection(): Promise<void> {
 		const twoFactorCode = (document.getElementById('pw-2fa-code') as HTMLInputElement | null)?.value?.trim();
 
 		if (hasPassword && !currentPw) {
-			showToast(t('settings.current_password_required') || 'Enter your current password', 'warning');
+			showToast(t('settings.current_password_required'), 'warning');
 			restore();
 			return;
 		}
 		if (newPw.length < 8) {
-			showToast(t('settings.password_too_short') || 'New password must be at least 8 characters', 'warning');
+			showToast(t('settings.password_too_short'), 'warning');
 			restore();
 			return;
 		}
 		if (newPw !== confirmPw) {
-			showToast(t('settings.password_mismatch') || 'Passwords do not match', 'warning');
+			showToast(t('settings.password_mismatch'), 'warning');
 			restore();
 			return;
 		}
 		if (has2FA && !twoFactorCode) {
-			showToast(t('settings.2fa_code_required') || '2FA code is required', 'warning');
+			showToast(t('settings.2fa_code_required'), 'warning');
 			restore();
 			return;
 		}

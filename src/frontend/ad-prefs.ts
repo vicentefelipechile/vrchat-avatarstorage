@@ -131,6 +131,7 @@ export function markBudgetEggSeen(): void {
 
 import { t } from './i18n';
 import { getIcon } from './icons';
+import { showToast } from './utils';
 
 export function renderAdPrefsPanel(): string {
 	const prefs = getAdPrefs();
@@ -175,13 +176,26 @@ export function renderAdPrefsPanel(): string {
 			<div class="ad-prefs-section__title">${t('community.prefs.typesTitle')}</div>
 			${typesHtml}
 		</div>
+
+		<div class="ad-prefs-footer">
+			<button class="btn" id="ad-prefs-save">${t('community.prefs.saveBtn')}</button>
+		</div>
 	</div>`;
 }
 
-export function wireAdPrefsPanel(): void {
+export interface WireAdPrefsPanelOptions {
+	/** If true (default), the page reloads after saving so ad slots re-evaluate the new prefs. */
+	reloadOnSave?: boolean;
+}
+
+export function wireAdPrefsPanel(options: WireAdPrefsPanelOptions = {}): void {
+	const { reloadOnSave = true } = options;
+
 	const panel = document.getElementById('ad-prefs-panel');
 	const overlay = document.getElementById('ad-prefs-overlay');
 	const closeBtn = document.getElementById('ad-prefs-close');
+	const saveBtn = document.getElementById('ad-prefs-save');
+	const showAdsCheckbox = document.getElementById('prefs-show-ads') as HTMLInputElement | null;
 
 	if (!panel || !overlay) return;
 
@@ -190,27 +204,46 @@ export function wireAdPrefsPanel(): void {
 		overlay.classList.remove('open');
 	};
 
+	/** Disable/enable all slot + type checkboxes based on the master toggle. */
+	const syncSubCheckboxes = (enabled: boolean) => {
+		document.querySelectorAll<HTMLInputElement>('[data-prefs-slot], [data-prefs-type]').forEach((input) => {
+			input.disabled = !enabled;
+		});
+	};
+
+	// Run once on mount to reflect the stored state.
+	if (showAdsCheckbox) {
+		syncSubCheckboxes(showAdsCheckbox.checked);
+		showAdsCheckbox.addEventListener('change', () => syncSubCheckboxes(showAdsCheckbox.checked));
+	}
+
 	closeBtn?.addEventListener('click', close);
 	overlay.addEventListener('click', close);
 
-	// Master toggle
-	document.getElementById('prefs-show-ads')?.addEventListener('change', (e) => {
-		setShowAds((e.target as HTMLInputElement).checked);
-	});
+	// Save button — reads all checkbox states at once and persists them.
+	// This avoids the _prefsWired guard bug where re-rendered DOM elements
+	// after SPA navigation would not receive per-change event listeners.
+	saveBtn?.addEventListener('click', () => {
+		const showAds = showAdsCheckbox?.checked ?? true;
 
-	// Slot toggles
-	document.querySelectorAll<HTMLInputElement>('[data-prefs-slot]').forEach((input) => {
-		input.addEventListener('change', () => {
-			toggleSlot(input.dataset.prefsSlot!, input.checked);
+		const disabledSlots: string[] = [];
+		document.querySelectorAll<HTMLInputElement>('[data-prefs-slot]').forEach((input) => {
+			if (!input.checked) disabledSlots.push(input.dataset.prefsSlot!);
 		});
-	});
 
-	// Type toggles
-	document.querySelectorAll<HTMLInputElement>('[data-prefs-type]').forEach((input) => {
-		input.addEventListener('change', () => {
-			// checked = NOT blocked; unchecked = blocked
-			toggleType(input.dataset.prefsType!, !input.checked);
+		const blockedTypes: string[] = [];
+		document.querySelectorAll<HTMLInputElement>('[data-prefs-type]').forEach((input) => {
+			if (!input.checked) blockedTypes.push(input.dataset.prefsType!);
 		});
+
+		saveAdPrefs({ show_ads: showAds, disabled_slots: disabledSlots, blocked_types: blockedTypes });
+		showToast(t('community.prefs.saved'), 'success', 3000);
+		close();
+
+		if (reloadOnSave) {
+			// Short delay so the toast is visible before the page refreshes.
+			setTimeout(() => location.reload(), 800);
+		}
 	});
 }
 

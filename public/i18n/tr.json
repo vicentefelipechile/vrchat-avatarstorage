@@ -804,6 +804,7 @@
 			"errorTagline": "Slogan zorunludur.",
 			"errorServiceType": "Lütfen bir hizmet türü seçin.",
 			"errorExternalUrl": "Dış URL zorunludur."
-		}
+		},
+		"viewDetails": "Detayları görüntüle"
 	}
 }

@@ -700,7 +700,8 @@
 			"errorTagline": "标语为必填项。",
 			"errorServiceType": "请选择服务类型。",
 			"errorExternalUrl": "外部 URL 为必填项。"
-		}
+		},
+		"viewDetails": "查看详情"
 	},
 	"dmca": {
 		"simple": {

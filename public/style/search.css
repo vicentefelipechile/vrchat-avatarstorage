@@ -171,8 +171,7 @@
 .filter-select {
 	width: 100%;
 	padding: 6px 8px;
-	border: 1px solid var(--border-color);
-	background: var(--bg-body);
+	border: 2px solid var(--border-color);
 	color: var(--text-main);
 	font-family: inherit;
 	font-size: 0.83rem;

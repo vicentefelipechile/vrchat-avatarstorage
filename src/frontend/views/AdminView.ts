@@ -74,7 +74,7 @@ const NAV_ITEMS = [
 	{ id: 'authors', label: t('admin.nav.authors') },
 	{ id: 'media', label: t('admin.nav.media') },
 	{ id: 'cache', label: t('admin.nav.cache') },
-	{ id: 'community-ads', label: t('admin.nav.communityAds') },
+	{ id: 'community-ads', label: t('admin.nav.community') },
 ];
 
 // =========================================================================
@@ -730,11 +730,10 @@ async function loadMedia(el: HTMLElement): Promise<void> {
 					${t('admin.media.desc')}
 				</p>
 				${filesList}
-				${
-					stats.orphaned_count > 0
-						? `<button class="btn btn-danger" id="cleanup-orphaned" style="margin-top:14px">🗑️ ${t('admin.media.btnDeleteOrphaned')} (${stats.orphaned_count})</button>`
-						: `<p style="color:#3fb950;font-size:0.88rem;margin:10px 0 0">✅ ${t('admin.media.noOrphaned')}</p>`
-				}
+				${stats.orphaned_count > 0
+				? `<button class="btn btn-danger" id="cleanup-orphaned" style="margin-top:14px">🗑️ ${t('admin.media.btnDeleteOrphaned')} (${stats.orphaned_count})</button>`
+				: `<p style="color:#3fb950;font-size:0.88rem;margin:10px 0 0">✅ ${t('admin.media.noOrphaned')}</p>`
+			}
 			</div>`;
 
 		document.getElementById('cleanup-orphaned')?.addEventListener('click', async (e) => {
@@ -804,7 +803,6 @@ function loadCache(el: HTMLElement): void {
 
 // ---- Community Ads ----
 
-
 interface AdRow {
 	uuid: string;
 	title: string;
@@ -817,6 +815,9 @@ interface AdRow {
 	display_weight: number;
 	created_at: number;
 	author_username: string | null;
+	banner_r2_key: string | null;
+	card_r2_key: string | null;
+	external_url: string | null;
 }
 
 interface AdSlot {
@@ -834,6 +835,110 @@ interface AdStatRow {
 	total_impressions: number;
 	total_clicks: number;
 	ctr: string;
+}
+
+// =========================================================================
+// Ad Preview Modal
+// =========================================================================
+
+function showAdPreviewModal(ad: AdRow): void {
+	document.getElementById('ad-preview-modal')?.remove();
+
+	const imgSrc = ad.card_r2_key
+		? `/api/download/${ad.card_r2_key}`
+		: ad.banner_r2_key
+			? `/api/download/${ad.banner_r2_key}`
+			: null;
+
+	const badge = `<span class="badge-community">Community</span>`;
+
+	const sidebarHtml = `
+		<div class="ad-sidebar" style="display:inline-flex;vertical-align:top;">
+			${imgSrc ? `<img class="ad-sidebar__img" src="${imgSrc}" alt="">` : `<div class="ad-sidebar__img-placeholder"></div>`}
+			<p class="ad-sidebar__title">${ad.title}</p>
+			<p class="ad-sidebar__tagline">${ad.tagline}</p>
+			<div class="ad-sidebar__footer">
+				<a class="ad-sidebar__cta" href="#">Ver más</a>
+				${badge}
+			</div>
+		</div>`;
+
+	const featuredHtml = `
+		<div class="ad-featured">
+			${imgSrc ? `<img class="ad-featured__img" src="${imgSrc}" alt="">` : `<div class="ad-featured__img-placeholder"></div>`}
+			<div class="ad-featured__body">
+				<div class="ad-featured__meta">${badge}<span style="font-size:0.75rem;color:var(--text-muted);">${ad.service_type}</span></div>
+				<p class="ad-featured__title">${ad.title}</p>
+				<p class="ad-featured__tagline">${ad.tagline}</p>
+			</div>
+			<div class="ad-featured__actions"><a class="btn" href="#">Ver más</a></div>
+		</div>`;
+
+	const gridHtml = `
+		<div class="ad-grid-card" style="max-width:260px;">
+			<div class="ad-grid-card__image">
+				${imgSrc ? `<img src="${imgSrc}" alt="">` : `<div class="ad-grid-card__image-placeholder"></div>`}
+				<div class="ad-grid-card__badge-wrap">${badge}</div>
+			</div>
+			<div class="ad-grid-card__body">
+				<p class="ad-grid-card__title">${ad.title}</p>
+				<p class="ad-grid-card__tagline">${ad.tagline}</p>
+			</div>
+			<div class="ad-grid-card__footer">
+				<span style="font-size:0.75rem;color:var(--text-muted);">${ad.service_type}</span>
+				<a class="btn" style="font-size:0.78rem;" href="#">Ver más</a>
+			</div>
+		</div>`;
+
+	const detailHtml = `
+		<div class="ad-detail-banner">
+			${imgSrc ? `<img class="ad-detail-banner__img" src="${imgSrc}" alt="">` : `<div class="ad-detail-banner__img-placeholder"></div>`}
+			<div class="ad-detail-banner__body">
+				<p class="ad-detail-banner__title">${ad.title}</p>
+				<p class="ad-detail-banner__tagline">${ad.tagline}</p>
+			</div>
+			<div class="ad-detail-banner__actions">
+				${badge}
+				<a class="btn" href="#">Ver más</a>
+			</div>
+		</div>`;
+
+	const overlay = document.createElement('div');
+	overlay.id = 'ad-preview-modal';
+	overlay.style.cssText =
+		'position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:2000;display:flex;align-items:flex-start;justify-content:center;padding:32px 16px;overflow-y:auto;';
+
+	overlay.innerHTML = `
+		<div style="background:var(--bg-card);border:1px solid var(--border-color);padding:24px;max-width:760px;width:100%;position:relative;">
+			<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+				<h3 style="margin:0;font-size:1rem;color:var(--text-color);">${t('admin.communityAds.previewTitle')}: <em>${ad.title}</em></h3>
+				<button id="ad-preview-close" style="background:none;border:none;cursor:pointer;font-size:1.1rem;color:var(--text-muted);font-family:inherit;padding:4px 8px;">✕</button>
+			</div>
+			<div style="display:grid;gap:28px;">
+				<div>
+					<p style="font-size:0.72rem;font-weight:bold;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin:0 0 10px;">Sidebar (160px)</p>
+					${sidebarHtml}
+				</div>
+				<div>
+					<p style="font-size:0.72rem;font-weight:bold;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin:0 0 10px;">Featured Artist Banner</p>
+					${featuredHtml}
+				</div>
+				<div>
+					<p style="font-size:0.72rem;font-weight:bold;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin:0 0 10px;">Grid Card (260px)</p>
+					${gridHtml}
+				</div>
+				<div>
+					<p style="font-size:0.72rem;font-weight:bold;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin:0 0 10px;">Detail Page Banner</p>
+					${detailHtml}
+				</div>
+			</div>
+		</div>`;
+
+	document.body.appendChild(overlay);
+	overlay.addEventListener('click', (e) => {
+		if (e.target === overlay) overlay.remove();
+	});
+	document.getElementById('ad-preview-close')?.addEventListener('click', () => overlay.remove());
 }
 
 async function loadCommunityAds(el: HTMLElement, activeTab = 'pending'): Promise<void> {
@@ -869,99 +974,188 @@ async function loadAdsTab(tab: string): Promise<void> {
 			const res = await fetch(`/api/admin/ads?status=${status}`);
 			const data = (await res.json()) as { ads: AdRow[] };
 
-			const tbody = data.ads.map((a) => `<tr>
-				<td><strong>${a.title}</strong><br><span style="font-size:0.75rem;color:var(--text-muted)">${a.tagline.substring(0, 50)}</span></td>
-				<td>${a.service_type}</td>
-				<td>${a.author_username ?? '—'}</td>
-				<td>${a.destination_type}</td>
-				<td>${new Date(a.created_at * 1000).toLocaleDateString()}</td>
-				<td class="admin-row-actions">
-					${tab === 'pending'
-						? `<button class="btn" data-ad-approve="${a.uuid}">${t('admin.communityAds.approve')}</button>
-						   <button class="btn" data-ad-reject="${a.uuid}">${t('admin.communityAds.reject')}</button>`
-						: `<button class="btn" data-ad-deactivate="${a.uuid}">${t('admin.communityAds.deactivate')}</button>
-						   <input type="number" min="1" max="100" value="${a.display_weight}" class="form-input" style="width:60px" data-ad-weight-input="${a.uuid}">
-						   <button class="btn" data-ad-save-weight="${a.uuid}">${t('admin.communityAds.saveWeight')}</button>`
-					}
-				</td>
-			</tr>`).join('');
+			if (!data.ads || data.ads.length === 0) {
+				wrap.innerHTML = `<div class="admin-form-panel" style="padding:16px"><p style="color:var(--text-muted);margin:0;">${t('admin.communityAds.noAds')}</p></div>`;
+				return;
+			}
 
-			wrap.innerHTML = `<div class="admin-form-panel" style="padding:16px">
-				<table class="admin-data-table">
-					<thead><tr>
-						<th>${t('admin.communityAds.colAd')}</th>
-						<th>${t('admin.communityAds.colType')}</th>
-						<th>${t('admin.overview.colAuthor')}</th>
-						<th>${t('admin.communityAds.colDest')}</th>
-						<th>${t('admin.overview.colDate')}</th>
-						<th></th>
-					</tr></thead>
-					<tbody>${tbody || `<tr><td colspan="6">${t('admin.communityAds.noAds')}</td></tr>`}</tbody>
-				</table>
-			</div>`;
+			const cardsHtml = data.ads
+				.map((a) => {
+					const thumbSrc = a.card_r2_key
+						? `/api/download/${a.card_r2_key}`
+						: a.banner_r2_key
+							? `/api/download/${a.banner_r2_key}`
+							: null;
+					const thumbHtml = thumbSrc
+						? `<img src="${thumbSrc}" style="width:56px;height:56px;object-fit:cover;flex-shrink:0;border:1px solid var(--border-color);" alt="">`
+						: `<div style="width:56px;height:56px;flex-shrink:0;background:var(--bg-body);border:1px solid var(--border-color);display:flex;align-items:center;justify-content:center;font-size:0.6rem;color:var(--text-muted);">No img</div>`;
 
-			// Approve buttons
-			document.querySelectorAll<HTMLButtonElement>('[data-ad-approve]').forEach((btn) => {
-				btn.addEventListener('click', async () => {
-					const r = await fetch(`/api/admin/ads/${btn.dataset.adApprove}/approve`, { method: 'POST' });
-					if (r.ok) { showToast(t('admin.communityAds.toastApproved'), 'success'); loadAdsTab('pending'); }
-					else showToast(t('admin.networkError'), 'error');
+					const pendingActions = `
+						<button class="btn" data-ad-approve="${a.uuid}">${t('admin.communityAds.approve')}</button>
+						<button class="btn" data-ad-reject-open="${a.uuid}">${t('admin.communityAds.reject')}</button>`;
+
+					const activeActions = `
+						<button class="btn" data-ad-deactivate="${a.uuid}">${t('admin.communityAds.deactivate')}</button>
+						<span style="display:inline-flex;align-items:center;gap:4px;">
+							<input type="number" min="1" max="100" value="${a.display_weight}" class="form-input" style="width:60px" data-ad-weight-input="${a.uuid}">
+							<button class="btn" data-ad-save-weight="${a.uuid}">${t('admin.communityAds.saveWeight')}</button>
+						</span>`;
+
+					return `<div class="admin-form-panel" id="ad-card-${a.uuid}" style="padding:14px;margin-bottom:10px;">
+						<div style="display:flex;gap:12px;align-items:flex-start;">
+							${thumbHtml}
+							<div style="flex:1;min-width:0;">
+								<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;">
+									<strong style="font-size:0.95rem;color:var(--text-color);">${a.title}</strong>
+									<span class="admin-badge-status ${a.is_active ? 'active' : 'pending'}" style="font-size:0.7rem;">${a.service_type}</span>
+								</div>
+								<p style="font-size:0.8rem;color:var(--text-muted);margin:0 0 6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:480px;">${a.tagline}</p>
+								<div style="font-size:0.75rem;color:var(--text-muted);display:flex;gap:14px;flex-wrap:wrap;">
+									<span>👤 ${a.author_username ?? '—'}</span>
+									<span>🔗 ${a.destination_type}</span>
+									<span>📅 ${new Date(a.created_at * 1000).toLocaleDateString()}</span>
+								</div>
+							</div>
+							<div style="display:flex;gap:6px;flex-wrap:wrap;flex-shrink:0;align-items:flex-start;">
+								<button class="btn" data-ad-preview="${a.uuid}" style="font-size:0.78rem;">👁 ${t('admin.communityAds.preview')}</button>
+								${tab === 'pending' ? pendingActions : activeActions}
+							</div>
+						</div>
+						<div id="reject-panel-${a.uuid}" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--border-color);">
+							<label style="font-size:0.82rem;font-weight:bold;display:block;margin-bottom:6px;">${t('admin.communityAds.rejectReasonLabel')}</label>
+							<textarea id="reject-reason-${a.uuid}" class="form-input" rows="2" style="width:100%;resize:vertical;margin-bottom:8px;" placeholder="${t('admin.communityAds.rejectReasonPlaceholder')}"></textarea>
+							<div style="display:flex;gap:8px;">
+								<button class="btn" data-ad-reject-confirm="${a.uuid}">${t('admin.communityAds.rejectConfirm')}</button>
+								<button class="btn" data-ad-reject-cancel="${a.uuid}">${t('admin.communityAds.rejectCancel')}</button>
+							</div>
+						</div>
+					</div>`;
+				})
+				.join('');
+
+			wrap.innerHTML = cardsHtml;
+
+			// Preview
+			document.querySelectorAll<HTMLButtonElement>('[data-ad-preview]').forEach((btn) => {
+				btn.addEventListener('click', () => {
+					const uuid = btn.dataset.adPreview!;
+					const ad = data.ads.find((a) => a.uuid === uuid);
+					if (ad) showAdPreviewModal(ad);
 				});
 			});
 
-			// Reject buttons
-			document.querySelectorAll<HTMLButtonElement>('[data-ad-reject]').forEach((btn) => {
+			// Approve
+			document.querySelectorAll<HTMLButtonElement>('[data-ad-approve]').forEach((btn) => {
+				btn.addEventListener('click', async () => {
+					btn.disabled = true;
+					const r = await fetch(`/api/admin/ads/${btn.dataset.adApprove}/approve`, { method: 'POST' });
+					if (r.ok) {
+						showToast(t('admin.communityAds.toastApproved'), 'success');
+						loadAdsTab('pending');
+					} else {
+						showToast(t('admin.networkError'), 'error');
+						btn.disabled = false;
+					}
+				});
+			});
+
+			// Reject: open inline panel
+			document.querySelectorAll<HTMLButtonElement>('[data-ad-reject-open]').forEach((btn) => {
 				btn.addEventListener('click', () => {
-					const reason = prompt(t('admin.communityAds.rejectReasonPrompt'));
-					if (!reason) return;
-					fetch(`/api/admin/ads/${btn.dataset.adReject}/reject`, {
+					const uuid = btn.dataset.adRejectOpen!;
+					const panel = document.getElementById(`reject-panel-${uuid}`);
+					if (panel) panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+				});
+			});
+
+			// Reject: cancel
+			document.querySelectorAll<HTMLButtonElement>('[data-ad-reject-cancel]').forEach((btn) => {
+				btn.addEventListener('click', () => {
+					const panel = document.getElementById(`reject-panel-${btn.dataset.adRejectCancel!}`);
+					if (panel) panel.style.display = 'none';
+				});
+			});
+
+			// Reject: confirm
+			document.querySelectorAll<HTMLButtonElement>('[data-ad-reject-confirm]').forEach((btn) => {
+				btn.addEventListener('click', async () => {
+					const uuid = btn.dataset.adRejectConfirm!;
+					const textarea = document.getElementById(`reject-reason-${uuid}`) as HTMLTextAreaElement;
+					const reason = textarea?.value.trim();
+					if (!reason) {
+						showToast(t('admin.communityAds.rejectReasonRequired'), 'error');
+						return;
+					}
+					btn.disabled = true;
+					fetch(`/api/admin/ads/${uuid}/reject`, {
 						method: 'POST',
 						headers: { 'Content-Type': 'application/json' },
 						body: JSON.stringify({ reason }),
-					}).then((r) => {
-						if (r.ok) { showToast(t('admin.communityAds.toastRejected'), 'success'); loadAdsTab('pending'); }
-						else showToast(t('admin.networkError'), 'error');
-					}).catch(() => showToast(t('admin.networkError'), 'error'));
+					})
+						.then((r) => {
+							if (r.ok) {
+								showToast(t('admin.communityAds.toastRejected'), 'success');
+								loadAdsTab('pending');
+							} else {
+								showToast(t('admin.networkError'), 'error');
+								btn.disabled = false;
+							}
+						})
+						.catch(() => {
+							showToast(t('admin.statsError'), 'error');
+							btn.disabled = false;
+						});
 				});
 			});
 
-			// Deactivate buttons
+			// Deactivate
 			document.querySelectorAll<HTMLButtonElement>('[data-ad-deactivate]').forEach((btn) => {
 				btn.addEventListener('click', async () => {
 					if (!confirm(t('admin.communityAds.confirmDeactivate'))) return;
+					btn.disabled = true;
 					const r = await fetch(`/api/admin/ads/${btn.dataset.adDeactivate}/deactivate`, { method: 'POST' });
-					if (r.ok) { showToast(t('admin.communityAds.toastDeactivated'), 'success'); loadAdsTab('active'); }
-					else showToast(t('admin.networkError'), 'error');
+					if (r.ok) {
+						showToast(t('admin.communityAds.toastDeactivated'), 'success');
+						loadAdsTab('active');
+					} else {
+						showToast(t('admin.networkError'), 'error');
+						btn.disabled = false;
+					}
 				});
 			});
 
-			// Save weight buttons
+			// Save weight
 			document.querySelectorAll<HTMLButtonElement>('[data-ad-save-weight]').forEach((btn) => {
 				btn.addEventListener('click', async () => {
 					const uuid = btn.dataset.adSaveWeight!;
 					const input = document.querySelector<HTMLInputElement>(`[data-ad-weight-input="${uuid}"]`);
 					const weight = parseInt(input?.value ?? '1', 10);
+					btn.disabled = true;
 					const r = await fetch(`/api/admin/ads/${uuid}/weight`, {
 						method: 'PUT',
 						headers: { 'Content-Type': 'application/json' },
 						body: JSON.stringify({ display_weight: weight }),
 					});
+					btn.disabled = false;
 					if (r.ok) showToast(t('admin.communityAds.toastWeightSaved'), 'success');
 					else showToast(t('admin.networkError'), 'error');
 				});
 			});
-
 		} else if (tab === 'slots') {
 			const res = await fetch('/api/admin/ads/slots');
 			const data = (await res.json()) as { slots: AdSlot[] };
 
-			const tbody = data.slots.map((s) => `<tr>
+			const tbody = data.slots
+				.map(
+					(s) => `<tr>
 				<td><strong>${s.slot_name}</strong></td>
 				<td><input type="number" class="form-input" style="width:70px" value="${s.max_concurrent}" data-slot-max="${s.slot_name}"></td>
 				<td><input type="number" class="form-input" style="width:70px" value="${s.rotation_hours}" data-slot-hours="${s.slot_name}"></td>
 				<td><input type="checkbox" ${s.is_enabled ? 'checked' : ''} data-slot-enabled="${s.slot_name}"></td>
 				<td class="admin-row-actions"><button class="btn" data-slot-save="${s.slot_name}">${t('admin.communityAds.saveSlot')}</button></td>
-			</tr>`).join('');
+			</tr>`,
+				)
+				.join('');
 
 			wrap.innerHTML = `<div class="admin-form-panel" style="padding:16px">
 				<table class="admin-data-table">
@@ -981,7 +1175,7 @@ async function loadAdsTab(tab: string): Promise<void> {
 					const slot = btn.dataset.slotSave!;
 					const max = parseInt((document.querySelector<HTMLInputElement>(`[data-slot-max="${slot}"]`)?.value ?? '3'), 10);
 					const hours = parseInt((document.querySelector<HTMLInputElement>(`[data-slot-hours="${slot}"]`)?.value ?? '24'), 10);
-					const enabled = (document.querySelector<HTMLInputElement>(`[data-slot-enabled="${slot}"]`)?.checked ? 1 : 0);
+					const enabled = document.querySelector<HTMLInputElement>(`[data-slot-enabled="${slot}"]`)?.checked ? 1 : 0;
 					const r = await fetch(`/api/admin/ads/slots/${slot}`, {
 						method: 'PUT',
 						headers: { 'Content-Type': 'application/json' },
@@ -991,19 +1185,22 @@ async function loadAdsTab(tab: string): Promise<void> {
 					else showToast(t('admin.networkError'), 'error');
 				});
 			});
-
 		} else if (tab === 'stats') {
 			const res = await fetch('/api/admin/ads/stats');
 			const data = (await res.json()) as { stats: AdStatRow[] };
 
-			const tbody = data.stats.map((s) => `<tr>
+			const tbody = data.stats
+				.map(
+					(s) => `<tr>
 				<td>${s.title}</td>
 				<td>${s.service_type}</td>
 				<td><span class="admin-badge-status ${s.is_active ? 'active' : 'inactive'}">${s.is_active ? t('admin.resources.approved') : t('admin.resources.pending')}</span></td>
 				<td>${s.total_impressions}</td>
 				<td>${s.total_clicks}</td>
 				<td>${s.ctr}</td>
-			</tr>`).join('');
+			</tr>`,
+				)
+				.join('');
 
 			wrap.innerHTML = `<div class="admin-form-panel" style="padding:16px">
 				<p style="font-size:0.82rem;color:var(--text-muted);margin:0 0 12px">${t('admin.communityAds.statsNote')}</p>
@@ -1024,4 +1221,3 @@ async function loadAdsTab(tab: string): Promise<void> {
 		wrap.innerHTML = `<p class="error-message">${t('admin.statsError')}</p>`;
 	}
 }
-

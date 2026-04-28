@@ -700,7 +700,8 @@
 			"errorTagline": "Слоган обязателен.",
 			"errorServiceType": "Выберите тип услуги.",
 			"errorExternalUrl": "Внешний URL обязателен."
-		}
+		},
+		"viewDetails": "Посмотреть детали"
 	},
 	"dmca": {
 		"simple": {

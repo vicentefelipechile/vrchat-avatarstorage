@@ -224,7 +224,7 @@ function buildAvatarMetaFields(): string {
 		<div class="upload-grid" style="margin-top:8px">
 			<div class="form-group">
 				<label><strong>${t('meta.avatar.extras')}</strong></label>
-				<div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:6px">
+				<div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:6px;flex-direction:column">
 					<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="av-nsfw"> ${t('meta.features.nsfw')}</label>
 					<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="av-physbones"> ${t('meta.features.physbones')}</label>
 					<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="av-dps"> ${t('meta.features.dps')}</label>
@@ -380,7 +380,7 @@ export async function uploadView(_ctx: RouteContext): Promise<string> {
 			<form id="upload-form">
 				<div class="form-group">
 					<label><strong>${t('upload.name')} ${t('upload.required')}</strong></label>
-					<input type="text" id="title" required placeholder="${t('upload.resourceName')}">
+					<input type="text" id="title" required placeholder="${t('upload.resourceName')}" style="width:100%">
 				</div>
 
 				<div class="form-group">
@@ -1007,15 +1007,15 @@ export async function uploadAfter(_ctx: RouteContext): Promise<void> {
 			const backupLinksRaw = (document.getElementById('backup-links') as HTMLTextAreaElement).value;
 			const extra = backupLinksRaw
 				? backupLinksRaw
-						.split('\n')
-						.map((u) => u.trim())
-						.filter(Boolean)
-						.map((url, i) => ({
-							link_url: url,
-							link_title: 'Backup ' + (i + 1),
-							link_type: 'download',
-							display_order: fileLinks.length + i + 1,
-						}))
+					.split('\n')
+					.map((u) => u.trim())
+					.filter(Boolean)
+					.map((url, i) => ({
+						link_url: url,
+						link_title: 'Backup ' + (i + 1),
+						link_type: 'download',
+						display_order: fileLinks.length + i + 1,
+					}))
 				: [];
 
 			const endpointMap: Record<string, string> = {

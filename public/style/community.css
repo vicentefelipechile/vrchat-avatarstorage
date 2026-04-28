@@ -17,6 +17,36 @@
 	flex-shrink: 0;
 }
 
+/* Fixed variant for category pages (Avatars / Assets / Clothes).
+   Takes the ad completely out of the document flow so the
+   category-layout gets the full container width.
+   Positioned in the whitespace to the left of the .container.
+
+   Math (container = max-width 950px, centered):
+     container left edge = 50vw - 475px
+     ad width            = 160px (+ 1px border each side = 162px)
+     desired gap         = 8px
+     ad left             = container-left - 162px - 8px
+                         = 50vw - 475px - 170px
+                         = 50vw - 645px
+
+   For left > 0 we need vw > 1290px → breakpoint at 1350px gives
+   a comfortable 30px margin from the viewport edge. */
+.ad-zone--sidebar-fixed {
+	display: none;
+	position: fixed;
+	left: calc(50vw - 645px);
+	top: 80px;
+	width: 160px;
+	z-index: 50;
+}
+
+@media (min-width: 1300px) {
+	.ad-zone--sidebar-fixed {
+		display: block;
+	}
+}
+
 .ad-zone--featured {
 	margin: 20px 0;
 }
@@ -83,6 +113,7 @@
 	display: flex;
 	flex-direction: column;
 	gap: 8px;
+	box-shadow: 4px 4px 0 var(--shadow-color);
 }
 
 .ad-sidebar__img {
@@ -126,6 +157,7 @@
 	align-items: center;
 	justify-content: space-between;
 	margin-top: 4px;
+	flex-direction: column;
 }
 
 .ad-sidebar__cta {
@@ -134,6 +166,7 @@
 	font-weight: bold;
 	color: var(--accent);
 	text-decoration: none;
+	padding: 12px;
 }
 
 .ad-sidebar__cta:hover {
@@ -404,6 +437,7 @@
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
+	gap: 12px;
 	padding: 6px 0;
 	border-bottom: 1px solid var(--border-color);
 }
@@ -417,6 +451,12 @@
 	font-family: inherit;
 	color: var(--text-color);
 	cursor: pointer;
+	flex: 1;
+	min-width: 0;
+}
+
+.ad-prefs-row input[type='checkbox'] {
+	flex-shrink: 0;
 }
 
 .ad-prefs-overlay {
@@ -429,6 +469,17 @@
 
 .ad-prefs-overlay.open {
 	display: block;
+}
+
+.ad-prefs-footer {
+	margin-top: 24px;
+	padding-top: 16px;
+	border-top: 1px solid var(--border-color);
+}
+
+.ad-prefs-footer .btn {
+	width: 100%;
+	text-align: center;
 }
 
 /* ============================================================================
@@ -474,7 +525,7 @@
 }
 
 .community-card {
-	border: 1px solid var(--border-color);
+	border: 2px solid var(--border-color);
 	background: var(--bg-card);
 	display: flex;
 	flex-direction: column;
@@ -606,6 +657,54 @@
 	padding: 24px 16px;
 }
 
+/* ---- Markdown editor with Write / Preview tabs ---- */
+
+.md-editor-wrap {
+	border: 1px solid var(--border-color);
+}
+
+.md-editor-tabs {
+	display: flex;
+	border-bottom: 1px solid var(--border-color);
+	background: var(--bg-body);
+}
+
+.md-editor-tab {
+	padding: 6px 14px;
+	font-size: 0.82rem;
+	font-family: inherit;
+	font-weight: 600;
+	color: var(--text-muted);
+	background: none;
+	border: none;
+	border-bottom: 2px solid transparent;
+	margin-bottom: -1px;
+	cursor: pointer;
+}
+
+.md-editor-tab.active {
+	color: var(--text-main);
+	border-bottom-color: var(--text-main);
+	background: var(--bg-card);
+}
+
+.md-editor-wrap .comment-editor {
+	border: none;
+}
+
+.md-editor-wrap .comment-editor textarea {
+	border: none;
+	border-top: 1px solid var(--border-color);
+	outline: none;
+	width: 100%;
+	padding: 10px 12px;
+	font-family: monospace;
+	font-size: 0.9rem;
+	background: var(--bg-card);
+	color: var(--text-main);
+	box-sizing: border-box;
+}
+
 .ad-create__title {
 	font-size: 1.4rem;
 	font-weight: bold;
@@ -711,4 +810,93 @@
 
 .admin-ads-tab-content.active {
 	display: block;
+}
+
+/* ============================================================================
+   Ad Skeleton / Loading State
+   Shown immediately while the async ad fetch is in flight.
+   Matches the exact dimensions of each real ad slot.
+   ============================================================================ */
+
+@keyframes ad-pulse {
+	0%, 100% { opacity: 1; }
+	50%       { opacity: 0.45; }
+}
+
+.ad-skeleton__block {
+	background: var(--border-color);
+	animation: ad-pulse 1.4s ease-in-out infinite;
+}
+
+/* Sidebar skeleton (160 × ~290px, mirrors .ad-sidebar layout) */
+.ad-skeleton--sidebar {
+	width: 160px;
+	border: 1px solid var(--border-color);
+	background: var(--bg-card);
+	padding: 12px;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	box-shadow: 4px 4px 0 var(--shadow-color);
+	flex-shrink: 0;
+}
+
+.ad-skeleton--sidebar .sk-img {
+	width: 100%;
+	aspect-ratio: 1 / 1.2;
+}
+
+.ad-skeleton--sidebar .sk-line {
+	height: 10px;
+	width: 90%;
+}
+
+.ad-skeleton--sidebar .sk-line-short {
+	height: 8px;
+	width: 60%;
+}
+
+/* Fixed sidebar variant — same dimensions, positioned out of flow */
+.ad-zone--sidebar-fixed .ad-skeleton--sidebar {
+	width: 160px;
+}
+
+/* Featured artist skeleton (full-width row, mirrors .ad-featured) */
+.ad-skeleton--featured {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	border: 1px solid var(--border-color);
+	background: var(--bg-card);
+	padding: 16px;
+	margin: 20px 0;
+}
+
+.ad-skeleton--featured .sk-img {
+	width: 80px;
+	height: 80px;
+	flex-shrink: 0;
+}
+
+.ad-skeleton--featured .sk-body {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.ad-skeleton--featured .sk-line {
+	height: 12px;
+	width: 55%;
+}
+
+.ad-skeleton--featured .sk-line-short {
+	height: 10px;
+	width: 35%;
+}
+
+.ad-skeleton--featured .sk-actions {
+	width: 90px;
+	height: 32px;
+	flex-shrink: 0;
 }

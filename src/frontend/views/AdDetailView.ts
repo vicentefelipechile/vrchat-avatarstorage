@@ -4,7 +4,7 @@
 
 import { t } from '../i18n';
 import type { RouteContext } from '../types';
-import { trackAdClick } from '../ad-components';
+import { wireAdZoneEvents } from '../ad-components';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 
@@ -107,11 +107,7 @@ export async function adDetailView(ctx: RouteContext): Promise<string> {
 // =========================================================================
 
 export async function adDetailAfter(_ctx: RouteContext): Promise<void> {
-	// Track clicks
-	document.addEventListener('click', (e) => {
-		const el = (e.target as HTMLElement).closest<HTMLElement>('[data-ad-click]');
-		if (el) trackAdClick(el.dataset.adClick!);
-	});
+	wireAdZoneEvents();
 
 	// Render Markdown body
 	const contentEl = document.getElementById('ad-page-content');

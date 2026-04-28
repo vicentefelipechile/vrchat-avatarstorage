@@ -20,7 +20,10 @@ This guide is for agentic coding agents (like yourself) operating in the VRCStor
 - **Language:** TypeScript (backend **and** frontend)
 - **Database:** Cloudflare D1 (SQLite) - Accessible via `c.env.DB`
 - **Storage:** Cloudflare R2 (Bucket) - Accessible via `c.env.BUCKET`
-- **Caching:** Cloudflare KV - Accessible via `c.env.VRCSTORAGE_KV`
+- **KV Cache:** Cloudflare KV - Accessible via `c.env.VRCSTORAGE_KV` (used by legacy rate-limit middleware).
+- **Rate Limiting:** Cloudflare native Rate Limiting bindings — `RL_STRICT` (1/60s), `RL_MEDIUM` (100/60s), `RL_GLOBAL` (500/60s), `RL_LOGIN` (10/60s). Configured in `wrangler.jsonc`.
+- **Queues:** Cloudflare Queues — `UPLOAD_QUEUE` binding for async upload post-processing.
+- **Cron:** Scheduled worker runs daily at `0 3 * * *` UTC — `cleanupOrphanedMedia` in `src/index.ts`.
 - **Validation:** [Zod](https://zod.dev/) for request body and parameter validation.
 - **Frontend Bundler:** [esbuild](https://esbuild.github.io/) — compiles `src/frontend/` → `public/js/bundle.js`.
 - **Icons:** [lucide](https://lucide.dev/) — icon library used via centralized `src/frontend/icons.ts` module.
@@ -171,20 +174,26 @@ src/
     app.ts                # Entry point: route registration, nav, auth, boot
     router.ts             # History API SPA router (route/navigateTo/initRouter)
     i18n.ts               # i18n loader (wraps dynamic import of locale files)
-    cache.ts              # DataCache — in-memory + sessionStorage caching
+    cache.ts              # DataCache — two-layer cache: in-memory Map + localStorage (survives reloads)
     comment-editor.ts     # Shared Markdown editor component (toolbar, image upload, Turnstile)
     diff.ts               # Content diff utilities
+    filter-panel.ts       # Reusable faceted filter panel (used in AvatarsView, etc.)
     icons.ts              # Centralized Lucide icon registry
     utils.ts              # General frontend utilities (incl. showToast)
     admin.ts              # Admin-specific frontend logic
+    ad-components.ts      # Community ad rendering components (banner, card, etc.)
+    ad-prefs.ts           # User ad preferences (opt-out, category filtering)
     types.ts              # Frontend-only TypeScript types (RouteContext, ViewFn, etc.)
     views/                # Functional view modules (viewFn + optional afterFn)
-      AdminView.ts         BlogCreateView.ts  BlogListView.ts
-      BlogPostView.ts      CategoryView.ts    DMCAView.ts
-      EditResourceView.ts  FavoritesView.ts   HistoryView.ts
-      HomeView.ts          ItemView.ts        LoginView.ts
-      OAuthRegisterView.ts RegisterView.ts    SettingsView.ts
-      TOSView.ts           UploadView.ts      WikiView.ts
+      AdCreateView.ts      AdDetailView.ts    AdminView.ts
+      AssetsView.ts        AuthorView.ts      AvatarsView.ts
+      BlogCreateView.ts    BlogListView.ts    BlogPostView.ts
+      CategoryView.ts      ClothesView.ts     CommunityView.ts
+      DMCAView.ts          EditResourceView.ts FavoritesView.ts
+      HistoryView.ts       HomeView.ts        ItemView.ts
+      LoginView.ts         OAuthRegisterView.ts RegisterView.ts
+      SettingsView.ts      TOSView.ts         UploadView.ts
+      WikiView.ts
   helpers/
     file-validation.ts    # Magic-byte file type & size validation
     image-validator.ts    # Image-specific validation
@@ -198,7 +207,12 @@ src/
   routes/
     2fa.ts                # Two-factor authentication endpoints
     admin.ts              # Admin panel endpoints
+    ads.ts                # Community ads endpoints (CRUD, moderation, stats)
+    assets.ts             # Asset (shader/tool/etc.) listing endpoints
+    authors.ts            # Avatar author profile endpoints
+    avatars.ts            # Avatar listing and detail endpoints
     blog.ts               # Blog CRUD endpoints
+    clothes.ts            # Clothing resource listing endpoints
     comments.ts           # Comment endpoints
     downloads.ts          # R2 file download proxy
     favorites.ts          # User favorites endpoints
@@ -227,13 +241,17 @@ public/
     age-gate.css          # Age verification overlay modal styles
     blog.css              # Blog-specific styles
     wiki.css              # Wiki page styles
-    admin.css             # Admin panel styles
+    admin.css             # Admin panel styles (legacy, kept for compatibility)
+    admin-dashboard.css   # Admin dashboard stats and layout
+    authors.css           # Avatar author profile page styles
+    community.css         # Community ads pages (AdCreateView, AdDetailView, CommunityView)
+    search.css            # Search bar and filter panel styles
   sw.js                   # Service worker
   js/
     bundle.js             # Compiled frontend bundle (output of esbuild, DO NOT EDIT)
-    i18n/                 # Locale files (ES module, `export default { ... }`)
-      cn.js  de.js  en.js  es.js  fr.js  it.js
-      jp.js  nl.js  pl.js  pt.js  ru.js  tr.js
+    i18n/                 # Locale files — plain JSON (`{ "key": "value" }`, NOT ES modules)
+      cn.json  de.json  en.json  es.json  fr.json  it.json
+      jp.json  nl.json  pl.json  pt.json  ru.json  tr.json
   wiki/                   # Markdown wiki articles (multi-language)
     cn/ de/ en/ es/ fr/ it/ jp/ nl/ pl/ pt/ ru/ tr/
     └── <topic>.md        # 23 articles per language (home, faq, setup, poiyomi, ...)
@@ -246,7 +264,11 @@ migrations/               # D1 schema & migration files
   0005_2fa.sql
   0006_google.sql
   0007_blogs.sql
-                          # New migrations follow the pattern: NNNN_description.sql
+  0008_category_authors.sql   # avatar_authors table (normalized author profiles)
+  0009_category_metadata.sql  # avatar_meta, asset_meta, clothes_meta tables
+  0010_backfill_metadata.sql  # Backfill metadata for existing resources
+  0011_community_ads.sql      # community_ads, ad_slot_config, ad_stats, ad_internal_pages
+                              # New migrations follow the pattern: NNNN_description.sql
 
 wrangler.jsonc            # Cloudflare Worker configuration & bindings
 tsconfig.json             # Backend TypeScript config
@@ -281,7 +303,7 @@ STOP. Your knowledge of Cloudflare Workers APIs and limits may be outdated. Alwa
 ### Middleware Details
 
 - `securityMiddleware`: Sets `HSTS`, `Content-Security-Policy`, `X-Content-Type-Options`, `X-Frame-Options`, and `CORS`.
-- `rateLimit`: Uses KV to store counts. Key format: `rate_limit:{prefix}:{key}`.
+- `rateLimit` (legacy): KV-based rate limiter in `src/middleware/rate-limit.ts`. Key format: `rate_limit:{prefix}:{key}`. Most endpoints now use the **Cloudflare native Rate Limiting bindings** (`RL_STRICT`, `RL_MEDIUM`, `RL_GLOBAL`, `RL_LOGIN`) configured directly in `wrangler.jsonc` and applied in `src/index.ts` via `rateLimit({ binding: c.env.RL_*, keyPrefix: '...' })`.
 - `getAuthUser`: Helper in `src/auth.ts` to retrieve user from session/cookie.
 
 > **Note:** `GET /api/version` (in `src/routes/system.ts`) is **intentionally public and unauthenticated**. It exposes deployment metadata (version ID, commit hash, compatibility date, Cloudflare Ray ID, colo, country) for debugging and monitoring purposes. This is a deliberate design decision — do not gate it behind auth or flag it as information disclosure.
@@ -311,7 +333,7 @@ The frontend is **TypeScript-first** and compiled with esbuild:
 - **Source:** `src/frontend/` directory (TypeScript).
 - **Output:** `public/js/bundle.js` (single IIFE bundle, minified in production).
 - **Source Maps:** Only emitted in dev mode (`--dev` flag). Never included in production builds.
-- **i18n files** in `public/js/i18n/` are **not** bundled — they remain separate static files imported at runtime.
+- **i18n files** in `public/js/i18n/` are **not** bundled — they are plain `.json` files loaded at runtime by `src/frontend/i18n.ts`. Do not convert them to ES modules.
 - The build script is `src/tools/build-frontend.mjs`. Do not edit the output `bundle.js` directly.
 
 ### Icons
@@ -322,14 +344,71 @@ Icons are managed via a centralized registry in `src/frontend/icons.ts`, built o
 - The module exports a typed `getIcon(name, size?)` function that returns an SVG string.
 - This ensures consistent sizing and stroke width across the entire UI.
 
-### Shared Comment Editor
+### Shared Markdown & Comment Editor
 
-`src/frontend/comment-editor.ts` is a reusable module that encapsulates the full Markdown editor experience:
+`src/frontend/comment-editor.ts` is a reusable module that encapsulates the full Markdown editor experience. It offers two modes:
 
-- Markdown toolbar (bold, italic, link, etc.) with Lucide icons.
-- Native image upload via clipboard paste and the `/api/upload` endpoint.
-- Cloudflare Turnstile integration.
-- Used by `ItemView`, `BlogCreateView`, and `BlogPostView` — do not duplicate this logic in individual views.
+1. **Full Comment Form:** Uses `commentEditorHtml()` and `initCommentEditor()`. Includes Turnstile, submit handling, and the toolbar. Used in `ItemView`, `BlogPostView`.
+2. **Standalone Toolbar:** Uses `markdownToolbarHtml()` and `initMarkdownToolbar()`. Just the formatting toolbar and paste-to-upload logic, designed to be dropped into custom forms.
+
+**Markdown Editor Pattern:**
+When adding a Markdown description field to a form (like in `AdCreateView` or `BlogCreateView`), follow the established layout pattern:
+- Wrap the editor in `.md-editor-wrap` with `.md-editor-tabs` (Write / Preview).
+- Render the `textarea` and toolbar inside a `.comment-editor` pane.
+- Render the preview via `marked` and `DOMPurify` inside a `.markdown-body` pane.
+- **Never** duplicate toolbar generation or image paste logic in individual views.
+
+### Community Ads System
+
+The community ads system consists of two frontend modules and one backend route.
+
+#### `src/frontend/ad-prefs.ts` — User preferences (localStorage)
+
+Stores and reads ad preferences with no server involvement. Key exports:
+
+- `getAdPrefs() / saveAdPrefs()` — read/write `ad_prefs` key in localStorage.
+- `shouldShowSlot(slot)` / `shouldShowType(type)` / `shouldShowAd(slot, type)` — visibility checks used by renderers.
+- `renderAdPrefsPanel()` — returns the slide-in panel HTML string.
+- `wireAdPrefsPanel(options?)` — attaches all event listeners to the panel. Accepts `WireAdPrefsPanelOptions`:
+  - `reloadOnSave?: boolean` (default `true`) — when `true`, calls `location.reload()` 800 ms after saving so ad slots re-evaluate the new prefs. Pass `{ reloadOnSave: false }` from `SettingsView` (which has its own inline save logic).
+- The master "Show all ads" checkbox disables/enables all slot and type checkboxes live via `syncSubCheckboxes()`.
+- `openAdPrefsPanel()` — opens the panel programmatically (called by gear-button click delegation in `wireAdZoneEvents`).
+
+#### `src/frontend/ad-components.ts` — Ad renderers
+
+Provides skeleton loaders and real ad HTML builders for every slot:
+
+| Function | Slot |
+|---|---|
+| `renderSidebarBannerSkeleton(id)` | `sidebar_left` (HomeView) |
+| `renderSidebarBannerFixedSkeleton(id)` | `sidebar_left` (category views) |
+| `renderFeaturedArtistCardSkeleton(id)` | `featured_artist` |
+| `renderSidebarBanner(ads)` | `sidebar_left` |
+| `renderSidebarBannerFixed(ads)` | `sidebar_left` (fixed position) |
+| `renderFeaturedArtistCard(ads, excludeUuids?)` | `featured_artist` |
+| `renderGridPromoCard(ad)` | `grid_card` |
+| `renderDetailBanner(ads)` | `detail_banner` |
+
+**`injectAdOrFade(placeholderId, html)`** — replaces a skeleton placeholder with real HTML, or calls `el.remove()` immediately if no ad is available. There is **no fade animation** — removal is synchronous.
+
+**`wireAdZoneEvents()`** — global click delegation (ad click tracking, gear button → open prefs panel). Call once per page session; guarded by `_adEventsWired`.
+
+**`trackVisibleAdImpressions()`** — fires impression events for all `[data-ad-uuid]` elements on the page.
+
+#### Ad fetch & caching
+
+`fetchAdsForSlot(slot)` fetches from `/api/ads?slot=<slot>` with a 10-minute TTL via `DataCache`. `getCachedAdsForSlot(slot)` does a synchronous read from the two-layer cache (in-memory → localStorage) so views can skip the skeleton entirely on repeat visits.
+
+#### `src/routes/ads.ts` — Ad selection algorithm
+
+`GET /api/ads?slot=<slot>` uses **weighted random sampling without replacement** (`weightedSample`):
+
+- Each ad is drawn with probability proportional to its `display_weight` (minimum 1).
+- An ad with `display_weight = 10` appears ~10× more often than one with `display_weight = 1`, but the result is genuinely random on every request.
+- Already-drawn ads are excluded from subsequent draws (no duplicates within a single response).
+- The number of ads returned is limited by `ad_slot_config.max_concurrent` for the slot.
+
+> Do **not** reintroduce deterministic daily seeds or `ORDER BY display_weight DESC` \u2014 those patterns caused the highest-weight ad to monopolize the slot permanently.
 
 ### Frontend Utilities & Feedback
 
@@ -342,13 +421,13 @@ All visual feedback or ephemeral messages to the user (success, error, loading s
 
 ### i18n (Frontend)
 
-Locale files live in `public/js/i18n/` as ES modules (`export default { ... }`).
+Locale files live in `public/js/i18n/` as **plain JSON files** (e.g. `en.json`, `es.json`). They are NOT ES modules — do not use `export default`.
 
 - **Supported locales:** `cn`, `de`, `en`, `es`, `fr`, `it`, `jp`, `nl`, `pl`, `pt`, `ru`, `tr`.
-- **Loader:** `src/frontend/i18n.ts` handles dynamic locale loading.
+- **Loader:** `src/frontend/i18n.ts` handles dynamic locale loading via `fetch()` + `JSON.parse()`.
 - **No Fallbacks:** NEVER use fallback strings with the `t()` function (e.g., avoid `t('key') || 'Fallback'`). Just use `t('key')`. Fallbacks make it harder to detect missing translations.
 - **Consistency check:** Run `npm run i18n-manager CHECK` to detect missing keys across all locale files (compact one-line-per-key output). Exits with code `1` if issues are found (CI-safe).
-- **NO ENGLISH PLACEHOLDERS IN OTHER LANGUAGES:** It is **EXPLICITLY FORBIDDEN** to use English text as placeholder translations in non‑English locale files. The i18n system already falls back to English when a key is missing; writing English strings in other locale files defeats the purpose of translation and makes missing keys invisible. Agents MUST generate proper translations for all supported languages—use machine translation if necessary, but never copy English strings verbatim into `de.js`, `es.js`, etc.
+- **NO ENGLISH PLACEHOLDERS IN OTHER LANGUAGES:** It is **EXPLICITLY FORBIDDEN** to use English text as placeholder translations in non‑English locale files. The i18n system already falls back to English when a key is missing; writing English strings in other locale files defeats the purpose of translation and makes missing keys invisible. Agents MUST generate proper translations for all supported languages—use machine translation if necessary, but never copy English strings verbatim into `de.json`, `es.json`, etc.
 
 #### Adding a few keys (ADD mode — for 1–2 keys)
 
@@ -441,16 +520,19 @@ A scheduled cron job (`cleanupOrphanedMedia` in `src/index.ts`) runs daily and d
 
 A media record is considered **in use** if its `uuid` or `r2_key` appears in any of the following:
 
-| Reference type                     | How tracked                           |
-| ---------------------------------- | ------------------------------------- |
-| Resource thumbnail                 | `resources.thumbnail_uuid`            |
-| Resource reference image           | `resources.reference_image_uuid`      |
-| Resource gallery file              | `resource_n_media.media_uuid`         |
-| Blog post cover image              | `blog_posts.cover_image_uuid`         |
-| User avatar                        | `INSTR(users.avatar_url, m.r2_key)`   |
-| Image embedded in resource comment | `INSTR(comments.text, m.r2_key)`      |
-| Image embedded in blog comment     | `INSTR(blog_comments.text, m.r2_key)` |
-| Image embedded in blog post body   | `INSTR(blog_posts.content, m.r2_key)` |
+| Reference type                     | How tracked                                        |
+| ---------------------------------- | -------------------------------------------------- |
+| Resource thumbnail                 | `resources.thumbnail_uuid`                         |
+| Resource reference image           | `resources.reference_image_uuid`                   |
+| Resource gallery file              | `resource_n_media.media_uuid`                      |
+| Blog post cover image              | `blog_posts.cover_image_uuid`                      |
+| Community ad banner image          | `community_ads.banner_media_uuid`                  |
+| Community ad card image            | `community_ads.card_media_uuid`                    |
+| User avatar                        | `INSTR(users.avatar_url, m.r2_key)`                |
+| Image embedded in resource comment | `INSTR(comments.text, m.r2_key)`                   |
+| Image embedded in blog comment     | `INSTR(blog_comments.text, m.r2_key)`              |
+| Image embedded in blog post body   | `INSTR(blog_posts.content, m.r2_key)`              |
+| Image embedded in ad internal page | `INSTR(ad_internal_pages.content, m.r2_key)`       |
 
 > **Important:** Comments embed images as Markdown (`![alt](/api/download/<r2_key>)`). Because there is no FK between `media` and `comments`, the cleanup uses `INSTR` to scan comment text for the `r2_key`. This means:
 >
@@ -643,18 +725,18 @@ The repository contains a multi-language wiki in `public/wiki/`.
 
 When adding a new language to the project, follow **ALL** of these steps in order:
 
-#### Step 1: Create the locale file (`public/js/i18n/<code>.js`)
+#### Step 1: Create the locale file (`public/js/i18n/<code>.json`)
 
-1. Copy `public/js/i18n/en.js` as the template (it is the reference locale and always has the complete set of keys).
+1. Copy `public/js/i18n/en.json` as the template (it is the reference locale and always has the complete set of keys).
 2. Translate **every** value to the target language. Keep all keys in English.
-3. The file format is an ES module: `export default { ... }`.
-4. DO NOT add or remove keys — maintain exact structural parity with `en.js`.
+3. The file format is **plain JSON** — a single JSON object `{ "key": "value", ... }`. Do NOT use `export default` or any JS syntax.
+4. DO NOT add or remove keys — maintain exact structural parity with `en.json`.
 
 #### Step 2: Register the locale in the frontend loader
 
 1. Open `src/frontend/i18n.ts`.
-2. Add an `import` for the new locale file (e.g., `import xx from '../../public/js/i18n/xx.js';`).
-3. Add the new code to the `translations` object (e.g., `{ ..., xx }`).
+2. Add the new locale code to the loader's switch/map so it fetches `/js/i18n/<code>.json` at runtime.
+3. Verify the loader correctly parses the JSON response.
 
 #### Step 3: Add the language to the HTML selector
 
@@ -690,7 +772,7 @@ This bundles the new locale import into `public/js/bundle.js`.
 
 - Update the **Supported locales** list in the `i18n (Frontend)` section.
 - Update the **Languages** list in the `Wiki Documentation` section.
-- Update the locale file listing in the `Project Structure` section.
+- Update the locale file listing (`.json` files) in the `Project Structure` section.
 
 ## Implementation Checklist for Agents
 

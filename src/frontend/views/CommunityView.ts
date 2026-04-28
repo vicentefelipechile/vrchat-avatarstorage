@@ -6,7 +6,7 @@ import { t } from '../i18n';
 import type { RouteContext } from '../types';
 import { navigateTo } from '../router';
 import { showToast } from '../utils';
-import { trackAdClick } from '../ad-components';
+import { wireAdZoneEvents } from '../ad-components';
 import { renderAdPrefsPanel, wireAdPrefsPanel } from '../ad-prefs';
 
 // =========================================================================
@@ -62,7 +62,7 @@ function communityCard(ad: DirectoryAd): string {
 			<p class="community-card__tagline">${ad.tagline}</p>
 		</div>
 		<div class="community-card__footer">
-			<a href="${adHref(ad)}" ${adTarget(ad)} class="btn" data-ad-click="${ad.uuid}">${t('community.visitProfile')}</a>
+			<a href="${adHref(ad)}" ${adTarget(ad)} class="btn" data-ad-click="${ad.uuid}">${t('community.viewDetails')}</a>
 		</div>
 	</div>`;
 }
@@ -135,12 +135,7 @@ export async function communityView(ctx: RouteContext): Promise<string> {
 
 export async function communityAfter(_ctx: RouteContext): Promise<void> {
 	wireAdPrefsPanel();
-
-	// Click tracking
-	document.addEventListener('click', (e) => {
-		const el = (e.target as HTMLElement).closest<HTMLElement>('[data-ad-click]');
-		if (el) trackAdClick(el.dataset.adClick!);
-	});
+	wireAdZoneEvents();
 
 	// Client-side filter (all ads are already loaded in the DOM)
 	const searchInput = document.getElementById('community-search') as HTMLInputElement | null;

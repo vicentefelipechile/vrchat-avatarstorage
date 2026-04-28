@@ -436,7 +436,6 @@
 .comment-editor {
 	border: 2px solid var(--border-color);
 	background: var(--bg-card);
-	margin-bottom: 10px;
 }
 
 .md-toolbar {
@@ -444,7 +443,6 @@
 	align-items: center;
 	gap: 2px;
 	padding: 4px 6px;
-	border-bottom: 2px solid var(--border-color);
 	background: var(--bg-hover);
 	flex-wrap: wrap;
 }

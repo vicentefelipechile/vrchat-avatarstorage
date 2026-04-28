@@ -6,8 +6,8 @@ import { DataCache } from '../cache';
 import { t } from '../i18n';
 import { stripMarkdown, TimeUnit } from '../utils';
 import type { RouteContext, Resource } from '../types';
-import { fetchAdsForSlot, renderSidebarBanner, renderFeaturedArtistCard, wireAdZoneEvents, trackVisibleAdImpressions } from '../ad-components';
-import { renderAdPrefsPanel, wireAdPrefsPanel } from '../ad-prefs';
+import { fetchAdsForSlot, getCachedAdsForSlot, renderSidebarBanner, renderFeaturedArtistCard, renderSidebarBannerSkeleton, renderFeaturedArtistCardSkeleton, injectAdOrFade, wireAdZoneEvents, trackVisibleAdImpressions, AdPublic } from '../ad-components';
+import { renderAdPrefsPanel, wireAdPrefsPanel, shouldShowAd } from '../ad-prefs';
 
 // =========================================================================
 // Helpers
@@ -60,19 +60,29 @@ export async function homeView(_ctx: RouteContext): Promise<string> {
 
 	const apiCategories = ['avatars', 'assets', 'clothes'];
 
-	// Fetch resources and ads in parallel
-	const [resources, sidebarAds, featuredAds] = await Promise.all([
-		DataCache.fetch('/api/resources/latest', { ttl: TimeUnit.Minute * 15 }).catch(() => []) as Promise<Resource[]>,
-		fetchAdsForSlot('sidebar_left'),
-		fetchAdsForSlot('featured_artist'),
-	]);
+	// Fetch only resources — ads load asynchronously in homeAfter
+	const resources = (await DataCache.fetch('/api/resources/latest', { ttl: TimeUnit.Minute * 15 }).catch(() => [])) as Resource[];
 
 	const categoriesHtml = apiCategories
 		.map((cat) => `<a href="/${cat}" data-link class="category-btn">${t('cats.' + cat)}</a>`)
 		.join('');
 
-	const sidebarBannerHtml = renderSidebarBanner(sidebarAds);
-	const featuredCardHtml = renderFeaturedArtistCard(featuredAds);
+	// Use cached ad data if available to skip the skeleton entirely on repeat visits.
+	// For the featured slot, exclude the ad already shown in the sidebar to ensure variety.
+	const cachedSidebar = getCachedAdsForSlot('sidebar_left');
+	const cachedFeatured = getCachedAdsForSlot('featured_artist');
+
+	const sidebarAd: AdPublic | null = cachedSidebar !== null
+		? (cachedSidebar.find((a) => shouldShowAd('sidebar_left', a.service_type)) ?? null)
+		: null;
+	const sidebarExclude = sidebarAd ? [sidebarAd.uuid] : [];
+
+	const sidebarHtml = cachedSidebar !== null
+		? renderSidebarBanner(cachedSidebar)
+		: renderSidebarBannerSkeleton('home-sidebar-ad-placeholder');
+	const featuredHtml = cachedFeatured !== null
+		? renderFeaturedArtistCard(cachedFeatured, sidebarExclude)
+		: renderFeaturedArtistCardSkeleton('home-featured-ad-placeholder');
 
 	const mainContent = `
 		<section class="hero-section">
@@ -80,12 +90,12 @@ export async function homeView(_ctx: RouteContext): Promise<string> {
 			<p>${t('home.browse')}</p>
 			<div class="category-nav">${categoriesHtml}</div>
 		</section>
-		${featuredCardHtml}
+		${featuredHtml}
 		<section class="latest-section">
 			<h2>${t('home.latest')}</h2>
 			${
 				resources.length === 0
-					? `<p class="empty-message">${t('common.noResourcesFound') || 'No resources found.'}</p>`
+					? `<p class="empty-message">${t('common.noResourcesFound')}</p>`
 					: `<div class="grid">${resources.map(resourceCard).join('')}</div>`
 			}
 		</section>`;
@@ -93,7 +103,7 @@ export async function homeView(_ctx: RouteContext): Promise<string> {
 	return `
 		${renderAdPrefsPanel()}
 		<div style="display:flex;gap:20px;align-items:flex-start">
-			${sidebarBannerHtml}
+			${sidebarHtml}
 			<div style="flex:1;min-width:0">${mainContent}</div>
 		</div>`;
 }
@@ -105,5 +115,37 @@ export async function homeView(_ctx: RouteContext): Promise<string> {
 export function homeAfter(_ctx: RouteContext): void {
 	wireAdPrefsPanel();
 	wireAdZoneEvents();
-	trackVisibleAdImpressions();
+
+	const hasSidebarPlaceholder = !!document.getElementById('home-sidebar-ad-placeholder');
+	const hasFeaturedPlaceholder = !!document.getElementById('home-featured-ad-placeholder');
+
+	// Fetch both slots in parallel so we can exclude the sidebar ad from the featured slot.
+	if (hasSidebarPlaceholder || hasFeaturedPlaceholder) {
+		Promise.all([
+			hasSidebarPlaceholder ? fetchAdsForSlot('sidebar_left') : Promise.resolve([] as AdPublic[]),
+			hasFeaturedPlaceholder ? fetchAdsForSlot('featured_artist') : Promise.resolve([] as AdPublic[]),
+		]).then(([sidebarAds, featuredAds]) => {
+			// Inject sidebar first
+			if (hasSidebarPlaceholder) {
+				injectAdOrFade('home-sidebar-ad-placeholder', renderSidebarBanner(sidebarAds));
+			}
+
+			// For the featured slot, exclude whatever the sidebar is showing
+			if (hasFeaturedPlaceholder) {
+				const sidebarAd = sidebarAds.find((a) => shouldShowAd('sidebar_left', a.service_type));
+				const excludeUuids = sidebarAd ? [sidebarAd.uuid] : [];
+				const html = renderFeaturedArtistCard(featuredAds, excludeUuids);
+				const el = document.getElementById('home-featured-ad-placeholder');
+				if (el) {
+					if (html) {
+						el.outerHTML = html;
+					} else {
+						el.remove();
+					}
+				}
+			}
+
+			trackVisibleAdImpressions();
+		}).catch((err) => console.error('[ads] home fetch failed', err));
+	}
 }

@@ -11,7 +11,7 @@ import { buildFilterPanel, FilterType, initFilterPanel } from '../filter-panel';
 import type { RouteContext } from '../types';
 import { DataCache } from '../cache';
 import { TimeUnit } from '../utils';
-import { fetchAdsForSlot, renderSidebarBanner, wireAdZoneEvents, trackVisibleAdImpressions } from '../ad-components';
+import { fetchAdsForSlot, getCachedAdsForSlot, renderSidebarBannerFixed, renderSidebarBannerFixedSkeleton, injectAdOrFade, wireAdZoneEvents, trackVisibleAdImpressions } from '../ad-components';
 import { renderAdPrefsPanel, wireAdPrefsPanel } from '../ad-prefs';
 
 // =========================================================================
@@ -195,24 +195,22 @@ async function buildResults(params: URLSearchParams): Promise<string> {
 export async function clothesView(ctx: RouteContext): Promise<string> {
 	document.title = t('filterPanel.titleClothes');
 
-	const [resultsHtml, sidebarAds] = await Promise.all([
-		buildResults(ctx.query),
-		fetchAdsForSlot('sidebar_left'),
-	]);
+	// Only fetch results — ad loads asynchronously in clothesAfter
+	const resultsHtml = await buildResults(ctx.query);
 
-	const sidebarBannerHtml = renderSidebarBanner(sidebarAds);
+	// Skip skeleton if cached ad data is already available
+	const cachedSidebar = getCachedAdsForSlot('sidebar_left');
+	const sidebarHtml = cachedSidebar !== null
+		? renderSidebarBannerFixed(cachedSidebar)
+		: renderSidebarBannerFixedSkeleton('clothes-sidebar-ad-placeholder');
 
 	return `
 		${renderAdPrefsPanel()}
-		<div style="display:flex;gap:20px;align-items:flex-start">
-			${sidebarBannerHtml}
-			<div style="flex:1;min-width:0">
-				<div class="category-layout">
-					${buildFilterPanel(CLOTHES_FILTER_CONFIG)}
-					<div class="category-results" id="clothes-results">
-						${resultsHtml}
-					</div>
-				</div>
+		${sidebarHtml}
+		<div class="category-layout">
+			${buildFilterPanel(CLOTHES_FILTER_CONFIG)}
+			<div class="category-results" id="clothes-results">
+				${resultsHtml}
 			</div>
 		</div>`;
 }
@@ -227,7 +225,14 @@ export function clothesAfter(ctx: RouteContext): void {
 
 	wireAdPrefsPanel();
 	wireAdZoneEvents();
-	trackVisibleAdImpressions();
+
+	// Only fetch if the skeleton placeholder is in the DOM.
+	if (document.getElementById('clothes-sidebar-ad-placeholder')) {
+		fetchAdsForSlot('sidebar_left').then((ads) => {
+			injectAdOrFade('clothes-sidebar-ad-placeholder', renderSidebarBannerFixed(ads));
+			trackVisibleAdImpressions();
+		});
+	}
 
 	async function refreshResults(newParams: URLSearchParams): Promise<void> {
 		const resultsEl = document.getElementById('clothes-results');

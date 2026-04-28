@@ -769,6 +769,7 @@
 			"errorTagline": "Le slogan est requis.",
 			"errorServiceType": "Veuillez sélectionner un type de service.",
 			"errorExternalUrl": "L\"URL externe est requise."
-		}
+		},
+		"viewDetails": "Voir les détails"
 	}
 }

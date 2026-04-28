@@ -883,6 +883,7 @@
 			"errorTagline": "El eslogan es obligatorio.",
 			"errorServiceType": "Por favor selecciona un tipo de servicio.",
 			"errorExternalUrl": "La URL externa es obligatoria."
-		}
+		},
+		"viewDetails": "Ver detalles"
 	}
 }

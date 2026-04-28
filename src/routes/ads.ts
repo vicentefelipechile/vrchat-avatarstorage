@@ -18,42 +18,45 @@ import { AdSubmitSchema, AdUpdateSchema } from '../validators';
 // Helpers
 // =========================================================================================================
 
-/**
- * Deterministic daily rotation seed.
- * Returns a pseudo-random number in [0, 1) that is stable for a given (date + slot) combination.
- * All users see the same ads on the same day.
- */
-function dailySeed(slot: string): number {
-	const today = new Date().toISOString().slice(0, 10); // "2026-04-25"
-	const str = today + ':' + slot;
-	let h = 0x811c9dc5;
-	for (let i = 0; i < str.length; i++) {
-		h ^= str.charCodeAt(i);
-		h = (h * 0x01000193) >>> 0;
-	}
-	return h / 0xffffffff;
-}
-
-/**
- * Deterministic shuffle using a seeded PRNG (Mulberry32).
- * Returns a new array — does not mutate the original.
- */
-function seededShuffle<T>(arr: T[], seed: number): T[] {
-	const out = [...arr];
-	let s = (seed * 0xffffffff) >>> 0;
-	for (let i = out.length - 1; i > 0; i--) {
-		s ^= s << 13;
-		s ^= s >> 17;
-		s ^= s << 5;
-		const j = (s >>> 0) % (i + 1);
-		[out[i], out[j]] = [out[j], out[i]];
-	}
-	return out;
-}
-
-/** Returns today's date string in YYYY-MM-DD format (UTC). */
+/** Returns today's date string in YYYY-MM-DD format (UTC). Used by stats endpoints. */
 function todayUtc(): string {
 	return new Date().toISOString().slice(0, 10);
+}
+
+/**
+ * Weighted random sample without replacement.
+ *
+ * Performs `count` draws from `pool` using each item's `display_weight` as its
+ * relative probability. An item with weight 10 is ~10× more likely to be drawn
+ * than one with weight 1, but the outcome is genuinely random on every request.
+ * Already-drawn items are excluded from subsequent draws (no duplicates).
+ *
+ * Falls back to the full pool (in weight-descending order) if count >= pool.length.
+ */
+function weightedSample<T extends { display_weight: number }>(pool: T[], count: number): T[] {
+	if (count >= pool.length) return [...pool];
+
+	const remaining = pool.map((item, idx) => ({ item, idx }));
+	const result: T[] = [];
+
+	for (let draw = 0; draw < count; draw++) {
+		const totalWeight = remaining.reduce((sum, r) => sum + Math.max(r.item.display_weight, 1), 0);
+		let pick = Math.random() * totalWeight;
+
+		let chosen = remaining.length - 1; // fallback to last
+		for (let i = 0; i < remaining.length; i++) {
+			pick -= Math.max(remaining[i].item.display_weight, 1);
+			if (pick <= 0) {
+				chosen = i;
+				break;
+			}
+		}
+
+		result.push(remaining[chosen].item);
+		remaining.splice(chosen, 1);
+	}
+
+	return result;
 }
 
 // =========================================================================================================
@@ -65,7 +68,7 @@ const ads = new Hono<{ Bindings: Env }>();
 // =========================================================================================================
 // GET /api/ads
 // Fetch active ads for a given slot (?slot=sidebar_left) or all active ads (?slot=all).
-// Uses deterministic daily rotation — same result for every user on the same day.
+// Uses weighted random selection — higher display_weight ads appear more often but not exclusively.
 // =========================================================================================================
 
 ads.get('/', async (c) => {
@@ -90,7 +93,7 @@ ads.get('/', async (c) => {
 			maxConcurrent = config.max_concurrent;
 		}
 
-		// Fetch all approved and active ads
+		// Fetch all approved and active ads (DB order doesn't matter — selection is random)
 		const result = await c.env.DB.prepare(
 			`SELECT
 				ca.uuid, ca.title, ca.tagline, ca.service_type,
@@ -102,8 +105,7 @@ ads.get('/', async (c) => {
 			LEFT JOIN users u ON ca.author_uuid = u.uuid
 			LEFT JOIN media bm ON ca.banner_media_uuid = bm.uuid
 			LEFT JOIN media cm ON ca.card_media_uuid = cm.uuid
-			WHERE ca.is_active = 1 AND ca.is_approved = 1
-			ORDER BY ca.display_weight DESC`,
+			WHERE ca.is_active = 1 AND ca.is_approved = 1`,
 		).all<CommunityAdPublic>();
 
 		const pool = result.results;
@@ -116,13 +118,8 @@ ads.get('/', async (c) => {
 			return c.json({ ads: pool });
 		}
 
-		// Deterministic daily shuffle — sort by weight first, then shuffle within each weight tier
-		const seed = dailySeed(slot);
-		const shuffled = seededShuffle(pool, seed);
-		// Stable sort: keep higher-weight ads at the front after shuffle
-		shuffled.sort((a, b) => b.display_weight - a.display_weight);
-
-		const selected = shuffled.slice(0, maxConcurrent);
+		// Weighted random selection: probability proportional to display_weight.
+		const selected = weightedSample(pool, maxConcurrent);
 		return c.json({ ads: selected });
 	} catch (e) {
 		console.error('GET /api/ads error:', e);
@@ -137,6 +134,11 @@ ads.get('/', async (c) => {
 
 ads.get('/:uuid', async (c) => {
 	const uuid = c.req.param('uuid');
+	const cache = await c.env.VRCSTORAGE_KV.get(`ads:${uuid}`);
+	if (cache) {
+		return c.json({ ad: JSON.parse(cache) });
+	}
+
 	try {
 		const ad = await c.env.DB.prepare(
 			`SELECT
@@ -157,9 +159,11 @@ ads.get('/:uuid', async (c) => {
 			.first<CommunityAdPublic & { description: string | null; internal_page_content: string | null }>();
 
 		if (!ad) return c.json({ error: 'Ad not found' }, 404);
+		await c.env.VRCSTORAGE_KV.put(`ads:${uuid}`, JSON.stringify(ad), { expirationTtl: 60 * 60 * 24 });
+
 		return c.json({ ad });
 	} catch (e) {
-		console.error('GET /api/ads/:uuid error:', e);
+		console.error('GET item-detail-ad-zone:uuid error:', e);
 		return c.json({ error: 'Failed to fetch ad' }, 500);
 	}
 });
