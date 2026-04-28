@@ -786,7 +786,8 @@
 		"titleAvatars": "VRCStorage — Avatares",
 		"filterTitle": "Filtros",
 		"reset": "Reestablecer",
-		"titleClothes": "VRCStorage — Ropa"
+		"titleClothes": "VRCStorage — Ropa",
+		"noClothes": "No se encontraron ropas con estos filtros."
 	},
 	"authorProfile": {
 		"notFound": "El autor no fue encontrado.",

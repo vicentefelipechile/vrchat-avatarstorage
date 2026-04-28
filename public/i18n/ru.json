@@ -609,7 +609,8 @@
 		"titleAvatars": "VRCStorage — Аватары",
 		"titleClothes": "VRCStorage — Одежда",
 		"filterTitle": "Фильтры",
-		"reset": "Сбросить фильтры"
+		"reset": "Сбросить фильтры",
+		"noClothes": "Одежда по заданным фильтрам не найдена."
 	},
 	"autorProfile": {
 		"notFound": "Автора с таким именем не существует.",

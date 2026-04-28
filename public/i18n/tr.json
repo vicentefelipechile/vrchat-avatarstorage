@@ -713,7 +713,8 @@
 		"titleAvatars": "VRCStorage — Avatarlar",
 		"titleClothes": "VRCStorage — Kıyafetler",
 		"filterTitle": "Filtreler",
-		"reset": "Filtreleri Sıfırla"
+		"reset": "Filtreleri Sıfırla",
+		"noClothes": "Bu filtrelerle kıyafet bulunamadı."
 	},
 	"autorProfile": {
 		"notFound": "Bu isimde bir yazar yok.",

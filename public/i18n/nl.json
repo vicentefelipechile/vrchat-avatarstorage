@@ -713,7 +713,8 @@
 		"titleAvatars": "VRCStorage — Avatars",
 		"titleClothes": "VRCStorage — Kleding",
 		"filterTitle": "Filters",
-		"reset": "Filters resetten"
+		"reset": "Filters resetten",
+		"noClothes": "Geen kleding gevonden met deze filters."
 	},
 	"autorProfile": {
 		"notFound": "Er is geen auteur met deze naam.",

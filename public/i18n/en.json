@@ -678,7 +678,8 @@
 		"titleAvatars": "VRCStorage — Avatars",
 		"titleClothes": "VRCStorage — Clothes",
 		"filterTitle": "Filters",
-		"reset": "Reset Filters"
+		"reset": "Reset Filters",
+		"noClothes": "No clothes found with these filters."
 	},
 	"autorProfile": {
 		"notFound": "There is no author with this name.",

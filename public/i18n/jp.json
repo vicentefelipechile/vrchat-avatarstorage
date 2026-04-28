@@ -609,7 +609,8 @@
 		"titleAvatars": "VRCStorage — アバター",
 		"titleClothes": "VRCStorage — 衣装",
 		"filterTitle": "フィルター",
-		"reset": "フィルターをリセット"
+		"reset": "フィルターをリセット",
+		"noClothes": "このフィルターに一致する服が見つかりませんでした。"
 	},
 	"autorProfile": {
 		"notFound": "この名前の作者は存在しません。",
