@@ -766,7 +766,9 @@
 			"slotSidebar": "Sidebar Banner",
 			"slotFeatured": "Featured Artist",
 			"slotGrid": "Grid Card",
-			"slotDetail": "Item Page Banner"
+			"slotDetail": "Item Page Banner",
+			"saveBtn": "Save preferences",
+			"saved": "Preferences saved"
 		}
 	}
 }

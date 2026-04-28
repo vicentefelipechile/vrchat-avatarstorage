@@ -768,7 +768,9 @@
 			"slotSidebar": "Banner laterale",
 			"slotFeatured": "Artista in evidenza",
 			"slotGrid": "Scheda griglia",
-			"slotDetail": "Banner pagina articolo"
+			"slotDetail": "Banner pagina articolo",
+			"saveBtn": "Salva preferenze",
+			"saved": "Preferenze salvate"
 		},
 		"form": {
 			"title": "Nome visualizzato",

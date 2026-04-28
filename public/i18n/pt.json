@@ -733,7 +733,9 @@
 			"slotSidebar": "Banner lateral",
 			"slotFeatured": "Artista em destaque",
 			"slotGrid": "Cartão de grelha",
-			"slotDetail": "Banner da página de item"
+			"slotDetail": "Banner da página de item",
+			"saveBtn": "Salvar preferências",
+			"saved": "Preferências salvas"
 		},
 		"form": {
 			"title": "Nome de exibição",

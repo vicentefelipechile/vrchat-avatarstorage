@@ -768,7 +768,9 @@
 			"slotSidebar": "Zijbalk banner",
 			"slotFeatured": "Uitgelichte artiest",
 			"slotGrid": "Rasterkaart",
-			"slotDetail": "Item-pagina banner"
+			"slotDetail": "Item-pagina banner",
+			"saveBtn": "Voorkeuren opslaan",
+			"saved": "Voorkeuren opgeslagen"
 		},
 		"form": {
 			"title": "Weergavenaam",

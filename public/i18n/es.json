@@ -847,7 +847,9 @@
 			"slotSidebar": "Banner lateral",
 			"slotFeatured": "Artista destacado",
 			"slotGrid": "Tarjeta de cuadrícula",
-			"slotDetail": "Banner de página de ítem"
+			"slotDetail": "Banner de página de ítem",
+			"saveBtn": "Guardar preferencias",
+			"saved": "Preferencias guardadas"
 		},
 		"form": {
 			"title": "Nombre de visualización",

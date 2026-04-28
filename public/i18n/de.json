@@ -765,7 +765,9 @@
 			"slotSidebar": "Seitenleisten-Banner",
 			"slotFeatured": "Vorgestellter Künstler",
 			"slotGrid": "Rasterkarte",
-			"slotDetail": "Item-Seiten-Banner"
+			"slotDetail": "Item-Seiten-Banner",
+			"saveBtn": "Einstellungen speichern",
+			"saved": "Einstellungen gespeichert"
 		},
 		"form": {
 			"title": "Anzeigename",

@@ -664,7 +664,9 @@
 			"slotSidebar": "侧边栏横幅",
 			"slotFeatured": "精选艺术家",
 			"slotGrid": "网格卡片",
-			"slotDetail": "物品页面横幅"
+			"slotDetail": "物品页面横幅",
+			"saveBtn": "保存偏好设置",
+			"saved": "偏好设置已保存"
 		},
 		"form": {
 			"title": "显示名称",

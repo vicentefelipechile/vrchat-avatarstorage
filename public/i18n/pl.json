@@ -769,7 +769,9 @@
 			"slotSidebar": "Baner boczny",
 			"slotFeatured": "Wyróżniony artysta",
 			"slotGrid": "Karta siatki",
-			"slotDetail": "Baner strony elementu"
+			"slotDetail": "Baner strony elementu",
+			"saveBtn": "Zapisz preferencje",
+			"saved": "Preferencje zapisane"
 		},
 		"form": {
 			"title": "Nazwa wyświetlana",

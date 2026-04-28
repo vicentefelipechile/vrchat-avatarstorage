@@ -768,7 +768,9 @@
 			"slotSidebar": "Kenar Çubuğu Afişi",
 			"slotFeatured": "Öne Çıkan Sanatçı",
 			"slotGrid": "Izgara Kartı",
-			"slotDetail": "Öğe Sayfası Afişi"
+			"slotDetail": "Öğe Sayfası Afişi",
+			"saveBtn": "Tercihleri kaydet",
+			"saved": "Tercihler kaydedildi"
 		},
 		"form": {
 			"title": "Görünen Ad",

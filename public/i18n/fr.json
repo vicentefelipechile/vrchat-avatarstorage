@@ -733,7 +733,9 @@
 			"slotSidebar": "Bannière latérale",
 			"slotFeatured": "Artiste en vedette",
 			"slotGrid": "Carte de grille",
-			"slotDetail": "Bannière de page d'article"
+			"slotDetail": "Bannière de page d'article",
+			"saveBtn": "Enregistrer les préférences",
+			"saved": "Préférences enregistrées"
 		},
 		"form": {
 			"title": "Nom d\"affichage",

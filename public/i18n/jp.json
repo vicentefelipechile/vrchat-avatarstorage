@@ -664,7 +664,9 @@
 			"slotSidebar": "サイドバーバナー",
 			"slotFeatured": "注目アーティスト",
 			"slotGrid": "グリッドカード",
-			"slotDetail": "アイテムページバナー"
+			"slotDetail": "アイテムページバナー",
+			"saveBtn": "設定を保存",
+			"saved": "設定を保存しました"
 		},
 		"form": {
 			"title": "表示名",
