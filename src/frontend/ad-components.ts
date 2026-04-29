@@ -75,7 +75,7 @@ export async function fetchAdsForSlot(slot: string): Promise<AdPublic[]> {
 	try {
 		// persistent:true writes to localStorage so getCachedAdsForSlot can read it
 		// on the next page load / SPA navigation and skip the skeleton.
-		const data = await DataCache.fetch<{ ads: AdPublic[] }>(slotUrl(slot), { ttl: AD_TTL });
+		const data = await DataCache.fetch<{ ads: AdPublic[] }>(slotUrl(slot), { ttl: AD_TTL, persistent: true });
 		return data.ads;
 	} catch {
 		return [];

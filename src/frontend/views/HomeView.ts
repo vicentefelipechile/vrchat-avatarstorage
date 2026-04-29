@@ -6,8 +6,24 @@ import { DataCache } from '../cache';
 import { t } from '../i18n';
 import { stripMarkdown, TimeUnit } from '../utils';
 import type { RouteContext, Resource } from '../types';
-import { fetchAdsForSlot, getCachedAdsForSlot, renderSidebarBanner, renderFeaturedArtistCard, renderSidebarBannerSkeleton, renderFeaturedArtistCardSkeleton, injectAdOrFade, wireAdZoneEvents, trackVisibleAdImpressions, AdPublic } from '../ad-components';
-import { renderAdPrefsPanel, wireAdPrefsPanel, shouldShowAd } from '../ad-prefs';
+import {
+	fetchAdsForSlot,
+	getCachedAdsForSlot,
+	renderSidebarBanner,
+	renderFeaturedArtistCard,
+	renderSidebarBannerSkeleton,
+	renderFeaturedArtistCardSkeleton,
+	injectAdOrFade,
+	wireAdZoneEvents,
+	trackVisibleAdImpressions,
+	AdPublic
+} from '../ad-components';
+import {
+	renderAdPrefsPanel,
+	wireAdPrefsPanel,
+	shouldShowAd,
+	shouldShowSlot
+} from '../ad-prefs';
 
 // =========================================================================
 // Helpers
@@ -24,16 +40,15 @@ function resourceCard(res: Resource): string {
 	return `
 		<div class="card">
 			<a href="/item/${res.uuid}" data-link class="card-link">
-				${
-					res.thumbnail_key
-						? `<div class="card-image">
+				${res.thumbnail_key
+			? `<div class="card-image">
 						<img src="/api/download/${res.thumbnail_key}" alt="${title}" loading="lazy">
 						<span class="card-badge">${categoryLabel}</span>
 					</div>`
-						: `<div class="card-image card-image-placeholder">
+			: `<div class="card-image card-image-placeholder">
 						<span class="card-badge">${categoryLabel}</span>
 					</div>`
-				}
+		}
 			</a>
 			<div class="card-body">
 				<h3>${title}${res.title.length > 50 ? '...' : ''}</h3>
@@ -67,22 +82,35 @@ export async function homeView(_ctx: RouteContext): Promise<string> {
 		.map((cat) => `<a href="/${cat}" data-link class="category-btn">${t('cats.' + cat)}</a>`)
 		.join('');
 
-	// Use cached ad data if available to skip the skeleton entirely on repeat visits.
-	// For the featured slot, exclude the ad already shown in the sidebar to ensure variety.
-	const cachedSidebar = getCachedAdsForSlot('sidebar_left');
-	const cachedFeatured = getCachedAdsForSlot('featured_artist');
+	// Check user preferences first — if a slot is disabled, skip skeleton and fetch entirely
+	// to avoid a layout shift (skeleton appearing then immediately removed).
+	const sidebarEnabled = shouldShowSlot('sidebar_left');
+	const featuredEnabled = shouldShowSlot('featured_artist');
+
+	const cachedSidebar = sidebarEnabled ? getCachedAdsForSlot('sidebar_left') : null;
+	const cachedFeatured = featuredEnabled ? getCachedAdsForSlot('featured_artist') : null;
 
 	const sidebarAd: AdPublic | null = cachedSidebar !== null
 		? (cachedSidebar.find((a) => shouldShowAd('sidebar_left', a.service_type)) ?? null)
 		: null;
 	const sidebarExclude = sidebarAd ? [sidebarAd.uuid] : [];
 
-	const sidebarHtml = cachedSidebar !== null
-		? renderSidebarBanner(cachedSidebar)
-		: renderSidebarBannerSkeleton('home-sidebar-ad-placeholder');
-	const featuredHtml = cachedFeatured !== null
-		? renderFeaturedArtistCard(cachedFeatured, sidebarExclude)
-		: renderFeaturedArtistCardSkeleton('home-featured-ad-placeholder');
+	const featuredAd: AdPublic | null = cachedFeatured !== null
+		? (cachedFeatured.find((a) => shouldShowAd('featured_artist', a.service_type) && !sidebarExclude.includes(a.uuid)) ?? null)
+		: null;
+
+	// Only show skeleton when the slot is enabled AND we have no cached content to show.
+	// Empty string when disabled = no flex item created = no layout shift.
+	const sidebarHtml = !sidebarEnabled
+		? ''
+		: sidebarAd !== null
+			? renderSidebarBanner(cachedSidebar!)
+			: renderSidebarBannerSkeleton('home-sidebar-ad-placeholder');
+	const featuredHtml = !featuredEnabled
+		? ''
+		: featuredAd !== null
+			? renderFeaturedArtistCard(cachedFeatured!, sidebarExclude)
+			: renderFeaturedArtistCardSkeleton('home-featured-ad-placeholder');
 
 	const mainContent = `
 		<section class="hero-section">
@@ -93,11 +121,10 @@ export async function homeView(_ctx: RouteContext): Promise<string> {
 		${featuredHtml}
 		<section class="latest-section">
 			<h2>${t('home.latest')}</h2>
-			${
-				resources.length === 0
-					? `<p class="empty-message">${t('common.noResourcesFound')}</p>`
-					: `<div class="grid">${resources.map(resourceCard).join('')}</div>`
-			}
+			${resources.length === 0
+			? `<p class="empty-message">${t('common.noResourcesFound')}</p>`
+			: `<div class="grid">${resources.map(resourceCard).join('')}</div>`
+		}
 		</section>`;
 
 	return `

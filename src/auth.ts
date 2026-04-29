@@ -95,9 +95,9 @@ export async function getAuthUser(c: Context<{ Bindings: Env }>): Promise<AuthUs
 			if (denied) return null;
 		}
 
-		// 2. KV session cache
+		// 2. KV session cache — skip stale entries that predate the uuid field
 		const cachedUser = (await c.env.VRCSTORAGE_KV.get(`user:${username}`, 'json')) as AuthUser | null;
-		if (cachedUser) {
+		if (cachedUser?.uuid) {
 			return cachedUser;
 		}
 
