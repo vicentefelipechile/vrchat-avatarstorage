@@ -140,7 +140,7 @@ export function renderAdPrefsPanel(): string {
 		(s) => `
 		<div class="ad-prefs-row">
 			<label for="prefs-slot-${s.id}">${t(s.labelKey)}</label>
-			<input type="checkbox" id="prefs-slot-${s.id}" data-prefs-slot="${s.id}"
+			<input type="checkbox" id="prefs-slot-${s.id}" data-prefs-slot="${s.id}" class="clear-form"
 				${!prefs.disabled_slots.includes(s.id) ? 'checked' : ''}>
 		</div>`,
 	).join('');
@@ -149,7 +149,7 @@ export function renderAdPrefsPanel(): string {
 		(st) => `
 		<div class="ad-prefs-row">
 			<label for="prefs-type-${st.id}">${t(st.labelKey)}</label>
-			<input type="checkbox" id="prefs-type-${st.id}" data-prefs-type="${st.id}"
+			<input type="checkbox" id="prefs-type-${st.id}" data-prefs-type="${st.id}" class="clear-form"
 				${!prefs.blocked_types.includes(st.id) ? 'checked' : ''}>
 		</div>`,
 	).join('');
@@ -163,7 +163,7 @@ export function renderAdPrefsPanel(): string {
 		<div class="ad-prefs-section">
 			<div class="ad-prefs-row">
 				<label for="prefs-show-ads"><strong>${t('community.prefs.showAds')}</strong></label>
-				<input type="checkbox" id="prefs-show-ads" ${prefs.show_ads ? 'checked' : ''}>
+				<input type="checkbox" id="prefs-show-ads" class="clear-form" ${prefs.show_ads ? 'checked' : ''}>
 			</div>
 		</div>
 

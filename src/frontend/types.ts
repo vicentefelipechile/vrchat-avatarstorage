@@ -49,15 +49,15 @@ export interface Route {
 // =========================================================================
 
 export interface ResourceLink {
+	uuid?: string;
 	link_url: string;
-	link_title?: string;
-	link_type: 'download' | 'backup';
+	link_title?: string | null;
+	link_type: 'download' | 'demo' | 'documentation' | 'general';
 	display_order?: number;
-	file_size?: number;
-	version?: string;
 }
 
 export interface MediaFile {
+	uuid?: string;
 	r2_key: string;
 	media_type: 'image' | 'video' | 'file';
 }

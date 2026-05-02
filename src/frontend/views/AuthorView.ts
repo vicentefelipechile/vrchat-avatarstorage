@@ -74,7 +74,7 @@ function avatarMiniCard(item: AuthorProfileResponse['avatars'][number]): string 
 		<div class="card-body">
 			<h3>${title}${item.title.length > 50 ? '…' : ''}</h3>
 			<div class="card-meta">
-				<span>${new Date(item.created_at).toLocaleDateString()}</span>
+				<span>${new Date(item.created_at * 1000).toLocaleDateString()}</span>
 				<div class="card-stats"><span>📥 ${item.download_count}</span></div>
 			</div>
 			<div class="card-footer">

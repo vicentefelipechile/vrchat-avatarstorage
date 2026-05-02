@@ -47,7 +47,7 @@ function commentCard(c: BlogComment): string {
 			<div class="comment-header">
 				${c.author_avatar ? `<img src="${c.author_avatar}" class="comment-avatar" alt="">` : '<span class="comment-avatar-placeholder">👤</span>'}
 				<strong class="comment-author">${esc(c.author)}</strong>
-				<span class="comment-date">${new Date(c.timestamp).toLocaleDateString()}</span>
+				<span class="comment-date">${new Date(c.timestamp * 1000).toLocaleDateString()}</span>
 				${canDelete ? `<button class="btn-icon delete-comment-btn" data-uuid="${c.uuid}" title="${t('admin.delete')}">🗑️</button>` : ''}
 			</div>
 			<p class="comment-text">${esc(c.text)}</p>
@@ -100,7 +100,7 @@ export async function blogPostView(ctx: RouteContext): Promise<string> {
 
 	document.title = `VRCStorage — ${post.title}`;
 
-	const date = new Date(post.created_at).toLocaleDateString();
+	const date = new Date(post.created_at * 1000).toLocaleDateString();
 	const authorName = post.author_display === 'team' ? t('blog.team') : (post.author_username ?? '');
 	const { isAdmin } = window.appState;
 
@@ -117,11 +117,11 @@ export async function blogPostView(ctx: RouteContext): Promise<string> {
 
 	const commentFormHtml = window.appState.isLoggedIn
 		? commentEditorHtml({
-				formId: 'blog-comment-form',
-				textareaId: 'blog-comment-text',
-				turnstileId: 'blog-turnstile-container',
-				placeholder: t('blog.commentPlaceholder'),
-			})
+			formId: 'blog-comment-form',
+			textareaId: 'blog-comment-text',
+			turnstileId: 'blog-turnstile-container',
+			placeholder: t('blog.commentPlaceholder'),
+		})
 		: `<p class="login-prompt"><a href="/login" data-link>${t('blog.loginToComment')}</a></p>`;
 
 	return `

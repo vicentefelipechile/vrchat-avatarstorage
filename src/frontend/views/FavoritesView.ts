@@ -36,7 +36,7 @@ function favoriteCard(fav: Favorite): string {
 	const description = stripMarkdown(fav.description ?? '').substring(0, 80);
 	const cleanDescription = description.split('--- Avatar Details')[0];
 	const categoryLabel = t('cats.' + fav.category) || fav.category;
-	const date = new Date(fav.created_at).toLocaleDateString();
+	const date = new Date(fav.created_at * 1000).toLocaleDateString();
 	const downloads = fav.download_count || 0;
 
 	return `

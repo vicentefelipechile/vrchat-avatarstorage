@@ -102,7 +102,7 @@ blog.get('/', async (c) => {
 			c.env.DB.prepare(
 				`SELECT
 					bp.*,
-					bp.created_at * 1000 as created_at,
+					bp.created_at,
 					u.username as author_username,
 					u.avatar_url as author_avatar,
 					m.r2_key as cover_image_key
@@ -150,7 +150,7 @@ blog.get('/:uuid', async (c) => {
 		const post = await c.env.DB.prepare(
 			`SELECT
 				bp.*,
-				bp.created_at * 1000 as created_at,
+				bp.created_at,
 				u.username as author_username,
 				u.avatar_url as author_avatar,
 				m.r2_key as cover_image_key

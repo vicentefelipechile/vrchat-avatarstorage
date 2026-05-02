@@ -108,7 +108,7 @@ clothes.get('/', async (c) => {
 				r.uuid,
 				r.title,
 				r.download_count,
-				r.created_at * 1000 AS created_at,
+				r.created_at,
 				m.r2_key as thumbnail_key,
 				cm.gender_fit,
 				cm.clothing_type,

@@ -396,7 +396,7 @@ export async function itemView(ctx: RouteContext): Promise<string> {
 
 	const { user, isAdmin } = window.appState;
 	const category = res.category ? t('cats.' + res.category) || res.category : t('common.unknown');
-	const date = new Date(res.created_at).toLocaleString();
+	const date = new Date(res.created_at * 1000).toLocaleString();
 	const { html: galleryHtml, images: lightboxImages } = buildGallery(res);
 	const isOwner = user && res.author && user.username === res.author.username;
 	const canEdit = isAdmin || (isOwner && res.is_active === 0);

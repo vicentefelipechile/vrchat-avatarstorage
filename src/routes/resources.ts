@@ -12,7 +12,7 @@ import { Hono } from 'hono';
 import { z } from 'zod';
 import { getAuthUser } from '../auth';
 import { Resource, ResourceCategory, RESOURCE_CATEGORIES, User, Media, ResourceLink, ResourceHistory, Tag } from '../types';
-import { ResourceSchema, LinkSchema } from '../validators';
+import { ResourceSchema, LinkSchema, LinkUpdateSchema } from '../validators';
 import { verifyTurnstile } from '../helpers/turnstile';
 import { QueryBuilder } from '../helpers/query-constructor';
 
@@ -44,7 +44,7 @@ resources.get('/latest', async (c) => {
 			'r.title',
 			'r.description',
 			'r.thumbnail_uuid',
-			'r.created_at * 1000 as created_at',
+			'r.created_at',
 			'r.download_count',
 			'm.r2_key as thumbnail_key',
 		])
@@ -115,7 +115,7 @@ resources.get('/', async (c) => {
 				'r.category',
 				'r.thumbnail_uuid',
 				'r.download_count',
-				'r.created_at * 1000 as created_at',
+				'r.created_at',
 				'm.r2_key AS thumbnail_key',
 			])
 			.join('INNER JOIN media m ON r.thumbnail_uuid = m.uuid')
@@ -172,8 +172,8 @@ resources.get('/:uuid', async (c) => {
             r.category,
             r.download_count,
             r.is_active,
-            r.created_at * 1000 AS created_at,
-            r.updated_at * 1000 AS updated_at,
+            r.created_at,
+            r.updated_at,
             tm.r2_key         	AS thumbnail_key,
             rm_ref.r2_key     	AS reference_image_key,
             -- Avatar metadata
@@ -481,8 +481,6 @@ resources.put('/:uuid', async (c) => {
 	// Validate and sanitize all user-supplied fields with Zod before touching the DB
 	const ResourceUpdateSchema = ResourceSchema.partial().omit({
 		token: true,
-		thumbnail_uuid: true,
-		reference_image_uuid: true,
 		links: true,
 		media_files: true,
 	});
@@ -589,6 +587,40 @@ resources.put('/:uuid', async (c) => {
 			}
 		}
 
+		// 5. Update Thumbnail (if provided)
+		if (parsed.data.thumbnail_uuid !== undefined) {
+			operations.push(
+				c.env.DB.prepare('UPDATE resources SET thumbnail_uuid = ? WHERE uuid = ?').bind(parsed.data.thumbnail_uuid, uuid),
+			);
+		}
+
+		// 6. Update Reference Image (if provided — null clears it)
+		if (parsed.data.reference_image_uuid !== undefined) {
+			operations.push(
+				c.env.DB.prepare('UPDATE resources SET reference_image_uuid = ? WHERE uuid = ?').bind(
+					parsed.data.reference_image_uuid ?? null,
+					uuid,
+				),
+			);
+		}
+
+		// 7. Gallery Media — full replacement if provided
+		if (body.gallery_media_uuids !== undefined) {
+			const gallerySchema = z.array(z.uuid());
+			const validatedGallery = gallerySchema.parse(body.gallery_media_uuids);
+			operations.push(c.env.DB.prepare('DELETE FROM resource_n_media WHERE resource_uuid = ?').bind(uuid));
+			for (const mediaUuid of validatedGallery) {
+				const relUuid = crypto.randomUUID();
+				operations.push(
+					c.env.DB.prepare('INSERT INTO resource_n_media (uuid, resource_uuid, media_uuid) VALUES (?, ?, ?)').bind(
+						relUuid,
+						uuid,
+						mediaUuid,
+					),
+				);
+			}
+		}
+
 		await c.env.DB.batch(operations);
 
 		// Invalidate Cache
@@ -628,6 +660,74 @@ resources.delete('/:uuid', async (c) => {
 		console.error('Delete resource error:', e);
 		return c.json({ error: 'Failed to delete resource' }, 500);
 	}
+});
+
+// =========================================================================================================
+// DELETE /api/resources/:uuid/links/:linkUuid
+// Deletes a single resource link. Owner or admin only.
+// =========================================================================================================
+
+resources.delete('/:uuid/links/:linkUuid', async (c) => {
+	const authUser = await getAuthUser(c);
+	if (!authUser) return c.json({ error: 'Unauthorized' }, 401);
+
+	const resourceUuid = c.req.param('uuid');
+	const linkUuid = c.req.param('linkUuid');
+
+	const resource = await c.env.DB.prepare('SELECT author_uuid FROM resources WHERE uuid = ?').bind(resourceUuid).first<{ author_uuid: string }>();
+	if (!resource) return c.json({ error: 'Resource not found' }, 404);
+
+	const currentUser = await c.env.DB.prepare('SELECT * FROM users WHERE username = ?').bind(authUser.username).first<User>();
+	if (!currentUser) return c.json({ error: 'User not found' }, 404);
+	if (authUser.uuid !== resource.author_uuid && currentUser.is_admin !== 1) return c.json({ error: 'Forbidden' }, 403);
+
+	const result = await c.env.DB.prepare('DELETE FROM resource_links WHERE uuid = ? AND resource_uuid = ?').bind(linkUuid, resourceUuid).run();
+	if (result.changes === 0) return c.json({ error: 'Link not found' }, 404);
+
+	await c.env.VRCSTORAGE_KV.delete(`resource:${resourceUuid}`);
+	return c.json({ ok: true });
+});
+
+// =========================================================================================================
+// PUT /api/resources/:uuid/links/:linkUuid
+// Updates a single resource link (title, url, type, order). Owner or admin only.
+// =========================================================================================================
+
+resources.put('/:uuid/links/:linkUuid', async (c) => {
+	const authUser = await getAuthUser(c);
+	if (!authUser) return c.json({ error: 'Unauthorized' }, 401);
+
+	const resourceUuid = c.req.param('uuid');
+	const linkUuid = c.req.param('linkUuid');
+
+	const resource = await c.env.DB.prepare('SELECT author_uuid FROM resources WHERE uuid = ?').bind(resourceUuid).first<{ author_uuid: string }>();
+	if (!resource) return c.json({ error: 'Resource not found' }, 404);
+
+	const currentUser = await c.env.DB.prepare('SELECT * FROM users WHERE username = ?').bind(authUser.username).first<User>();
+	if (!currentUser) return c.json({ error: 'User not found' }, 404);
+	if (authUser.uuid !== resource.author_uuid && currentUser.is_admin !== 1) return c.json({ error: 'Forbidden' }, 403);
+
+	const body = await c.req.json();
+	const result = LinkUpdateSchema.safeParse(body);
+	if (!result.success) return c.json({ error: 'Invalid input', details: result.error.issues }, 400);
+
+	const updates = result.data;
+	if (Object.keys(updates).length === 0) return c.json({ error: 'No fields to update' }, 400);
+
+	const setClauses: string[] = [];
+	const bindings: unknown[] = [];
+	for (const [key, value] of Object.entries(updates)) {
+		setClauses.push(`${key} = ?`);
+		bindings.push(value ?? null);
+	}
+	bindings.push(linkUuid, resourceUuid);
+
+	await c.env.DB.prepare(`UPDATE resource_links SET ${setClauses.join(', ')} WHERE uuid = ? AND resource_uuid = ?`)
+		.bind(...bindings)
+		.run();
+
+	await c.env.VRCSTORAGE_KV.delete(`resource:${resourceUuid}`);
+	return c.json({ ok: true });
 });
 
 // =========================================================================================================

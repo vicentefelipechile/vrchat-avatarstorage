@@ -67,6 +67,20 @@ export const LinkSchema = z.object({
 	display_order: z.number().int().optional(),
 });
 
+export const LinkUpdateSchema = z.object({
+	link_url: z
+		.string()
+		.optional()
+		.transform((val) => (val ? sanitizeHtml(val) : val)),
+	link_title: z
+		.string()
+		.optional()
+		.nullable()
+		.transform((val) => (val ? sanitizeHtml(val) : val)),
+	link_type: z.enum(['download', 'demo', 'documentation', 'general']).optional(),
+	display_order: z.number().int().optional(),
+});
+
 export const ResourceSchema = z.object({
 	title: z
 		.string()

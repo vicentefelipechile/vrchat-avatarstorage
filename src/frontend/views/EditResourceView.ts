@@ -1,15 +1,15 @@
 // =========================================================================
-// views/EditResourceView.ts — Edit resource metadata and add files
+// views/EditResourceView.ts — Edit resource metadata, images, and links
 // =========================================================================
 
-import type { RouteContext, Resource } from '../types';
+import type { RouteContext, Resource, ResourceLink, MediaFile } from '../types';
 import { htmlDecode, renderMarkdown, showToast } from '../utils';
 import { navigateTo } from '../router';
 import { DataCache } from '../cache';
 import { t } from '../i18n';
 
 // =========================================================================
-// Helpers
+// Helpers — Upload
 // =========================================================================
 
 const CHUNK_SIZE = 30 * 1024 * 1024;
@@ -84,7 +84,6 @@ async function uploadLargeFile(file: File, onProgress: (p: number) => void): Pro
 function buildAvatarMetaFields(): string {
 	return `<div id="avatar-meta-fields" style="display:none;background:var(--bg-card);padding:20px;margin-bottom:20px;border:1px solid var(--border-color)">
 		<h3 style="margin-top:0;margin-bottom:16px">${t('meta.avatar.titleAdmin')} <span style="color:#e05c5c;font-size:0.8em">${t('meta.adminOnly')}</span></h3>
-
 		<div class="upload-grid">
 			<div class="form-group">
 				<label><strong>${t('meta.avatar.gender')}</strong></label>
@@ -92,8 +91,6 @@ function buildAvatarMetaFields(): string {
 					<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="av-gender" value="male"> ${t('meta.avatar_gender.male')}</label>
 					<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="av-gender" value="female"> ${t('meta.avatar_gender.female')}</label>
 					<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="av-gender" value="both"> ${t('meta.avatar_gender.both')}</label>
-					<!-- <label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="hidden" name="av-gender" value="androgynous" hide> ${t('meta.avatar_gender.androgynous')}</label> -->
-					<!-- <label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="hidden" name="av-gender" value="undefined"> ${t('meta.avatar_gender.undefined')}</label> -->
 				</div>
 			</div>
 			<div class="form-group">
@@ -107,7 +104,6 @@ function buildAvatarMetaFields(): string {
 				</div>
 			</div>
 		</div>
-
 		<div class="upload-grid">
 			<div class="form-group">
 				<label><strong>${t('meta.avatar.type')}</strong></label>
@@ -121,10 +117,6 @@ function buildAvatarMetaFields(): string {
 					<option value="semi-realistic">${t('meta.avatar_type.semiRealistic')}</option>
 					<option value="monster">${t('meta.avatar_type.monster')}</option>
 					<option value="fantasy">${t('meta.avatar_type.fantasy')}</option>
-					<!-- <option value="kemono">${t('meta.avatar_type.kemono')}</option> -->
-					<!-- <option value="mecha">${t('meta.avatar_type.mecha')}</option> -->
-					<!-- <option value="sci-fi">${t('meta.avatar_type.sciFi')}</option> -->
-					<!-- <option value="vtuber">${t('meta.avatar_type.vtuber')}</option> -->
 					<option value="other">${t('meta.avatar_type.other')}</option>
 				</select>
 			</div>
@@ -137,7 +129,6 @@ function buildAvatarMetaFields(): string {
 				</select>
 			</div>
 		</div>
-
 		<div class="upload-grid">
 			<div class="form-group">
 				<label><strong>${t('meta.sdk_version.title')}</strong></label>
@@ -153,7 +144,6 @@ function buildAvatarMetaFields(): string {
 				<div id="av-author-suggestions" style="position:absolute;z-index:100;background:var(--bg-card);border:1px solid var(--border-color);width:300px;display:none"></div>
 			</div>
 		</div>
-
 		<div class="upload-grid" style="margin-top:8px">
 			<div class="form-group">
 				<label><strong>${t('meta.avatar.extras')}</strong></label>
@@ -174,7 +164,6 @@ function buildAvatarMetaFields(): string {
 function buildAssetMetaFields(): string {
 	return `<div id="asset-meta-fields" style="display:none;background:var(--bg-card);padding:20px;margin-bottom:20px;border:1px solid var(--border-color)">
 		<h3 style="margin-top:0;margin-bottom:16px">${t('meta.asset.titleAdmin')} <span style="color:#e05c5c;font-size:0.8em">${t('meta.adminOnly')}</span></h3>
-
 		<div class="upload-grid">
 			<div class="form-group">
 				<label><strong>${t('meta.asset.type')}</strong></label>
@@ -204,7 +193,6 @@ function buildAssetMetaFields(): string {
 				</select>
 			</div>
 		</div>
-
 		<div class="upload-grid">
 			<div class="form-group">
 				<label><strong>${t('meta.sdk_version.title')}</strong></label>
@@ -221,7 +209,6 @@ function buildAssetMetaFields(): string {
 				</select>
 			</div>
 		</div>
-
 		<div class="form-group" style="margin-top:8px">
 			<label><strong>${t('meta.features.title')}</strong></label>
 			<div style="display:flex;gap:12px;margin-top:6px">
@@ -234,7 +221,6 @@ function buildAssetMetaFields(): string {
 function buildClothesMetaFields(): string {
 	return `<div id="clothes-meta-fields" style="display:none;background:var(--bg-card);padding:20px;margin-bottom:20px;border:1px solid var(--border-color)">
 		<h3 style="margin-top:0;margin-bottom:16px">${t('meta.clothes.titleAdmin')} <span style="color:#e05c5c;font-size:0.8em">${t('meta.adminOnly')}</span></h3>
-
 		<div class="upload-grid">
 			<div class="form-group">
 				<label><strong>${t('meta.clothes.gender')}</strong></label>
@@ -269,7 +255,6 @@ function buildClothesMetaFields(): string {
 				</select>
 			</div>
 		</div>
-
 		<div class="upload-grid">
 			<div class="form-group">
 				<label><strong>${t('meta.platform.title')}</strong></label>
@@ -288,7 +273,6 @@ function buildClothesMetaFields(): string {
 				</div>
 			</div>
 		</div>
-
 		<div id="clothes-base-fields" style="display:none;margin-top:12px">
 			<div class="form-group">
 				<label><strong>${t('meta.clothes.baseAvatar')}</strong> <small style="color:var(--text-muted)">${t('meta.clothes.baseAvatarHint')}</small></label>
@@ -300,11 +284,108 @@ function buildClothesMetaFields(): string {
 	</div>`;
 }
 
+// =========================================================================
+// Helpers — Image preview
+// =========================================================================
+
+function createImagePreview(src: string, mediaType: 'image' | 'video' | 'file', fileName?: string, isNew?: boolean, onRemove?: () => void): HTMLDivElement {
+	if (mediaType === 'file') {
+		console.warn('Image preview called with mediaType "file", which is not an image or video. This may indicate a bug.');
+	}
+
+	const wrap = document.createElement('div');
+	wrap.style.cssText = 'position:relative;display:inline-block;border:2px solid var(--border-color);padding:10px;margin:5px;background:var(--bg-card);vertical-align:top';
+
+	const media = mediaType === 'video'
+		? document.createElement('video')
+		: document.createElement('img');
+	media.setAttribute('src', src);
+	if (mediaType === 'video') {
+		(media as HTMLVideoElement).controls = false;
+	}
+	media.style.cssText = 'max-width:200px;max-height:200px;display:block';
+	wrap.appendChild(media);
+
+	if (fileName) {
+		const label = document.createElement('div');
+		label.style.cssText = 'margin-top:5px;font-size:12px;color:var(--text-muted);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
+		label.textContent = fileName;
+		wrap.appendChild(label);
+	}
+
+	if (onRemove) {
+		const del = document.createElement('button');
+		del.type = 'button';
+		del.textContent = '\u2715';
+		del.style.cssText = 'position:absolute;top:-8px;right:-8px;background:#dc3545;color:white;border:none;width:24px;height:24px;cursor:pointer;font-size:14px;line-height:1;z-index:10';
+		del.addEventListener('click', (e) => {
+			e.preventDefault();
+			onRemove();
+		});
+		wrap.appendChild(del);
+	}
+
+	return wrap;
+}
+
+// =========================================================================
+// Helpers — set select/radio/checkbox values
+// =========================================================================
+
+function setSelectValue(id: string, value: string | null | undefined): void {
+	if (!value) return;
+	const el = document.getElementById(id) as HTMLSelectElement | null;
+	if (el) el.value = value;
+}
+
+function setRadioValue(name: string, value: string | null | undefined): void {
+	if (!value) return;
+	const el = document.querySelector<HTMLInputElement>(`input[name="${name}"][value="${value}"]`);
+	if (el) el.checked = true;
+}
+
+function setCheckbox(id: string, value: number | boolean | null | undefined): void {
+	const el = document.getElementById(id) as HTMLInputElement | null;
+	if (el) el.checked = Boolean(value);
+}
+
+// =========================================================================
+// Link management helpers
+// =========================================================================
+
+function buildLinkRow(link: ResourceLink, index: number): string {
+	const linkUuid = link.uuid || '';
+	const title = link.link_title || '';
+	const url = link.link_url;
+	const isR2File = link.link_type === 'download' && url.startsWith('/api/download/');
+
+	return `<div class="link-row" data-link-uuid="${linkUuid}" data-r2-file="${isR2File ? '1' : '0'}" style="border:1px solid var(--border-color);padding:12px;margin-bottom:8px;background:var(--bg-card)">
+		<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+			<div style="flex:1;width:180px">
+				<label style="font-size:0.8em;color:var(--text-muted)">${t('edit.linkTitle')}</label>
+				<input type="text" class="link-title-input form-control" value="${htmlDecode(title)}" style="width:100%;${isR2File ? 'background-color:var(--bg-dropdown);' : ''}" ${isR2File ? 'readonly' : ''}>
+			</div>
+			<div style="flex:2;width:180px">
+				<label style="font-size:0.8em;color:var(--text-muted)">${t('edit.linkUrl')}</label>
+				<input type="text" class="link-url-input form-control" value="${htmlDecode(url)}" style="width:100%;${isR2File ? 'background-color:var(--bg-dropdown);' : ''}" ${isR2File ? 'readonly' : ''}>
+			</div>
+			<div style="display:flex;gap:6px;align-items:flex-end">
+				${isR2File ? '' : `<button type="button" class="btn-link-save btn btn-sm" style="font-family:inherit">${t('edit.linkSave')}</button>`}
+				<button type="button" class="btn-link-delete btn btn-sm btn-danger" style="font-family:inherit">${t('edit.linkDelete')}</button>
+			</div>
+		</div>
+	</div>`;
+}
+
+// =========================================================================
+// HTML
+// =========================================================================
+
 function editFormHtml(id: string): string {
 	return `
 		<div style="max-width:1200px;margin:0 auto">
 			<h1>${t('edit.title')}</h1>
-			<div id="loading-edit" class="skeleton-text">Loading…</div>
+			<div id="loading-edit" class="skeleton-text">Loading\u2026</div>
 
 			<form id="edit-form" style="display:none">
 				<div class="form-group">
@@ -338,15 +419,41 @@ function editFormHtml(id: string): string {
 				</div>
 
 				<div class="form-group" style="background:var(--bg-card);padding:15px;border:2px solid var(--border-color);margin-top:20px">
-					<h3 style="margin-top:0">${t('edit.addFileHeader')}</h3>
-					<p style="font-size:0.9em;color:var(--text-muted)">${t('edit.addFileDesc')}</p>
-					<label><strong>${t('upload.file')}</strong></label>
-					<input type="file" id="new-file" accept=".rar,.zip,.unitypackage,.blend">
-					<div id="new-file-info"></div>
-					<div id="upload-progress" style="display:none;margin-top:10px">
-						<progress id="upload-bar" value="0" max="100" style="width:100%"></progress>
-						<span id="upload-percent">0%</span>
-					</div>
+					<h3 style="margin-top:0">${t('edit.currentThumbnail')}</h3>
+					<div id="current-thumbnail"></div>
+					<label style="display:block;margin-top:12px"><strong>${t('edit.changeThumbnail')}</strong></label>
+					<input type="file" id="new-thumbnail" accept="image/png,image/jpg,image/jpeg,image/webp,image/gif,image/avif,video/mp4,video/webm">
+					<div id="thumbnail-preview" style="margin-top:10px"></div>
+					<small style="color:var(--text-muted)">${t('upload.imageVideo')}</small>
+				</div>
+
+				<div class="form-group" style="background:var(--bg-card);padding:15px;border:2px solid var(--border-color)">
+					<h3 style="margin-top:0">${t('edit.currentReference')}</h3>
+					<div id="current-reference"></div>
+					<label style="display:block;margin-top:12px"><strong>${t('edit.changeReference')}</strong></label>
+					<input type="file" id="new-reference" accept="image/png,image/jpg,image/jpeg,image/webp,image/gif,image/avif,video/mp4,video/webm">
+					<div id="reference-preview" style="margin-top:10px"></div>
+					<small style="color:var(--text-muted)">${t('upload.optional')}</small>
+				</div>
+
+				<div class="form-group" style="background:var(--bg-card);padding:15px;border:2px solid var(--border-color)">
+					<h3 style="margin-top:0">${t('edit.galleryTitle')}</h3>
+					<div id="current-gallery"></div>
+					<label style="display:block;margin-top:12px"><strong>${t('edit.galleryAdd')}</strong></label>
+					<input type="file" id="new-gallery-images" accept="image/png,image/jpg,image/jpeg,image/webp,image/gif,image/avif,video/mp4,video/webm" multiple>
+					<div id="gallery-preview" style="margin-top:10px"></div>
+					<small style="color:var(--text-muted)">${t('edit.galleryMax')}</small>
+				</div>
+
+				<div class="form-group" style="background:var(--bg-card);padding:15px;border:2px solid var(--border-color)">
+					<h3 style="margin-top:0">${t('edit.existingLinks')}</h3>
+					<div id="existing-links"></div>
+				</div>
+
+				<div class="form-group" style="background:var(--bg-card);padding:15px;border:2px solid var(--border-color)">
+					<h3 style="margin-top:0">${t('edit.backupLinksLabel')}</h3>
+					<textarea id="backup-links" rows="3" placeholder="https://example.com/backup1&#10;https://example.com/backup2" style="width:100%;font-family:monospace;resize:vertical"></textarea>
+					<small style="color:var(--text-muted)">${t('edit.backupLinksHint')}</small>
 				</div>
 
 				<div id="edit-error" style="color:red;margin:10px 0"></div>
@@ -360,33 +467,12 @@ function editFormHtml(id: string): string {
 }
 
 // =========================================================================
-// Helpers — set select/radio values
-// =========================================================================
-
-function setSelectValue(id: string, value: string | null | undefined): void {
-	if (!value) return;
-	const el = document.getElementById(id) as HTMLSelectElement | null;
-	if (el) el.value = value;
-}
-
-function setRadioValue(name: string, value: string | null | undefined): void {
-	if (!value) return;
-	const el = document.querySelector<HTMLInputElement>(`input[name="${name}"][value="${value}"]`);
-	if (el) el.checked = true;
-}
-
-function setCheckbox(id: string, value: number | boolean | null | undefined): void {
-	const el = document.getElementById(id) as HTMLInputElement | null;
-	if (el) el.checked = Boolean(value);
-}
-
-// =========================================================================
 // View
 // =========================================================================
 
 export async function editResourceView(ctx: RouteContext): Promise<string> {
 	const id = ctx.params.id;
-	document.title = `VRCStorage — ${t('edit.title')}`;
+	document.title = `VRCStorage \u2014 ${t('edit.title')}`;
 	return editFormHtml(id);
 }
 
@@ -401,30 +487,25 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 	const errorDiv = document.getElementById('edit-error')!;
 	const isAdmin = window.appState?.isAdmin ?? false;
 
-	// -----------------------------------------------------------------------
-	// Load resource
-	// -----------------------------------------------------------------------
-
 	let resource: Resource;
 	try {
 		resource = (await DataCache.fetch(`/api/resources/${id}`)) as Resource;
 		if (!resource) throw new Error('Not found');
-		document.title = `VRCStorage — Edit ${resource.title}`;
+		document.title = `VRCStorage \u2014 Edit ${resource.title}`;
 	} catch (e) {
 		loadingEl.innerHTML = `<p style="color:red">Error: ${(e as Error).message}</p>`;
 		return;
 	}
 
-	// Populate base fields
 	const decodedTitle = htmlDecode(resource.title);
 	const decodedDescription = htmlDecode(resource.description ?? '');
-	document.title = `VRCStorage — Edit ${decodedTitle}`;
+	document.title = `VRCStorage \u2014 Edit ${decodedTitle}`;
 	(document.getElementById('title') as HTMLInputElement).value = decodedTitle;
 	(document.getElementById('category') as HTMLSelectElement).value = resource.category;
 	(document.getElementById('description') as HTMLTextAreaElement).value = decodedDescription;
 
 	// -----------------------------------------------------------------------
-	// Category → meta block toggle + load existing meta (admin-only)
+	// Category meta block toggle + load existing meta (admin-only)
 	// -----------------------------------------------------------------------
 
 	const categorySelect = document.getElementById('category') as HTMLSelectElement;
@@ -434,7 +515,6 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 
 	function toggleMetaBlocks(): void {
 		const cat = categorySelect.value;
-		// Meta editing is admin-only
 		avatarMetaEl.style.display = isAdmin && cat === 'avatars' ? 'block' : 'none';
 		assetMetaEl.style.display = isAdmin && cat === 'assets' ? 'block' : 'none';
 		clothesMetaEl.style.display = isAdmin && cat === 'clothes' ? 'block' : 'none';
@@ -442,7 +522,6 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 	categorySelect.addEventListener('change', toggleMetaBlocks);
 	toggleMetaBlocks();
 
-	// Load and pre-populate existing meta fields (admin only)
 	if (isAdmin) {
 		const cat = resource.category;
 		const endpointMap: Record<string, string> = {
@@ -630,6 +709,270 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 	descEl.addEventListener('input', updatePreview);
 	updatePreview();
 
+	// -----------------------------------------------------------------------
+	// Render current thumbnail
+	// -----------------------------------------------------------------------
+
+	const currentThumbnailEl = document.getElementById('current-thumbnail')!;
+	if (resource.thumbnail_key) {
+		const thumbSrc = `/api/download/${resource.thumbnail_key}`;
+		currentThumbnailEl.appendChild(
+			createImagePreview(thumbSrc, 'image', t('upload.thumbnail')),
+		);
+	} else {
+		currentThumbnailEl.innerHTML = `<p style="color:var(--text-muted)">${t('edit.noThumbnail')}</p>`;
+	}
+
+	// -----------------------------------------------------------------------
+	// Render current reference image
+	// -----------------------------------------------------------------------
+
+	const currentReferenceEl = document.getElementById('current-reference')!;
+	if (resource.reference_image_key) {
+		const refSrc = `/api/download/${resource.reference_image_key}`;
+		currentReferenceEl.appendChild(
+			createImagePreview(refSrc, 'image', t('edit.currentReference')),
+		);
+	} else {
+		currentReferenceEl.innerHTML = `<p style="color:var(--text-muted)">${t('edit.noReference')}</p>`;
+	}
+
+	// -----------------------------------------------------------------------
+	// Render gallery images
+	// -----------------------------------------------------------------------
+
+	const currentGalleryEl = document.getElementById('current-gallery')!;
+	const existingMediaFiles: MediaFile[] = resource.mediaFiles || [];
+	const removedMediaUuids = new Set<string>();
+
+	function renderGallery(): void {
+		currentGalleryEl.innerHTML = '';
+		const visibleFiles = existingMediaFiles.filter((mf) => !removedMediaUuids.has(mf.uuid || ''));
+
+		if (visibleFiles.length === 0) {
+			currentGalleryEl.innerHTML = `<p style="color:var(--text-muted)">${t('edit.galleryEmpty')}</p>`;
+			return;
+		}
+
+		for (const mf of visibleFiles) {
+			const src = `/api/download/${mf.r2_key}`;
+			currentGalleryEl.appendChild(
+				createImagePreview(src, mf.media_type, undefined, false, () => {
+					removedMediaUuids.add(mf.uuid || '');
+					renderGallery();
+				}),
+			);
+		}
+	}
+	renderGallery();
+
+	// -----------------------------------------------------------------------
+	// Render existing links
+	// -----------------------------------------------------------------------
+
+	const existingLinksEl = document.getElementById('existing-links')!;
+	const allLinks: ResourceLink[] = resource.links || [];
+
+	function renderLinks(): void {
+		existingLinksEl.innerHTML = '';
+		if (allLinks.length === 0) {
+			existingLinksEl.innerHTML = `<p style="color:var(--text-muted)">${t('edit.noLinks')}</p>`;
+			return;
+		}
+
+		for (let i = 0; i < allLinks.length; i++) {
+			existingLinksEl.innerHTML += buildLinkRow(allLinks[i], i);
+		}
+
+		existingLinksEl.querySelectorAll<HTMLElement>('.link-row').forEach((row) => {
+			const linkUuid = row.dataset.linkUuid || '';
+			const saveBtn = row.querySelector<HTMLButtonElement>('.btn-link-save');
+			const deleteBtn = row.querySelector<HTMLButtonElement>('.btn-link-delete')!;
+			const titleInput = row.querySelector<HTMLInputElement>('.link-title-input')!;
+			const urlInput = row.querySelector<HTMLInputElement>('.link-url-input')!;
+
+			if (saveBtn) {
+				saveBtn.addEventListener('click', async () => {
+					saveBtn.disabled = true;
+					try {
+						const res = await fetch(`/api/resources/${id}/links/${linkUuid}`, {
+							method: 'PUT',
+							headers: { 'Content-Type': 'application/json' },
+							body: JSON.stringify({
+								link_title: titleInput.value || null,
+								link_url: urlInput.value,
+							}),
+						});
+						if (res.ok) {
+							showToast(t('edit.linkSaved'), 'success');
+							DataCache.clear(`/api/resources/${id}`);
+						} else {
+							const data = (await res.json()) as { error?: string };
+							showToast(data.error ?? t('edit.linkSaveError'), 'error');
+						}
+					} catch {
+						showToast(t('edit.linkSaveError'), 'error');
+					}
+					saveBtn.disabled = false;
+				});
+			}
+
+			deleteBtn.addEventListener('click', async () => {
+				if (!confirm(t('edit.confirmDeleteLink'))) return;
+				deleteBtn.disabled = true;
+				try {
+					const res = await fetch(`/api/resources/${id}/links/${linkUuid}`, { method: 'DELETE' });
+					if (res.ok) {
+						showToast(t('edit.linkDeleted'), 'success');
+						const idx = allLinks.findIndex((l) => l.uuid === linkUuid);
+						if (idx !== -1) allLinks.splice(idx, 1);
+						DataCache.clear(`/api/resources/${id}`);
+						renderLinks();
+					} else {
+						const data = (await res.json()) as { error?: string };
+						showToast(data.error ?? t('edit.linkDeleteError'), 'error');
+						deleteBtn.disabled = false;
+					}
+				} catch {
+					showToast(t('edit.linkDeleteError'), 'error');
+					deleteBtn.disabled = false;
+				}
+			});
+		});
+	}
+	renderLinks();
+
+	// -----------------------------------------------------------------------
+	// Thumbnail change preview
+	// -----------------------------------------------------------------------
+
+	const newThumbnailInput = document.getElementById('new-thumbnail') as HTMLInputElement;
+	const thumbnailPreviewEl = document.getElementById('thumbnail-preview')!;
+	let newThumbnailFile: File | null = null;
+
+	newThumbnailInput.addEventListener('change', () => {
+		thumbnailPreviewEl.innerHTML = '';
+		const file = newThumbnailInput.files?.[0];
+		if (!file) {
+			newThumbnailFile = null;
+			return;
+		}
+		newThumbnailFile = file;
+		const url = URL.createObjectURL(file);
+		const isVideo = file.type.startsWith('video/');
+		thumbnailPreviewEl.appendChild(
+			createImagePreview(url, isVideo ? 'video' : 'image', file.name, true, () => {
+				newThumbnailInput.value = '';
+				thumbnailPreviewEl.innerHTML = '';
+				newThumbnailFile = null;
+			}),
+		);
+	});
+
+	// -----------------------------------------------------------------------
+	// Reference image change preview
+	// -----------------------------------------------------------------------
+
+	const newReferenceInput = document.getElementById('new-reference') as HTMLInputElement;
+	const referencePreviewEl = document.getElementById('reference-preview')!;
+	let newReferenceFile: File | null = null;
+
+	newReferenceInput.addEventListener('change', () => {
+		referencePreviewEl.innerHTML = '';
+		const file = newReferenceInput.files?.[0];
+		if (!file) {
+			newReferenceFile = null;
+			return;
+		}
+		newReferenceFile = file;
+		const url = URL.createObjectURL(file);
+		const isVideo = file.type.startsWith('video/');
+		referencePreviewEl.appendChild(
+			createImagePreview(url, isVideo ? 'video' : 'image', file.name, true, () => {
+				newReferenceInput.value = '';
+				referencePreviewEl.innerHTML = '';
+				newReferenceFile = null;
+			}),
+		);
+	});
+
+	// -----------------------------------------------------------------------
+	// Gallery image add preview
+	// -----------------------------------------------------------------------
+
+	const newGalleryInput = document.getElementById('new-gallery-images') as HTMLInputElement;
+	const galleryPreviewEl = document.getElementById('gallery-preview')!;
+	const newGalleryFiles: File[] = [];
+
+	function countGalleryTotal(): number {
+		return existingMediaFiles.filter((mf) => !removedMediaUuids.has(mf.uuid || '')).length + newGalleryFiles.length;
+	}
+
+	function renderNewGalleryPreview(): void {
+		galleryPreviewEl.innerHTML = '';
+		for (let i = 0; i < newGalleryFiles.length; i++) {
+			const file = newGalleryFiles[i];
+			const url = URL.createObjectURL(file);
+			const isVideo = file.type.startsWith('video/');
+			galleryPreviewEl.appendChild(
+				createImagePreview(url, isVideo ? 'video' : 'image', file.name, true, () => {
+					newGalleryFiles.splice(i, 1);
+					renderNewGalleryPreview();
+				}),
+			);
+		}
+	}
+
+	newGalleryInput.addEventListener('change', () => {
+		const files = Array.from(newGalleryInput.files || []);
+		const currentCount = countGalleryTotal();
+		const limit = 8;
+
+		if (currentCount + files.length > limit) {
+			showToast(t('edit.galleryMax'), 'warning');
+			newGalleryInput.value = '';
+			return;
+		}
+
+		for (const file of files) {
+			if (newGalleryFiles.length + currentCount >= limit) break;
+			newGalleryFiles.push(file);
+		}
+		renderNewGalleryPreview();
+		newGalleryInput.value = '';
+	});
+
+	// -----------------------------------------------------------------------
+	// Upload progress bar (hidden by default)
+	// -----------------------------------------------------------------------
+
+	const progressEl = document.getElementById('upload-progress');
+	const progressContainer = document.createElement('div');
+	progressContainer.id = 'upload-progress';
+	progressContainer.style.cssText = 'display:none;margin-top:10px;padding:10px;background:var(--bg-card);border:1px solid var(--border-color)';
+	progressContainer.innerHTML = `<div id="progress-label" style="margin-bottom:5px;font-weight:bold"></div>
+		<progress id="progress-bar" value="0" max="100" style="width:100%"></progress>
+		<span id="progress-pct" style="font-size:0.85em;color:var(--text-muted)">0%</span>`;
+	form.appendChild(progressContainer);
+
+	function showProgress(label: string): void {
+		document.getElementById('upload-progress')!.style.display = 'block';
+		document.getElementById('progress-label')!.textContent = label;
+	}
+
+	function updateProgressBar(pct: number): void {
+		(document.getElementById('progress-bar') as HTMLProgressElement).value = pct;
+		document.getElementById('progress-pct')!.textContent = `${Math.round(pct)}%`;
+	}
+
+	function hideProgress(): void {
+		document.getElementById('upload-progress')!.style.display = 'none';
+	}
+
+	// -----------------------------------------------------------------------
+	// Show form
+	// -----------------------------------------------------------------------
+
 	loadingEl.style.display = 'none';
 	form.style.display = 'block';
 
@@ -650,54 +993,86 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 		errorDiv.textContent = '';
 
 		try {
-			const newFileInput = document.getElementById('new-file') as HTMLInputElement;
-			const newFile = newFileInput.files?.[0];
-			const uploadedFileLinks: object[] = [];
+			let newThumbnailUuid: string | undefined;
+			let newReferenceUuid: string | null | undefined;
+			const newGalleryUuids: string[] = [];
 
-			// Upload new file if selected (chunked for large files)
-			if (newFile) {
-				const progressEl = document.getElementById('upload-progress')!;
-				const barEl = document.getElementById('upload-bar') as HTMLProgressElement;
-				const pctEl = document.getElementById('upload-percent')!;
-				progressEl.style.display = 'block';
+			// Upload new thumbnail
+			if (newThumbnailFile) {
+				showProgress(t('edit.uploadingThumbnail'));
+				const fd = new FormData();
+				fd.append('file', newThumbnailFile);
+				fd.append('media_type', newThumbnailFile.type.startsWith('video/') ? 'video' : 'image');
+				const thumbData = await uploadWithProgress('/api/upload', fd, updateProgressBar);
+				newThumbnailUuid = thumbData.media_uuid;
+			}
 
-				const onProgress = (p: number) => {
-					barEl.value = p;
-					pctEl.textContent = `${Math.round(p)}%`;
-				};
+			// Upload new reference image
+			if (newReferenceFile) {
+				showProgress(t('edit.uploadingReference'));
+				const fd = new FormData();
+				fd.append('file', newReferenceFile);
+				fd.append('media_type', newReferenceFile.type.startsWith('video/') ? 'video' : 'image');
+				const refData = await uploadWithProgress('/api/upload', fd, updateProgressBar);
+				newReferenceUuid = refData.media_uuid;
+			}
 
-				let fileData: { r2_key: string; media_uuid: string };
-				if (newFile.size > CHUNK_SIZE) {
-					fileData = await uploadLargeFile(newFile, onProgress);
-				} else {
+			// Upload new gallery images
+			if (newGalleryFiles.length > 0) {
+				showProgress(t('edit.uploadingGallery'));
+				for (let i = 0; i < newGalleryFiles.length; i++) {
+					const file = newGalleryFiles[i];
 					const fd = new FormData();
-					fd.append('file', newFile);
-					fd.append('media_type', 'file');
-					fileData = await uploadWithProgress('/api/upload', fd, onProgress);
+					fd.append('file', file);
+					fd.append('media_type', file.type.startsWith('video/') ? 'video' : 'image');
+					updateProgressBar(0);
+					const data = await uploadWithProgress('/api/upload', fd, updateProgressBar);
+					newGalleryUuids.push(data.media_uuid);
 				}
+			}
 
-				uploadedFileLinks.push({
-					link_url: `/api/download/${fileData.r2_key}`,
-					link_title: newFile.name,
-					link_type: 'download',
-					display_order: 99,
-				});
+			hideProgress();
+
+			// Compute final gallery list
+			const keptMediaFiles = existingMediaFiles.filter((mf) => !removedMediaUuids.has(mf.uuid || ''));
+			const galleryMediaUuids: string[] | undefined =
+				newThumbnailFile || newReferenceFile !== undefined || newGalleryFiles.length > 0 || removedMediaUuids.size > 0
+					? [...keptMediaFiles.map((mf) => mf.uuid!).filter(Boolean), ...newGalleryUuids]
+					: undefined;
+
+			// Parse backup links from textarea
+			const backupText = (document.getElementById('backup-links') as HTMLTextAreaElement).value.trim();
+			const newLinks: object[] = [];
+			if (backupText) {
+				const lines = backupText.split('\n').map((l) => l.trim()).filter(Boolean);
+				for (const line of lines) {
+					newLinks.push({
+						link_url: line,
+						link_type: 'download',
+						display_order: 99,
+					});
+				}
 			}
 
 			const categoryVal = (document.getElementById('category') as HTMLSelectElement).value;
 			const description = descEl.value;
 			const title = (document.getElementById('title') as HTMLInputElement).value;
 
-			// 1. Update base resource fields
+			const resourceBody: Record<string, unknown> = {
+				title,
+				category: categoryVal,
+				description,
+			};
+
+			if (newThumbnailUuid) resourceBody.thumbnail_uuid = newThumbnailUuid;
+			if (newReferenceUuid !== undefined) resourceBody.reference_image_uuid = newReferenceUuid;
+			if (galleryMediaUuids !== undefined) resourceBody.gallery_media_uuids = galleryMediaUuids;
+			if (newLinks.length > 0) resourceBody.new_links = newLinks;
+
 			const resourceRes = await fetch(`/api/resources/${id}`, {
 				method: 'PUT',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					title,
-					category: categoryVal,
-					description,
-					new_links: uploadedFileLinks.length ? uploadedFileLinks : undefined,
-				}),
+				body: JSON.stringify(resourceBody),
 			});
 
 			if (!resourceRes.ok) {
@@ -705,7 +1080,7 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 				throw new Error(data.error ?? 'Update failed');
 			}
 
-			// 2. Update category meta (admin only)
+			// Update category meta (admin only)
 			if (isAdmin) {
 				const metaEndpointMap: Record<string, string> = {
 					avatars: `/api/avatars/${id}`,
@@ -785,7 +1160,6 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 						});
 						if (!metaRes.ok) {
 							const data = (await metaRes.json()) as { error?: string };
-							// Non-fatal: meta update failed but resource was saved
 							showToast(`Meta update: ${data.error ?? 'failed'}`, 'warning');
 						}
 					}
@@ -793,9 +1167,10 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 			}
 
 			DataCache.clear(`/api/resources/${id}`);
-			showToast(t('settings.save') + ' ✓', 'success');
+			showToast(t('settings.save') + ' \u2713', 'success');
 			navigateTo(`/item/${id}`);
 		} catch (err) {
+			hideProgress();
 			errorDiv.textContent = (err as Error).message;
 			showToast((err as Error).message, 'error');
 			restore();

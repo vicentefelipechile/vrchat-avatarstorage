@@ -126,7 +126,7 @@ function commentRow(c: WikiComment, canDelete: boolean): string {
 			</div>
 			<div class="wiki-comment-content">
 				<div class="wiki-comment-header">
-					<span>${c.author} <span class="wiki-comment-date">(${new Date(c.timestamp).toLocaleString()})</span></span>
+					<span>${c.author} <span class="wiki-comment-date">(${new Date(c.timestamp * 1000).toLocaleString()})</span></span>
 					${canDelete ? `<button class="btn delete-comment-btn btn-danger-sm" data-uuid="${c.uuid}">${t('admin.delete')}</button>` : ''}
 				</div>
 				<div class="markdown-body wiki-comment-body">${content}</div>

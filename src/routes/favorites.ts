@@ -45,13 +45,13 @@ favorites.get('/', async (c) => {
 			r.category,
 			r.thumbnail_uuid,
 			r.download_count,
-			r.created_at * 1000 AS created_at,
-			r.updated_at * 1000 AS updated_at,
+			r.created_at,
+			r.updated_at,
 			m.r2_key AS thumbnail_key,
 			u.username AS author_username,
 			u.avatar_url AS author_avatar,
 			uf.display_order,
-			uf.created_at * 1000 AS favorite_created_at
+			uf.created_at AS favorite_created_at
 		FROM user_favorites uf
 		JOIN resources r ON uf.resource_uuid = r.uuid
 		JOIN media m ON r.thumbnail_uuid = m.uuid

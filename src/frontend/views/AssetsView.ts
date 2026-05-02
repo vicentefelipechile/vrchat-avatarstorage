@@ -44,7 +44,7 @@ interface AssetListResponse {
 
 function assetCard(res: AssetResource): string {
 	const title = res.title.substring(0, 50);
-	const date = new Date(res.created_at).toLocaleDateString();
+	const date = new Date(res.created_at * 1000).toLocaleDateString();
 
 	const imgHtml = res.thumbnail_key
 		? `<div class="card-image"><img src="/api/download/${res.thumbnail_key}" alt="${title}" loading="lazy"><span class="card-badge">${res.meta.asset_type}</span></div>`

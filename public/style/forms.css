@@ -21,6 +21,14 @@ textarea {
 	font-family: inherit;
 	background-color: var(--bg-input);
 	color: var(--text-main);
+	width: 100%;
+}
+
+.clear-form {
+	padding: 0;
+	border: none;
+	background: none;
+	width: auto;
 }
 
 .form-input {

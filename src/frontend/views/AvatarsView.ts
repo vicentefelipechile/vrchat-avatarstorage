@@ -55,7 +55,7 @@ interface AvatarListResponse {
 
 function avatarCard(res: AvatarResource): string {
 	const title = res.title.substring(0, 50);
-	const date = new Date(res.created_at).toLocaleDateString();
+	const date = new Date(res.created_at * 1000).toLocaleDateString();
 	const authorDisplay = res.meta.author_name || res.meta.author_name_raw || '';
 	const authorHtml = res.meta.author_slug
 		? `<a href="/authors/${res.meta.author_slug}" data-link class="card-author-link">${authorDisplay}</a>`

@@ -180,7 +180,7 @@ function renderMetaDiff(snapshot: MetaEditSnapshot, current: MetaEditFields | nu
 // =========================================================================
 
 async function historyCard(entry: HistoryEntry, current: Resource, resourceUuid: string): Promise<string> {
-	const date = new Date(entry.created_at).toLocaleString();
+	const date = new Date(entry.created_at * 1000).toLocaleString();
 	const actorName = entry.actor?.username ?? 'Unknown';
 	const actorAvatar = entry.actor?.avatar_url ?? '';
 	const changeTypeLabel = t(`history.types.${entry.change_type}`) || entry.change_type;

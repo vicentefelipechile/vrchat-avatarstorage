@@ -32,6 +32,7 @@ import assetsRoutes from './routes/assets';
 import clothesRoutes from './routes/clothes';
 import authorsRoutes from './routes/authors';
 import adsRoutes from './routes/ads';
+import llmsRoute from './routes/llms';
 
 // =========================================================================================================
 // Variables
@@ -129,6 +130,12 @@ app.route('/api/assets', assetsRoutes);
 app.route('/api/clothes', clothesRoutes);
 app.route('/api/authors', authorsRoutes);
 app.route('/api/ads', adsRoutes);
+
+// =========================================================================================================
+// LLMs.txt — AI scraper context file (llmstxt.org spec)
+// =========================================================================================================
+
+app.route('/llms.txt', llmsRoute);
 
 // =========================================================================================================
 // SEO routes

@@ -33,7 +33,7 @@ function resourceCard(res: Resource): string {
 	const title = stripMarkdown(res.title).substring(0, 50);
 	const description = stripMarkdown(res.description || '').substring(0, 80);
 	const categoryLabel = t('cats.' + res.category) || res.category;
-	const date = new Date(res.created_at).toLocaleDateString();
+	const date = new Date(res.created_at * 1000).toLocaleDateString();
 	const downloads = res.download_count || 0;
 	const cleanDescription = description.split('--- Avatar Details')[0];
 
