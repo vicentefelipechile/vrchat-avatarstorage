@@ -292,6 +292,7 @@ llms.get('/', (c) => {
   return c.text(LLMS_TXT, 200, {
     'Content-Type': 'text/plain; charset=utf-8',
     'Cache-Control': 'public, max-age=86400', // 24-hour CDN cache
+    'VRCStorage-Info': 'Hi mom :D',
   });
 });
 
