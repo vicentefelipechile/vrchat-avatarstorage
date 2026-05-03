@@ -712,14 +712,186 @@ The repository contains a multi-language wiki in `public/wiki/`.
 - **Languages:** `cn`, `de`, `en`, `es`, `fr`, `it`, `jp`, `nl`, `pl`, `pt`, `ru`, `tr`.
 - **Drafting:** Always draft in Spanish first (if applicable) or verify content thoroughly.
 - **Routing:** The frontend (`WikiView.ts`) fetches `/wiki/{lang}/{topic}.md` based on `getCurrentLang()`. If the file does not exist, it **falls back to the English version**. If neither exists, an error message is shown. The view detects non-existent files by checking if Cloudflare returned the SPA shell (HTML) instead of Markdown.
-- **Formatting:**
-  - Use badges: `<span class="badge badge-blue">Logic</span>`.
-  - Use GitHub alerts: `> [!NOTE]`, `> [!TIP]`, etc.
-  - Internal links MUST use `/wiki?topic=slug` format.
-- **References:** Use a single `## References` section. Format: `* Author. (Date). Title. Site. URL`.
-- **Verification:** Prohibited to include unverified links. Verify URLs before adding them.
+- **Verification:** Prohibited to include unverified links. Verify all URLs before adding them.
 - **Translations:** Request user confirmation before translating to all supported languages.
 - **Article list (23 topics):** `home`, `faq`, `setup`, `poiyomi`, `vrcfury`, `modular-avatar`, `physbones`, `syncdances`, `vrcquesttools`, `gogoloco`, `gogoloco-nsfw`, `desktop-puppeteer`, `gesture-manager-emulator`, `action-menu`, `parameter`, `unityhub-error`, `nsfw-essentials`, `sps`, `inside-view`, `pcs`, `haptics`, `dps`, `justkisssfx`.
+
+#### Article Structure
+
+Every wiki article follows a strict top-to-bottom structure. Deviating from this order is not allowed.
+
+```markdown
+# Article Title
+
+<span class="badge ...">Category</span> [<span class="badge ...">Category</span> ...]
+
+## What is it?
+
+Short paragraph (2–4 sentences) explaining what the tool/concept is in plain language.
+No lists here — prose only.
+
+> [!NOTE] or > [!WARNING] (if immediately relevant at a glance)
+
+## What is it for?
+
+Bullet list of concrete use cases. Each item is a short, actionable phrase.
+
+## [Main content sections]
+
+The body of the article. Variable structure depending on topic type (see below).
+
+## References
+
+* Author. (Year). _Title_. Site Name. URL
+```
+
+**Rules:**
+- The `# Title` is always `H1`. All subsequent sections are `H2` (`##`). Subsections are `H3` (`###`) and `H4` (`####`). Never skip levels.
+- The badge line must come immediately after the `H1` title, before any other content.
+- `## What is it?` and `## What is it for?` are **mandatory** on every article.
+- `## References` is **mandatory** and always the last section.
+- Do not add a table of contents — `WikiView.ts` does not render one.
+
+#### Badge System
+
+Badges classify the article's role. Use one or more `<span>` tags on the same line, separated by a space:
+
+| Badge HTML | Meaning |
+|---|---|
+| `<span class="badge badge-blue">Logic</span>` | Explains a VRChat/Unity concept or system |
+| `<span class="badge badge-blue">DEPENDENCY</span>` | A tool/shader that must be installed (Poiyomi, PhysBones, etc.) |
+| `<span class="badge badge-blue">Optimization</span>` | Performance or memory optimization topic |
+| `<span class="badge">TOOL</span>` | A standalone utility or workflow tool (no color modifier = default gray) |
+
+Only use badge classes that already exist in `public/style/wiki.css`. Do not invent new badge colors.
+
+#### Callout Alerts
+
+Use GitHub-style alert blocks for contextual callouts. Supported types:
+
+| Syntax | Use for |
+|---|---|
+| `> [!NOTE]` | Neutral supplementary information |
+| `> [!TIP]` | Actionable advice or best practices |
+| `> [!WARNING]` | Common mistakes or potentially destructive actions |
+| `> [!CAUTION]` | Hard requirements that, if ignored, break things |
+| `> [!IMPORTANT]` | Information the reader must not skip |
+
+**Rules:**
+- Place alerts inline within the section they relate to, not grouped at the end.
+- Never use an alert as a replacement for a proper section — alerts are supplements, not structure.
+- Do not nest alerts.
+
+#### Tables
+
+Use Markdown tables for structured comparisons, settings references, and multi-column data. Follow this pattern:
+
+```markdown
+| Column A | Column B | Column C |
+| :------- | :------- | :------- |
+| Value    | Value    | Value    |
+```
+
+- Left-align all columns (`:-------`) unless the data is numeric, in which case right-align (`:------:`).
+- Bold the first column when it contains parameter or setting names (e.g., `| **Pull** | ... |`).
+- Keep cell text concise — one short sentence max per cell.
+
+#### Internal Links
+
+All links between wiki articles MUST use the SPA query format:
+
+```markdown
+[VRCFury](/wiki?topic=vrcfury)
+[Poiyomi](/wiki?topic=poiyomi)
+```
+
+Never use relative file paths (`../poiyomi.md`) or external URLs for internal wiki topics.
+
+#### References Section
+
+The `## References` section is always the last section of the article. Format each entry as:
+
+```markdown
+* LastName, F. (Year). _Title of the page_. Site Name. https://full-url
+```
+
+- Use `_italics_` for the title.
+- List one URL per reference entry. Do not combine multiple URLs in one bullet.
+- Only include sources that are actually cited or directly relevant to the article's content.
+- **Never include unverified or fabricated URLs.** If you cannot confirm a URL is live, omit it.
+
+#### Article Type Patterns
+
+Different topic types follow different body structures after the mandatory opening sections.
+
+**Dependency articles** (tools that must be installed — e.g., `poiyomi`, `physbones`):
+
+```markdown
+## What is it?
+## What is it for?
+## Where to get it?        ← download links (official site, GitHub, Patreon if applicable)
+## How to install?         ← step-by-step, numbered list, one method per H3 subsection
+## [Feature sections]      ← detailed breakdown of settings, components, or options
+## Common Errors           ← symptom → cause → fix, as H3 per error
+## References
+```
+
+**Tool articles** (workflow utilities — e.g., `modular-avatar`, `vrcfury`):
+
+```markdown
+## What is it?
+## What is it for?
+## Main features           ← comparison table or feature list
+## Where to get it?
+## How to install?
+## How to use it?          ← practical walkthroughs with numbered steps
+## Relationship with other tools  ← cross-references via internal links
+## References
+```
+
+**Concept/Logic articles** (VRChat systems — e.g., `parameter`, `gogoloco`):
+
+```markdown
+## What is it?             ← definition + purpose
+## [Core concept sections] ← tables, diagrams in prose, examples
+## Advanced Uses           ← edge cases, integrations with other systems
+## Limitations and Common Issues  ← numbered problem/consequence format
+## Optimization and Tricks ← practical techniques
+## Summary Table           ← quick-reference table at the end before References
+## References
+```
+
+**Setup/Guide articles** (step-by-step processes — e.g., `setup`):
+
+```markdown
+## [Intro note if needed]
+### Step 1: ...            ← H3 steps in sequence, each with a short title
+### Step 2: ...
+...
+## References
+```
+
+Setup articles may omit `## What is it for?` if the title makes the purpose self-evident, but must still include `## References`.
+
+#### Practical Examples
+
+When an article includes code-like configuration steps (Unity inspector values, Animator settings), format them as numbered lists with inline `code` for field names and values:
+
+```markdown
+1. Set **Root Transform** to the hair root bone.
+2. Set **Pull** to `0.3`–`0.5`.
+3. Set **Gravity Falloff** to `0.8` to reduce gravity at rest.
+```
+
+Use bold for UI label names and inline code for values and field identifiers.
+
+#### What NOT to do in wiki articles
+
+- **No HTML other than badges.** Do not use `<div>`, `<table>`, `<img>`, or any other HTML tag. The wiki renderer only supports Markdown + the badge `<span>` pattern.
+- **Do not translate tool names, Unity menu paths, code, or URLs.** These must remain in English across all language versions for discoverability (e.g., "Assets → Import Package → Custom Package..." stays as-is in every locale).
+- **Do not add a "See also" section.** Use inline internal links within the relevant paragraph or section instead.
+- **Do not use `H1` more than once.** The article title is the only `H1`.
+- **Do not write vague callouts.** Every `> [!TIP]` or `> [!WARNING]` must contain specific, actionable information — not generic advice like "be careful with this setting."
 
 ### Adding a New Language (Complete Checklist)
 
