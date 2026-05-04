@@ -20,7 +20,9 @@ import {
 	trackVisibleAdImpressions,
 	type AdPublic,
 } from './ad-components';
-import { renderAdPrefsPanel, wireAdPrefsPanel, shouldShowSlot, shouldShowAd } from './ad-prefs';
+import { renderAdPrefsPanel, wireAdPrefsPanel, shouldShowSlot, shouldShowAd, setShowAds } from './ad-prefs';
+import { showToast } from './utils';
+import { t } from './i18n';
 
 // =========================================================================
 // Exports de conveniencia — re-exportados para que los views no importen
@@ -214,6 +216,50 @@ export function mountDetailBannerSlot(options: MountDetailBannerOptions): void {
 }
 
 // =========================================================================
+// detectAdBlock
+// Detecta si el usuario tiene un bloqueador de anuncios activo (uBlock,
+// AdBlock, etc.) creando un elemento señuelo con clases y dimensiones
+// típicamente bloqueadas. Si el elemento es ocultado o eliminado, se
+// considera que hay un bloqueador activo.
+// Se ejecuta UNA VEZ por sesión (guardado en sessionStorage).
+// =========================================================================
+
+const ADBLOCK_SESSION_KEY = 'adblock_detected';
+
+function detectAdBlock(): Promise<boolean> {
+	return new Promise((resolve) => {
+		// If already checked this session, return cached result.
+		const cached = sessionStorage.getItem(ADBLOCK_SESSION_KEY);
+		if (cached !== null) {
+			resolve(cached === '1');
+			return;
+		}
+
+		const decoy = document.createElement('div');
+		// Class names and inline style chosen to match common adblock filter lists.
+		decoy.className = 'ad-slot banner-ad adsbox ad-unit pub_300x250';
+		decoy.style.cssText = 'width:1px;height:1px;position:absolute;top:-9999px;left:-9999px;pointer-events:none;';
+		decoy.setAttribute('aria-hidden', 'true');
+		document.body.appendChild(decoy);
+
+		// Give the blocker a tick to apply its rules.
+		requestAnimationFrame(() => {
+			const computed = window.getComputedStyle(decoy);
+			const blocked =
+				!document.body.contains(decoy) ||
+				computed.display === 'none' ||
+				computed.visibility === 'hidden' ||
+				computed.opacity === '0' ||
+				decoy.offsetHeight === 0;
+
+			decoy.remove();
+			sessionStorage.setItem(ADBLOCK_SESSION_KEY, blocked ? '1' : '0');
+			resolve(blocked);
+		});
+	});
+}
+
+// =========================================================================
 // initAdSystem
 // Inicializa el sistema de anuncios global: wires el panel de prefs y los
 // eventos de click delegation. Debe llamarse UNA VEZ por navegación.
@@ -222,4 +268,14 @@ export function mountDetailBannerSlot(options: MountDetailBannerOptions): void {
 export function initAdSystem(options: { reloadOnSave?: boolean } = {}): void {
 	wireAdPrefsPanel(options);
 	wireAdZoneEvents();
+
+	// Only run the adblock check on the very first call per session.
+	if (sessionStorage.getItem(ADBLOCK_SESSION_KEY) === null) {
+		detectAdBlock().then((blocked) => {
+			if (!blocked) return;
+			// Internally disable ads so slots no-op on future navigations.
+			setShowAds(false);
+			showToast(t('community.prefs.adblockDetected'), 'warning', 6000);
+		});
+	}
 }

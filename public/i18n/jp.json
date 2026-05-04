@@ -694,7 +694,8 @@
 			"slotGrid": "グリッドカード",
 			"slotDetail": "アイテムページバナー",
 			"saveBtn": "設定を保存",
-			"saved": "設定を保存しました"
+			"saved": "設定を保存しました",
+			"adblockDetected": "広告ブロッカーを検出しました。広告を無効にします"
 		},
 		"form": {
 			"title": "表示名",

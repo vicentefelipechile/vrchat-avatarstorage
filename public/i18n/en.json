@@ -796,7 +796,8 @@
 			"slotGrid": "Grid Card",
 			"slotDetail": "Item Page Banner",
 			"saveBtn": "Save preferences",
-			"saved": "Preferences saved"
+			"saved": "Preferences saved",
+			"adblockDetected": "Adblock detected, disabling ads"
 		},
 		"viewDetails": "View Details"
 	}

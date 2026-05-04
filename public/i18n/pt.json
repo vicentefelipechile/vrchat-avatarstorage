@@ -763,7 +763,8 @@
 			"slotGrid": "Cartão de grelha",
 			"slotDetail": "Banner da página de item",
 			"saveBtn": "Salvar preferências",
-			"saved": "Preferências salvas"
+			"saved": "Preferências salvas",
+			"adblockDetected": "Adblock detectado, desativando anúncios"
 		},
 		"form": {
 			"title": "Nome de exibição",

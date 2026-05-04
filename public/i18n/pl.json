@@ -799,7 +799,8 @@
 			"slotGrid": "Karta siatki",
 			"slotDetail": "Baner strony elementu",
 			"saveBtn": "Zapisz preferencje",
-			"saved": "Preferencje zapisane"
+			"saved": "Preferencje zapisane",
+			"adblockDetected": "Wykryto Adblock, wyłączanie reklam"
 		},
 		"form": {
 			"title": "Nazwa wyświetlana",

@@ -877,7 +877,8 @@
 			"slotGrid": "Tarjeta de cuadrícula",
 			"slotDetail": "Banner de página de ítem",
 			"saveBtn": "Guardar preferencias",
-			"saved": "Preferencias guardadas"
+			"saved": "Preferencias guardadas",
+			"adblockDetected": "Adblock detectado, desactivando anuncios"
 		},
 		"form": {
 			"title": "Nombre de visualización",

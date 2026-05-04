@@ -694,7 +694,8 @@
 			"slotGrid": "网格卡片",
 			"slotDetail": "物品页面横幅",
 			"saveBtn": "保存偏好设置",
-			"saved": "偏好设置已保存"
+			"saved": "偏好设置已保存",
+			"adblockDetected": "检测到广告拦截器，正在禁用广告"
 		},
 		"form": {
 			"title": "显示名称",

@@ -795,7 +795,8 @@
 			"slotGrid": "Rasterkarte",
 			"slotDetail": "Item-Seiten-Banner",
 			"saveBtn": "Einstellungen speichern",
-			"saved": "Einstellungen gespeichert"
+			"saved": "Einstellungen gespeichert",
+			"adblockDetected": "Adblock erkannt, Anzeigen werden deaktiviert"
 		},
 		"form": {
 			"title": "Anzeigename",
