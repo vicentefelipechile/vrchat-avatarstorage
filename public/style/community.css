@@ -12,6 +12,21 @@
 	display: block;
 }
 
+/* Home page layout — flex row that holds the optional sidebar + main content.
+   The sidebar (.ad-zone--sidebar) is injected as the first child by the orchestrator
+   only when there is an active ad. When absent, .home-main spans the full width
+   without any gap or residual space. */
+.home-layout {
+	display: flex;
+	gap: 20px;
+	align-items: flex-start;
+}
+
+.home-main {
+	flex: 1;
+	min-width: 0;
+}
+
 .ad-zone--sidebar {
 	width: 160px;
 	flex-shrink: 0;

@@ -6,24 +6,8 @@ import { DataCache } from '../cache';
 import { t } from '../i18n';
 import { stripMarkdown, TimeUnit } from '../utils';
 import type { RouteContext, Resource } from '../types';
-import {
-	fetchAdsForSlot,
-	getCachedAdsForSlot,
-	renderSidebarBanner,
-	renderFeaturedArtistCard,
-	renderSidebarBannerSkeleton,
-	renderFeaturedArtistCardSkeleton,
-	injectAdOrFade,
-	wireAdZoneEvents,
-	trackVisibleAdImpressions,
-	AdPublic
-} from '../ad-components';
-import {
-	renderAdPrefsPanel,
-	wireAdPrefsPanel,
-	shouldShowAd,
-	shouldShowSlot
-} from '../ad-prefs';
+import { renderAdPrefsPanel } from '../ad-prefs';
+import { initAdSystem, mountSidebarSlot, mountFeaturedSlot } from '../ad-orchestrator';
 
 // =========================================================================
 // Helpers
@@ -41,14 +25,14 @@ function resourceCard(res: Resource): string {
 		<div class="card">
 			<a href="/item/${res.uuid}" data-link class="card-link">
 				${res.thumbnail_key
-			? `<div class="card-image">
-						<img src="/api/download/${res.thumbnail_key}" alt="${title}" loading="lazy">
-						<span class="card-badge">${categoryLabel}</span>
-					</div>`
-			: `<div class="card-image card-image-placeholder">
-						<span class="card-badge">${categoryLabel}</span>
-					</div>`
-		}
+		? `<div class="card-image">
+					<img src="/api/download/${res.thumbnail_key}" alt="${title}" loading="lazy">
+					<span class="card-badge">${categoryLabel}</span>
+				</div>`
+		: `<div class="card-image card-image-placeholder">
+					<span class="card-badge">${categoryLabel}</span>
+				</div>`
+	}
 			</a>
 			<div class="card-body">
 				<h3>${title}${res.title.length > 50 ? '...' : ''}</h3>
@@ -75,42 +59,11 @@ export async function homeView(_ctx: RouteContext): Promise<string> {
 
 	const apiCategories = ['avatars', 'assets', 'clothes'];
 
-	// Fetch only resources — ads load asynchronously in homeAfter
 	const resources = (await DataCache.fetch('/api/resources/latest', { ttl: TimeUnit.Minute * 15 }).catch(() => [])) as Resource[];
 
 	const categoriesHtml = apiCategories
 		.map((cat) => `<a href="/${cat}" data-link class="category-btn">${t('cats.' + cat)}</a>`)
 		.join('');
-
-	// Check user preferences first — if a slot is disabled, skip skeleton and fetch entirely
-	// to avoid a layout shift (skeleton appearing then immediately removed).
-	const sidebarEnabled = shouldShowSlot('sidebar_left');
-	const featuredEnabled = shouldShowSlot('featured_artist');
-
-	const cachedSidebar = sidebarEnabled ? getCachedAdsForSlot('sidebar_left') : null;
-	const cachedFeatured = featuredEnabled ? getCachedAdsForSlot('featured_artist') : null;
-
-	const sidebarAd: AdPublic | null = cachedSidebar !== null
-		? (cachedSidebar.find((a) => shouldShowAd('sidebar_left', a.service_type)) ?? null)
-		: null;
-	const sidebarExclude = sidebarAd ? [sidebarAd.uuid] : [];
-
-	const featuredAd: AdPublic | null = cachedFeatured !== null
-		? (cachedFeatured.find((a) => shouldShowAd('featured_artist', a.service_type) && !sidebarExclude.includes(a.uuid)) ?? null)
-		: null;
-
-	// Only show skeleton when the slot is enabled AND we have no cached content to show.
-	// Empty string when disabled = no flex item created = no layout shift.
-	const sidebarHtml = !sidebarEnabled
-		? ''
-		: sidebarAd !== null
-			? renderSidebarBanner(cachedSidebar!)
-			: renderSidebarBannerSkeleton('home-sidebar-ad-placeholder');
-	const featuredHtml = !featuredEnabled
-		? ''
-		: featuredAd !== null
-			? renderFeaturedArtistCard(cachedFeatured!, sidebarExclude)
-			: renderFeaturedArtistCardSkeleton('home-featured-ad-placeholder');
 
 	const mainContent = `
 		<section class="hero-section">
@@ -118,20 +71,21 @@ export async function homeView(_ctx: RouteContext): Promise<string> {
 			<p>${t('home.browse')}</p>
 			<div class="category-nav">${categoriesHtml}</div>
 		</section>
-		${featuredHtml}
-		<section class="latest-section">
+		<section class="latest-section" id="home-latest-section">
 			<h2>${t('home.latest')}</h2>
 			${resources.length === 0
-			? `<p class="empty-message">${t('common.noResourcesFound')}</p>`
-			: `<div class="grid">${resources.map(resourceCard).join('')}</div>`
-		}
+		? `<p class="empty-message">${t('common.noResourcesFound')}</p>`
+		: `<div class="grid">${resources.map(resourceCard).join('')}</div>`
+	}
 		</section>`;
 
+	// El layout siempre tiene la misma estructura. El sidebar se inserta como
+	// primer hijo de #home-layout por el orchestrator solo si hay un ad disponible.
+	// Si no hay ad, el layout permanece sin sidebar y sin ningun hueco residual.
 	return `
 		${renderAdPrefsPanel()}
-		<div style="display:flex;gap:20px;align-items:flex-start">
-			${sidebarHtml}
-			<div style="flex:1;min-width:0">${mainContent}</div>
+		<div class="home-layout" id="home-layout">
+			<div class="home-main" id="home-main">${mainContent}</div>
 		</div>`;
 }
 
@@ -140,39 +94,18 @@ export async function homeView(_ctx: RouteContext): Promise<string> {
 // =========================================================================
 
 export function homeAfter(_ctx: RouteContext): void {
-	wireAdPrefsPanel();
-	wireAdZoneEvents();
+	initAdSystem();
 
-	const hasSidebarPlaceholder = !!document.getElementById('home-sidebar-ad-placeholder');
-	const hasFeaturedPlaceholder = !!document.getElementById('home-featured-ad-placeholder');
-
-	// Fetch both slots in parallel so we can exclude the sidebar ad from the featured slot.
-	if (hasSidebarPlaceholder || hasFeaturedPlaceholder) {
-		Promise.all([
-			hasSidebarPlaceholder ? fetchAdsForSlot('sidebar_left') : Promise.resolve([] as AdPublic[]),
-			hasFeaturedPlaceholder ? fetchAdsForSlot('featured_artist') : Promise.resolve([] as AdPublic[]),
-		]).then(([sidebarAds, featuredAds]) => {
-			// Inject sidebar first
-			if (hasSidebarPlaceholder) {
-				injectAdOrFade('home-sidebar-ad-placeholder', renderSidebarBanner(sidebarAds));
-			}
-
-			// For the featured slot, exclude whatever the sidebar is showing
-			if (hasFeaturedPlaceholder) {
-				const sidebarAd = sidebarAds.find((a) => shouldShowAd('sidebar_left', a.service_type));
-				const excludeUuids = sidebarAd ? [sidebarAd.uuid] : [];
-				const html = renderFeaturedArtistCard(featuredAds, excludeUuids);
-				const el = document.getElementById('home-featured-ad-placeholder');
-				if (el) {
-					if (html) {
-						el.outerHTML = html;
-					} else {
-						el.remove();
-					}
-				}
-			}
-
-			trackVisibleAdImpressions();
-		}).catch((err) => console.error('[ads] home fetch failed', err));
-	}
+	// Montar sidebar primero. Cuando resuelva (sync o async), montar el featured
+	// excluyendo el uuid que ya muestra el sidebar para evitar duplicados.
+	mountSidebarSlot({
+		containerId: 'home-layout',
+		mode: 'inline',
+		onMounted: (sidebarUuids) => {
+			mountFeaturedSlot({
+				refElementId: 'home-latest-section',
+				excludeUuids: sidebarUuids,
+			});
+		},
+	});
 }

@@ -183,6 +183,7 @@ src/
     admin.ts              # Admin-specific frontend logic
     ad-components.ts      # Community ad rendering components (banner, card, etc.)
     ad-prefs.ts           # User ad preferences (opt-out, category filtering)
+    ad-orchestrator.ts    # Unified ad loading orchestrator (mountSidebarSlot, mountFeaturedSlot, mountDetailBannerSlot)
     types.ts              # Frontend-only TypeScript types (RouteContext, ViewFn, etc.)
     views/                # Functional view modules (viewFn + optional afterFn)
       AdCreateView.ts      AdDetailView.ts    AdminView.ts
@@ -360,7 +361,52 @@ When adding a Markdown description field to a form (like in `AdCreateView` or `B
 
 ### Community Ads System
 
-The community ads system consists of two frontend modules and one backend route.
+The community ads system consists of three frontend modules and one backend route.
+
+#### Architecture: Orchestrator Pattern
+
+All ad loading follows a **zero-skeleton, zero-layout-shift** principle:
+
+- `viewFn` **never** touches ad state. The rendered HTML is always stable and complete.
+- `afterFn` calls the mount functions from `ad-orchestrator.ts` after the DOM is inserted.
+- Mount functions check user prefs, read the sync cache, and insert the ad surgically — or do nothing if no ad is available.
+- **No skeletons are used.** Skeleton renderers were removed because they caused layout shifts when the slot turned out to be empty (the skeleton reserved space that then disappeared).
+- **No `injectAdOrFade`.** That function has been removed along with the skeleton renderers.
+
+#### `src/frontend/ad-orchestrator.ts` — Unified loading orchestrator
+
+The single entry point for all ad lifecycle management in views. Key exports:
+
+- **`initAdSystem(options?)`** — call once per navigation in `afterFn`. Wires the prefs panel and global click-delegation events.
+- **`mountSidebarSlot(options)`** — mounts the `sidebar_left` slot.
+  - `mode: 'inline'` — prepends the ad as the first child of `containerId` (used in `HomeView` flex layout).
+  - `mode: 'fixed'` — appends a `position:fixed` element to `document.body` (used in category views).
+  - `onMounted(shownUuids)` — optional callback, fires after the slot resolves. Used by `HomeView` to pass the sidebar UUID to `mountFeaturedSlot` so it can avoid showing the same ad.
+  - **SPA safety:** always removes both `.ad-zone--sidebar-fixed` and `.ad-zone--sidebar` at the start, before checking prefs or inserting. This guarantees no residual ads survive SPA navigation regardless of which mode was active on the previous page.
+- **`mountFeaturedSlot(options)`** — mounts the `featured_artist` slot. Inserts before `refElementId`. Accepts `excludeUuids` to prevent showing the same ad already shown in the sidebar.
+- **`mountDetailBannerSlot(options)`** — mounts the `detail_banner` slot inside an existing zone `div` by `zoneId`. Safe for inline use — does not affect surrounding layout.
+- Re-exports `renderAdPrefsPanel` and `wireAdPrefsPanel` from `ad-prefs.ts` as a convenience so views only import from this module.
+
+**Calling pattern in every view that uses ads:**
+
+```typescript
+// In viewFn — no ad logic whatsoever:
+return `
+  ${renderAdPrefsPanel()}
+  <div class="home-layout" id="home-layout">
+    <div class="home-main" id="home-main">${mainContent}</div>
+  </div>`;
+
+// In afterFn — orchestrator handles everything:
+initAdSystem();
+mountSidebarSlot({
+  containerId: 'home-layout',
+  mode: 'inline',
+  onMounted: (sidebarUuids) => {
+    mountFeaturedSlot({ refElementId: 'home-latest-section', excludeUuids: sidebarUuids });
+  },
+});
+```
 
 #### `src/frontend/ad-prefs.ts` — User preferences (localStorage)
 
@@ -368,36 +414,30 @@ Stores and reads ad preferences with no server involvement. Key exports:
 
 - `getAdPrefs() / saveAdPrefs()` — read/write `ad_prefs` key in localStorage.
 - `shouldShowSlot(slot)` / `shouldShowType(type)` / `shouldShowAd(slot, type)` — visibility checks used by renderers.
-- `renderAdPrefsPanel()` — returns the slide-in panel HTML string.
+- `renderAdPrefsPanel()` — returns the slide-in panel HTML string. Include once per view that shows ads.
 - `wireAdPrefsPanel(options?)` — attaches all event listeners to the panel. Accepts `WireAdPrefsPanelOptions`:
-  - `reloadOnSave?: boolean` (default `true`) — when `true`, calls `location.reload()` 800 ms after saving so ad slots re-evaluate the new prefs. Pass `{ reloadOnSave: false }` from `SettingsView` (which has its own inline save logic).
+  - `reloadOnSave?: boolean` (default `true`) — when `true`, calls `location.reload()` 800 ms after saving so ad slots re-evaluate the new prefs. Pass `{ reloadOnSave: false }` from `SettingsView`.
 - The master "Show all ads" checkbox disables/enables all slot and type checkboxes live via `syncSubCheckboxes()`.
 - `openAdPrefsPanel()` — opens the panel programmatically (called by gear-button click delegation in `wireAdZoneEvents`).
 
 #### `src/frontend/ad-components.ts` — Ad renderers
 
-Provides skeleton loaders and real ad HTML builders for every slot:
+Provides real ad HTML builders for every slot. **Skeleton renderers have been removed** — see Architecture section above.
 
 | Function | Slot |
 |---|---|
-| `renderSidebarBannerSkeleton(id)` | `sidebar_left` (HomeView) |
-| `renderSidebarBannerFixedSkeleton(id)` | `sidebar_left` (category views) |
-| `renderFeaturedArtistCardSkeleton(id)` | `featured_artist` |
-| `renderSidebarBanner(ads)` | `sidebar_left` |
-| `renderSidebarBannerFixed(ads)` | `sidebar_left` (fixed position) |
+| `renderSidebarBanner(ads)` | `sidebar_left` (inline, HomeView) |
+| `renderSidebarBannerFixed(ads)` | `sidebar_left` (fixed position, category views) |
 | `renderFeaturedArtistCard(ads, excludeUuids?)` | `featured_artist` |
-| `renderGridPromoCard(ad)` | `grid_card` |
 | `renderDetailBanner(ads)` | `detail_banner` |
 
-**`injectAdOrFade(placeholderId, html)`** — replaces a skeleton placeholder with real HTML, or calls `el.remove()` immediately if no ad is available. There is **no fade animation** — removal is synchronous.
-
-**`wireAdZoneEvents()`** — global click delegation (ad click tracking, gear button → open prefs panel). Call once per page session; guarded by `_adEventsWired`.
+**`wireAdZoneEvents()`** — global click delegation (ad click tracking, gear button → open prefs panel). Call once per page session via `initAdSystem()`; guarded by `_adEventsWired`.
 
 **`trackVisibleAdImpressions()`** — fires impression events for all `[data-ad-uuid]` elements on the page.
 
 #### Ad fetch & caching
 
-`fetchAdsForSlot(slot)` fetches from `/api/ads?slot=<slot>` with a 10-minute TTL via `DataCache`. `getCachedAdsForSlot(slot)` does a synchronous read from the two-layer cache (in-memory → localStorage) so views can skip the skeleton entirely on repeat visits.
+`fetchAdsForSlot(slot)` fetches from `/api/ads?slot=<slot>` with a 10-minute TTL via `DataCache`. `getCachedAdsForSlot(slot)` does a synchronous read from the two-layer cache (in-memory → localStorage). The orchestrator always tries the sync cache first; if it hits, the ad is inserted before the first paint with no async delay.
 
 #### `src/routes/ads.ts` — Ad selection algorithm
 
@@ -408,7 +448,7 @@ Provides skeleton loaders and real ad HTML builders for every slot:
 - Already-drawn ads are excluded from subsequent draws (no duplicates within a single response).
 - The number of ads returned is limited by `ad_slot_config.max_concurrent` for the slot.
 
-> Do **not** reintroduce deterministic daily seeds or `ORDER BY display_weight DESC` \u2014 those patterns caused the highest-weight ad to monopolize the slot permanently.
+> Do **not** reintroduce deterministic daily seeds or `ORDER BY display_weight DESC` — those patterns caused the highest-weight ad to monopolize the slot permanently.
 
 ### Frontend Utilities & Feedback
 

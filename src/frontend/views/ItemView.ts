@@ -11,8 +11,8 @@ import { commentEditorHtml, initCommentEditor } from '../comment-editor';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import type { RouteContext, Resource, Comment, ResourceLink, AvatarMeta, AssetMeta, ClothesMeta } from '../types';
-import { fetchAdsForSlot, renderDetailBanner, wireAdZoneEvents, trackVisibleAdImpressions } from '../ad-components';
-import { renderAdPrefsPanel, wireAdPrefsPanel } from '../ad-prefs';
+import { renderAdPrefsPanel } from '../ad-prefs';
+import { initAdSystem, mountDetailBannerSlot } from '../ad-orchestrator';
 
 // =========================================================================
 // Helpers
@@ -479,18 +479,8 @@ export async function itemAfter(ctx: RouteContext): Promise<void> {
 	const uuid = ctx.params.id;
 	const commentsContainer = document.getElementById('comments-container')!;
 
-	// Wire ad preferences panel
-	wireAdPrefsPanel();
-	wireAdZoneEvents();
-
-	// Fetch & inject detail banner (non-blocking, after comments load)
-	fetchAdsForSlot('detail_banner').then((ads) => {
-		const zone = document.getElementById('item-detail-ad-zone');
-		if (zone && ads.length) {
-			zone.innerHTML = renderDetailBanner(ads);
-			trackVisibleAdImpressions();
-		}
-	}).catch(() => {});
+	initAdSystem();
+	mountDetailBannerSlot({ zoneId: 'item-detail-ad-zone' });
 
 	// Recover lightbox images from data attribute
 	const box = document.querySelector<HTMLElement>('.details-box');

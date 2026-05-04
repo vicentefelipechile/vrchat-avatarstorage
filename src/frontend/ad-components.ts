@@ -82,64 +82,6 @@ export async function fetchAdsForSlot(slot: string): Promise<AdPublic[]> {
 	}
 }
 
-// =========================================================================
-// Skeleton renderers
-// Shown immediately while the async fetch is in flight.
-// Mirror the exact dimensions of each real ad slot.
-// =========================================================================
-
-export function renderSidebarBannerSkeleton(id: string): string {
-	return `
-	<div class="ad-zone ad-zone--sidebar" id="${id}">
-		<div class="ad-skeleton--sidebar">
-			<div class="sk-img ad-skeleton__block"></div>
-			<div class="sk-line ad-skeleton__block"></div>
-			<div class="sk-line-short ad-skeleton__block"></div>
-			<div class="sk-line-short ad-skeleton__block" style="width:45%"></div>
-		</div>
-	</div>`;
-}
-
-export function renderSidebarBannerFixedSkeleton(id: string): string {
-	return `
-	<div class="ad-zone ad-zone--sidebar-fixed" id="${id}">
-		<div class="ad-skeleton--sidebar">
-			<div class="sk-img ad-skeleton__block"></div>
-			<div class="sk-line ad-skeleton__block"></div>
-			<div class="sk-line-short ad-skeleton__block"></div>
-			<div class="sk-line-short ad-skeleton__block" style="width:45%"></div>
-		</div>
-	</div>`;
-}
-
-export function renderFeaturedArtistCardSkeleton(id: string): string {
-	return `
-	<div class="ad-zone ad-zone--featured ad-skeleton--featured" id="${id}">
-		<div class="sk-img ad-skeleton__block"></div>
-		<div class="sk-body">
-			<div class="sk-line ad-skeleton__block"></div>
-			<div class="sk-line-short ad-skeleton__block"></div>
-		</div>
-		<div class="sk-actions ad-skeleton__block"></div>
-	</div>`;
-}
-
-// =========================================================================
-// injectAdOrFade
-// Replaces a skeleton placeholder with real ad HTML, or removes it
-// immediately when no ad is available.
-// Usage: injectAdOrFade(id, realHtml)
-// =========================================================================
-
-export function injectAdOrFade(placeholderId: string, html: string): void {
-	const el = document.getElementById(placeholderId);
-	if (!el) return;
-	if (html) {
-		el.outerHTML = html;
-	} else {
-		el.remove();
-	}
-}
 
 // =========================================================================
 // CTA URL helper
@@ -269,33 +211,6 @@ export function renderFeaturedArtistCard(ads: AdPublic[], excludeUuids: string[]
 	</div>`;
 }
 
-// =========================================================================
-// Grid Promoted Card (shaped like a resource card)
-// =========================================================================
-
-export function renderGridPromoCard(ad: AdPublic): string {
-	const imgHtml = ad.card_r2_key
-		? `<img src="/api/download/${ad.card_r2_key}" alt="${ad.title}" loading="lazy">`
-		: null;
-
-	return `
-	<div class="ad-grid-card" data-ad-uuid="${ad.uuid}">
-		<a href="${adHref(ad)}" ${adTarget(ad)} class="ad-grid-card__image" data-ad-click="${ad.uuid}">
-			${imgHtml ? imgHtml : `<div class="ad-grid-card__image-placeholder"></div>`}
-			<div class="ad-grid-card__badge-wrap">
-				<span class="badge-community">${t('community.badge')}</span>
-			</div>
-		</a>
-		<div class="ad-grid-card__body">
-			<p class="ad-grid-card__title">${ad.title}</p>
-			<p class="ad-grid-card__tagline">${ad.tagline}</p>
-		</div>
-		<div class="ad-grid-card__footer">
-			<a href="${adHref(ad)}" ${adTarget(ad)} class="btn" data-ad-click="${ad.uuid}">${t('community.viewDetails')}</a>
-			${renderAdPrefsGearButton()}
-		</div>
-	</div>`;
-}
 
 // =========================================================================
 // Detail Page Banner (below comments)

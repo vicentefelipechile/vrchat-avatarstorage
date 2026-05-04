@@ -8,12 +8,11 @@
 
 import { t } from '../i18n';
 import { buildFilterPanel, initFilterPanel, FilterType } from '../filter-panel';
-import { navigateTo } from '../router';
 import type { RouteContext } from '../types';
 import { DataCache } from '../cache';
 import { TimeUnit } from '../utils';
-import { fetchAdsForSlot, getCachedAdsForSlot, renderSidebarBannerFixed, renderSidebarBannerFixedSkeleton, injectAdOrFade, wireAdZoneEvents, trackVisibleAdImpressions } from '../ad-components';
-import { renderAdPrefsPanel, wireAdPrefsPanel } from '../ad-prefs';
+import { renderAdPrefsPanel } from '../ad-prefs';
+import { initAdSystem, mountSidebarSlot } from '../ad-orchestrator';
 
 // =========================================================================
 // Types
@@ -225,18 +224,10 @@ async function buildResults(params: URLSearchParams): Promise<string> {
 export async function avatarsView(ctx: RouteContext): Promise<string> {
     document.title = t('filterPanel.titleAvatars');
 
-    // Only fetch results — ad loads asynchronously in avatarsAfter
     const resultsHtml = await buildResults(ctx.query);
-
-    // Use cached ad data if available to skip the skeleton entirely on repeat visits
-    const cachedSidebar = getCachedAdsForSlot('sidebar_left');
-    const sidebarHtml = cachedSidebar !== null
-        ? renderSidebarBannerFixed(cachedSidebar)
-        : renderSidebarBannerFixedSkeleton('avatars-sidebar-ad-placeholder');
 
 	return `
 		${renderAdPrefsPanel()}
-		${sidebarHtml}
 		<div class="category-layout">
 			${buildFilterPanel(AVATAR_FILTER_CONFIG)}
 			<div class="category-results" id="avatar-results">
@@ -253,16 +244,8 @@ export function avatarsAfter(ctx: RouteContext): void {
     const panel = document.getElementById('filter-panel');
     if (!panel) return;
 
-    wireAdPrefsPanel();
-    wireAdZoneEvents();
-
-    // Only fetch if the skeleton placeholder is in the DOM.
-    if (document.getElementById('avatars-sidebar-ad-placeholder')) {
-        fetchAdsForSlot('sidebar_left').then((ads) => {
-            injectAdOrFade('avatars-sidebar-ad-placeholder', renderSidebarBannerFixed(ads));
-            trackVisibleAdImpressions();
-        });
-    }
+    initAdSystem();
+    mountSidebarSlot({ mode: 'fixed' });
 
     // Función que actualiza SOLO los resultados, sin tocar el panel
     async function refreshResults(newParams: URLSearchParams) {
