@@ -19,6 +19,7 @@ interface BlogPost {
 	excerpt?: string;
 	cover_image_key?: string;
 	cover_image_uuid?: string;
+	cover_image_media_uuid?: string | null;
 	author_display: 'personal' | 'team';
 	slug?: string;
 }
@@ -80,7 +81,7 @@ function formHtml(editId: string | null, post: BlogPost | null): string {
 
 			<div class="form-group">
 				<label>${t('blog.coverImageLabel')}</label>
-				${p?.cover_image_key ? `<div class="current-cover"><img src="/api/download/${p.cover_image_key}" alt="cover" style="max-height:120px;border-radius:8px"></div>` : ''}
+				${(p?.cover_image_media_uuid || p?.cover_image_key) ? `<div class="current-cover"><img src="${p.cover_image_media_uuid ? `/media/${p.cover_image_media_uuid}/preview` : `/api/download/${p.cover_image_key}`}" alt="cover" style="max-height:120px;border-radius:8px"></div>` : ''}
 				<input type="file" id="blog-cover-file" accept="image/*" class="form-input">
 				<input type="hidden" id="blog-cover-uuid" value="${p?.cover_image_uuid ?? ''}">
 			</div>

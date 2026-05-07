@@ -36,6 +36,7 @@ interface AuthorProfileResponse {
 		uuid: string;
 		title: string;
 		thumbnail_key: string | null;
+		thumbnail_media_uuid: string | null;
 		download_count: number;
 		created_at: number;
 		avatar_gender: string;
@@ -65,8 +66,8 @@ function socialLink(url: string | null, label: string, iconName: string): string
 
 function avatarMiniCard(item: AuthorProfileResponse['avatars'][number]): string {
 	const title = item.title.substring(0, 50);
-	const imgHtml = item.thumbnail_key
-		? `<div class="card-image"><img src="/api/download/${item.thumbnail_key}" alt="${title}" loading="lazy"><span class="card-badge">${item.avatar_type}</span></div>`
+	const imgHtml = item.thumbnail_media_uuid
+		? `<div class="card-image"><img src="/media/${item.thumbnail_media_uuid}/thumbnail" alt="${title}" loading="lazy" decoding="async"><span class="card-badge">${item.avatar_type}</span></div>`
 		: `<div class="card-image card-image-placeholder"><span class="card-badge">${item.avatar_type}</span></div>`;
 
 	return `<div class="card">

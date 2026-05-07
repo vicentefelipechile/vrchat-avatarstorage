@@ -151,7 +151,7 @@ export async function adCreateView(ctx: RouteContext): Promise<string> {
 				<label class="form-label">${t('community.form.bannerImage')}</label>
 				<p style="font-size:0.78rem;color:var(--text-muted);margin:0 0 8px">${t('community.form.bannerImageHint')}</p>
 				<div id="ad-banner-preview" style="width:160px;height:196px;border:1px solid var(--border-color);background:var(--bg-body);overflow:hidden;display:flex;align-items:center;justify-content:center;margin-bottom:8px">
-					${existing?.banner_r2_key ? `<img src="/api/download/${existing.banner_r2_key}" style="width:100%;height:100%;object-fit:cover" alt="">` : `<span style="font-size:0.75rem;color:var(--text-muted)">${t('community.form.noImage')}</span>`}
+					${existing?.banner_media_uuid ? `<img src="/media/${existing.banner_media_uuid}/banner" style="width:100%;height:100%;object-fit:cover" alt="">` : `<span style="font-size:0.75rem;color:var(--text-muted)">${t('community.form.noImage')}</span>`}
 				</div>
 				<input type="file" id="ad-banner-file" accept="image/*" style="display:none">
 				<button type="button" class="btn" id="ad-banner-btn">${t('community.form.uploadBanner')}</button>
@@ -162,7 +162,7 @@ export async function adCreateView(ctx: RouteContext): Promise<string> {
 				<label class="form-label">${t('community.form.cardImage')}</label>
 				<p style="font-size:0.78rem;color:var(--text-muted);margin:0 0 8px">${t('community.form.cardImageHint')}</p>
 				<div id="ad-card-preview" style="width:200px;height:150px;border:1px solid var(--border-color);background:var(--bg-body);overflow:hidden;display:flex;align-items:center;justify-content:center;margin-bottom:8px">
-					${existing?.card_r2_key ? `<img src="/api/download/${existing.card_r2_key}" style="width:100%;height:100%;object-fit:cover" alt="">` : `<span style="font-size:0.75rem;color:var(--text-muted)">${t('community.form.noImage')}</span>`}
+					${existing?.card_media_uuid ? `<img src="/media/${existing.card_media_uuid}/banner" style="width:100%;height:100%;object-fit:cover" alt="">` : `<span style="font-size:0.75rem;color:var(--text-muted)">${t('community.form.noImage')}</span>`}
 				</div>
 				<input type="file" id="ad-card-file" accept="image/*" style="display:none">
 				<button type="button" class="btn" id="ad-card-btn">${t('community.form.uploadCard')}</button>
@@ -276,7 +276,7 @@ export async function adCreateAfter(ctx: RouteContext): Promise<void> {
 		dismiss();
 		if (result && bannerPreview) {
 			bannerUuidInput.value = result.uuid;
-			bannerPreview.innerHTML = `<img src="/api/download/${result.r2_key}" style="width:100%;height:100%;object-fit:cover" alt="">`;
+			bannerPreview.innerHTML = `<img src="/media/${result.uuid}/banner" style="width:100%;height:100%;object-fit:cover" alt="">`;
 		}
 	});
 
@@ -295,7 +295,7 @@ export async function adCreateAfter(ctx: RouteContext): Promise<void> {
 		dismiss();
 		if (result && cardPreview) {
 			cardUuidInput.value = result.uuid;
-			cardPreview.innerHTML = `<img src="/api/download/${result.r2_key}" style="width:100%;height:100%;object-fit:cover" alt="">`;
+			cardPreview.innerHTML = `<img src="/media/${result.uuid}/banner" style="width:100%;height:100%;object-fit:cover" alt="">`;
 		}
 	});
 

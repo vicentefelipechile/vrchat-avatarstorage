@@ -21,7 +21,9 @@ interface AdDetail {
 	destination_type: 'internal' | 'external';
 	external_url: string | null;
 	banner_r2_key: string | null;
+	banner_media_uuid: string | null;
 	card_r2_key: string | null;
+	card_media_uuid: string | null;
 	author_username: string;
 	internal_page_content: string | null;
 }
@@ -59,8 +61,8 @@ export async function adDetailView(ctx: RouteContext): Promise<string> {
 	const href = ad.destination_type === 'external' && ad.external_url ? ad.external_url : '#';
 	const target = ad.destination_type === 'external' ? 'target="_blank" rel="noopener noreferrer"' : '';
 
-	const bannerHtml = ad.banner_r2_key
-		? `<img class="community-page__banner" src="/api/download/${ad.banner_r2_key}" alt="${ad.title}" loading="lazy">`
+	const bannerHtml = ad.banner_media_uuid
+		? `<img class="community-page__banner" src="/media/${ad.banner_media_uuid}/banner" alt="${ad.title}" loading="lazy" decoding="async">`
 		: `<div class="community-page__banner-placeholder"></div>`;
 
 	// Render Markdown body using the existing marked library if available

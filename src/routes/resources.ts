@@ -47,8 +47,9 @@ resources.get('/latest', async (c) => {
 			'r.created_at',
 			'r.download_count',
 			'm.r2_key as thumbnail_key',
+			'm.uuid as thumbnail_media_uuid',
 		])
-		.join('INNER JOIN media m ON r.thumbnail_uuid = m.uuid')
+		.join('INNER JOIN image_media m ON r.thumbnail_uuid = m.uuid')
 		.join('LEFT JOIN users u ON r.author_uuid = u.uuid')
 		.where('r.is_active = 1')
 		.orderBy('r.created_at', 'DESC')
@@ -117,8 +118,9 @@ resources.get('/', async (c) => {
 				'r.download_count',
 				'r.created_at',
 				'm.r2_key AS thumbnail_key',
+				'm.uuid AS thumbnail_media_uuid',
 			])
-			.join('INNER JOIN media m ON r.thumbnail_uuid = m.uuid')
+			.join('INNER JOIN image_media m ON r.thumbnail_uuid = m.uuid')
 			.where('r.is_active = 1')
 			.whereIf(!!category && RESOURCE_CATEGORIES.includes(category as ResourceCategory), 'r.category = ?', category)
 			.tags(tagsList)
@@ -175,7 +177,9 @@ resources.get('/:uuid', async (c) => {
             r.created_at,
             r.updated_at,
             tm.r2_key         	AS thumbnail_key,
+            tm.uuid           	AS thumbnail_media_uuid,
             rm_ref.r2_key     	AS reference_image_key,
+            rm_ref.uuid       	AS reference_image_media_uuid,
             -- Avatar metadata
             am.gender            AS av_gender,
             am.avatar_size       AS av_avatar_size,
@@ -213,7 +217,7 @@ resources.get('/:uuid', async (c) => {
                     'r2_key',     m.r2_key,
                     'media_type', m.media_type
                 ))
-                FROM media m
+                FROM image_media m
                 JOIN resource_n_media rnm ON m.uuid = rnm.media_uuid
                 WHERE rnm.resource_uuid = r.uuid
             ), '[]') AS media_files_json,
@@ -237,8 +241,8 @@ resources.get('/:uuid', async (c) => {
             ), '[]') AS tags_json
         FROM resources r
         LEFT JOIN users  u      ON r.author_uuid          = u.uuid
-        LEFT JOIN media  tm     ON r.thumbnail_uuid        = tm.uuid
-        LEFT JOIN media  rm_ref ON r.reference_image_uuid  = rm_ref.uuid
+        LEFT JOIN image_media  tm     ON r.thumbnail_uuid        = tm.uuid
+        LEFT JOIN image_media  rm_ref ON r.reference_image_uuid  = rm_ref.uuid
         LEFT JOIN avatar_meta   am ON r.uuid = am.resource_uuid
         LEFT JOIN avatar_authors aa ON am.author_uuid = aa.uuid
         LEFT JOIN asset_meta   asm ON r.uuid = asm.resource_uuid
@@ -270,7 +274,9 @@ resources.get('/:uuid', async (c) => {
 		updated_at: row.updated_at,
 		// Gallery
 		thumbnail_key: row.thumbnail_key ?? null,
+		thumbnail_media_uuid: row.thumbnail_media_uuid ?? null,
 		reference_image_key: row.reference_image_key ?? null,
+		reference_image_media_uuid: row.reference_image_media_uuid ?? null,
 		// Category-specific metadata (null if not yet populated)
 		meta: (() => {
 			const cat = row.category as string;

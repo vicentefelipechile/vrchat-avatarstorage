@@ -12,7 +12,6 @@
 
 import { Hono } from 'hono';
 import { getAuthUser } from '../auth';
-import { Media } from '../types';
 
 // =========================================================================================================
 // Helpers
@@ -61,42 +60,53 @@ const downloads = new Hono<{ Bindings: Env }>();
 downloads.get('/:key', async (c) => {
 	const key = c.req.param('key');
 
-	const result = await c.env.DB.prepare('SELECT * FROM media WHERE r2_key = ?').bind(key).first<Media>();
-	if (!result) return c.json({ error: 'Not found' }, 404);
+	// Check image_media first; fall back to asset_files for binary downloads.
+	const imgRow = await c.env.DB.prepare('SELECT uuid, media_type, file_name, r2_bucket FROM image_media WHERE r2_key = ?')
+		.bind(key)
+		.first<{ uuid: string; media_type: string; file_name: string; r2_bucket: string }>();
 
-	const isMedia: boolean = result.media_type === 'image' || result.media_type === 'video';
+	const assetRow = imgRow
+		? null
+		: await c.env.DB.prepare('SELECT uuid, mime_type, file_name FROM asset_files WHERE r2_key = ?')
+			.bind(key)
+			.first<{ uuid: string; mime_type: string; file_name: string }>();
+
+	if (!imgRow && !assetRow) return c.json({ error: 'Not found' }, 404);
+
+	// Determine whether this is public media or a private binary asset
+	const isMedia: boolean = imgRow ? (imgRow.media_type === 'image' || imgRow.media_type === 'video') : false;
 
 	if (!isMedia) {
-		// Private files (archives) require authentication and need the original filename
-		// set in Content-Disposition, which only exists in D1, not in R2 metadata.
 		const user = await getAuthUser(c);
 		if (!user) return c.json({ error: 'Unauthorized' }, 401);
 	}
 
-	const object = await c.env.BUCKET.get(key);
+	// Route R2 read to the correct bucket
+	let object: R2ObjectBody | null;
+	if (imgRow) {
+		const bucket = imgRow.r2_bucket === 'media' ? c.env.MEDIA_BUCKET : c.env.BUCKET;
+		object = await bucket.get(key);
+	} else {
+		object = await c.env.BUCKET.get(key);
+	}
 	if (!object) return c.json({ error: 'Not found' }, 404);
 
-	const filename = result.file_name.replace(/"/g, '');
+	const filename = (imgRow?.file_name ?? assetRow!.file_name).replace(/"/g, '');
 
 	const headers = new Headers();
 	object.writeHttpMetadata(headers);
 	headers.set('ETag', object.httpEtag);
-	// Always enforce safe Content-Type to prevent R2-hosted HTML/SVG/JS execution
 	headers.set('Content-Type', safeContentType(headers.get('Content-Type')));
-	// Prevent MIME-type sniffing by the browser — must respect our Content-Type declaration
 	headers.set('X-Content-Type-Options', 'nosniff');
 
 	if (isMedia) {
-		// Public media: inline disposition, long-lived cache
 		headers.set('Content-Disposition', `inline; filename="${filename}"; filename*=UTF-8''${encodeURIComponent(filename)}`);
 		headers.set('Cache-Control', 'public, max-age=31536000, immutable');
 	} else {
-		// Private files: attachment disposition, no cache
 		headers.set('Content-Disposition', `attachment; filename="${filename}"; filename*=UTF-8''${encodeURIComponent(filename)}`);
 		headers.set('Cache-Control', 'private, no-store');
 
-		// Increment download_count on the parent resource after the response is sent.
-		// We resolve the resource via the resource_media join table using the media UUID.
+		const mediaUuid = imgRow?.uuid ?? assetRow!.uuid;
 		c.executionCtx.waitUntil(
 			c.env.DB.prepare(
 				`UPDATE resources
@@ -105,7 +115,7 @@ downloads.get('/:key', async (c) => {
 				      SELECT resource_uuid FROM resource_n_media WHERE media_uuid = ? LIMIT 1
 				  )`,
 			)
-				.bind(result.uuid)
+				.bind(mediaUuid)
 				.run(),
 		);
 	}

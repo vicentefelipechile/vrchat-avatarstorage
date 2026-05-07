@@ -105,10 +105,11 @@ blog.get('/', async (c) => {
 					bp.created_at,
 					u.username as author_username,
 					u.avatar_url as author_avatar,
-					m.r2_key as cover_image_key
+					m.r2_key as cover_image_key,
+					m.uuid as cover_image_media_uuid
 				FROM blog_posts bp
 				JOIN users u ON bp.author_uuid = u.uuid
-				LEFT JOIN media m ON bp.cover_image_uuid = m.uuid
+				LEFT JOIN image_media m ON bp.cover_image_uuid = m.uuid
 				ORDER BY bp.created_at DESC
 				LIMIT ? OFFSET ?`,
 			)
@@ -153,10 +154,11 @@ blog.get('/:uuid', async (c) => {
 				bp.created_at,
 				u.username as author_username,
 				u.avatar_url as author_avatar,
-				m.r2_key as cover_image_key
+				m.r2_key as cover_image_key,
+				m.uuid as cover_image_media_uuid
 			FROM blog_posts bp
 			JOIN users u ON bp.author_uuid = u.uuid
-			LEFT JOIN media m ON bp.cover_image_uuid = m.uuid
+			LEFT JOIN image_media m ON bp.cover_image_uuid = m.uuid
 			WHERE bp.uuid = ?`,
 		)
 			.bind(uuid)
@@ -302,13 +304,14 @@ blog.delete('/:uuid', async (c) => {
 			.first<{ cover_image_uuid: string | null }>();
 
 		if (postToDelete?.cover_image_uuid) {
-			const coverMedia = await c.env.DB.prepare('SELECT r2_key FROM media WHERE uuid = ?')
+			const coverMedia = await c.env.DB.prepare('SELECT r2_key, r2_bucket FROM image_media WHERE uuid = ?')
 				.bind(postToDelete.cover_image_uuid)
-				.first<{ r2_key: string }>();
+				.first<{ r2_key: string; r2_bucket: string }>();
 
 			if (coverMedia) {
-				await c.env.BUCKET.delete(coverMedia.r2_key);
-				await c.env.DB.prepare('DELETE FROM media WHERE uuid = ?').bind(postToDelete.cover_image_uuid).run();
+				const bucket = coverMedia.r2_bucket === 'media' ? c.env.MEDIA_BUCKET : c.env.BUCKET;
+				await bucket.delete(coverMedia.r2_key);
+				await c.env.DB.prepare('DELETE FROM image_media WHERE uuid = ?').bind(postToDelete.cover_image_uuid).run();
 			}
 		}
 

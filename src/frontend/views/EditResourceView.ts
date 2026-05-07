@@ -714,8 +714,10 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 	// -----------------------------------------------------------------------
 
 	const currentThumbnailEl = document.getElementById('current-thumbnail')!;
-	if (resource.thumbnail_key) {
-		const thumbSrc = `/api/download/${resource.thumbnail_key}`;
+	if (resource.thumbnail_key || resource.thumbnail_media_uuid) {
+		const thumbSrc = resource.thumbnail_media_uuid
+			? `/media/${resource.thumbnail_media_uuid}/thumbnail`
+			: `/api/download/${resource.thumbnail_key}`;
 		currentThumbnailEl.appendChild(
 			createImagePreview(thumbSrc, 'image', t('upload.thumbnail')),
 		);
@@ -728,8 +730,10 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 	// -----------------------------------------------------------------------
 
 	const currentReferenceEl = document.getElementById('current-reference')!;
-	if (resource.reference_image_key) {
-		const refSrc = `/api/download/${resource.reference_image_key}`;
+	if (resource.reference_image_key || resource.reference_image_media_uuid) {
+		const refSrc = resource.reference_image_media_uuid
+			? `/media/${resource.reference_image_media_uuid}/preview`
+			: `/api/download/${resource.reference_image_key}`;
 		currentReferenceEl.appendChild(
 			createImagePreview(refSrc, 'image', t('edit.currentReference')),
 		);
@@ -755,7 +759,7 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 		}
 
 		for (const mf of visibleFiles) {
-			const src = `/api/download/${mf.r2_key}`;
+			const src = mf.uuid ? `/media/${mf.uuid}/preview` : `/api/download/${mf.r2_key}`;
 			currentGalleryEl.appendChild(
 				createImagePreview(src, mf.media_type, undefined, false, () => {
 					removedMediaUuids.add(mf.uuid || '');

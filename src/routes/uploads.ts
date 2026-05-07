@@ -80,18 +80,23 @@ upload.put('/', async (c) => {
 				mimeType = `video/${validation.mediaName.toLowerCase()}`;
 			}
 
-			// Upload to R2 with strict Content-Type
-			await c.env.BUCKET.put(r2Key, file, {
+			// Images go to the dedicated MEDIA_BUCKET; all other types stay on the original BUCKET
+			const isImage = validation.mediaType === 'image';
+			const targetBucket = isImage ? c.env.MEDIA_BUCKET : c.env.BUCKET;
+			const r2BucketValue = isImage ? 'media' : 'legacy';
+
+			await targetBucket.put(r2Key, file, {
 				httpMetadata: { contentType: mimeType },
 			});
 
-			// Create media record
-			await c.env.DB.prepare('INSERT INTO media (uuid, r2_key, media_type, file_name) VALUES (?, ?, ?, ?)')
-				.bind(mediaUuid, r2Key, validation.mediaType, filename)
+			// Create media record in image_media (renamed from media)
+			await c.env.DB.prepare(
+				'INSERT INTO image_media (uuid, r2_key, media_type, file_name, r2_bucket) VALUES (?, ?, ?, ?, ?)',
+			)
+				.bind(mediaUuid, r2Key, validation.mediaType, filename, r2BucketValue)
 				.run();
 
 			// Enqueue async post-processing job (runs after response is sent)
-			// Currently logs the upload; extend here for virus scanning, thumbnail gen, etc.
 			c.executionCtx.waitUntil(
 				c.env.UPLOAD_QUEUE.send({
 					media_uuid: mediaUuid,
@@ -145,7 +150,11 @@ upload.post('/init', async (c) => {
 			mimeType = `${media_type}/mp4`; // generic fallback, actual type is validated in /part 1
 		}
 
-		const multipartUpload = await c.env.BUCKET.createMultipartUpload(r2Key, {
+		// Images go to MEDIA_BUCKET; all other types stay on BUCKET
+		const isImage = media_type === 'image';
+		const targetBucket = isImage ? c.env.MEDIA_BUCKET : c.env.BUCKET;
+
+		const multipartUpload = await targetBucket.createMultipartUpload(r2Key, {
 			httpMetadata: { contentType: mimeType },
 		});
 
@@ -188,27 +197,30 @@ upload.put('/part', async (c) => {
 		return c.json({ error: 'Missing request body' }, 400);
 	}
 
-	const multipartUpload = c.env.BUCKET.resumeMultipartUpload(key, uploadId);
+	// Resolve bucket from the stored media_type (set during /init)
+	// We need this on every part (not just part 1) to resume on the right bucket.
+	const storedMediaType = await c.env.VRCSTORAGE_KV.get(`upload_meta:${uploadId}`);
+	if (!storedMediaType) {
+		return c.json({ error: 'Upload session expired or invalid' }, 400);
+	}
+	const partBucket = storedMediaType === 'image' ? c.env.MEDIA_BUCKET : c.env.BUCKET;
+
+	const multipartUpload = partBucket.resumeMultipartUpload(key, uploadId);
 	try {
 		let bodyToUpload: ReadableStream | ArrayBuffer = c.req.raw.body;
 
 		// Step 1: Validation for the first part
 		if (partNumber === 1) {
-			const expectedMediaType = await c.env.VRCSTORAGE_KV.get(`upload_meta:${uploadId}`);
-			if (!expectedMediaType) {
-				return c.json({ error: 'Upload session expired or invalid' }, 400);
-			}
-
 			// We must read the body into memory to validate the signature
 			// R2 multipart parts are usually 5MB+, which fits in Worker memory (128MB)
 			const buffer = await c.req.arrayBuffer();
 			const validation = isValidSignature(buffer);
 
-			if (!validation.isValidFile || validation.mediaType !== expectedMediaType) {
+			if (!validation.isValidFile || validation.mediaType !== storedMediaType) {
 				await multipartUpload.abort();
 				return c.json(
 					{
-						error: `Invalid file signature. Expected ${expectedMediaType}, but detected ${validation.mediaType} (${validation.mediaName}).`,
+						error: `Invalid file signature. Expected ${storedMediaType}, but detected ${validation.mediaType} (${validation.mediaName}).`,
 					},
 					400,
 				);
@@ -255,7 +267,12 @@ upload.post('/complete', async (c) => {
 	}
 
 	try {
-		const multipartUpload = c.env.BUCKET.resumeMultipartUpload(key, uploadId);
+		// Images: complete on MEDIA_BUCKET; everything else on BUCKET
+		const isImage = media_type === 'image';
+		const targetBucket = isImage ? c.env.MEDIA_BUCKET : c.env.BUCKET;
+		const r2BucketValue = isImage ? 'media' : 'legacy';
+
+		const multipartUpload = targetBucket.resumeMultipartUpload(key, uploadId);
 		await multipartUpload.complete(parts);
 
 		// Clean up KV entry
@@ -264,8 +281,10 @@ upload.post('/complete', async (c) => {
 		const mediaUuid = crypto.randomUUID();
 
 		// Create media record using the server-authoritative media_type from KV
-		await c.env.DB.prepare('INSERT INTO media (uuid, r2_key, media_type, file_name) VALUES (?, ?, ?, ?)')
-			.bind(mediaUuid, key, media_type, filename)
+		await c.env.DB.prepare(
+			'INSERT INTO image_media (uuid, r2_key, media_type, file_name, r2_bucket) VALUES (?, ?, ?, ?, ?)',
+		)
+			.bind(mediaUuid, key, media_type, filename, r2BucketValue)
 			.run();
 
 		return c.json({

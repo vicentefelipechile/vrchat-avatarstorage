@@ -24,9 +24,9 @@ function resourceCard(res: Resource): string {
 	return `
 		<div class="card">
 			<a href="/item/${res.uuid}" data-link class="card-link">
-				${res.thumbnail_key
+				${res.thumbnail_media_uuid
 		? `<div class="card-image">
-					<img src="/api/download/${res.thumbnail_key}" alt="${title}" loading="lazy">
+					<img src="/media/${res.thumbnail_media_uuid}/thumbnail" alt="${title}" loading="lazy" decoding="async">
 					<span class="card-badge">${categoryLabel}</span>
 				</div>`
 		: `<div class="card-image card-image-placeholder">

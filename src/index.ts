@@ -10,7 +10,7 @@
 // =========================================================================================================
 
 import { Hono } from 'hono';
-import { Media, Resource, UploadQueueMessage } from './types';
+import { Resource, UploadQueueMessage } from './types';
 import { z } from 'zod';
 import { securityMiddleware } from './middleware/security';
 import { rateLimit } from './middleware/rate-limit';
@@ -33,6 +33,7 @@ import clothesRoutes from './routes/clothes';
 import authorsRoutes from './routes/authors';
 import adsRoutes from './routes/ads';
 import llmsRoute from './routes/llms';
+import mediaRoutes from './routes/media';
 
 // =========================================================================================================
 // Variables
@@ -130,6 +131,7 @@ app.route('/api/assets', assetsRoutes);
 app.route('/api/clothes', clothesRoutes);
 app.route('/api/authors', authorsRoutes);
 app.route('/api/ads', adsRoutes);
+app.route('/media', mediaRoutes);
 
 // =========================================================================================================
 // LLMs.txt — AI scraper context file (llmstxt.org spec)
@@ -246,7 +248,7 @@ app.get('/blog/:slug', async (c) => {
 		const post = await c.env.DB.prepare(
 			`SELECT bp.uuid, bp.title, bp.excerpt, m.r2_key as cover_image_key
 			FROM blog_posts bp
-			LEFT JOIN media m ON bp.cover_image_uuid = m.uuid
+			LEFT JOIN image_media m ON bp.cover_image_uuid = m.uuid
 			WHERE bp.uuid = ?`,
 		)
 			.bind(slug)
@@ -283,7 +285,7 @@ app.get('/item/:uuid', async (c) => {
 
 		if (resource && resource.is_active) {
 			// Get thumbnail
-			const thumbnail = await c.env.DB.prepare('SELECT * FROM media WHERE uuid = ?').bind(resource.thumbnail_uuid).first();
+			const thumbnail = await c.env.DB.prepare('SELECT * FROM image_media WHERE uuid = ?').bind(resource.thumbnail_uuid).first();
 
 			// Fetch original index.html
 			const indexResponse = await c.env.ASSETS.fetch(new URL('/index.html', c.req.url));
@@ -319,7 +321,7 @@ app.get('/community/:uuid', async (c) => {
 		const ad = await c.env.DB.prepare(
 			`SELECT ca.uuid, ca.title, ca.tagline, bm.r2_key as banner_r2_key
 			FROM community_ads ca
-			LEFT JOIN media bm ON ca.banner_media_uuid = bm.uuid
+			LEFT JOIN image_media bm ON ca.banner_media_uuid = bm.uuid
 			WHERE ca.uuid = ? AND ca.is_active = 1 AND ca.is_approved = 1`,
 		)
 			.bind(uuid)
@@ -369,11 +371,14 @@ async function cleanupOrphanedMedia(env: Env) {
 	const TWENTY_FOUR_HOURS = 24 * 60 * 60;
 	const cutoffTime = Math.floor(Date.now() / 1000) - TWENTY_FOUR_HOURS;
 
+	let deletedCount = 0;
+
 	try {
-		const orphanedMedia = await env.DB.prepare(
+		// ── Sweep 1: image_media (visual files) → delete from the correct R2 bucket ──
+		const orphanedImages = await env.DB.prepare(
 			`
-			SELECT m.uuid, m.r2_key 
-			FROM media m
+			SELECT m.uuid, m.r2_key, m.r2_bucket
+			FROM image_media m
 			WHERE m.created_at < ?
 			AND m.uuid NOT IN (
 				SELECT thumbnail_uuid FROM resources WHERE thumbnail_uuid IS NOT NULL
@@ -388,21 +393,41 @@ async function cleanupOrphanedMedia(env: Env) {
 				UNION
 				SELECT card_media_uuid FROM community_ads WHERE card_media_uuid IS NOT NULL
 			)
-			AND NOT EXISTS (SELECT 1 FROM users         WHERE INSTR(users.avatar_url,     m.r2_key) > 0)
-			AND NOT EXISTS (SELECT 1 FROM comments      WHERE INSTR(comments.text,        m.r2_key) > 0)
-			AND NOT EXISTS (SELECT 1 FROM blog_comments WHERE INSTR(blog_comments.text,   m.r2_key) > 0)
-			AND NOT EXISTS (SELECT 1 FROM blog_posts    WHERE INSTR(blog_posts.content,   m.r2_key) > 0)
+			AND NOT EXISTS (SELECT 1 FROM users             WHERE INSTR(users.avatar_url,          m.r2_key) > 0)
+			AND NOT EXISTS (SELECT 1 FROM comments          WHERE INSTR(comments.text,             m.r2_key) > 0)
+			AND NOT EXISTS (SELECT 1 FROM blog_comments     WHERE INSTR(blog_comments.text,        m.r2_key) > 0)
+			AND NOT EXISTS (SELECT 1 FROM blog_posts        WHERE INSTR(blog_posts.content,        m.r2_key) > 0)
 			AND NOT EXISTS (SELECT 1 FROM ad_internal_pages WHERE INSTR(ad_internal_pages.content, m.r2_key) > 0)
 		`,
 		)
 			.bind(cutoffTime)
-			.all<Media>();
+			.all<{ uuid: string; r2_key: string; r2_bucket: string }>();
 
-		let deletedCount = 0;
+		for (const img of orphanedImages.results) {
+			// Route delete to the correct bucket based on the discriminator
+			const bucket = img.r2_bucket === 'media' ? env.MEDIA_BUCKET : env.BUCKET;
+			await bucket.delete(img.r2_key);
+			await env.DB.prepare('DELETE FROM image_media WHERE uuid = ?').bind(img.uuid).run();
+			deletedCount++;
+		}
 
-		for (const media of orphanedMedia.results) {
-			await env.BUCKET.delete(media.r2_key);
-			await env.DB.prepare('DELETE FROM media WHERE uuid = ?').bind(media.uuid).run();
+		// ── Sweep 2: asset_files (binary downloads) → always delete from BUCKET ──
+		const orphanedAssets = await env.DB.prepare(
+			`
+			SELECT af.uuid, af.r2_key
+			FROM asset_files af
+			WHERE af.created_at < ?
+			AND af.uuid NOT IN (
+				SELECT asset_file_uuid FROM resources WHERE asset_file_uuid IS NOT NULL
+			)
+		`,
+		)
+			.bind(cutoffTime)
+			.all<{ uuid: string; r2_key: string }>();
+
+		for (const asset of orphanedAssets.results) {
+			await env.BUCKET.delete(asset.r2_key);
+			await env.DB.prepare('DELETE FROM asset_files WHERE uuid = ?').bind(asset.uuid).run();
 			deletedCount++;
 		}
 

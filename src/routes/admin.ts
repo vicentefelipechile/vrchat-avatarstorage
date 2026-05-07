@@ -10,7 +10,7 @@
 
 import { Hono } from 'hono';
 import { getAuthUser } from '../auth';
-import { Resource, Media } from '../types';
+import { Resource } from '../types';
 
 // =========================================================================================================
 // Endpoints
@@ -37,7 +37,7 @@ admin.get('/pending', async (c) => {
                 u.username as author_username,
                 u.avatar_url as author_avatar
             FROM resources r 
-            LEFT JOIN media m ON r.thumbnail_uuid = m.uuid 
+            LEFT JOIN image_media m ON r.thumbnail_uuid = m.uuid 
             LEFT JOIN users u ON r.author_uuid = u.uuid
             WHERE r.is_active = 0 
             ORDER BY r.created_at DESC
@@ -100,21 +100,27 @@ admin.post('/resource/:uuid/reject', async (c) => {
 	const uuid = c.req.param('uuid');
 	try {
 		const mediaFiles = await c.env.DB.prepare(
-			`SELECT m.r2_key FROM media m
+			`SELECT m.uuid, m.r2_key, m.r2_bucket FROM image_media m
 			 JOIN resource_n_media rm ON m.uuid = rm.media_uuid
 			 WHERE rm.resource_uuid = ?`,
 		)
 			.bind(uuid)
-			.all<Media>();
+			.all<{ uuid: string; r2_key: string; r2_bucket: string }>();
 
-		const thumbnail = await c.env.DB.prepare('SELECT m.r2_key FROM media m JOIN resources r ON m.uuid = r.thumbnail_uuid WHERE r.uuid = ?')
+		const thumbnail = await c.env.DB.prepare(
+			'SELECT m.uuid, m.r2_key, m.r2_bucket FROM image_media m JOIN resources r ON m.uuid = r.thumbnail_uuid WHERE r.uuid = ?',
+		)
 			.bind(uuid)
-			.first<Media>();
+			.first<{ uuid: string; r2_key: string; r2_bucket: string }>();
 
-		// Delete from R2
-		if (thumbnail) await c.env.BUCKET.delete(thumbnail.r2_key);
-		for (const media of mediaFiles.results) {
-			await c.env.BUCKET.delete(media.r2_key);
+		// Delete from the correct R2 bucket based on the discriminator
+		if (thumbnail) {
+			const bucket = thumbnail.r2_bucket === 'media' ? c.env.MEDIA_BUCKET : c.env.BUCKET;
+			await bucket.delete(thumbnail.r2_key);
+		}
+		for (const mf of mediaFiles.results) {
+			const bucket = mf.r2_bucket === 'media' ? c.env.MEDIA_BUCKET : c.env.BUCKET;
+			await bucket.delete(mf.r2_key);
 		}
 
 		await c.env.DB.prepare('DELETE FROM resources WHERE uuid = ?').bind(uuid).run();
@@ -170,11 +176,11 @@ admin.get('/stats/orphaned-media', async (c) => {
 	const cutoffTime = Math.floor(Date.now() / 1000) - TWENTY_FOUR_HOURS;
 
 	try {
-		// Contar archivos huérfanos
+		// Count orphaned image_media files
 		const orphanedMedia = await c.env.DB.prepare(
 			`
 			SELECT m.uuid, m.r2_key, m.file_name, m.media_type, m.created_at
-			FROM media m
+			FROM image_media m
 			WHERE m.created_at < ?
 			AND m.uuid NOT IN (
 				SELECT thumbnail_uuid FROM resources WHERE thumbnail_uuid IS NOT NULL
@@ -192,20 +198,40 @@ admin.get('/stats/orphaned-media', async (c) => {
 		`,
 		)
 			.bind(cutoffTime)
-			.all<Media>();
+			.all<{ uuid: string; r2_key: string; file_name: string; media_type: string; created_at: number }>();
 
-		// Estadísticas generales
-		const totalMedia = await c.env.DB.prepare('SELECT COUNT(*) as count FROM media').first<{ count: number }>();
+		// Count orphaned asset_files
+		const orphanedAssets = await c.env.DB.prepare(
+			`
+			SELECT af.uuid, af.file_name, af.created_at
+			FROM asset_files af
+			WHERE af.created_at < ?
+			AND af.uuid NOT IN (SELECT asset_file_uuid FROM resources WHERE asset_file_uuid IS NOT NULL)
+		`,
+		)
+			.bind(cutoffTime)
+			.all<{ uuid: string; file_name: string; created_at: number }>();
+
+		// General stats
+		const totalMedia = await c.env.DB.prepare('SELECT COUNT(*) as count FROM image_media').first<{ count: number }>();
 		const totalResources = await c.env.DB.prepare('SELECT COUNT(*) as count FROM resources').first<{ count: number }>();
 
 		return c.json({
-			orphaned_count: orphanedMedia.results.length,
-			orphaned_files: orphanedMedia.results.map((m) => ({
-				uuid: m.uuid,
-				filename: m.file_name,
-				type: m.media_type,
-				age_hours: Math.floor((Date.now() / 1000 - m.created_at) / 3600),
-			})),
+			orphaned_count: orphanedMedia.results.length + orphanedAssets.results.length,
+			orphaned_files: [
+				...orphanedMedia.results.map((m) => ({
+					uuid: m.uuid,
+					filename: m.file_name,
+					type: m.media_type,
+					age_hours: Math.floor((Date.now() / 1000 - m.created_at) / 3600),
+				})),
+				...orphanedAssets.results.map((a) => ({
+					uuid: a.uuid,
+					filename: a.file_name,
+					type: 'asset_file',
+					age_hours: Math.floor((Date.now() / 1000 - a.created_at) / 3600),
+				})),
+			],
 			total_media: totalMedia?.count || 0,
 			total_resources: totalResources?.count || 0,
 			cutoff_hours: 24,
@@ -230,11 +256,11 @@ admin.post('/cleanup/orphaned-media', async (c) => {
 	const cutoffTime = Math.floor(Date.now() / 1000) - TWENTY_FOUR_HOURS;
 
 	try {
-		// Encontrar media huérfanos (no asociados a recursos)
+		// ── Sweep 1: image_media (visual files) ──
 		const orphanedMedia = await c.env.DB.prepare(
 			`
-			SELECT m.uuid, m.r2_key 
-			FROM media m
+			SELECT m.uuid, m.r2_key, m.r2_bucket
+			FROM image_media m
 			WHERE m.created_at < ?
 			AND m.uuid NOT IN (
 				SELECT thumbnail_uuid FROM resources WHERE thumbnail_uuid IS NOT NULL
@@ -252,17 +278,33 @@ admin.post('/cleanup/orphaned-media', async (c) => {
 		`,
 		)
 			.bind(cutoffTime)
-			.all<Media>();
+			.all<{ uuid: string; r2_key: string; r2_bucket: string }>();
 
 		let deletedCount = 0;
 
 		for (const media of orphanedMedia.results) {
-			// Eliminar de R2
-			await c.env.BUCKET.delete(media.r2_key);
+			// Route delete to the correct bucket
+			const bucket = media.r2_bucket === 'media' ? c.env.MEDIA_BUCKET : c.env.BUCKET;
+			await bucket.delete(media.r2_key);
+			await c.env.DB.prepare('DELETE FROM image_media WHERE uuid = ?').bind(media.uuid).run();
+			deletedCount++;
+		}
 
-			// Eliminar de DB
-			await c.env.DB.prepare('DELETE FROM media WHERE uuid = ?').bind(media.uuid).run();
+		// ── Sweep 2: asset_files (binary downloads) ──
+		const orphanedAssets = await c.env.DB.prepare(
+			`
+			SELECT af.uuid, af.r2_key
+			FROM asset_files af
+			WHERE af.created_at < ?
+			AND af.uuid NOT IN (SELECT asset_file_uuid FROM resources WHERE asset_file_uuid IS NOT NULL)
+		`,
+		)
+			.bind(cutoffTime)
+			.all<{ uuid: string; r2_key: string }>();
 
+		for (const asset of orphanedAssets.results) {
+			await c.env.BUCKET.delete(asset.r2_key);
+			await c.env.DB.prepare('DELETE FROM asset_files WHERE uuid = ?').bind(asset.uuid).run();
 			deletedCount++;
 		}
 
@@ -373,9 +415,9 @@ admin.get('/stats', async (c) => {
 			c.env.DB.prepare("SELECT COUNT(*) as count FROM resources WHERE category = 'clothes' AND is_active = 1"),
 			c.env.DB.prepare('SELECT COUNT(*) as count FROM resources WHERE is_active = 0'),
 			c.env.DB.prepare('SELECT COUNT(*) as count FROM avatar_authors'),
-			c.env.DB.prepare('SELECT COUNT(*) as count FROM media'),
+			c.env.DB.prepare('SELECT COUNT(*) as count FROM image_media'),
 			c.env.DB.prepare(
-				`SELECT COUNT(*) as count FROM media m
+				`SELECT COUNT(*) as count FROM image_media m
 				WHERE m.created_at < ?
 				AND m.uuid NOT IN (
 					SELECT thumbnail_uuid FROM resources WHERE thumbnail_uuid IS NOT NULL
@@ -504,7 +546,7 @@ admin.get('/resources', async (c) => {
 				u.username as author_username, m.r2_key as thumbnail_key
 			FROM resources r
 			LEFT JOIN users u ON r.author_uuid = u.uuid
-			LEFT JOIN media m ON r.thumbnail_uuid = m.uuid
+			LEFT JOIN image_media m ON r.thumbnail_uuid = m.uuid
 			${whereStr}
 			ORDER BY r.created_at DESC LIMIT ? OFFSET ?`,
 		)
@@ -572,8 +614,8 @@ admin.get('/ads', async (c) => {
 				ca.external_url
 			FROM community_ads ca
 			LEFT JOIN users u ON ca.author_uuid = u.uuid
-			LEFT JOIN media bm ON ca.banner_media_uuid = bm.uuid
-			LEFT JOIN media cm ON ca.card_media_uuid = cm.uuid
+			LEFT JOIN image_media bm ON ca.banner_media_uuid = bm.uuid
+			LEFT JOIN image_media cm ON ca.card_media_uuid = cm.uuid
 			${whereStr}
 			ORDER BY ca.created_at DESC LIMIT ? OFFSET ?`,
 		)

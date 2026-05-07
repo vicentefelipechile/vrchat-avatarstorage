@@ -47,7 +47,7 @@ function assetCard(res: AssetResource): string {
 	const date = new Date(res.created_at * 1000).toLocaleDateString();
 
 	const imgHtml = res.thumbnail_key
-		? `<div class="card-image"><img src="/api/download/${res.thumbnail_key}" alt="${title}" loading="lazy"><span class="card-badge">${res.meta.asset_type}</span></div>`
+		? `<div class="card-image"><img src="/media/${res.thumbnail_media_uuid}/thumbnail" alt="${title}" loading="lazy" decoding="async"><span class="card-badge">${res.meta.asset_type}</span></div>`
 		: `<div class="card-image card-image-placeholder"><span class="card-badge">${res.meta.asset_type}</span></div>`;
 
 	return `<div class="card">

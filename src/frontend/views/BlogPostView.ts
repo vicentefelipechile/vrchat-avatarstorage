@@ -18,6 +18,7 @@ interface BlogPost {
 	content: string;
 	excerpt?: string;
 	cover_image_key?: string;
+	cover_image_media_uuid?: string | null;
 	author_display: 'personal' | 'team';
 	author_username?: string;
 	created_at: number;
@@ -104,8 +105,8 @@ export async function blogPostView(ctx: RouteContext): Promise<string> {
 	const authorName = post.author_display === 'team' ? t('blog.team') : (post.author_username ?? '');
 	const { isAdmin } = window.appState;
 
-	const coverHtml = post.cover_image_key
-		? `<div class="blog-post-cover"><img src="/api/download/${post.cover_image_key}" alt="${esc(post.title)}"></div>`
+	const coverHtml = post.cover_image_media_uuid
+		? `<div class="blog-post-cover"><img src="/media/${post.cover_image_media_uuid}/preview" alt="${esc(post.title)}" loading="lazy" decoding="async"></div>`
 		: '';
 
 	const adminActions = isAdmin

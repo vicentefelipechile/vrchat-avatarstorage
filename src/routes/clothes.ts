@@ -110,6 +110,7 @@ clothes.get('/', async (c) => {
 				r.download_count,
 				r.created_at,
 				m.r2_key as thumbnail_key,
+				m.uuid as thumbnail_media_uuid,
 				cm.gender_fit,
 				cm.clothing_type,
 				cm.is_base,
@@ -120,7 +121,7 @@ clothes.get('/', async (c) => {
 				cm.base_avatar_name_raw
 			FROM resources r
 			INNER JOIN clothes_meta cm ON r.uuid = cm.resource_uuid
-			LEFT JOIN media m ON r.thumbnail_uuid = m.uuid
+			LEFT JOIN image_media m ON r.thumbnail_uuid = m.uuid
 			WHERE r.is_active = 1 ${whereStr}
 			ORDER BY r.${sortBy} ${sortOrder}
 			LIMIT ? OFFSET ?`,
@@ -132,6 +133,7 @@ clothes.get('/', async (c) => {
 			uuid: row.uuid,
 			title: row.title,
 			thumbnail_key: row.thumbnail_key,
+			thumbnail_media_uuid: row.thumbnail_media_uuid,
 			download_count: row.download_count,
 			created_at: row.created_at,
 			meta: {

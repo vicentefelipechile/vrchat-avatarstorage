@@ -48,13 +48,14 @@ favorites.get('/', async (c) => {
 			r.created_at,
 			r.updated_at,
 			m.r2_key AS thumbnail_key,
+			m.uuid AS thumbnail_media_uuid,
 			u.username AS author_username,
 			u.avatar_url AS author_avatar,
 			uf.display_order,
 			uf.created_at AS favorite_created_at
 		FROM user_favorites uf
 		JOIN resources r ON uf.resource_uuid = r.uuid
-		JOIN media m ON r.thumbnail_uuid = m.uuid
+		JOIN image_media m ON r.thumbnail_uuid = m.uuid
 		JOIN users u ON r.author_uuid = u.uuid
 		WHERE uf.user_uuid = ? AND r.is_active = 1
 		ORDER BY uf.display_order DESC, uf.created_at DESC

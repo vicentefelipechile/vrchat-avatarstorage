@@ -20,7 +20,9 @@ export interface AdPublic {
 	destination_type: 'internal' | 'external';
 	external_url: string | null;
 	banner_r2_key: string | null;
+	banner_media_uuid: string | null;
 	card_r2_key: string | null;
+	card_media_uuid: string | null;
 	display_weight: number;
 	author_username: string;
 }
@@ -118,8 +120,8 @@ export function renderSidebarBanner(ads: AdPublic[]): string {
 
 	const ad = visible[0];
 
-	const imgHtml = ad.banner_r2_key
-		? `<img class="ad-sidebar__img" src="/api/download/${ad.banner_r2_key}" alt="${ad.title}" loading="lazy">`
+	const imgHtml = ad.banner_media_uuid
+		? `<img class="ad-sidebar__img" src="/media/${ad.banner_media_uuid}/banner" alt="${ad.title}" loading="lazy" decoding="async">`
 		: `<div class="ad-sidebar__img-placeholder"></div>`;
 
 	return `
@@ -152,8 +154,8 @@ export function renderSidebarBannerFixed(ads: AdPublic[]): string {
 
 	const ad = visible[0];
 
-	const imgHtml = ad.banner_r2_key
-		? `<img class="ad-sidebar__img" src="/api/download/${ad.banner_r2_key}" alt="${ad.title}" loading="lazy">`
+	const imgHtml = ad.banner_media_uuid
+		? `<img class="ad-sidebar__img" src="/media/${ad.banner_media_uuid}/banner" alt="${ad.title}" loading="lazy" decoding="async">`
 		: `<div class="ad-sidebar__img-placeholder"></div>`;
 
 	return `
@@ -187,8 +189,8 @@ export function renderFeaturedArtistCard(ads: AdPublic[], excludeUuids: string[]
 
 	const ad = visible[0];
 
-	const imgHtml = ad.card_r2_key || ad.banner_r2_key
-		? `<img class="ad-featured__img" src="/api/download/${ad.card_r2_key ?? ad.banner_r2_key}" alt="${ad.title}" loading="lazy">`
+	const imgHtml = (ad.card_media_uuid || ad.banner_media_uuid)
+		? `<img class="ad-featured__img" src="/media/${ad.card_media_uuid ?? ad.banner_media_uuid}/banner" alt="${ad.title}" loading="lazy" decoding="async">`
 		: `<div class="ad-featured__img-placeholder"></div>`;
 
 	return `
@@ -222,8 +224,8 @@ export function renderDetailBanner(ads: AdPublic[]): string {
 
 	const ad = visible[0];
 
-	const imgHtml = ad.banner_r2_key
-		? `<img class="ad-detail-banner__img" src="/api/download/${ad.banner_r2_key}" alt="${ad.title}" loading="lazy">`
+	const imgHtml = ad.banner_media_uuid
+		? `<img class="ad-detail-banner__img" src="/media/${ad.banner_media_uuid}/banner" alt="${ad.title}" loading="lazy" decoding="async">`
 		: `<div class="ad-detail-banner__img-placeholder"></div>`;
 
 	return `

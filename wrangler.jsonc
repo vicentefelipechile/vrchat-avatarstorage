@@ -31,7 +31,15 @@
 			"binding": "BUCKET",
 			"remote": false
 		},
+		{
+			"bucket_name": "vrcstorage-media",
+			"binding": "MEDIA_BUCKET",
+			"remote": false
+		},
 	],
+	"images": {
+		"binding": "IMAGES"
+	},
 	"kv_namespaces": [
 		{
 			"binding": "VRCSTORAGE_KV",

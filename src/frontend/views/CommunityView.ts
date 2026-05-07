@@ -21,7 +21,9 @@ interface DirectoryAd {
 	destination_type: 'internal' | 'external';
 	external_url: string | null;
 	banner_r2_key: string | null;
+	banner_media_uuid: string | null;
 	card_r2_key: string | null;
+	card_media_uuid: string | null;
 	author_username: string;
 }
 
@@ -43,9 +45,9 @@ function adTarget(ad: DirectoryAd): string {
 }
 
 function communityCard(ad: DirectoryAd): string {
-	const imgSrc = ad.card_r2_key ?? ad.banner_r2_key;
-	const imgHtml = imgSrc
-		? `<img class="community-card__img" src="/api/download/${imgSrc}" alt="${ad.title}" loading="lazy">`
+	const imgMediaUuid = ad.card_media_uuid ?? ad.banner_media_uuid;
+	const imgHtml = imgMediaUuid
+		? `<img class="community-card__img" src="/media/${imgMediaUuid}/banner" alt="${ad.title}" loading="lazy" decoding="async">`
 		: `<div class="community-card__img-placeholder"></div>`;
 
 	return `

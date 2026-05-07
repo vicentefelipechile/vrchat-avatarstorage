@@ -177,25 +177,25 @@ function buildGallery(res: Resource): { html: string; images: string[] } {
 	html = '<div class="gallery-grid">';
 
 	if (hasThumbnail) {
-		const url = `/api/download/${res.thumbnail_key}`;
+		const url = res.thumbnail_media_uuid ? `/media/${res.thumbnail_media_uuid}/thumbnail` : `/api/download/${res.thumbnail_key}`;
 		const idx = images.length;
 		images.push(url);
 		html += `
 			<div class="gallery-item">
 				<div class="gallery-item-link" data-lightbox-index="${idx}" style="display:block;width:100%;height:100%;cursor:zoom-in">
-					<img src="${url}" alt="Thumbnail" loading="lazy">
+					<img src="${url}" alt="Thumbnail" loading="lazy" decoding="async">
 				</div>
 			</div>`;
 	}
 
 	if (hasMedia) {
 		res.mediaFiles!.forEach((media) => {
-			const url = `/api/download/${media.r2_key}`;
+			const url = media.uuid ? `/media/${media.uuid}/preview` : `/api/download/${media.r2_key}`;
 			if (media.media_type === 'video') {
 				html += `
 					<div class="gallery-item">
 						<video controls style="width:100%;height:100%;object-fit:cover">
-							<source src="${url}" type="video/mp4">
+							<source src="/api/download/${media.r2_key}" type="video/mp4">
 						</video>
 					</div>`;
 			} else if (media.media_type === 'image') {
@@ -204,7 +204,7 @@ function buildGallery(res: Resource): { html: string; images: string[] } {
 				html += `
 					<div class="gallery-item">
 						<div class="gallery-item-link" data-lightbox-index="${idx}" style="display:block;width:100%;height:100%;cursor:zoom-in">
-							<img src="${url}" alt="Gallery Image" loading="lazy">
+							<img src="${url}" alt="Gallery Image" loading="lazy" decoding="async">
 						</div>
 					</div>`;
 			}

@@ -100,11 +100,13 @@ ads.get('/', async (c) => {
 				ca.destination_type, ca.external_url, ca.display_weight,
 				u.username as author_username,
 				bm.r2_key as banner_r2_key,
-				cm.r2_key as card_r2_key
+				bm.uuid as banner_media_uuid,
+				cm.r2_key as card_r2_key,
+				cm.uuid as card_media_uuid
 			FROM community_ads ca
 			LEFT JOIN users u ON ca.author_uuid = u.uuid
-			LEFT JOIN media bm ON ca.banner_media_uuid = bm.uuid
-			LEFT JOIN media cm ON ca.card_media_uuid = cm.uuid
+			LEFT JOIN image_media bm ON ca.banner_media_uuid = bm.uuid
+			LEFT JOIN image_media cm ON ca.card_media_uuid = cm.uuid
 			WHERE ca.is_active = 1 AND ca.is_approved = 1`,
 		).all<CommunityAdPublic>();
 
@@ -146,12 +148,14 @@ ads.get('/:uuid', async (c) => {
 				ca.destination_type, ca.external_url, ca.display_weight,
 				u.username as author_username,
 				bm.r2_key as banner_r2_key,
+				bm.uuid as banner_media_uuid,
 				cm.r2_key as card_r2_key,
+				cm.uuid as card_media_uuid,
 				ip.content as internal_page_content
 			FROM community_ads ca
 			LEFT JOIN users u ON ca.author_uuid = u.uuid
-			LEFT JOIN media bm ON ca.banner_media_uuid = bm.uuid
-			LEFT JOIN media cm ON ca.card_media_uuid = cm.uuid
+			LEFT JOIN image_media bm ON ca.banner_media_uuid = bm.uuid
+			LEFT JOIN image_media cm ON ca.card_media_uuid = cm.uuid
 			LEFT JOIN ad_internal_pages ip ON ip.ad_uuid = ca.uuid
 			WHERE ca.uuid = ? AND ca.is_active = 1 AND ca.is_approved = 1`,
 		)

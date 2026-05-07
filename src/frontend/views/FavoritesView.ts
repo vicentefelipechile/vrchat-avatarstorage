@@ -15,6 +15,7 @@ interface Favorite {
 	uuid: string;
 	thumbnail_key?: string;
 	thumbnail_uuid?: string;
+	thumbnail_media_uuid?: string | null;
 	title: string;
 	description?: string;
 	category: string;
@@ -43,9 +44,9 @@ function favoriteCard(fav: Favorite): string {
 		<div class="card" data-resource-id="${fav.uuid}">
 			<a href="/item/${fav.uuid}" data-link class="card-link">
 				${
-					fav.thumbnail_key
+					fav.thumbnail_media_uuid
 						? `<div class="card-image">
-						<img src="/api/download/${fav.thumbnail_key}" alt="${title}" loading="lazy">
+						<img src="/media/${fav.thumbnail_media_uuid}/thumbnail" alt="${title}" loading="lazy" decoding="async">
 						<span class="card-badge">${categoryLabel}</span>
 					</div>`
 						: `<div class="card-image card-image-placeholder">
