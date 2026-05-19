@@ -458,6 +458,9 @@
 		},
 		"avatarCategories": {
 			"title": "アバターカテゴリ"
+		},
+		"gogolocoRemove": {
+			"title": "GoGo Locoの削除"
 		}
 	},
 	"blog": {
@@ -730,7 +733,9 @@
 			"errorServiceType": "サービスタイプを選択してください。",
 			"errorExternalUrl": "外部URLは必須です。"
 		},
-		"viewDetails": "詳細を見る"
+		"viewDetails": "詳細を見る",
+		"createTitle": "自分を宣伝する",
+		"editTitle": "プロモーションを編集"
 	},
 	"dmca": {
 		"simple": {

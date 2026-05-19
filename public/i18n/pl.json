@@ -472,6 +472,9 @@
 		},
 		"avatarCategories": {
 			"title": "Kategorie awatarów"
+		},
+		"gogolocoRemove": {
+			"title": "Usuń GoGo Loco"
 		}
 	},
 	"dmca": {
@@ -563,7 +566,10 @@
 			"evidenceLabel": "Dowód Własności:",
 			"evidenceHint": "URL lub opis potwierdzający Twoje prawo własności do oryginalnej treści:",
 			"evidencePlaceholder": "https://link-to-your-original-work.com lub opis..."
-		}
+		},
+		"modeSimple": "Tryb Prosty",
+		"modeAdvanced": "Tryb Zaawansowany",
+		"sendEmail": "Wyślij przez Email"
 	},
 	"blog": {
 		"title": "Blog",
@@ -835,6 +841,8 @@
 			"errorServiceType": "Wybierz typ usługi.",
 			"errorExternalUrl": "Zewnętrzny URL jest wymagany."
 		},
-		"viewDetails": "Zobacz szczegóły"
+		"viewDetails": "Zobacz szczegóły",
+		"createTitle": "Promuj Siebie",
+		"editTitle": "Edytuj Promocję"
 	}
 }

@@ -458,6 +458,9 @@
 		},
 		"avatarCategories": {
 			"title": "Категории аватаров"
+		},
+		"gogolocoRemove": {
+			"title": "Удалить GoGo Loco"
 		}
 	},
 	"blog": {
@@ -730,7 +733,9 @@
 			"errorServiceType": "Выберите тип услуги.",
 			"errorExternalUrl": "Внешний URL обязателен."
 		},
-		"viewDetails": "Посмотреть детали"
+		"viewDetails": "Посмотреть детали",
+		"createTitle": "Продвигайте себя",
+		"editTitle": "Редактировать продвижение"
 	},
 	"dmca": {
 		"simple": {

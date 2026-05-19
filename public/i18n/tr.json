@@ -471,6 +471,9 @@
 		},
 		"avatarCategories": {
 			"title": "Avatar Kategorileri"
+		},
+		"gogolocoRemove": {
+			"title": "GoGo Loco Kaldır"
 		}
 	},
 	"dmca": {
@@ -562,7 +565,10 @@
 			"evidenceLabel": "Mülkiyet Kanıtı:",
 			"evidenceHint": "Orijinal içeriğin size ait olduğunu kanıtlayan URL veya açıklama:",
 			"evidencePlaceholder": "https://link-to-your-original-work.com veya açıklama..."
-		}
+		},
+		"modeSimple": "Basit Mod",
+		"modeAdvanced": "Gelişmiş Mod",
+		"sendEmail": "E-posta ile Gönder"
 	},
 	"blog": {
 		"title": "Blog",
@@ -834,6 +840,8 @@
 			"errorServiceType": "Lütfen bir hizmet türü seçin.",
 			"errorExternalUrl": "Dış URL zorunludur."
 		},
-		"viewDetails": "Detayları görüntüle"
+		"viewDetails": "Detayları görüntüle",
+		"createTitle": "Kendinizi Tanıtın",
+		"editTitle": "Tanıtımı Düzenle"
 	}
 }

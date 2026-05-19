@@ -458,6 +458,9 @@
 			"dependencies": "Dependencies",
 			"erp": "ERP",
 			"informative": "Informative"
+		},
+		"gogolocoRemove": {
+			"title": "Remove GoGo Loco"
 		}
 	},
 	"dmca": {

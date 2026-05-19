@@ -62,7 +62,7 @@ function serviceTypeOptions(selected = ''): string {
 // =========================================================================
 
 export async function adCreateView(ctx: RouteContext): Promise<string> {
-	const isEdit = ctx.params.uuid !== undefined && ctx.path !== '/community/create';
+	const isEdit = ctx.params.uuid !== undefined && window.location.pathname !== '/community/create';
 	const uuid = ctx.params.uuid;
 
 	if (!window.appState.isLoggedIn) {
@@ -186,7 +186,7 @@ export async function adCreateView(ctx: RouteContext): Promise<string> {
 export async function adCreateAfter(ctx: RouteContext): Promise<void> {
 	if (!window.appState.isLoggedIn) return;
 
-	const isEdit = ctx.params.uuid !== undefined && ctx.path !== '/community/create';
+	const isEdit = ctx.params.uuid !== undefined && window.location.pathname !== '/community/create';
 	const uuid = ctx.params.uuid;
 
 	// Tagline counter

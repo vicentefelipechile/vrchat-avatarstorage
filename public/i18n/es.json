@@ -566,6 +566,9 @@
 			"dependencies": "Dependencias",
 			"erp": "ERP",
 			"informative": "Informativo"
+		},
+		"gogolocoRemove": {
+			"title": "Eliminar GoGo Loco"
 		}
 	},
 	"dmca": {
@@ -913,6 +916,8 @@
 			"errorServiceType": "Por favor selecciona un tipo de servicio.",
 			"errorExternalUrl": "La URL externa es obligatoria."
 		},
-		"viewDetails": "Ver detalles"
+		"viewDetails": "Ver detalles",
+		"createTitle": "Promociónate",
+		"editTitle": "Editar Promoción"
 	}
 }

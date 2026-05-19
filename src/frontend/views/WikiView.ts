@@ -53,6 +53,7 @@ const CATEGORIES: WikiCategory[] = [
 			{ id: 'parameter', label: 'wiki.parameter.title' },
 			{ id: 'action-menu', label: 'wiki.actionMenu.title' },
 			{ id: 'unityhub-error', label: 'wiki.unityhubError.title' },
+			{ id: 'gogoloco-remove', label: 'wiki.gogolocoRemove.title' },
 		],
 	},
 	{
@@ -254,16 +255,15 @@ export async function wikiAfter(ctx: RouteContext): Promise<void> {
 		contentEl.innerHTML = `
 			<h1>${t('wiki.comments.title')}</h1>
 			<div id="comments-container"><p>${t('common.loading')}</p></div>
-			${
-				user
-					? `<form id="wiki-comment-form" class="wiki-comment-form">
+			${user
+				? `<form id="wiki-comment-form" class="wiki-comment-form">
 					<div class="form-group">
 						<textarea id="comment-text" rows="3" placeholder="${t('item.commentPlaceholder')}" required class="comment-textarea"></textarea>
 					</div>
 					<div id="turnstile-wiki-comment" class="mb-10"></div>
 					<button type="submit" class="btn">${t('item.send')}</button>
 				</form>`
-					: `<hr><h3>${t('item.loginToComment')}</h3>`
+				: `<hr><h3>${t('item.loginToComment')}</h3>`
 			}`;
 
 		await loadComments();

@@ -468,6 +468,9 @@
 		},
 		"avatarCategories": {
 			"title": "Avatar-Kategorien"
+		},
+		"gogolocoRemove": {
+			"title": "GoGo Loco entfernen"
 		}
 	},
 	"dmca": {
@@ -559,7 +562,10 @@
 			"evidenceLabel": "Eigentumsnachweis:",
 			"evidenceHint": "URL oder Beschreibung als Nachweis Ihrer Urheberschaft am Originalinhalt:",
 			"evidencePlaceholder": "https://link-to-your-original-work.com oder Beschreibung..."
-		}
+		},
+		"modeSimple": "Einfacher Modus",
+		"modeAdvanced": "Erweiterter Modus",
+		"sendEmail": "Per E-Mail senden"
 	},
 	"meta": {
 		"required": "* erforderlich",
@@ -831,6 +837,8 @@
 			"errorServiceType": "Bitte wähle einen Diensttyp aus.",
 			"errorExternalUrl": "Externe URL ist erforderlich."
 		},
-		"viewDetails": "Details ansehen"
+		"viewDetails": "Details ansehen",
+		"createTitle": "Sich selbst bewerben",
+		"editTitle": "Werbung bearbeiten"
 	}
 }

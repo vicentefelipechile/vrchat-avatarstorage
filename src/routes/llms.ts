@@ -274,6 +274,7 @@ All wiki articles are served as raw Markdown from /wiki/en/{topic}.md (replace \
 - [Wiki - Sync Dances](https://vrcstorage.lat/wiki/en/syncdances.md): Synchronized dance system for VRChat.
 - [Wiki - Unity Hub Error](https://vrcstorage.lat/wiki/en/unityhub-error.md): Common Unity Hub errors and fixes.
 - [Wiki - VRCQuestTools](https://vrcstorage.lat/wiki/en/vrcquesttools.md): VRCQuestTools — PC to Quest avatar conversion.
+- [Wiki - Remove GoGo Loco](https://vrcstorage.lat/wiki/en/gogoloco-remove.md): How to remove GoGo Loco from an avatar.
 `;
 
 // =========================================================================================================

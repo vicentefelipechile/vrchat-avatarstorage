@@ -471,6 +471,9 @@
 		},
 		"avatarCategories": {
 			"title": "Avatar-categorieën"
+		},
+		"gogolocoRemove": {
+			"title": "GoGo Loco verwijderen"
 		}
 	},
 	"dmca": {
@@ -562,7 +565,10 @@
 			"evidenceLabel": "Bewijs van Eigendom:",
 			"evidenceHint": "URL of beschrijving ter bewijs van uw eigenaarschap van de originele inhoud:",
 			"evidencePlaceholder": "https://link-to-your-original-work.com of beschrijving..."
-		}
+		},
+		"modeSimple": "Eenvoudige Modus",
+		"modeAdvanced": "Geavanceerde Modus",
+		"sendEmail": "Verzenden via e-mail"
 	},
 	"blog": {
 		"title": "Blog",
@@ -834,6 +840,8 @@
 			"errorServiceType": "Selecteer een servicetype.",
 			"errorExternalUrl": "Externe URL is vereist."
 		},
-		"viewDetails": "Details bekijken"
+		"viewDetails": "Details bekijken",
+		"createTitle": "Promoot Jezelf",
+		"editTitle": "Promotie Bewerken"
 	}
 }

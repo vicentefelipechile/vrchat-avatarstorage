@@ -458,6 +458,9 @@
 		},
 		"avatarCategories": {
 			"title": "Catégories d\"avatars"
+		},
+		"gogolocoRemove": {
+			"title": "Supprimer GoGo Loco"
 		}
 	},
 	"dmca": {
@@ -799,6 +802,8 @@
 			"errorServiceType": "Veuillez sélectionner un type de service.",
 			"errorExternalUrl": "L\"URL externe est requise."
 		},
-		"viewDetails": "Voir les détails"
+		"viewDetails": "Voir les détails",
+		"createTitle": "Faites votre promotion",
+		"editTitle": "Modifier la Promotion"
 	}
 }

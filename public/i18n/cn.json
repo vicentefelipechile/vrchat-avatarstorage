@@ -458,6 +458,9 @@
 		},
 		"avatarCategories": {
 			"title": "Avatar 分类"
+		},
+		"gogolocoRemove": {
+			"title": "移除GoGo Loco"
 		}
 	},
 	"blog": {
@@ -730,7 +733,9 @@
 			"errorServiceType": "请选择服务类型。",
 			"errorExternalUrl": "外部 URL 为必填项。"
 		},
-		"viewDetails": "查看详情"
+		"viewDetails": "查看详情",
+		"createTitle": "推广自己",
+		"editTitle": "编辑推广"
 	},
 	"dmca": {
 		"simple": {
@@ -799,6 +804,11 @@
 			"l1": "所有DMCA通知将由我们的团队在72小时内审核。",
 			"l2": "提供虚假信息可能会产生法律后果。",
 			"l3": "在申诉调查期间, 内容可能会被预防性地删除。"
-		}
+		},
+		"title": "DMCA 下架通知",
+		"subtitle": "报告托管在 vrcstorage.lat 上的资源的侵权行为",
+		"modeSimple": "简单模式",
+		"modeAdvanced": "高级模式",
+		"sendEmail": "通过电子邮件发送"
 	}
 }
