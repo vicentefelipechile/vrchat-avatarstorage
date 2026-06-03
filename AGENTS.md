@@ -986,23 +986,6 @@ This bundles the new locale import into `public/js/bundle.js`.
 - Update the **Languages** list in the `Wiki Documentation` section.
 - Update the locale file listing (`.json` files) in the `Project Structure` section.
 
-## Implementation Checklist for Agents
-
-When implementing a new feature or fixing a bug, verify the following:
-
-1. [ ] **Input Validation:** Are all inputs (body, query, params) validated with Zod?
-2. [ ] **Sanitization:** Are string inputs sanitized to prevent XSS?
-3. [ ] **Type Safety:** Are `src/types.ts`, `frontend/types.ts`, and `worker-configuration.d.ts` updated and used?
-4. [ ] **Security:** Is the endpoint protected by `getAuthUser` or appropriate middleware?
-5. [ ] **Rate Limiting:** Is a `rateLimit` middleware applied if the endpoint is public?
-6. [ ] **Caching:** Does the KV cache need to be cleared/updated after this change (e.g., `VRCSTORAGE_KV.delete(...)`)?
-7. [ ] **Database:** Are queries using prepared statements and `.bind(...)`?
-8. [ ] **Schema Migration:** If the DB schema changed, did you create a new `migrations/NNNN_description.sql` file following the sequential numbering convention?
-9. [ ] **i18n:** If new translatable strings were added to the frontend, did you update all locale files in `public/js/i18n/` and run `npm run i18n-manager CHECK`?
-10. [ ] **Frontend Build:** After editing anything in `src/frontend/`, did you rebuild with `npm run build-frontend`?
-11. [ ] **Typegen:** Did you run `npm run cf-typegen` if you changed `wrangler.jsonc`?
-12. [ ] **R2 Media Cleanup:** If your change deletes a record that directly owns a media file (e.g. a blog post with a cover image), did you explicitly delete the R2 object and `media` row **before** the parent DELETE? If you added a new table or column that can embed media via Markdown, did you add the corresponding `INSTR` guard to **both** `src/index.ts` (cron) and `src/routes/admin.ts` (manual cleanup)?
-
 ## Troubleshooting
 
 - **Memory/CPU Limits (1102):** Worker execution exceeded limits. Optimize D1 queries or R2 stream handling.
