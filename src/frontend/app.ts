@@ -5,7 +5,7 @@
 import { route, notFound, navigateTo, initRouter } from './router';
 import { setLanguage, getCurrentLang, t } from './i18n';
 import { DataCache } from './cache';
-import { showToast, TimeUnit } from './utils';
+import { showToast, TimeUnit, initLazyImages } from './utils';
 import type { AuthUser } from './types';
 
 // Views
@@ -390,6 +390,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 	// Update nav DOM on route changes
 	window.addEventListener('route-changed', updateNavDOM);
+	window.addEventListener('route-changed', () => initLazyImages());
 
 	// Service Worker
 	if ('serviceWorker' in navigator) {

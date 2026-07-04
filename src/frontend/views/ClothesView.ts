@@ -10,7 +10,7 @@ import { t } from '../i18n';
 import { buildFilterPanel, FilterType, initFilterPanel } from '../filter-panel';
 import type { RouteContext } from '../types';
 import { DataCache } from '../cache';
-import { TimeUnit } from '../utils';
+import { TimeUnit, mediaUrl } from '../utils';
 import { renderAdPrefsPanel } from '../ad-prefs';
 import { initAdSystem, mountSidebarSlot } from '../ad-orchestrator';
 
@@ -22,6 +22,7 @@ interface ClothesResource {
 	uuid: string;
 	title: string;
 	thumbnail_key: string | null;
+	thumbnail_media_uuid: string | null;
 	download_count: number;
 	created_at: number;
 	meta: {
@@ -49,9 +50,11 @@ function clothesCard(res: ClothesResource): string {
 	const title = res.title.substring(0, 50);
 	const date = new Date(res.created_at * 1000).toLocaleDateString();
 
-	const imgHtml = res.thumbnail_key
-		? `<div class="card-image"><img src="/api/download/${res.thumbnail_key}" alt="${title}" loading="lazy"><span class="card-badge">${res.meta.clothing_type}</span></div>`
-		: `<div class="card-image card-image-placeholder"><span class="card-badge">${res.meta.clothing_type}</span></div>`;
+	const imgHtml = res.thumbnail_media_uuid
+		? `<div class="card-image"><img src="${mediaUrl(res.thumbnail_media_uuid, 'low')}" alt="${title}" loading="lazy"><span class="card-badge">${res.meta.clothing_type}</span></div>`
+		: res.thumbnail_key
+			? `<div class="card-image"><img src="/api/download/${res.thumbnail_key}" alt="${title}" loading="lazy"><span class="card-badge">${res.meta.clothing_type}</span></div>`
+			: `<div class="card-image card-image-placeholder"><span class="card-badge">${res.meta.clothing_type}</span></div>`;
 
 	return `<div class="card">
 		<a href="/item/${res.uuid}" data-link class="card-link">${imgHtml}</a>

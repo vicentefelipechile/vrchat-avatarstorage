@@ -307,7 +307,7 @@
 		"confirmPassword": "Confirm Password",
 		"passwordMismatch": "Passwords do not match",
 		"error": "Registration failed. Please try again.",
-		"success": "Registration successful. Please login."
+		"success": "Welcome! Your account has been created."
 	},
 	"upload": {
 		"title": "Upload Resource",

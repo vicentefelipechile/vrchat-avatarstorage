@@ -9,11 +9,19 @@
 // Imports
 // =========================================================================================================
 
+import {
+	Media,
+	Resource,
+	UploadQueueMessage,
+	MediaResolution,
+	MediaFormat
+} from './types';
 import { Hono } from 'hono';
-import { Media, Resource, UploadQueueMessage } from './types';
 import { z } from 'zod';
+
 import { securityMiddleware } from './middleware/security';
 import { rateLimit } from './middleware/rate-limit';
+
 import resourceRoutes from './routes/resources';
 import userRoutes from './routes/users';
 import adminRoutes from './routes/admin';
@@ -358,6 +366,64 @@ app.get('/*', async (c) => {
 });
 
 // =========================================================================================================
+// Queue Processing — Image Variant Generation
+// =========================================================================================================
+
+const MEDIA_VARIANTS: Array<{ res: MediaResolution; format: MediaFormat; maxWidth?: number; quality: number }> = [
+	{ res: 'low', format: 'webp', maxWidth: 400, quality: 75 },
+	{ res: 'low', format: 'png', maxWidth: 400, quality: 75 },
+	{ res: 'med', format: 'webp', maxWidth: 800, quality: 85 },
+	{ res: 'med', format: 'png', maxWidth: 800, quality: 85 },
+	{ res: 'original', format: 'webp', quality: 90 },
+	{ res: 'original', format: 'png', quality: 90 },
+];
+
+async function processImageVariants(env: Env, media_uuid: string, r2_key: string): Promise<void> {
+	const originalObj = await env.BUCKET.get(r2_key);
+	if (!originalObj) throw new Error(`Original not found in BUCKET: ${r2_key}`);
+
+	const originalBytes = new Uint8Array(await originalObj.arrayBuffer());
+	const toStream = (): ReadableStream<Uint8Array> =>
+		new ReadableStream({ start(c) { c.enqueue(originalBytes); c.close(); } });
+	const statements: D1PreparedStatement[] = [];
+
+	for (const v of MEDIA_VARIANTS) {
+		const transformInput = env.IMAGES.input(toStream());
+		const withTransform = v.maxWidth ? transformInput.transform({ width: v.maxWidth, fit: 'scale-down' }) : transformInput;
+		const result = await withTransform.output({ format: `image/${v.format}` as `image/${MediaFormat}`, quality: v.quality });
+
+		const variantKey = `${media_uuid}/${v.res}.${v.format}`;
+		const variantBuffer = await result.response().arrayBuffer();
+
+		await env.MEDIA_BUCKET.put(variantKey, variantBuffer, {
+			httpMetadata: { contentType: `image/${v.format}` },
+		});
+
+		statements.push(
+			env.DB.prepare(
+				`INSERT OR REPLACE INTO media_variants (media_uuid, res, format, r2_key, file_size) VALUES (?, ?, ?, ?, ?)`,
+			).bind(media_uuid, v.res, v.format, variantKey, variantBuffer.byteLength),
+		);
+	}
+
+	const placeholderResult = await env.IMAGES.input(toStream())
+		.transform({ width: 8, height: 8, fit: 'cover' })
+		.output({ format: 'image/webp', quality: 10 });
+
+	const placeholderBuffer = await placeholderResult.response().arrayBuffer();
+	const placeholderBase64 = btoa(String.fromCharCode(...new Uint8Array(placeholderBuffer)));
+
+	statements.push(
+		env.DB.prepare('UPDATE media SET placeholder_blur = ? WHERE uuid = ?').bind(
+			`data:image/webp;base64,${placeholderBase64}`,
+			media_uuid,
+		),
+	);
+
+	await env.DB.batch(statements);
+}
+
+// =========================================================================================================
 // Scheduled Tasks (Cron Jobs)
 // =========================================================================================================
 
@@ -401,6 +467,10 @@ async function cleanupOrphanedMedia(env: Env) {
 		let deletedCount = 0;
 
 		for (const media of orphanedMedia.results) {
+			const variants = await env.DB.prepare('SELECT r2_key FROM media_variants WHERE media_uuid = ?')
+				.bind(media.uuid)
+				.all<{ r2_key: string }>();
+			await Promise.all(variants.results.map((v) => env.MEDIA_BUCKET.delete(v.r2_key)));
 			await env.BUCKET.delete(media.r2_key);
 			await env.DB.prepare('DELETE FROM media WHERE uuid = ?').bind(media.uuid).run();
 			deletedCount++;
@@ -420,14 +490,16 @@ export default {
 		console.log('[CRON] Running scheduled cleanup task');
 		ctx.waitUntil(cleanupOrphanedMedia(env));
 	},
-	queue: async (batch: MessageBatch<UploadQueueMessage>, env: Env, ctx: ExecutionContext) => {
+	queue: async (batch: MessageBatch<UploadQueueMessage>, env: Env, _ctx: ExecutionContext) => {
 		for (const msg of batch.messages) {
 			const { media_uuid, r2_key, media_type, file_name } = msg.body;
 			try {
-				// ── Hook point for async post-processing ──────────────────────────
-				// Add here: virus scanning, thumbnail generation, content moderation
-				// ──────────────────────────────────────────────────────────────────
-				console.log(`[QUEUE] Processing upload: ${media_uuid} (${media_type}) → ${file_name}`);
+				if (media_type === 'image') {
+					await processImageVariants(env, media_uuid, r2_key);
+					console.log(`[QUEUE] Image variants generated: ${media_uuid} (${file_name})`);
+				} else {
+					console.log(`[QUEUE] Non-image upload acknowledged: ${media_uuid} (${media_type})`);
+				}
 				msg.ack();
 			} catch (e) {
 				console.error(`[QUEUE] Failed to process ${r2_key}:`, e);

@@ -34,13 +34,27 @@ export interface CreateUser {
 // =========================================================================
 
 export type MediaType = 'image' | 'video' | 'file';
+export type MediaResolution = 'low' | 'med' | 'original';
+export type MediaFormat = 'webp' | 'png';
 
 export interface Media {
 	uuid: string;
 	r2_key: string; // Clave en Cloudflare R2
 	media_type: MediaType; // 'image' o 'file'
 	file_name: string;
+	placeholder_blur: string | null;
 	created_at: number; // Unix timestamp
+}
+
+export interface MediaVariant {
+	media_uuid: string;
+	res: MediaResolution;
+	format: MediaFormat;
+	r2_key: string;
+	width: number | null;
+	height: number | null;
+	file_size: number | null;
+	created_at: number;
 }
 
 export interface CreateMedia {
@@ -470,7 +484,7 @@ export interface CommunityAd {
 	expires_at: number | null;
 }
 
-/** Extended view returned by GET /api/ads — includes resolved media keys */
+/** Extended view returned by GET /api/ads — includes resolved media keys and UUIDs */
 export interface CommunityAdPublic {
 	uuid: string;
 	title: string;
@@ -479,7 +493,9 @@ export interface CommunityAdPublic {
 	destination_type: AdDestinationType;
 	external_url: string | null;
 	banner_r2_key: string | null;
+	banner_media_uuid: string | null;
 	card_r2_key: string | null;
+	card_media_uuid: string | null;
 	display_weight: number;
 	author_username: string;
 }

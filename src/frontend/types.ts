@@ -117,6 +117,7 @@ export interface Resource {
 	description: string;
 	category: string;
 	thumbnail_key?: string;
+	thumbnail_media_uuid?: string | null;
 	reference_image_key?: string | null;
 	is_active: number;
 	created_at: number;

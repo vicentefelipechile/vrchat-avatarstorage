@@ -6,7 +6,7 @@
 import { t } from './i18n';
 import { shouldShowAd, shouldShowSlot, openAdPrefsPanel, renderAdPrefsGearButton } from './ad-prefs';
 import { DataCache } from './cache';
-import { TimeUnit } from './utils';
+import { TimeUnit, mediaUrl } from './utils';
 
 // =========================================================================
 // Types
@@ -20,7 +20,9 @@ export interface AdPublic {
 	destination_type: 'internal' | 'external';
 	external_url: string | null;
 	banner_r2_key: string | null;
+	banner_media_uuid: string | null;
 	card_r2_key: string | null;
+	card_media_uuid: string | null;
 	display_weight: number;
 	author_username: string;
 }
@@ -118,8 +120,9 @@ export function renderSidebarBanner(ads: AdPublic[]): string {
 
 	const ad = visible[0];
 
-	const imgHtml = ad.banner_r2_key
-		? `<img class="ad-sidebar__img" src="/api/download/${ad.banner_r2_key}" alt="${ad.title}" loading="lazy">`
+	const bannerSrc1 = ad.banner_media_uuid ? mediaUrl(ad.banner_media_uuid, 'med') : ad.banner_r2_key ? `/api/download/${ad.banner_r2_key}` : null;
+	const imgHtml = bannerSrc1
+		? `<img class="ad-sidebar__img" src="${bannerSrc1}" alt="${ad.title}" loading="lazy">`
 		: `<div class="ad-sidebar__img-placeholder"></div>`;
 
 	return `
@@ -152,8 +155,9 @@ export function renderSidebarBannerFixed(ads: AdPublic[]): string {
 
 	const ad = visible[0];
 
-	const imgHtml = ad.banner_r2_key
-		? `<img class="ad-sidebar__img" src="/api/download/${ad.banner_r2_key}" alt="${ad.title}" loading="lazy">`
+	const bannerSrc2 = ad.banner_media_uuid ? mediaUrl(ad.banner_media_uuid, 'med') : ad.banner_r2_key ? `/api/download/${ad.banner_r2_key}` : null;
+	const imgHtml = bannerSrc2
+		? `<img class="ad-sidebar__img" src="${bannerSrc2}" alt="${ad.title}" loading="lazy">`
 		: `<div class="ad-sidebar__img-placeholder"></div>`;
 
 	return `
@@ -187,8 +191,11 @@ export function renderFeaturedArtistCard(ads: AdPublic[], excludeUuids: string[]
 
 	const ad = visible[0];
 
-	const imgHtml = ad.card_r2_key || ad.banner_r2_key
-		? `<img class="ad-featured__img" src="/api/download/${ad.card_r2_key ?? ad.banner_r2_key}" alt="${ad.title}" loading="lazy">`
+	const featuredUuid = ad.card_media_uuid ?? ad.banner_media_uuid;
+	const featuredKey = ad.card_r2_key ?? ad.banner_r2_key;
+	const featuredSrc = featuredUuid ? mediaUrl(featuredUuid, 'med') : featuredKey ? `/api/download/${featuredKey}` : null;
+	const imgHtml = featuredSrc
+		? `<img class="ad-featured__img" src="${featuredSrc}" alt="${ad.title}" loading="lazy">`
 		: `<div class="ad-featured__img-placeholder"></div>`;
 
 	return `
@@ -222,8 +229,9 @@ export function renderDetailBanner(ads: AdPublic[]): string {
 
 	const ad = visible[0];
 
-	const imgHtml = ad.banner_r2_key
-		? `<img class="ad-detail-banner__img" src="/api/download/${ad.banner_r2_key}" alt="${ad.title}" loading="lazy">`
+	const detailSrc = ad.banner_media_uuid ? mediaUrl(ad.banner_media_uuid, 'med') : ad.banner_r2_key ? `/api/download/${ad.banner_r2_key}` : null;
+	const imgHtml = detailSrc
+		? `<img class="ad-detail-banner__img" src="${detailSrc}" alt="${ad.title}" loading="lazy">`
 		: `<div class="ad-detail-banner__img-placeholder"></div>`;
 
 	return `

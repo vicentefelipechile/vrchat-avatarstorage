@@ -415,7 +415,7 @@
 		"confirmPassword": "Confirmar Contraseña",
 		"passwordMismatch": "Las contraseñas no coinciden",
 		"error": "Error en el registro. Por favor inténtalo de nuevo.",
-		"success": "Registro exitoso. Por favor inicia sesión."
+		"success": "¡Bienvenido/a! Tu cuenta ha sido creada."
 	},
 	"upload": {
 		"title": "Subir Recurso",

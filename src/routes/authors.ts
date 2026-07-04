@@ -112,7 +112,7 @@ authors.get('/:slug', async (c) => {
 		const total = countResult?.total ?? 0;
 
 		const avatars = await c.env.DB.prepare(
-			`SELECT r.uuid, r.title, r.download_count, r.created_at, m.r2_key as thumbnail_key,
+			`SELECT r.uuid, r.title, r.download_count, r.created_at, m.r2_key as thumbnail_key, m.uuid as thumbnail_media_uuid,
 				am.gender, am.avatar_type, am.platform, am.is_nsfw
 			FROM resources r
 			INNER JOIN avatar_meta am ON r.uuid = am.resource_uuid

@@ -317,7 +317,7 @@
 		"confirmPassword": "Wachtwoord bevestigen",
 		"passwordMismatch": "Wachtwoorden komen niet overeen",
 		"error": "Registratie mislukt. Probeer het opnieuw.",
-		"success": "Registratie succesvol. Log in."
+		"success": "Welkom! Je account is aangemaakt."
 	},
 	"upload": {
 		"title": "Bron uploaden",

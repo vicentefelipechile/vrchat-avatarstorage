@@ -218,6 +218,58 @@ export function showToast(message: string, type: ToastType = 'info', duration = 
 }
 
 // =========================================================================================================
+// Media CDN
+// =========================================================================================================
+
+const CDN_BASE = 'https://cdn.vrcstorage.lat';
+
+export function mediaUrl(uuid: string, res: 'low' | 'med' | 'original' = 'med', format: 'webp' | 'png' = 'webp'): string {
+	return `${CDN_BASE}/${uuid}?res=${res}&format=${format}`;
+}
+
+export function progressiveImg(opts: {
+	uuid: string;
+	placeholder: string | null;
+	res?: 'low' | 'med' | 'original';
+	alt?: string;
+	className?: string;
+}): string {
+	const { uuid, placeholder, res = 'med', alt = '', className = '' } = opts;
+	const src = placeholder ?? mediaUrl(uuid, res);
+	const dataSrc = mediaUrl(uuid, res);
+	const blurStyle = placeholder ? 'filter:blur(8px);transition:filter 0.4s ease' : '';
+	return `<img
+		src="${src}"
+		data-src="${dataSrc}"
+		alt="${alt}"
+		class="lazy-img${className ? ' ' + className : ''}"
+		style="${blurStyle}"
+		loading="lazy"
+	/>`;
+}
+
+export function initLazyImages(): void {
+	const observer = new IntersectionObserver(
+		(entries) => {
+			entries.forEach((entry) => {
+				if (!entry.isIntersecting) return;
+				const img = entry.target as HTMLImageElement;
+				const dataSrc = img.dataset.src;
+				if (!dataSrc) return;
+				img.onload = () => {
+					img.style.filter = '';
+				};
+				img.src = dataSrc;
+				observer.unobserve(img);
+			});
+		},
+		{ rootMargin: '200px' },
+	);
+
+	document.querySelectorAll<HTMLImageElement>('img.lazy-img[data-src]').forEach((img) => observer.observe(img));
+}
+
+// =========================================================================================================
 // Time Definitions
 // =========================================================================================================
 

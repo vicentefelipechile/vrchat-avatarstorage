@@ -317,7 +317,7 @@
 		"confirmPassword": "Şifreyi Onayla",
 		"passwordMismatch": "Şifreler eşleşmiyor",
 		"error": "Kayıt başarısız. Lütfen tekrar deneyin.",
-		"success": "Kayıt başarılı. Lütfen giriş yapın."
+		"success": "Hoş geldiniz! Hesabınız oluşturuldu."
 	},
 	"upload": {
 		"title": "Kaynak Yükle",

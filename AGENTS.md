@@ -19,10 +19,13 @@ This guide is for agentic coding agents (like yourself) operating in the VRCStor
 - **Framework:** [Hono](https://hono.dev/) (v4+)
 - **Language:** TypeScript (backend **and** frontend)
 - **Database:** Cloudflare D1 (SQLite) - Accessible via `c.env.DB`
-- **Storage:** Cloudflare R2 (Bucket) - Accessible via `c.env.BUCKET`
+- **Storage:** Two Cloudflare R2 buckets:
+  - `BUCKET` (`vrcstorage`) — originals + all non-image files (zip, rar, blend, mp4). Accessible via `c.env.BUCKET`.
+  - `MEDIA_BUCKET` (`vrcstorage-media`) — pre-processed image variants only (6 per image). Accessible via `c.env.MEDIA_BUCKET`.
+- **Images:** Cloudflare Images binding (`IMAGES`) — used by the queue handler to generate image variants and blur placeholders. Configured in `wrangler.jsonc` (main Worker only; the CDN Worker does not need this binding).
 - **KV Cache:** Cloudflare KV - Accessible via `c.env.VRCSTORAGE_KV` (used by legacy rate-limit middleware).
 - **Rate Limiting:** Cloudflare native Rate Limiting bindings — `RL_STRICT` (1/60s), `RL_MEDIUM` (100/60s), `RL_GLOBAL` (500/60s), `RL_LOGIN` (10/60s). Configured in `wrangler.jsonc`.
-- **Queues:** Cloudflare Queues — `UPLOAD_QUEUE` binding for async upload post-processing.
+- **Queues:** Cloudflare Queues — `UPLOAD_QUEUE` binding for async upload post-processing. After a file is stored, the queue handler generates 6 image variants (low/med/original × webp/png) and a blur placeholder stored in D1.
 - **Cron:** Scheduled worker runs daily at `0 3 * * *` UTC — `cleanupOrphanedMedia` in `src/index.ts`.
 - **Validation:** [Zod](https://zod.dev/) for request body and parameter validation.
 - **Frontend Bundler:** [esbuild](https://esbuild.github.io/) — compiles `src/frontend/` → `public/js/bundle.js`.
@@ -33,7 +36,9 @@ This guide is for agentic coding agents (like yourself) operating in the VRCStor
 | Purpose                  | Command                                                                                  |
 | ------------------------ | ---------------------------------------------------------------------------------------- |
 | **Local Development**    | `npm run dev` (runs esbuild in watch mode + wrangler dev concurrently)                   |
+| **Dev CDN Worker**       | `npm run dev:cdn` (runs CDN Worker on port 8788 via `wrangler-cdn.jsonc`)                |
 | **Deploy**               | `npm run deploy` (builds frontend, then deploys to production)                           |
+| **Deploy CDN Worker**    | `npm run deploy:cdn` (deploys the dedicated CDN Worker via `wrangler-cdn.jsonc`)         |
 | **Deploy (Preview)**     | `npm run deploy:test` (builds frontend, then uploads a preview version)                  |
 | **Build Frontend**       | `npm run build-frontend` (production bundle, no source maps)                             |
 | **Build Frontend (Dev)** | `npm run build-frontend:dev` (development bundle with source maps)                       |
@@ -201,6 +206,7 @@ src/
     oauth-upsert.ts       # OAuth user upsert logic
     query-constructor.ts  # Dynamic D1 query builder
     turnstile.ts          # Cloudflare Turnstile token verification
+  cdn-worker.ts           # Dedicated CDN Worker entry point (deployed separately via wrangler-cdn.jsonc)
   index.ts                # App entry point, route mounting, error handler
   middleware/
     rate-limit.ts         # KV-based rate limiter
@@ -215,7 +221,7 @@ src/
     blog.ts               # Blog CRUD endpoints
     clothes.ts            # Clothing resource listing endpoints
     comments.ts           # Comment endpoints
-    downloads.ts          # R2 file download proxy
+    downloads.ts          # R2 file download proxy (originals, kept for backward compat)
     favorites.ts          # User favorites endpoints
     oauth.ts              # OAuth flow endpoints
     resources.ts          # Resource upload/listing/detail endpoints
@@ -269,9 +275,11 @@ migrations/               # D1 schema & migration files
   0009_category_metadata.sql  # avatar_meta, asset_meta, clothes_meta tables
   0010_backfill_metadata.sql  # Backfill metadata for existing resources
   0011_community_ads.sql      # community_ads, ad_slot_config, ad_stats, ad_internal_pages
+  0012_media_variants.sql     # placeholder_blur column on media + media_variants table
                               # New migrations follow the pattern: NNNN_description.sql
 
-wrangler.jsonc            # Cloudflare Worker configuration & bindings
+wrangler.jsonc            # Main Worker configuration & bindings
+wrangler-cdn.jsonc        # CDN Worker configuration (MEDIA_BUCKET, BUCKET, DB only)
 tsconfig.json             # Backend TypeScript config
 tsconfig.frontend.json    # Frontend TypeScript config (for type-checking only)
 ```
@@ -549,14 +557,34 @@ LIST mode never writes files — it is always safe to run.
 
 Every file uploaded via `PUT /api/upload` (or the multipart flow) creates:
 
-1. An object in **R2** (`BUCKET.put(r2Key, file)`)
-2. A row in **`media`** (`uuid`, `r2_key`, `media_type`, `file_name`)
+1. An object in **R2** (`BUCKET.put(r2Key, file)`) — the original, served via `/api/download/<r2_key>`.
+2. A row in **`media`** (`uuid`, `r2_key`, `media_type`, `file_name`, `placeholder_blur`).
+3. For images, the upload is also sent to `UPLOAD_QUEUE`. The queue handler (`processImageVariants` in `src/index.ts`) generates 6 variants stored in `MEDIA_BUCKET` and 6 rows in `media_variants`, then writes the base64 blur placeholder to `media.placeholder_blur`.
 
-The `r2_key` is a random UUID and appears in all download URLs: `/api/download/<r2_key>`.
+The `r2_key` is a random UUID. Original files remain accessible at `/api/download/<r2_key>`. Image variants are served via the **dedicated CDN Worker** (`src/cdn-worker.ts`, deployed separately):
+
+```
+GET https://cdn.vrcstorage.lat/{uuid}?res=[low|med|original]&format=[webp|png]
+```
+
+- **CDN Worker:** `src/cdn-worker.ts` — a standalone raw-fetch Worker (no Hono, no middleware) deployed via `wrangler-cdn.jsonc`. Custom domain `cdn.vrcstorage.lat` configured in Cloudflare dashboard (Workers & Pages → vrcstorage-cdn → Settings → Triggers → Custom Domains). The main API Worker has no CDN route.
+- **Variants:** 6 files per image in `MEDIA_BUCKET` with keys `{uuid}/{res}.{format}`. Fallback to `BUCKET` original if variants are not yet ready (short cache TTL, `X-Variant-Status: pending` header).
+- **Blur placeholder:** 8×8 WebP stored as a base64 data URI in `media.placeholder_blur`. Frontend reads it to display a blurred preview while the real image loads.
+- **Backfill:** `POST /api/admin/media/generate-variants` re-queues all images that have no variants yet.
+
+Frontend utilities in `src/frontend/utils.ts`:
+- `mediaUrl(uuid, res?, format?)` — constructs a CDN URL.
+- `progressiveImg(opts)` — renders an `<img>` with blur-up loading (uses `data-src` + `.lazy-img` class).
+- `initLazyImages()` — wires an `IntersectionObserver` to replace blurred placeholders with real images. Called from `app.ts` on every `route-changed` event.
 
 #### Orphan Cleanup
 
-A scheduled cron job (`cleanupOrphanedMedia` in `src/index.ts`) runs daily and deletes any `media` record (+ its R2 object) that is not referenced anywhere. The same logic is exposed manually via `POST /api/admin/cleanup/orphaned-media`.
+A scheduled cron job (`cleanupOrphanedMedia` in `src/index.ts`) runs daily and deletes any `media` record (+ its R2 objects) that is not referenced anywhere. The same logic is exposed manually via `POST /api/admin/cleanup/orphaned-media`.
+
+When deleting an orphaned media record, the cleanup:
+1. Deletes all variant objects from `MEDIA_BUCKET` (queried from `media_variants`).
+2. Deletes the original from `BUCKET`.
+3. Deletes the `media` row (cascades to `media_variants` via FK `ON DELETE CASCADE`).
 
 A media record is considered **in use** if its `uuid` or `r2_key` appears in any of the following:
 
@@ -583,7 +611,8 @@ A media record is considered **in use** if its `uuid` or `r2_key` appears in any
 
 - **Adding a new place where media can be referenced** (e.g. a new table with a text field that embeds images): add a corresponding `AND NOT EXISTS (SELECT 1 FROM <table> WHERE INSTR(<table>.<column>, m.r2_key) > 0)` clause to **both** the cron query in `src/index.ts` and the admin endpoint queries in `src/routes/admin.ts`.
 - **Adding a new FK reference to `media`** (e.g. a new table with a `media_uuid` column): add it to the `AND m.uuid NOT IN (...)` subquery in the same two files.
-- **Deleting a record that owns a media file** (e.g. a blog post with a cover image): always explicitly delete the R2 object and the `media` row **before** deleting the parent record. Do not rely on the orphan cron for immediate cleanup of explicitly owned assets.
+- **Deleting a record that owns a media file** (e.g. a blog post with a cover image): always explicitly delete the variant objects from `MEDIA_BUCKET`, the original from `BUCKET`, and the `media` row **before** deleting the parent record. Do not rely on the orphan cron for immediate cleanup of explicitly owned assets.
+- **Never delete a `media` row** without also deleting its variants from `MEDIA_BUCKET`. The `media_variants` rows cascade automatically on `DELETE FROM media`, but the R2 objects in `MEDIA_BUCKET` do not — they must be deleted manually first.
 
 ### CSS Architecture
 

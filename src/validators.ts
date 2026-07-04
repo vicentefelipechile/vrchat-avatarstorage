@@ -28,7 +28,7 @@ export const RegisterSchema = z.object({
 		.max(32, 'Username too long')
 		.regex(/^[a-zA-Z0-9_]+$/, 'Username must be alphanumeric'),
 	password: z.string().min(8, 'Password must be at least 8 characters').max(100),
-	token: z.string().optional(), // Turnstile token
+	token: z.string().nullish(), // Turnstile token
 });
 
 export const LoginSchema = z.object({
@@ -36,7 +36,7 @@ export const LoginSchema = z.object({
 	// a 1 MB string still wastes significant CPU. Cap early at the schema layer.
 	username: z.string().min(1).max(32),
 	password: z.string().min(1).max(200),
-	token: z.string().optional(),
+	token: z.string().nullish(),
 });
 
 export const UserUpdateSchema = z.object({

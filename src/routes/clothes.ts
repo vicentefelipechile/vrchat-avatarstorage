@@ -110,6 +110,7 @@ clothes.get('/', async (c) => {
 				r.download_count,
 				r.created_at,
 				m.r2_key as thumbnail_key,
+				m.uuid as thumbnail_media_uuid,
 				cm.gender_fit,
 				cm.clothing_type,
 				cm.is_base,
@@ -132,6 +133,7 @@ clothes.get('/', async (c) => {
 			uuid: row.uuid,
 			title: row.title,
 			thumbnail_key: row.thumbnail_key,
+			thumbnail_media_uuid: row.thumbnail_media_uuid,
 			download_count: row.download_count,
 			created_at: row.created_at,
 			meta: {

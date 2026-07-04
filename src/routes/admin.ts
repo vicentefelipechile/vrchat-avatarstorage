@@ -257,12 +257,12 @@ admin.post('/cleanup/orphaned-media', async (c) => {
 		let deletedCount = 0;
 
 		for (const media of orphanedMedia.results) {
-			// Eliminar de R2
+			const variants = await c.env.DB.prepare('SELECT r2_key FROM media_variants WHERE media_uuid = ?')
+				.bind(media.uuid)
+				.all<{ r2_key: string }>();
+			await Promise.all(variants.results.map((v) => c.env.MEDIA_BUCKET.delete(v.r2_key)));
 			await c.env.BUCKET.delete(media.r2_key);
-
-			// Eliminar de DB
 			await c.env.DB.prepare('DELETE FROM media WHERE uuid = ?').bind(media.uuid).run();
-
 			deletedCount++;
 		}
 
@@ -826,6 +826,41 @@ admin.get('/ads/stats', async (c) => {
 	} catch (e) {
 		console.error('Admin GET ads stats error:', e);
 		return c.json({ error: 'Failed to fetch ad stats' }, 500);
+	}
+});
+
+// =========================================================================================================
+// POST /api/admin/media/generate-variants
+// Backfill image variants for all existing images that have no variants yet.
+// Enqueues each image into UPLOAD_QUEUE; the queue handler generates the 6 variants.
+// =========================================================================================================
+
+admin.post('/media/generate-variants', async (c) => {
+	const user = await getAuthUser(c);
+	if (!user) return c.json({ error: 'Unauthorized' }, 401);
+	if (!user.is_admin) return c.json({ error: 'Forbidden' }, 403);
+
+	try {
+		const rows = await c.env.DB.prepare(
+			`SELECT uuid, r2_key FROM media
+			  WHERE media_type = 'image'
+			    AND uuid NOT IN (SELECT DISTINCT media_uuid FROM media_variants)`,
+		).all<{ uuid: string; r2_key: string }>();
+
+		for (const row of rows.results) {
+			await c.env.UPLOAD_QUEUE.send({
+				media_uuid: row.uuid,
+				r2_key: row.r2_key,
+				media_type: 'image',
+				file_name: 'backfill',
+				uploaded_at: Date.now(),
+			});
+		}
+
+		return c.json({ enqueued: rows.results.length });
+	} catch (e) {
+		console.error('Backfill variants error:', e);
+		return c.json({ error: 'Failed to enqueue backfill jobs' }, 500);
 	}
 });
 

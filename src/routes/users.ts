@@ -91,6 +91,7 @@ users.post('/register', async (c) => {
 			.bind(uuid, username, hash, avatarUrl)
 			.run();
 
+		await createSession(c, { username, is_admin: 0 });
 		return c.json({ success: true });
 	} catch (e) {
 		console.error('Registration error:', e);

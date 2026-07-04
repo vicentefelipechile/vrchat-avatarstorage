@@ -317,7 +317,7 @@
 		"confirmPassword": "Passwort bestätigen",
 		"passwordMismatch": "Die Passwörter stimmen nicht überein",
 		"error": "Registrierung fehlgeschlagen. Bitte versuche es erneut.",
-		"success": "Registrierung erfolgreich. Bitte melde dich an."
+		"success": "Willkommen! Dein Konto wurde erstellt."
 	},
 	"upload": {
 		"title": "Ressource hochladen",

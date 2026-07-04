@@ -77,7 +77,7 @@ export function registerAfter(_ctx: RouteContext): void {
 		const token = new FormData(form).get('cf-turnstile-response') as string;
 
 		try {
-			const res = await fetch('/api/register', {
+			const res = await fetch('/api/auth/register', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ username, password, token }),
@@ -85,8 +85,9 @@ export function registerAfter(_ctx: RouteContext): void {
 			const data = (await res.json()) as { error?: string };
 
 			if (res.ok) {
-				localStorage.removeItem('auth_state');
-				navigateTo('/login');
+				localStorage.setItem('auth_state', JSON.stringify({ isLoggedIn: true, isAdmin: false, user: { username } }));
+				window.appState = { isLoggedIn: true, isAdmin: false, user: { username } as never };
+				navigateTo('/');
 				showToast(t('register.success'), 'success');
 			} else {
 				showToast(data.error ?? t('register.error'), 'error');

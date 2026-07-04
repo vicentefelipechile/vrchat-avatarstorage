@@ -307,7 +307,7 @@
 		"confirmPassword": "Confirmar Senha",
 		"passwordMismatch": "As senhas não coincidem",
 		"error": "Falha no registro. Por favor, tente novamente.",
-		"success": "Registro realizado com sucesso. Faça o login."
+		"success": "Bem-vindo! Sua conta foi criada."
 	},
 	"upload": {
 		"title": "Enviar Recurso",

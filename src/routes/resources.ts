@@ -47,6 +47,7 @@ resources.get('/latest', async (c) => {
 			'r.created_at',
 			'r.download_count',
 			'm.r2_key as thumbnail_key',
+			'm.uuid as thumbnail_media_uuid',
 		])
 		.join('INNER JOIN media m ON r.thumbnail_uuid = m.uuid')
 		.join('LEFT JOIN users u ON r.author_uuid = u.uuid')
@@ -175,6 +176,7 @@ resources.get('/:uuid', async (c) => {
             r.created_at,
             r.updated_at,
             tm.r2_key         	AS thumbnail_key,
+            tm.uuid           	AS thumbnail_media_uuid,
             rm_ref.r2_key     	AS reference_image_key,
             -- Avatar metadata
             am.gender            AS av_gender,
@@ -270,6 +272,7 @@ resources.get('/:uuid', async (c) => {
 		updated_at: row.updated_at,
 		// Gallery
 		thumbnail_key: row.thumbnail_key ?? null,
+		thumbnail_media_uuid: row.thumbnail_media_uuid ?? null,
 		reference_image_key: row.reference_image_key ?? null,
 		// Category-specific metadata (null if not yet populated)
 		meta: (() => {

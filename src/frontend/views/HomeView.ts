@@ -4,7 +4,7 @@
 
 import { DataCache } from '../cache';
 import { t } from '../i18n';
-import { stripMarkdown, TimeUnit } from '../utils';
+import { stripMarkdown, TimeUnit, mediaUrl } from '../utils';
 import type { RouteContext, Resource } from '../types';
 import { renderAdPrefsPanel } from '../ad-prefs';
 import { initAdSystem, mountSidebarSlot, mountFeaturedSlot } from '../ad-orchestrator';
@@ -24,12 +24,17 @@ function resourceCard(res: Resource): string {
 	return `
 		<div class="card">
 			<a href="/item/${res.uuid}" data-link class="card-link">
-				${res.thumbnail_key
+				${res.thumbnail_media_uuid
 		? `<div class="card-image">
+					<img src="${mediaUrl(res.thumbnail_media_uuid, 'low')}" alt="${title}" loading="lazy">
+					<span class="card-badge">${categoryLabel}</span>
+				</div>`
+		: res.thumbnail_key
+			? `<div class="card-image">
 					<img src="/api/download/${res.thumbnail_key}" alt="${title}" loading="lazy">
 					<span class="card-badge">${categoryLabel}</span>
 				</div>`
-		: `<div class="card-image card-image-placeholder">
+			: `<div class="card-image card-image-placeholder">
 					<span class="card-badge">${categoryLabel}</span>
 				</div>`
 	}

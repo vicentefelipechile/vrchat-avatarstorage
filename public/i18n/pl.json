@@ -317,7 +317,7 @@
 		"confirmPassword": "Potwierdź hasło",
 		"passwordMismatch": "Hasła nie są zgodne",
 		"error": "Rejestracja nie powiodła się. Spróbuj ponownie.",
-		"success": "Rejestracja zakończona. Zaloguj się."
+		"success": "Witaj! Twoje konto zostało utworzone."
 	},
 	"upload": {
 		"title": "Prześlij zasób",

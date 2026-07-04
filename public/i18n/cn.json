@@ -307,7 +307,7 @@
 		"confirmPassword": "确认密码",
 		"passwordMismatch": "两次输入的密码不一致",
 		"error": "注册失败, 请重试。",
-		"success": "注册成功。请登录。"
+		"success": "欢迎！您的账号已创建。"
 	},
 	"upload": {
 		"title": "上传资源",

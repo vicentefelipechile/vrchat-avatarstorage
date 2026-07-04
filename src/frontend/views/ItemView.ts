@@ -4,7 +4,7 @@
 
 import { t } from '../i18n';
 import { DataCache } from '../cache';
-import { showToast, TimeUnit } from '../utils';
+import { showToast, TimeUnit, mediaUrl } from '../utils';
 import { deleteComment, approveResource, rejectResource, deactivateResource } from '../admin';
 import { icons } from '../icons';
 import { commentEditorHtml, initCommentEditor } from '../comment-editor';
@@ -190,21 +190,23 @@ function buildGallery(res: Resource): { html: string; images: string[] } {
 
 	if (hasMedia) {
 		res.mediaFiles!.forEach((media) => {
-			const url = `/api/download/${media.r2_key}`;
+			const fallbackUrl = `/api/download/${media.r2_key}`;
 			if (media.media_type === 'video') {
 				html += `
 					<div class="gallery-item">
 						<video controls style="width:100%;height:100%;object-fit:cover">
-							<source src="${url}" type="video/mp4">
+							<source src="${fallbackUrl}" type="video/mp4">
 						</video>
 					</div>`;
 			} else if (media.media_type === 'image') {
+				const thumbUrl = media.uuid ? mediaUrl(media.uuid, 'low') : fallbackUrl;
+				const fullUrl = media.uuid ? mediaUrl(media.uuid, 'original') : fallbackUrl;
 				const idx = images.length;
-				images.push(url);
+				images.push(fullUrl);
 				html += `
 					<div class="gallery-item">
 						<div class="gallery-item-link" data-lightbox-index="${idx}" style="display:block;width:100%;height:100%;cursor:zoom-in">
-							<img src="${url}" alt="Gallery Image" loading="lazy">
+							<img src="${thumbUrl}" alt="Gallery Image" loading="lazy">
 						</div>
 					</div>`;
 			}

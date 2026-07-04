@@ -317,7 +317,7 @@
 		"confirmPassword": "Conferma password",
 		"passwordMismatch": "Le password non corrispondono",
 		"error": "Registrazione fallita. Riprova.",
-		"success": "Registrazione completata. Effettua l'accesso."
+		"success": "Benvenuto! Il tuo account è stato creato."
 	},
 	"upload": {
 		"title": "Carica risorsa",

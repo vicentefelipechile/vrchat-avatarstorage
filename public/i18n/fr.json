@@ -307,7 +307,7 @@
 		"confirmPassword": "Confirmer le mot de passe",
 		"passwordMismatch": "Les mots de passe ne correspondent pas",
 		"error": "L'inscription a échoué. Veuillez réessayer.",
-		"success": "Inscription réussie. Veuillez vous connecter."
+		"success": "Bienvenue ! Votre compte a été créé."
 	},
 	"upload": {
 		"title": "Télécharger une ressource",
