@@ -37,13 +37,14 @@
 //    │                                │     ├─ verify RS256 signature  │
 //    │                                │     └─ validate iss/aud/exp    │
 //    │                                │  4. Upsert user in D1          │
-//    │                                │     (oauth-upsert.ts)          │
+//    │                                │     (oauth-service.ts)         │
 //    │                                │  5. Create session cookie      │
 //    │  302 → /                       │                                │
 //    │ ◄───────────────────────────── │                                │
 //
 //  This module is responsible only for steps marked with a function name above.
-//  Steps 1, 4, and 5 are handled entirely inside src/routes/oauth.ts.
+//  Step 1 and the session cookie (5) live in src/http/routes/oauth.ts; the D1 upsert (4) lives in
+//  src/services/oauth-service.ts (SQL in OAuthRepository/UserRepository).
 //
 // =========================================================================================================
 // References

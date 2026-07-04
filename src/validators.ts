@@ -225,13 +225,15 @@ export const ChangePasswordSchema = z.object({
 // ============================================================================
 
 // Generic
-const PLATFORM = ['pc', 'quest', 'cross'] as const;
-const SDK_VERSION = ['sdk3', 'sdk2'] as const;
-const UNITY_VERSION = ['2019', '2022'] as const;
+// Exported so downstream tooling (e.g. the llms.txt generator) documents the exact allowed
+// filter values from this single source of truth instead of duplicating them.
+export const PLATFORM = ['pc', 'quest', 'cross'] as const;
+export const SDK_VERSION = ['sdk3', 'sdk2'] as const;
+export const UNITY_VERSION = ['2019', '2022'] as const;
 const BOOLEAN_STRING = ['0', '1'] as const;
 
 // Avatars
-const AVATAR_GENDER = [
+export const AVATAR_GENDER = [
 	'male',
 	'female',
 	'androgynous',
@@ -239,7 +241,7 @@ const AVATAR_GENDER = [
 	'both'
 ] as const;
 
-const AVATAR_SIZE = [
+export const AVATAR_SIZE = [
 	'tiny',
 	'small',
 	'medium',
@@ -247,7 +249,7 @@ const AVATAR_SIZE = [
 	'giant'
 ] as const;
 
-const AVATAR_TYPE = [
+export const AVATAR_TYPE = [
 	'human',
 	'anime',
 	'furry',
@@ -264,7 +266,7 @@ const AVATAR_TYPE = [
 
 
 // Assets
-const ASSETS_TYPE = [
+export const ASSETS_TYPE = [
 	'prop',			'shader',		'particle',
 	'vfx',			'prefab',		'script',
 	'animation',	'avatar-base',	'texture-pack',
@@ -273,8 +275,8 @@ const ASSETS_TYPE = [
 ] as const;
 
 // Clothes
-const CLOTHES_GENDER = ['male', 'female', 'unisex', 'kemono'] as const;
-const CLOTHES_TYPES = [
+export const CLOTHES_GENDER = ['male', 'female', 'unisex', 'kemono'] as const;
+export const CLOTHES_TYPES = [
 	'top',			'jacket',		'bottom',
 	'dress',		'fullbody',		'swimwear',
 	'shoes',		'legwear',		'hat',

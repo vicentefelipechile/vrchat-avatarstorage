@@ -52,7 +52,8 @@
 //    │ ◄───────────────────────────│                                        │
 //
 //  This module covers steps explicitly named above.
-//  Session creation and DB updates are handled in src/routes/2fa.ts.
+//  Business rules + DB updates live in src/services/two-factor-service.ts (SQL in UserRepository);
+//  the HTTP layer and KV session-cache invalidation are in src/http/routes/two-factor.ts.
 //
 // =========================================================================================================
 // References

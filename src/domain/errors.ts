@@ -63,3 +63,10 @@ export class ConflictError extends DomainError {
 		super(message, 409);
 	}
 }
+
+/** The target existed but is no longer available (e.g. an expired one-time token). → 410 */
+export class GoneError extends DomainError {
+	constructor(message = 'Gone') {
+		super(message, 410);
+	}
+}

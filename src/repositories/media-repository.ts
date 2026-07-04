@@ -25,6 +25,15 @@ export class MediaRepository {
 		return queryOne<MediaRow>(this.db, 'SELECT * FROM media WHERE r2_key = ?', [r2Key]);
 	}
 
+	/** Insert a new media record after the file has been persisted to R2. */
+	async insert(uuid: string, r2Key: string, mediaType: string, fileName: string): Promise<void> {
+		await execute(
+			this.db,
+			'INSERT INTO media (uuid, r2_key, media_type, file_name) VALUES (?, ?, ?, ?)',
+			[uuid, r2Key, mediaType, fileName],
+		);
+	}
+
 	/**
 	 * Increment download_count on the resource that owns this media file. The media→resource
 	 * link goes through the `resource_n_media` join table; a media UUID maps to at most one
