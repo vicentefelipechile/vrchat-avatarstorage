@@ -263,8 +263,7 @@
 		"field": {
 			"title": "Titel",
 			"desc": "Beschreibung",
-			"cat": "Kategorie",
-			"tags": "Tags"
+			"cat": "Kategorie"
 		},
 		"noVisibleChanges": "Keine sichtbaren Inhaltsänderungen.",
 		"types": {
@@ -358,8 +357,6 @@
 		"maxFiles": "Max. 8 Dateien erlaubt",
 		"backupLinks": "Backup-Links (Optional)",
 		"backupLinksHint": "Eine URL pro Zeile (Google Drive, Dropbox usw.)",
-		"tags": "Tags",
-		"tagsHint": "Kommagetrennt",
 		"captcha": "CAPTCHA *",
 		"errorMaxFiles": "Max. 3 Dateien erlaubt",
 		"errorFileTooLarge": "Datei zu groß",

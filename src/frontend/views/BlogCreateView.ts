@@ -4,7 +4,7 @@
 
 import { t } from '../i18n';
 import { navigateTo } from '../router';
-import { renderMarkdown, showToast } from '../utils';
+import { renderMarkdown, showToast, mediaUrl } from '../utils';
 import { markdownToolbarHtml, initMarkdownToolbar } from '../comment-editor';
 import type { RouteContext } from '../types';
 
@@ -80,7 +80,7 @@ function formHtml(editId: string | null, post: BlogPost | null): string {
 
 			<div class="form-group">
 				<label>${t('blog.coverImageLabel')}</label>
-				${p?.cover_image_key ? `<div class="current-cover"><img src="/api/download/${p.cover_image_key}" alt="cover" style="max-height:120px;border-radius:8px"></div>` : ''}
+				${p?.cover_image_uuid ? `<div class="current-cover"><img src="${mediaUrl(p.cover_image_uuid, 'med')}" alt="cover" style="max-height:120px;border-radius:8px"></div>` : ''}
 				<input type="file" id="blog-cover-file" accept="image/*" class="form-input">
 				<input type="hidden" id="blog-cover-uuid" value="${p?.cover_image_uuid ?? ''}">
 			</div>

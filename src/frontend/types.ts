@@ -66,10 +66,6 @@ export interface ResourceAuthor {
 	username: string;
 }
 
-export interface ResourceTag {
-	name: string;
-}
-
 // =========================================================================
 // Category-specific metadata
 // =========================================================================
@@ -117,8 +113,10 @@ export interface Resource {
 	description: string;
 	category: string;
 	thumbnail_key?: string;
+	thumbnail_uuid?: string | null;
 	thumbnail_media_uuid?: string | null;
 	reference_image_key?: string | null;
+	reference_image_media_uuid?: string | null;
 	is_active: number;
 	created_at: number;
 	updated_at?: number;
@@ -126,7 +124,6 @@ export interface Resource {
 	author?: ResourceAuthor;
 	links?: ResourceLink[];
 	mediaFiles?: MediaFile[];
-	tags?: ResourceTag[];
 	meta?: AvatarMeta | AssetMeta | ClothesMeta | null;
 	// Download helpers
 	canDownload?: boolean;

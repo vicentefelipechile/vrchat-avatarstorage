@@ -4,7 +4,7 @@
 
 import { t } from '../i18n';
 import { navigateTo } from '../router';
-import { renderMarkdown, showToast } from '../utils';
+import { renderMarkdown, showToast, mediaUrl } from '../utils';
 import { commentEditorHtml, initCommentEditor } from '../comment-editor';
 import type { RouteContext } from '../types';
 
@@ -18,6 +18,7 @@ interface BlogPost {
 	content: string;
 	excerpt?: string;
 	cover_image_key?: string;
+	cover_image_uuid?: string;
 	author_display: 'personal' | 'team';
 	author_username?: string;
 	created_at: number;
@@ -104,8 +105,8 @@ export async function blogPostView(ctx: RouteContext): Promise<string> {
 	const authorName = post.author_display === 'team' ? t('blog.team') : (post.author_username ?? '');
 	const { isAdmin } = window.appState;
 
-	const coverHtml = post.cover_image_key
-		? `<div class="blog-post-cover"><img src="/api/download/${post.cover_image_key}" alt="${esc(post.title)}"></div>`
+	const coverHtml = post.cover_image_uuid
+		? `<div class="blog-post-cover"><img src="${mediaUrl(post.cover_image_uuid, 'original')}" alt="${esc(post.title)}"></div>`
 		: '';
 
 	const adminActions = isAdmin

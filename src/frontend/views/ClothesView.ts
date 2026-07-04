@@ -11,8 +11,6 @@ import { buildFilterPanel, FilterType, initFilterPanel } from '../filter-panel';
 import type { RouteContext } from '../types';
 import { DataCache } from '../cache';
 import { TimeUnit, mediaUrl } from '../utils';
-import { renderAdPrefsPanel } from '../ad-prefs';
-import { initAdSystem, mountSidebarSlot } from '../ad-orchestrator';
 
 // =========================================================================
 // Types
@@ -52,9 +50,7 @@ function clothesCard(res: ClothesResource): string {
 
 	const imgHtml = res.thumbnail_media_uuid
 		? `<div class="card-image"><img src="${mediaUrl(res.thumbnail_media_uuid, 'low')}" alt="${title}" loading="lazy"><span class="card-badge">${res.meta.clothing_type}</span></div>`
-		: res.thumbnail_key
-			? `<div class="card-image"><img src="/api/download/${res.thumbnail_key}" alt="${title}" loading="lazy"><span class="card-badge">${res.meta.clothing_type}</span></div>`
-			: `<div class="card-image card-image-placeholder"><span class="card-badge">${res.meta.clothing_type}</span></div>`;
+		: `<div class="card-image card-image-placeholder"><span class="card-badge">${res.meta.clothing_type}</span></div>`;
 
 	return `<div class="card">
 		<a href="/item/${res.uuid}" data-link class="card-link">${imgHtml}</a>
@@ -201,7 +197,6 @@ export async function clothesView(ctx: RouteContext): Promise<string> {
 	const resultsHtml = await buildResults(ctx.query);
 
 	return `
-		${renderAdPrefsPanel()}
 		<div class="category-layout">
 			${buildFilterPanel(CLOTHES_FILTER_CONFIG)}
 			<div class="category-results" id="clothes-results">
@@ -217,9 +212,6 @@ export async function clothesView(ctx: RouteContext): Promise<string> {
 export function clothesAfter(ctx: RouteContext): void {
 	const panel = document.getElementById('filter-panel');
 	if (!panel) return;
-
-	initAdSystem();
-	mountSidebarSlot({ mode: 'fixed' });
 
 	async function refreshResults(newParams: URLSearchParams): Promise<void> {
 		const resultsEl = document.getElementById('clothes-results');

@@ -11,8 +11,6 @@ import { commentEditorHtml, initCommentEditor } from '../comment-editor';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import type { RouteContext, Resource, Comment, ResourceLink, AvatarMeta, AssetMeta, ClothesMeta } from '../types';
-import { renderAdPrefsPanel } from '../ad-prefs';
-import { initAdSystem, mountDetailBannerSlot } from '../ad-orchestrator';
 
 // =========================================================================
 // Helpers
@@ -192,10 +190,13 @@ function buildGallery(res: Resource): { html: string; images: string[] } {
 		res.mediaFiles!.forEach((media) => {
 			const fallbackUrl = `/api/download/${media.r2_key}`;
 			if (media.media_type === 'video') {
+				// Video is public media → served by the CDN (uuid). The CDN's fallback path
+				// streams the original from BUCKET when no image variant exists.
+				const videoUrl = media.uuid ? mediaUrl(media.uuid, 'original') : fallbackUrl;
 				html += `
 					<div class="gallery-item">
 						<video controls style="width:100%;height:100%;object-fit:cover">
-							<source src="${fallbackUrl}" type="video/mp4">
+							<source src="${videoUrl}" type="video/mp4">
 						</video>
 					</div>`;
 			} else if (media.media_type === 'image') {
@@ -429,7 +430,6 @@ export async function itemView(ctx: RouteContext): Promise<string> {
 	const lightboxData = encodeURIComponent(JSON.stringify(lightboxImages));
 
 	return `
-		${renderAdPrefsPanel()}
 		<div class="details-box" data-lightbox="${lightboxData}">
 			<div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:15px;margin-bottom:15px">
 				<h1 style="margin:0;line-height:1.2;word-break:break-word">${res.title}</h1>
@@ -460,7 +460,6 @@ export async function itemView(ctx: RouteContext): Promise<string> {
 						: `<hr><h3>${t('item.loginToComment')}</h3>`
 				}
 			</div>
-			<div id="item-detail-ad-zone"></div>
 		</div>
 
 		<!-- Lightbox -->
@@ -480,9 +479,6 @@ export async function itemView(ctx: RouteContext): Promise<string> {
 export async function itemAfter(ctx: RouteContext): Promise<void> {
 	const uuid = ctx.params.id;
 	const commentsContainer = document.getElementById('comments-container')!;
-
-	initAdSystem();
-	mountDetailBannerSlot({ zoneId: 'item-detail-ad-zone' });
 
 	// Recover lightbox images from data attribute
 	const box = document.querySelector<HTMLElement>('.details-box');

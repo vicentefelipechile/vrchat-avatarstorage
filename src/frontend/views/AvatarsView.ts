@@ -11,8 +11,6 @@ import { buildFilterPanel, initFilterPanel, FilterType } from '../filter-panel';
 import type { RouteContext } from '../types';
 import { DataCache } from '../cache';
 import { TimeUnit, mediaUrl, initLazyImages } from '../utils';
-import { renderAdPrefsPanel } from '../ad-prefs';
-import { initAdSystem, mountSidebarSlot } from '../ad-orchestrator';
 
 // =========================================================================
 // Types
@@ -65,9 +63,7 @@ function avatarCard(res: AvatarResource): string {
 
 	const imgHtml = res.thumbnail_media_uuid
 		? `<div class="card-image"><img src="${mediaUrl(res.thumbnail_media_uuid, 'low')}" alt="${title}" loading="lazy"><span class="card-badge">${res.meta.avatar_type}</span></div>`
-		: res.thumbnail_key
-			? `<div class="card-image"><img src="/api/download/${res.thumbnail_key}" alt="${title}" loading="lazy"><span class="card-badge">${res.meta.avatar_type}</span></div>`
-			: `<div class="card-image card-image-placeholder"><span class="card-badge">${res.meta.avatar_type}</span></div>`;
+		: `<div class="card-image card-image-placeholder"><span class="card-badge">${res.meta.avatar_type}</span></div>`;
 
 	return `<div class="card">
 		<a href="/item/${res.uuid}" data-link class="card-link">${imgHtml}</a>
@@ -230,7 +226,6 @@ export async function avatarsView(ctx: RouteContext): Promise<string> {
     const resultsHtml = await buildResults(ctx.query);
 
 	return `
-		${renderAdPrefsPanel()}
 		<div class="category-layout">
 			${buildFilterPanel(AVATAR_FILTER_CONFIG)}
 			<div class="category-results" id="avatar-results">
@@ -246,9 +241,6 @@ export async function avatarsView(ctx: RouteContext): Promise<string> {
 export function avatarsAfter(ctx: RouteContext): void {
     const panel = document.getElementById('filter-panel');
     if (!panel) return;
-
-    initAdSystem();
-    mountSidebarSlot({ mode: 'fixed' });
 
     // Función que actualiza SOLO los resultados, sin tocar el panel
     async function refreshResults(newParams: URLSearchParams) {

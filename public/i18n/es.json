@@ -361,8 +361,7 @@
 		"field": {
 			"title": "Título",
 			"desc": "Descripción",
-			"cat": "Categoría",
-			"tags": "Etiquetas"
+			"cat": "Categoría"
 		},
 		"noVisibleChanges": "Sin cambios visibles en el contenido.",
 		"types": {
@@ -456,8 +455,6 @@
 		"maxFiles": "Máximo 8 archivos permitidos",
 		"backupLinks": "Enlaces de Respaldo (Opcional)",
 		"backupLinksHint": "Un enlace por línea (Google Drive, Dropbox, etc.). Tambien puede ser el enlace original del producto.",
-		"tags": "Etiquetas",
-		"tagsHint": "Separado por comas",
 		"captcha": "CAPTCHA *",
 		"errorMaxFiles": "Máx. 3 archivos permitidos",
 		"errorFileTooLarge": "Archivo demasiado grande",

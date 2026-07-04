@@ -8,7 +8,7 @@
 
 import { DataCache } from '../cache';
 import { t } from '../i18n';
-import { stripMarkdown, TimeUnit } from '../utils';
+import { stripMarkdown, TimeUnit, mediaUrl } from '../utils';
 import type { RouteContext, Resource } from '../types';
 
 // =========================================================================
@@ -40,9 +40,9 @@ function resourceCard(res: Resource): string {
 		<div class="card">
 			<a href="/item/${res.uuid}" data-link class="card-link">
 				${
-					res.thumbnail_key
+					res.thumbnail_uuid
 						? `<div class="card-image">
-						<img src="/api/download/${res.thumbnail_key}" alt="${title}" loading="lazy">
+						<img src="${mediaUrl(res.thumbnail_uuid, 'low')}" alt="${title}" loading="lazy">
 						<span class="card-badge">${categoryLabel}</span>
 					</div>`
 						: `<div class="card-image card-image-placeholder">

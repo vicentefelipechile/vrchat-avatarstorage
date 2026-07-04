@@ -253,8 +253,7 @@
 		"field": {
 			"title": "タイトル",
 			"desc": "説明",
-			"cat": "カテゴリー",
-			"tags": "タグ"
+			"cat": "カテゴリー"
 		},
 		"noVisibleChanges": "コンテンツに目に見える変更はありません。",
 		"types": {
@@ -348,8 +347,6 @@
 		"maxFiles": "最大8ファイルまで",
 		"backupLinks": "バックアップリンク (オプション)",
 		"backupLinksHint": "1行に1つのURL (Google Drive, Dropboxなど)",
-		"tags": "タグ",
-		"tagsHint": "カンマ区切り",
 		"captcha": "CAPTCHA *",
 		"errorMaxFiles": "最大3ファイルまで",
 		"errorFileTooLarge": "ファイルが大きすぎます",

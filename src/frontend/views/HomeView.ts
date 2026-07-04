@@ -6,8 +6,6 @@ import { DataCache } from '../cache';
 import { t } from '../i18n';
 import { stripMarkdown, TimeUnit, mediaUrl } from '../utils';
 import type { RouteContext, Resource } from '../types';
-import { renderAdPrefsPanel } from '../ad-prefs';
-import { initAdSystem, mountSidebarSlot, mountFeaturedSlot } from '../ad-orchestrator';
 
 // =========================================================================
 // Helpers
@@ -29,14 +27,9 @@ function resourceCard(res: Resource): string {
 					<img src="${mediaUrl(res.thumbnail_media_uuid, 'low')}" alt="${title}" loading="lazy">
 					<span class="card-badge">${categoryLabel}</span>
 				</div>`
-		: res.thumbnail_key
-			? `<div class="card-image">
-					<img src="/api/download/${res.thumbnail_key}" alt="${title}" loading="lazy">
-					<span class="card-badge">${categoryLabel}</span>
-				</div>`
-			: `<div class="card-image card-image-placeholder">
-					<span class="card-badge">${categoryLabel}</span>
-				</div>`
+		: `<div class="card-image card-image-placeholder">
+				<span class="card-badge">${categoryLabel}</span>
+			</div>`
 	}
 			</a>
 			<div class="card-body">
@@ -84,11 +77,7 @@ export async function homeView(_ctx: RouteContext): Promise<string> {
 	}
 		</section>`;
 
-	// El layout siempre tiene la misma estructura. El sidebar se inserta como
-	// primer hijo de #home-layout por el orchestrator solo si hay un ad disponible.
-	// Si no hay ad, el layout permanece sin sidebar y sin ningun hueco residual.
 	return `
-		${renderAdPrefsPanel()}
 		<div class="home-layout" id="home-layout">
 			<div class="home-main" id="home-main">${mainContent}</div>
 		</div>`;
@@ -99,18 +88,5 @@ export async function homeView(_ctx: RouteContext): Promise<string> {
 // =========================================================================
 
 export function homeAfter(_ctx: RouteContext): void {
-	initAdSystem();
-
-	// Montar sidebar primero. Cuando resuelva (sync o async), montar el featured
-	// excluyendo el uuid que ya muestra el sidebar para evitar duplicados.
-	mountSidebarSlot({
-		containerId: 'home-layout',
-		mode: 'inline',
-		onMounted: (sidebarUuids) => {
-			mountFeaturedSlot({
-				refElementId: 'home-latest-section',
-				excludeUuids: sidebarUuids,
-			});
-		},
-	});
+	// No-op. (Community ads system removed.)
 }

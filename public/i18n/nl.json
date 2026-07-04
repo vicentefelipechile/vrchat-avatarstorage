@@ -263,8 +263,7 @@
 		"field": {
 			"title": "Titel",
 			"desc": "Beschrijving",
-			"cat": "Categorie",
-			"tags": "Tags"
+			"cat": "Categorie"
 		},
 		"noVisibleChanges": "Geen zichtbare inhoudswijzigingen.",
 		"types": {
@@ -358,8 +357,6 @@
 		"maxFiles": "Max 8 bestanden toegestaan",
 		"backupLinks": "Back-uplinks (Optioneel)",
 		"backupLinksHint": "Eén URL per regel (Google Drive, Dropbox, enz.)",
-		"tags": "Tags",
-		"tagsHint": "Kommagescheiden",
 		"captcha": "CAPTCHA *",
 		"errorMaxFiles": "Max 3 bestanden",
 		"errorFileTooLarge": "Bestand te groot",

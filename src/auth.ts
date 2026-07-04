@@ -19,7 +19,7 @@ import { decryptSecret } from './auth/2fa';
 // Types
 // =========================================================================================================
 
-type AuthUser = {
+export type AuthUser = {
 	uuid: string;
 	username: string;
 	is_admin: boolean;
@@ -78,7 +78,10 @@ export async function createSession(c: Context<{ Bindings: Env }>, user: { usern
 // This function gets the authenticated user from the session
 // =========================================================================================================
 
-export async function getAuthUser(c: Context<{ Bindings: Env }>): Promise<AuthUser | null> {
+// Accepts any Hono context whose Bindings are Env, regardless of whether the caller
+// declared a Variables map (old routes don't; the v2 auth-guarded routes do). Using a
+// generic over the full env keeps both callers happy without widening to `any`.
+export async function getAuthUser<E extends { Bindings: Env }>(c: Context<E>): Promise<AuthUser | null> {
 	const token = getCookie(c, COOKIE_NAME);
 	if (!token) return null;
 

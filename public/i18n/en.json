@@ -253,8 +253,7 @@
 		"field": {
 			"title": "Title",
 			"desc": "Description",
-			"cat": "Category",
-			"tags": "Tags"
+			"cat": "Category"
 		},
 		"noVisibleChanges": "No visible content changes.",
 		"types": {
@@ -348,8 +347,6 @@
 		"maxFiles": "Max 8 files allowed",
 		"backupLinks": "Backup Links (Optional)",
 		"backupLinksHint": "One URL per line (Google Drive, Dropbox, etc.). Also can be the original link of the product.",
-		"tags": "Tags",
-		"tagsHint": "Comma separated",
 		"captcha": "CAPTCHA *",
 		"errorMaxFiles": "Max 3 files allowed",
 		"errorFileTooLarge": "File too large",

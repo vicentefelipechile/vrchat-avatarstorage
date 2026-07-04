@@ -36,11 +36,6 @@ interface MetaEditSnapshot {
 const AVATAR_DETAILS_RE = /\n\n---\n\n### Avatar Details\n[\s\S]*$/;
 const cleanDesc = (text: string) => (text ? text.replace(AVATAR_DETAILS_RE, '') : '');
 
-function normalizeTags(tags: unknown): string[] {
-	if (!Array.isArray(tags)) return [];
-	return tags.map((tag) => (typeof tag === 'object' && tag !== null ? (tag as { name: string }).name : String(tag)));
-}
-
 // =========================================================================
 // Helpers — meta_edit
 // =========================================================================
@@ -259,19 +254,6 @@ async function historyCard(entry: HistoryEntry, current: Resource, resourceUuid:
 					<del style="background:#ffeef0;color:#b31d28">${prev.category}</del>
 					&rarr;
 					<ins style="background:#e6ffec;color:#22863a">${current.category}</ins>
-				</div>
-			</div>`;
-		}
-
-		const oldTags = normalizeTags(prev.tags);
-		const newTags = normalizeTags(current.tags);
-		if (JSON.stringify([...oldTags].sort()) !== JSON.stringify([...newTags].sort())) {
-			changesHtml += `
-			<div class="diff-block">
-				<strong>${t('history.field.tags')}:</strong>
-				<div class="diff-content">
-					<span style="color:#b31d28">- [${oldTags.join(', ')}]</span><br>
-					<span style="color:#22863a">+ [${newTags.join(', ')}]</span>
 				</div>
 			</div>`;
 		}

@@ -19,27 +19,26 @@ import {
 import { Hono } from 'hono';
 import { z } from 'zod';
 
-import { securityMiddleware } from './middleware/security';
-import { rateLimit } from './middleware/rate-limit';
+import { securityMiddleware } from './http/middleware/security';
+import { rateLimit } from './http/middleware/rate-limit';
+import { DomainError } from './domain/errors';
 
-import resourceRoutes from './routes/resources';
+import resourceRoutes from './http/routes/resources';
 import userRoutes from './routes/users';
 import adminRoutes from './routes/admin';
-import commentRoutes from './routes/comments';
+import commentRoutes from './http/routes/comments';
 import uploadRoutes from './routes/uploads';
-import downloadRoutes from './routes/downloads';
-import systemRoutes from './routes/system';
+import downloadRoutes from './http/routes/downloads';
+import systemRoutes from './http/routes/system';
 import wikiRoutes from './routes/wiki';
-import tagsRoutes from './routes/tags';
-import favoritesRoutes from './routes/favorites';
+import favoritesRoutes from './http/routes/favorites';
 import twoFactorRoutes from './routes/2fa';
 import oauthRoutes from './routes/oauth';
 import blogRoutes from './routes/blog';
-import avatarsRoutes from './routes/avatars';
-import assetsRoutes from './routes/assets';
-import clothesRoutes from './routes/clothes';
-import authorsRoutes from './routes/authors';
-import adsRoutes from './routes/ads';
+import avatarsRoutes from './http/routes/avatars';
+import assetsRoutes from './http/routes/assets';
+import clothesRoutes from './http/routes/clothes';
+import authorsRoutes from './http/routes/authors';
 import llmsRoute from './routes/llms';
 
 // =========================================================================================================
@@ -53,6 +52,15 @@ const app = new Hono<{ Bindings: Env }>();
  */
 function escapeHtml(str: string): string {
 	return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+/**
+ * Public media (og:image) is served by the dedicated CDN worker, indexed by media uuid.
+ * Mirrors the frontend `mediaUrl()` helper (src/frontend/utils.ts).
+ */
+const CDN_BASE = 'https://cdn.vrcstorage.lat';
+function cdnMediaUrl(uuid: string, res: 'low' | 'med' | 'original' = 'med', format: 'webp' | 'png' = 'webp'): string {
+	return `${CDN_BASE}/${uuid}?res=${res}&format=${format}`;
 }
 
 // Security Headers & CORS
@@ -107,8 +115,12 @@ app.use('/api/auth/*', async (c, next) => rateLimit({ binding: c.env.RL_MEDIUM, 
 // OAuth registration completion — strict rate limit to prevent username enumeration
 app.use('/api/auth/complete', async (c, next) => rateLimit({ binding: c.env.RL_STRICT, keyPrefix: 'oauth_complete' })(c, next));
 
-// Error Handler for Zod
+// Central Error Handler
 app.onError((err, c) => {
+	// Typed domain errors thrown by the service layer map to their HTTP status.
+	if (err instanceof DomainError) {
+		return c.json(err.details === undefined ? { error: err.message } : { error: err.message, details: err.details }, err.status as 400);
+	}
 	if (err instanceof z.ZodError) {
 		return c.json({ error: 'Validation error', details: err.issues }, 400);
 	}
@@ -129,7 +141,6 @@ app.route('/api/blog', blogRoutes);
 app.route('/api/wiki', wikiRoutes);
 app.route('/api/upload', uploadRoutes);
 app.route('/api/download', downloadRoutes);
-app.route('/api/tags', tagsRoutes);
 app.route('/api/favorites', favoritesRoutes);
 app.route('/api/admin', adminRoutes);
 app.route('/api', systemRoutes);
@@ -137,7 +148,6 @@ app.route('/api/avatars', avatarsRoutes);
 app.route('/api/assets', assetsRoutes);
 app.route('/api/clothes', clothesRoutes);
 app.route('/api/authors', authorsRoutes);
-app.route('/api/ads', adsRoutes);
 
 // =========================================================================================================
 // LLMs.txt — AI scraper context file (llmstxt.org spec)
@@ -252,13 +262,12 @@ app.get('/blog/:slug', async (c) => {
 
 	try {
 		const post = await c.env.DB.prepare(
-			`SELECT bp.uuid, bp.title, bp.excerpt, m.r2_key as cover_image_key
+			`SELECT bp.uuid, bp.title, bp.excerpt, bp.cover_image_uuid
 			FROM blog_posts bp
-			LEFT JOIN media m ON bp.cover_image_uuid = m.uuid
 			WHERE bp.uuid = ?`,
 		)
 			.bind(slug)
-			.first<{ uuid: string; title: string; excerpt: string | null; cover_image_key: string | null }>();
+			.first<{ uuid: string; title: string; excerpt: string | null; cover_image_uuid: string | null }>();
 
 		if (post) {
 			const indexResponse = await c.env.ASSETS.fetch(new URL('/index.html', c.req.url));
@@ -267,7 +276,7 @@ app.get('/blog/:slug', async (c) => {
 
 			const postTitle = escapeHtml(`${post.title} - VRCStorage Blog`);
 			const postDesc = escapeHtml(post.excerpt || 'Read this article on the VRCStorage Blog.');
-			const imageUrl = post.cover_image_key ? `${urlOrigin}/api/download/${post.cover_image_key}` : `${urlOrigin}/favicon.svg`;
+			const imageUrl = post.cover_image_uuid ? cdnMediaUrl(post.cover_image_uuid) : `${urlOrigin}/favicon.svg`;
 			const postUrl = `${urlOrigin}/blog/${post.uuid}`;
 
 			html = injectSEO(html, { title: postTitle, description: postDesc, url: postUrl, imageUrl });
@@ -290,18 +299,15 @@ app.get('/item/:uuid', async (c) => {
 		const resource = await c.env.DB.prepare('SELECT * FROM resources WHERE uuid = ?').bind(uuid).first<Resource>();
 
 		if (resource && resource.is_active) {
-			// Get thumbnail
-			const thumbnail = await c.env.DB.prepare('SELECT * FROM media WHERE uuid = ?').bind(resource.thumbnail_uuid).first();
-
 			// Fetch original index.html
 			const indexResponse = await c.env.ASSETS.fetch(new URL('/index.html', c.req.url));
 			let html = await indexResponse.text();
 			const urlOrigin = new URL(c.req.url).origin;
 
-			// Meta values
+			// Meta values — thumbnail served by the CDN, indexed by media uuid.
 			const title = escapeHtml(resource.title);
 			const description = escapeHtml(resource.description || 'VRCStorage & Asset Storage');
-			const imageUrl = thumbnail ? `${urlOrigin}/api/download/${thumbnail.r2_key}` : `${urlOrigin}/favicon.svg`;
+			const imageUrl = resource.thumbnail_uuid ? cdnMediaUrl(resource.thumbnail_uuid) : `${urlOrigin}/favicon.svg`;
 			const url = `${urlOrigin}/item/${uuid}`;
 
 			html = injectSEO(html, { title, description, url, imageUrl });
@@ -313,43 +319,6 @@ app.get('/item/:uuid', async (c) => {
 	}
 
 	// Fallback to normal serving if not found or error
-	return c.env.ASSETS.fetch(new URL('/index.html', c.req.url));
-});
-
-// SEO route: /community/:uuid (internal advertiser page)
-app.get('/community/:uuid', async (c) => {
-	const uuid = c.req.param('uuid');
-	if (!uuid || uuid === 'create') {
-		return c.env.ASSETS.fetch(new URL('/index.html', c.req.url));
-	}
-
-	try {
-		const ad = await c.env.DB.prepare(
-			`SELECT ca.uuid, ca.title, ca.tagline, bm.r2_key as banner_r2_key
-			FROM community_ads ca
-			LEFT JOIN media bm ON ca.banner_media_uuid = bm.uuid
-			WHERE ca.uuid = ? AND ca.is_active = 1 AND ca.is_approved = 1`,
-		)
-			.bind(uuid)
-			.first<{ uuid: string; title: string; tagline: string; banner_r2_key: string | null }>();
-
-		if (ad) {
-			const indexResponse = await c.env.ASSETS.fetch(new URL('/index.html', c.req.url));
-			let html = await indexResponse.text();
-			const urlOrigin = new URL(c.req.url).origin;
-
-			const title = escapeHtml(`${ad.title} — VRCStorage Community`);
-			const description = escapeHtml(ad.tagline);
-			const imageUrl = ad.banner_r2_key ? `${urlOrigin}/api/download/${ad.banner_r2_key}` : `${urlOrigin}/favicon.svg`;
-			const url = `${urlOrigin}/community/${ad.uuid}`;
-
-			html = injectSEO(html, { title, description, url, imageUrl });
-			return c.html(html);
-		}
-	} catch (e) {
-		console.error('Error injecting Community Ad OG tags:', e);
-	}
-
 	return c.env.ASSETS.fetch(new URL('/index.html', c.req.url));
 });
 
@@ -449,16 +418,11 @@ async function cleanupOrphanedMedia(env: Env) {
 				SELECT media_uuid FROM resource_n_media
 				UNION
 				SELECT cover_image_uuid FROM blog_posts WHERE cover_image_uuid IS NOT NULL
-				UNION
-				SELECT banner_media_uuid FROM community_ads WHERE banner_media_uuid IS NOT NULL
-				UNION
-				SELECT card_media_uuid FROM community_ads WHERE card_media_uuid IS NOT NULL
 			)
 			AND NOT EXISTS (SELECT 1 FROM users         WHERE INSTR(users.avatar_url,     m.r2_key) > 0)
 			AND NOT EXISTS (SELECT 1 FROM comments      WHERE INSTR(comments.text,        m.r2_key) > 0)
 			AND NOT EXISTS (SELECT 1 FROM blog_comments WHERE INSTR(blog_comments.text,   m.r2_key) > 0)
 			AND NOT EXISTS (SELECT 1 FROM blog_posts    WHERE INSTR(blog_posts.content,   m.r2_key) > 0)
-			AND NOT EXISTS (SELECT 1 FROM ad_internal_pages WHERE INSTR(ad_internal_pages.content, m.r2_key) > 0)
 		`,
 		)
 			.bind(cutoffTime)

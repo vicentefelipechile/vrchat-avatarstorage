@@ -226,7 +226,6 @@ src/
     oauth.ts              # OAuth flow endpoints
     resources.ts          # Resource upload/listing/detail endpoints
     system.ts             # System/version info endpoints
-    tags.ts               # Tag listing endpoints
     uploads.ts            # R2 file upload handler
     users.ts              # User profile/account endpoints
     utils.ts              # Miscellaneous utility endpoints
@@ -366,97 +365,6 @@ When adding a Markdown description field to a form (like in `AdCreateView` or `B
 - Render the `textarea` and toolbar inside a `.comment-editor` pane.
 - Render the preview via `marked` and `DOMPurify` inside a `.markdown-body` pane.
 - **Never** duplicate toolbar generation or image paste logic in individual views.
-
-### Community Ads System
-
-The community ads system consists of three frontend modules and one backend route.
-
-#### Architecture: Orchestrator Pattern
-
-All ad loading follows a **zero-skeleton, zero-layout-shift** principle:
-
-- `viewFn` **never** touches ad state. The rendered HTML is always stable and complete.
-- `afterFn` calls the mount functions from `ad-orchestrator.ts` after the DOM is inserted.
-- Mount functions check user prefs, read the sync cache, and insert the ad surgically — or do nothing if no ad is available.
-- **No skeletons are used.** Skeleton renderers were removed because they caused layout shifts when the slot turned out to be empty (the skeleton reserved space that then disappeared).
-- **No `injectAdOrFade`.** That function has been removed along with the skeleton renderers.
-
-#### `src/frontend/ad-orchestrator.ts` — Unified loading orchestrator
-
-The single entry point for all ad lifecycle management in views. Key exports:
-
-- **`initAdSystem(options?)`** — call once per navigation in `afterFn`. Wires the prefs panel and global click-delegation events.
-- **`mountSidebarSlot(options)`** — mounts the `sidebar_left` slot.
-  - `mode: 'inline'` — prepends the ad as the first child of `containerId` (used in `HomeView` flex layout).
-  - `mode: 'fixed'` — appends a `position:fixed` element to `document.body` (used in category views).
-  - `onMounted(shownUuids)` — optional callback, fires after the slot resolves. Used by `HomeView` to pass the sidebar UUID to `mountFeaturedSlot` so it can avoid showing the same ad.
-  - **SPA safety:** always removes both `.ad-zone--sidebar-fixed` and `.ad-zone--sidebar` at the start, before checking prefs or inserting. This guarantees no residual ads survive SPA navigation regardless of which mode was active on the previous page.
-- **`mountFeaturedSlot(options)`** — mounts the `featured_artist` slot. Inserts before `refElementId`. Accepts `excludeUuids` to prevent showing the same ad already shown in the sidebar.
-- **`mountDetailBannerSlot(options)`** — mounts the `detail_banner` slot inside an existing zone `div` by `zoneId`. Safe for inline use — does not affect surrounding layout.
-- Re-exports `renderAdPrefsPanel` and `wireAdPrefsPanel` from `ad-prefs.ts` as a convenience so views only import from this module.
-
-**Calling pattern in every view that uses ads:**
-
-```typescript
-// In viewFn — no ad logic whatsoever:
-return `
-  ${renderAdPrefsPanel()}
-  <div class="home-layout" id="home-layout">
-    <div class="home-main" id="home-main">${mainContent}</div>
-  </div>`;
-
-// In afterFn — orchestrator handles everything:
-initAdSystem();
-mountSidebarSlot({
-  containerId: 'home-layout',
-  mode: 'inline',
-  onMounted: (sidebarUuids) => {
-    mountFeaturedSlot({ refElementId: 'home-latest-section', excludeUuids: sidebarUuids });
-  },
-});
-```
-
-#### `src/frontend/ad-prefs.ts` — User preferences (localStorage)
-
-Stores and reads ad preferences with no server involvement. Key exports:
-
-- `getAdPrefs() / saveAdPrefs()` — read/write `ad_prefs` key in localStorage.
-- `shouldShowSlot(slot)` / `shouldShowType(type)` / `shouldShowAd(slot, type)` — visibility checks used by renderers.
-- `renderAdPrefsPanel()` — returns the slide-in panel HTML string. Include once per view that shows ads.
-- `wireAdPrefsPanel(options?)` — attaches all event listeners to the panel. Accepts `WireAdPrefsPanelOptions`:
-  - `reloadOnSave?: boolean` (default `true`) — when `true`, calls `location.reload()` 800 ms after saving so ad slots re-evaluate the new prefs. Pass `{ reloadOnSave: false }` from `SettingsView`.
-- The master "Show all ads" checkbox disables/enables all slot and type checkboxes live via `syncSubCheckboxes()`.
-- `openAdPrefsPanel()` — opens the panel programmatically (called by gear-button click delegation in `wireAdZoneEvents`).
-
-#### `src/frontend/ad-components.ts` — Ad renderers
-
-Provides real ad HTML builders for every slot. **Skeleton renderers have been removed** — see Architecture section above.
-
-| Function | Slot |
-|---|---|
-| `renderSidebarBanner(ads)` | `sidebar_left` (inline, HomeView) |
-| `renderSidebarBannerFixed(ads)` | `sidebar_left` (fixed position, category views) |
-| `renderFeaturedArtistCard(ads, excludeUuids?)` | `featured_artist` |
-| `renderDetailBanner(ads)` | `detail_banner` |
-
-**`wireAdZoneEvents()`** — global click delegation (ad click tracking, gear button → open prefs panel). Call once per page session via `initAdSystem()`; guarded by `_adEventsWired`.
-
-**`trackVisibleAdImpressions()`** — fires impression events for all `[data-ad-uuid]` elements on the page.
-
-#### Ad fetch & caching
-
-`fetchAdsForSlot(slot)` fetches from `/api/ads?slot=<slot>` with a 10-minute TTL via `DataCache`. `getCachedAdsForSlot(slot)` does a synchronous read from the two-layer cache (in-memory → localStorage). The orchestrator always tries the sync cache first; if it hits, the ad is inserted before the first paint with no async delay.
-
-#### `src/routes/ads.ts` — Ad selection algorithm
-
-`GET /api/ads?slot=<slot>` uses **weighted random sampling without replacement** (`weightedSample`):
-
-- Each ad is drawn with probability proportional to its `display_weight` (minimum 1).
-- An ad with `display_weight = 10` appears ~10× more often than one with `display_weight = 1`, but the result is genuinely random on every request.
-- Already-drawn ads are excluded from subsequent draws (no duplicates within a single response).
-- The number of ads returned is limited by `ad_slot_config.max_concurrent` for the slot.
-
-> Do **not** reintroduce deterministic daily seeds or `ORDER BY display_weight DESC` — those patterns caused the highest-weight ad to monopolize the slot permanently.
 
 ### Frontend Utilities & Feedback
 

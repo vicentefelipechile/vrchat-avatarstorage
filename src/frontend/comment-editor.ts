@@ -16,7 +16,7 @@
 // =============================================================================
 
 import { t } from './i18n';
-import { renderTurnstile, showToast } from './utils';
+import { renderTurnstile, showToast, mediaUrl } from './utils';
 import { icons } from './icons';
 
 // -------------------------------------------------------------------------
@@ -284,8 +284,8 @@ async function uploadAndInsertImage(file: File, textarea: HTMLTextAreaElement): 
 		dismiss();
 		if (!res.ok) throw new Error(await res.text());
 
-		const data = (await res.json()) as { r2_key: string };
-		const markdown = `![image](/api/download/${data.r2_key})`;
+		const data = (await res.json()) as { r2_key: string; media_uuid: string };
+		const markdown = `![image](${mediaUrl(data.media_uuid, 'original')})`;
 		const pos = textarea.selectionStart;
 		textarea.setRangeText('\n\n' + markdown + '\n\n', pos, pos, 'end');
 		textarea.focus();

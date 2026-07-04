@@ -253,8 +253,7 @@
 		"field": {
 			"title": "Название",
 			"desc": "Описание",
-			"cat": "Категория",
-			"tags": "Теги"
+			"cat": "Категория"
 		},
 		"noVisibleChanges": "Нет видимых изменений контента.",
 		"types": {
@@ -348,8 +347,6 @@
 		"maxFiles": "Макс. 8 файлов разрешено",
 		"backupLinks": "Резервные ссылки (Необязательно)",
 		"backupLinksHint": "Одна ссылка в строке (Google Drive, Dropbox, etc.).",
-		"tags": "Теги",
-		"tagsHint": "Через запятую",
 		"captcha": "CAPTCHA *",
 		"errorMaxFiles": "Макс. 3 файла",
 		"errorFileTooLarge": "Файл слишком большой",

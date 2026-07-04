@@ -186,14 +186,6 @@ GET /api/blog/:uuid/comments
   Returns: [{ uuid, text, timestamp (Unix ms), author, author_avatar }]
 \`\`\`
 
-## Public API — Tags
-
-\`\`\`
-GET /api/tags
-  Returns all available tags used to label resources.
-  Response: [{ "id": number, "name": string }]
-\`\`\`
-
 ## Public API — Authors
 
 \`\`\`
@@ -211,7 +203,7 @@ Base URL: \`https://vrcstorage.lat/api/resources\`
 \`\`\`
 GET /api/resources/:uuid
   Get the full detail of any resource (avatar, asset, or clothing) by UUID.
-  Includes: title, description (Markdown), tags, download links, media files,
+  Includes: title, description (Markdown), download links, media files,
             thumbnail, reference image, download_count, category, created_at, updated_at.
 
 GET /api/resources/:uuid/comments

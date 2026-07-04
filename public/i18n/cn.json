@@ -253,8 +253,7 @@
 		"field": {
 			"title": "标题",
 			"desc": "描述",
-			"cat": "类别",
-			"tags": "标签"
+			"cat": "类别"
 		},
 		"noVisibleChanges": "没有可见的内容变更。",
 		"types": {
@@ -348,8 +347,6 @@
 		"maxFiles": "最多允许8个文件",
 		"backupLinks": "备用链接 (可选)",
 		"backupLinksHint": "每行一个链接 (Google Drive, Dropbox 等)",
-		"tags": "标签",
-		"tagsHint": "以逗号分隔",
 		"captcha": "CAPTCHA *",
 		"errorMaxFiles": "最多3个文件",
 		"errorFileTooLarge": "文件太大",

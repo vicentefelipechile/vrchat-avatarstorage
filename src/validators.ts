@@ -97,14 +97,12 @@ export const ResourceSchema = z.object({
 	reference_image_uuid: z.uuid('Invalid reference image UUID').optional().nullable(),
 	links: z.array(LinkSchema).optional(),
 	media_files: z.array(z.uuid()).optional(),
-	tags: z.array(z.string()).optional(),
 	token: z.string().optional(),
 });
 
 export const ResourceSearchSchema = z.object({
 	q: z.string().optional(),
 	category: z.enum(RESOURCE_CATEGORIES),
-	tags: z.string().optional(),
 	page: z.number().int().default(1),
 });
 
@@ -337,32 +335,55 @@ export const AssetMetaSchema = z.object({
 });
 
 /**
+ * Query-param filter schema for GET /api/assets. Tolerant by design (see AvatarFilterSchema):
+ * unrecognized facet values are dropped and malformed pagination/sort falls back to defaults,
+ * mirroring the legacy handler which silently ignored unsupported filters.
+ */
+export const AssetFilterSchema = z.object({
+	asset_type: 		AssetMetaSchema.shape.asset_type.optional().catch(undefined),
+	platform: 			AssetMetaSchema.shape.platform.optional().catch(undefined),
+	sdk_version: 		AssetMetaSchema.shape.sdk_version.optional().catch(undefined),
+	unity_version: 		AssetMetaSchema.shape.unity_version.optional().catch(undefined),
+	is_nsfw: 			z.enum(BOOLEAN_STRING).optional().catch(undefined),
+	page: 				z.coerce.number().int().min(1).catch(1).default(1),
+	limit: 				z.coerce.number().int().min(1).max(60).catch(24).default(24),
+	sort_by: 			z.enum(['created_at', 'download_count', 'title']).catch('created_at').default('created_at'),
+	sort_order: 		z.enum(['asc', 'desc']).catch('desc').default('desc'),
+});
+
+export type AssetFilter = z.infer<typeof AssetFilterSchema>;
+
+/**
  * Query-param filter schema for GET /api/avatars.
  * Derived from AvatarMetaSchema so allowed values stay in sync automatically.
- * All fields are optional — omitted params are simply not filtered.
+ *
+ * Tolerant by design: an unrecognized facet value is dropped (`.catch(undefined)`)
+ * rather than rejecting the whole request, and malformed pagination/sort params fall
+ * back to their defaults. This mirrors the legacy handler, which silently ignored
+ * unsupported filter keys instead of returning 400.
  */
 export const AvatarFilterSchema = z.object({
 	// Faceted filters — reuse the same enums as AvatarMetaSchema
-	avatar_gender: 		AvatarMetaSchema.shape.gender.optional(),
-	avatar_size: 		AvatarMetaSchema.shape.avatar_size.optional(),
-	avatar_type: 		AvatarMetaSchema.shape.avatar_type.optional(),
-	platform: 			AvatarMetaSchema.shape.platform.optional(),
-	sdk_version: 		AvatarMetaSchema.shape.sdk_version.optional(),
+	avatar_gender: 		AvatarMetaSchema.shape.gender.optional().catch(undefined),
+	avatar_size: 		AvatarMetaSchema.shape.avatar_size.optional().catch(undefined),
+	avatar_type: 		AvatarMetaSchema.shape.avatar_type.optional().catch(undefined),
+	platform: 			AvatarMetaSchema.shape.platform.optional().catch(undefined),
+	sdk_version: 		AvatarMetaSchema.shape.sdk_version.optional().catch(undefined),
 	// Boolean flags come as '0'/'1' strings from URLSearchParams
-	is_nsfw: 			z.enum(BOOLEAN_STRING).optional(),
-	has_physbones: 		z.enum(BOOLEAN_STRING).optional(),
-	has_face_tracking: 	z.enum(BOOLEAN_STRING).optional(),
-	has_dps: 			z.enum(BOOLEAN_STRING).optional(),
-	has_gogoloco: 		z.enum(BOOLEAN_STRING).optional(),
-	has_toggles: 		z.enum(BOOLEAN_STRING).optional(),
-	is_quest_optimized: z.enum(BOOLEAN_STRING).optional(),
+	is_nsfw: 			z.enum(BOOLEAN_STRING).optional().catch(undefined),
+	has_physbones: 		z.enum(BOOLEAN_STRING).optional().catch(undefined),
+	has_face_tracking: 	z.enum(BOOLEAN_STRING).optional().catch(undefined),
+	has_dps: 			z.enum(BOOLEAN_STRING).optional().catch(undefined),
+	has_gogoloco: 		z.enum(BOOLEAN_STRING).optional().catch(undefined),
+	has_toggles: 		z.enum(BOOLEAN_STRING).optional().catch(undefined),
+	is_quest_optimized: z.enum(BOOLEAN_STRING).optional().catch(undefined),
 	// Author filter
-	author_uuid: 		z.uuid().optional(),
+	author_uuid: 		z.uuid().optional().catch(undefined),
 	// Pagination & sorting
-	page: 				z.coerce.number().int().min(1).default(1),
-	limit: 				z.coerce.number().int().min(1).max(60).default(24),
-	sort_by: 			z.enum(['created_at', 'download_count', 'title']).default('created_at'),
-	sort_order: 		z.enum(['asc', 'desc']).default('desc'),
+	page: 				z.coerce.number().int().min(1).catch(1).default(1),
+	limit: 				z.coerce.number().int().min(1).max(60).catch(24).default(24),
+	sort_by: 			z.enum(['created_at', 'download_count', 'title']).catch('created_at').default('created_at'),
+	sort_order: 		z.enum(['asc', 'desc']).catch('desc').default('desc'),
 });
 
 export type AvatarFilter = z.infer<typeof AvatarFilterSchema>;
@@ -383,64 +404,24 @@ export const ClothesMetaSchema = z.object({
 	platform: 			z.enum(PLATFORM).default(PLATFORM[0]),
 });
 
-// ============================================================================
-// Community Ads Schemas
-// ============================================================================
-
-const AD_SERVICE_TYPES = [
-	'avatar_creator',
-	'3d_artist',
-	'illustrator',
-	'world_builder',
-	'texture_artist',
-	'rigger',
-	'shader_dev',
-	'animator',
-	'voice_actor',
-	'commissioner',
-] as const;
-
-export const AdSubmitSchema = z.object({
-	title: z
-		.string()
-		.min(2, 'Title too short')
-		.max(80, 'Title too long')
-		.transform((v) => sanitizeHtml(v)),
-	tagline: z
-		.string()
-		.min(2, 'Tagline too short')
-		.max(80, 'Tagline too long')
-		.transform((v) => sanitizeHtml(v)),
-	description: z
-		.string()
-		.max(5000, 'Description too long')
-		.optional()
-		.nullable()
-		.transform((v) => (v ? sanitizeHtml(v) : v)),
-	service_type: z.enum(AD_SERVICE_TYPES),
-	destination_type: z.enum(['internal', 'external']).default('internal'),
-	external_url: z.url('Invalid URL').optional().nullable(),
-	banner_media_uuid: z.uuid('Invalid banner media UUID').optional().nullable(),
-	card_media_uuid: z.uuid('Invalid card media UUID').optional().nullable(),
+/**
+ * Query-param filter schema for GET /api/clothes. Tolerant by design (see AvatarFilterSchema):
+ * unrecognized facet values are dropped and malformed pagination/sort falls back to defaults,
+ * mirroring the legacy handler which silently ignored unsupported filters.
+ */
+export const ClothesFilterSchema = z.object({
+	gender_fit: 		ClothesMetaSchema.shape.gender_fit.optional().catch(undefined),
+	clothing_type: 		ClothesMetaSchema.shape.clothing_type.optional().catch(undefined),
+	platform: 			ClothesMetaSchema.shape.platform.optional().catch(undefined),
+	is_base: 			z.enum(BOOLEAN_STRING).optional().catch(undefined),
+	is_nsfw: 			z.enum(BOOLEAN_STRING).optional().catch(undefined),
+	has_physbones: 		z.enum(BOOLEAN_STRING).optional().catch(undefined),
+	page: 				z.coerce.number().int().min(1).catch(1).default(1),
+	limit: 				z.coerce.number().int().min(1).max(60).catch(24).default(24),
+	sort_by: 			z.enum(['created_at', 'download_count', 'title']).catch('created_at').default('created_at'),
+	sort_order: 		z.enum(['asc', 'desc']).catch('desc').default('desc'),
 });
 
-export const AdUpdateSchema = AdSubmitSchema.partial();
+export type ClothesFilter = z.infer<typeof ClothesFilterSchema>;
 
-export const AdRejectSchema = z.object({
-	reason: z
-		.string()
-		.min(3, 'Reason too short')
-		.max(500, 'Reason too long')
-		.transform((v) => sanitizeHtml(v)),
-});
-
-export const AdSlotConfigUpdateSchema = z.object({
-	max_concurrent: z.number().int().min(1).max(20).optional(),
-	rotation_hours: z.number().int().min(1).max(168).optional(),
-	is_enabled: z.number().int().min(0).max(1).optional(),
-});
-
-export const AdWeightUpdateSchema = z.object({
-	display_weight: z.number().int().min(1).max(100),
-});
 

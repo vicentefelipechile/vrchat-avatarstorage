@@ -163,7 +163,7 @@ export const DataCache = {
 	 *
 	 * @example
 	 * // 3. Plain TTL shorthand (number) — 30 s cache, no localStorage persistence.
-	 * const tags = await DataCache.fetch<Tag[]>('/api/tags', 30000);
+	 * const authors = await DataCache.fetch<Author[]>('/api/authors', 30000);
 	 *
 	 * @example
 	 * // 4. Full CacheOptions object — persistent across reloads, 5 min TTL.

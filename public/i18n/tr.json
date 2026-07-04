@@ -263,8 +263,7 @@
 		"field": {
 			"title": "Başlık",
 			"desc": "Açıklama",
-			"cat": "Kategori",
-			"tags": "Etiketler"
+			"cat": "Kategori"
 		},
 		"noVisibleChanges": "Görünür içerik değişikliği yok.",
 		"types": {
@@ -358,8 +357,6 @@
 		"maxFiles": "Maks 8 dosya izni",
 		"backupLinks": "Yedek Bağlantılar (İsteğe bağlı)",
 		"backupLinksHint": "Satır başına bir URL (Google Drive, Dropbox vb.)",
-		"tags": "Etiketler",
-		"tagsHint": "Virgülle ayırın",
 		"captcha": "CAPTCHA *",
 		"errorMaxFiles": "Maks 3 dosya",
 		"errorFileTooLarge": "Dosya çok büyük",

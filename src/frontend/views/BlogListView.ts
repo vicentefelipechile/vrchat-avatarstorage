@@ -3,6 +3,7 @@
 // =========================================================================
 
 import { t } from '../i18n';
+import { mediaUrl } from '../utils';
 import type { RouteContext } from '../types';
 
 // =========================================================================
@@ -15,6 +16,7 @@ interface BlogPost {
 	excerpt?: string;
 	content: string;
 	cover_image_key?: string;
+	cover_image_uuid?: string;
 	author_display: 'personal' | 'team';
 	author_username?: string;
 	created_at: number;
@@ -36,8 +38,8 @@ function esc(str: string): string {
 function blogCard(post: BlogPost): string {
 	const date = new Date(post.created_at * 1000).toLocaleDateString();
 	const authorName = post.author_display === 'team' ? t('blog.team') : (post.author_username ?? '');
-	const coverHtml = post.cover_image_key
-		? `<div class="blog-card-cover"><img src="/api/download/${post.cover_image_key}" alt="${esc(post.title)}" loading="lazy"></div>`
+	const coverHtml = post.cover_image_uuid
+		? `<div class="blog-card-cover"><img src="${mediaUrl(post.cover_image_uuid, 'med')}" alt="${esc(post.title)}" loading="lazy"></div>`
 		: '';
 
 	return `

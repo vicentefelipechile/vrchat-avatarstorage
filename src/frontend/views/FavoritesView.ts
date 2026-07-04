@@ -4,7 +4,7 @@
 
 import { DataCache } from '../cache';
 import { t } from '../i18n';
-import { stripMarkdown } from '../utils';
+import { stripMarkdown, mediaUrl } from '../utils';
 import type { RouteContext } from '../types';
 
 // =========================================================================
@@ -43,9 +43,9 @@ function favoriteCard(fav: Favorite): string {
 		<div class="card" data-resource-id="${fav.uuid}">
 			<a href="/item/${fav.uuid}" data-link class="card-link">
 				${
-					fav.thumbnail_key
+					fav.thumbnail_uuid
 						? `<div class="card-image">
-						<img src="/api/download/${fav.thumbnail_key}" alt="${title}" loading="lazy">
+						<img src="${mediaUrl(fav.thumbnail_uuid, 'low')}" alt="${title}" loading="lazy">
 						<span class="card-badge">${categoryLabel}</span>
 					</div>`
 						: `<div class="card-image card-image-placeholder">

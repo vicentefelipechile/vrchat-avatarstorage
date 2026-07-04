@@ -68,9 +68,7 @@ function avatarMiniCard(item: AuthorProfileResponse['avatars'][number]): string 
 	const title = item.title.substring(0, 50);
 	const imgHtml = item.thumbnail_media_uuid
 		? `<div class="card-image"><img src="${mediaUrl(item.thumbnail_media_uuid, 'low')}" alt="${title}" loading="lazy"><span class="card-badge">${item.avatar_type}</span></div>`
-		: item.thumbnail_key
-			? `<div class="card-image"><img src="/api/download/${item.thumbnail_key}" alt="${title}" loading="lazy"><span class="card-badge">${item.avatar_type}</span></div>`
-			: `<div class="card-image card-image-placeholder"><span class="card-badge">${item.avatar_type}</span></div>`;
+		: `<div class="card-image card-image-placeholder"><span class="card-badge">${item.avatar_type}</span></div>`;
 
 	return `<div class="card">
 		<a href="/item/${item.uuid}" data-link class="card-link">${imgHtml}</a>
