@@ -25,8 +25,8 @@ This guide is for agentic coding agents (like yourself) operating in the VRCStor
 - **Images:** Cloudflare Images binding (`IMAGES`) — used by the queue handler to generate image variants and blur placeholders. Configured in `wrangler.jsonc` (main Worker only; the CDN Worker does not need this binding).
 - **KV Cache:** Cloudflare KV - Accessible via `c.env.VRCSTORAGE_KV` (used by legacy rate-limit middleware).
 - **Rate Limiting:** Cloudflare native Rate Limiting bindings — `RL_STRICT` (1/60s), `RL_MEDIUM` (100/60s), `RL_GLOBAL` (500/60s), `RL_LOGIN` (10/60s). Configured in `wrangler.jsonc`.
-- **Queues:** Cloudflare Queues — `UPLOAD_QUEUE` binding for async upload post-processing. After a file is stored, the queue handler generates 6 image variants (low/med/original × webp/png) and a blur placeholder stored in D1.
-- **Cron:** Scheduled worker runs daily at `0 3 * * *` UTC — `cleanupOrphanedMedia` in `src/index.ts`.
+- **Queues:** Cloudflare Queues — `UPLOAD_QUEUE` binding for async upload post-processing. After a file is stored, the `queue` handler (`src/http/queue.ts` → `MediaProcessingService`) generates 6 image variants (low/med/original × webp/png) and a blur placeholder stored in D1.
+- **Cron:** Scheduled worker runs daily at `0 3 * * *` UTC — the `scheduled` handler (`src/http/scheduled.ts`) reuses `AdminService.cleanupOrphanedMedia`.
 - **Validation:** [Zod](https://zod.dev/) for request body and parameter validation.
 - **Frontend Bundler:** [esbuild](https://esbuild.github.io/) — compiles `src/frontend/` → `public/js/bundle.js`.
 - **Icons:** [lucide](https://lucide.dev/) — icon library used via centralized `src/frontend/icons.ts` module.
@@ -68,24 +68,27 @@ This guide is for agentic coding agents (like yourself) operating in the VRCStor
 
 ### Architecture Patterns
 
-- **Modular Routing:** Define specific route handlers in `src/routes/` and mount them in `src/index.ts` using `app.route('/api/path', handler)`.
-- **Middleware:** reusable logic in `src/middleware/`.
-  - `securityMiddleware`: Sets security headers (CORS, CSP, etc.).
-  - `rateLimit`: Protects endpoints from abuse using KV.
+The backend is a **layered architecture**: route → service → repository. Each API domain is split across three directories, and `src/index.ts` mounts the routers with `app.route('/api/path', handler)`.
+
+- **Routes** (`src/http/routes/`): thin HTTP handlers. They resolve auth (via the guards in `src/http/middleware/auth.ts`), parse/validate input, call a service, and shape the response. They own the env collaborators that cannot leave the request (R2 buckets, KV caches, `UPLOAD_QUEUE`, cookies/sessions, the raw request stream) and hand them to the service where needed. No business logic, no SQL.
+- **Services** (`src/services/`): business rules, env-agnostic. They throw typed domain errors (`src/domain/errors.ts`) instead of building HTTP responses; secrets/collaborators (Turnstile secret, JWT secret, KV, R2 bucket, queue) are **passed into** the methods that need them so a service never reads `c.env`.
+- **Repositories** (`src/repositories/`): the ONLY place SQL lives, one repo per table (e.g. `user-repository.ts`, `blog-post-repository.ts`). They use the `db/client.ts` helpers (`queryOne<T>`, `queryAll<T>`, `execute`, `batch`) — not raw `c.env.DB.prepare` — and return DB row types; mapping to the API shape is the service's job.
+- **Auth guards** (`src/http/middleware/auth.ts`): `requireAuth`, `requireAdmin`, `optionalAuth`. On success they set `c.get('user')` (typed via `AuthVariables`); on failure they throw `UnauthorizedError`/`ForbiddenError`. These replace the per-handler `getAuthUser` + manual role checks.
+- **Response helpers** (`src/http/responses.ts`): `fail(c, message, status, details?)` and `ok(c, payload, status?)` guarantee a consistent JSON envelope (`{ error, details? }`).
+- **Middleware:** `securityMiddleware` (security headers) and the legacy KV `rateLimit` in `src/http/middleware/`; native rate-limit bindings are wired in `src/http/rate-limits.ts` (`registerRateLimits`, called from `src/index.ts`).
 - **Validation:** Always use Zod schemas in `src/validators.ts`. Use `.transform()` with `sanitizeHtml` for any string input that might be rendered.
 - **Types:** Centralized in `src/types.ts` (backend) and `frontend/types.ts` (frontend). Avoid inline types for complex structures.
-- **Database Queries:** Use prepared statements for safety. Use `.first<T>()` for single rows and `.all<T>()` for results lists.
-- **Error Handling:** Centralized in `src/index.ts` via `app.onError`. Return consistent JSON: `{ "error": "Human readable message", "details": ... }`.
+- **Error Handling:** Centralized in `src/index.ts` via `app.onError`, which maps `DomainError → its status`, `ZodError → 400`, and anything else → `500 { error: 'Internal Server Error' }`. Always return consistent JSON: `{ "error": "Human readable message", "details": ... }`.
 
 ### Route File Structure
 
-Every file in `src/routes/` follows a strict structural pattern using 105-`=` section banners. Deviating from this pattern is not allowed.
+Every file in `src/http/routes/`, `src/services/`, and `src/repositories/` follows a strict structural pattern using 105-`=` section banners. Deviating from this pattern is not allowed.
 
 ```typescript
 // =========================================================================================================
-// MODULE NAME ROUTES
+// MODULE NAME ROUTES (v2)
 // =========================================================================================================
-// Brief description of what this module handles.
+// Brief description: what this module handles and what stays in the route vs the service/repository.
 // =========================================================================================================
 
 // =========================================================================================================
@@ -93,27 +96,24 @@ Every file in `src/routes/` follows a strict structural pattern using 105-`=` se
 // =========================================================================================================
 
 import { Hono } from 'hono';
-import ...
-
-// =========================================================================================================
-// Helpers                          ← only present if helper functions exist
-// =========================================================================================================
-
-function helperFn() { ... }
+import { requireAuth, type AuthVariables } from '../middleware/auth';
+import { ExampleService } from '../../services/example-service';
+import { fail } from '../responses';
 
 // =========================================================================================================
 // Endpoints
 // =========================================================================================================
 
-const routerName = new Hono<{ Bindings: Env }>();
+const routerName = new Hono<{ Bindings: Env; Variables: AuthVariables }>();
 
 // =========================================================================================================
 // GET /api/route/:param
 // One-line description of what this endpoint does.
 // =========================================================================================================
 
-routerName.get('/:param', async (c) => {
-    // implementation
+routerName.get('/:param', requireAuth, async (c) => {
+    const result = await new ExampleService(c.env.DB).doThing(c.get('user'), c.req.param('param')!);
+    return c.json(result);
 });
 
 // =========================================================================================================
@@ -126,7 +126,9 @@ export default routerName;
 **Rules:**
 
 - The 105-`=` banner is **mandatory** before every section and every endpoint handler.
-- Auth guards use the **early-return pattern** (no curly braces): `if (!authUser) return c.json({ error: 'Unauthorized' }, 401);`
+- Auth is enforced with the **guards** (`requireAuth` / `requireAdmin` / `optionalAuth`), not a hand-rolled `getAuthUser` check. The authenticated user is read via `c.get('user')`, and the router generic must include `Variables: AuthVariables`.
+- Services throw **typed domain errors** (`NotFoundError`, `ForbiddenError`, `ValidationError`, `ConflictError`, `GoneError`); routes let them bubble to `app.onError`. Use `fail()` only for pre-service input rejections (e.g. malformed JSON).
+- A new domain slice means three files: a router in `src/http/routes/`, a service in `src/services/`, and one repository per table in `src/repositories/`. All SQL lives in the repository.
 - The `// Helpers` section is only added when helper functions exist; router initialization (`const x = new Hono(...)`) always goes inside `// Endpoints`.
 - The `// Export` section banner is **always** present, even for simple modules.
 
@@ -168,9 +170,43 @@ route('/example', exampleView, { after: exampleAfter });
 
 src/
   auth/                   # Authentication submodules
-    2fa.ts                # TOTP / two-factor logic
-    google.ts             # Google OAuth helpers
-  auth.ts                 # getAuthUser helper (session/cookie resolution)
+    2fa.ts                # TOTP / two-factor crypto (pure helpers)
+    google.ts             # Google OAuth adapter (auth URL, code exchange, id_token verify)
+  auth.ts                 # getAuthUser + createSession helpers (session/cookie/KV resolution)
+  db/
+    client.ts             # D1 query helpers: queryOne / queryAll / execute / batch (DB type alias)
+    schema.ts             # DB row types + RESOURCE_CATEGORIES
+    migrator.ts           # Programmatic migration runner
+  domain/
+    errors.ts             # Typed domain errors (NotFound/Unauthorized/Forbidden/Validation/Conflict/Gone)
+  http/
+    responses.ts          # fail() / ok() JSON envelope helpers
+    rate-limits.ts        # registerRateLimits(app) — all native rate-limit wiring
+    seo.ts                # registerSeoRoutes(app) — crawler-facing /wiki, /blog/:slug, /item/:uuid (OG injection)
+    queue.ts              # `queue` entrypoint handler — runs the image pipeline per message
+    scheduled.ts          # `scheduled` (cron) entrypoint handler — daily orphan cleanup
+    middleware/
+      auth.ts             # requireAuth / requireAdmin / optionalAuth guards + AuthVariables
+      rate-limit.ts       # KV-based rate limiter (legacy)
+      security.ts         # Security headers middleware
+    routes/               # Thin HTTP handlers (route layer) — one file per API domain
+      admin.ts            assets.ts     authors.ts    avatars.ts
+      blog.ts             clothes.ts    comments.ts   downloads.ts
+      favorites.ts        llms.ts       oauth.ts      resources.ts
+      system.ts           two-factor.ts uploads.ts    users.ts
+      wiki.ts
+  services/               # Business logic (service layer), env-agnostic — one file per domain
+    admin-service.ts      asset-service.ts    author-service.ts   avatar-service.ts
+    blog-service.ts       clothes-service.ts  comment-service.ts  download-service.ts
+    favorite-service.ts   media-processing-service.ts             oauth-service.ts
+    resource-service.ts   two-factor-service.ts                   upload-service.ts
+    user-service.ts       wiki-comment-service.ts
+  repositories/           # ALL SQL (repository layer) — one file per table
+    admin-repository.ts       asset-repository.ts       author-repository.ts
+    avatar-repository.ts      blog-comment-repository.ts blog-post-repository.ts
+    clothes-repository.ts     comment-repository.ts     favorite-repository.ts
+    media-repository.ts       media-variant-repository.ts oauth-repository.ts
+    resource-repository.ts    user-repository.ts        wiki-comment-repository.ts
   tools/
     i18n-manager.mjs      # CLI script: add/inspect translation keys (npm run i18n-manager)
     build-frontend.mjs    # esbuild script: bundles src/frontend/ → public/js/bundle.js
@@ -203,33 +239,13 @@ src/
   helpers/
     file-validation.ts    # Magic-byte file type & size validation
     image-validator.ts    # Image-specific validation
-    oauth-upsert.ts       # OAuth user upsert logic
     query-constructor.ts  # Dynamic D1 query builder
     turnstile.ts          # Cloudflare Turnstile token verification
   cdn-worker.ts           # Dedicated CDN Worker entry point (deployed separately via wrangler-cdn.jsonc)
-  index.ts                # App entry point, route mounting, error handler
-  middleware/
-    rate-limit.ts         # KV-based rate limiter
-    security.ts           # Security headers middleware
-  routes/
-    2fa.ts                # Two-factor authentication endpoints
-    admin.ts              # Admin panel endpoints
-    ads.ts                # Community ads endpoints (CRUD, moderation, stats)
-    assets.ts             # Asset (shader/tool/etc.) listing endpoints
-    authors.ts            # Avatar author profile endpoints
-    avatars.ts            # Avatar listing and detail endpoints
-    blog.ts               # Blog CRUD endpoints
-    clothes.ts            # Clothing resource listing endpoints
-    comments.ts           # Comment endpoints
-    downloads.ts          # R2 file download proxy (originals, kept for backward compat)
-    favorites.ts          # User favorites endpoints
-    oauth.ts              # OAuth flow endpoints
-    resources.ts          # Resource upload/listing/detail endpoints
-    system.ts             # System/version info endpoints
-    uploads.ts            # R2 file upload handler
-    users.ts              # User profile/account endpoints
-    utils.ts              # Miscellaneous utility endpoints
-    wiki.ts               # Wiki Markdown serving
+  index.ts                # Composition root: builds the app, wires middleware +
+                          # registerRateLimits + app.onError, mounts the /api routers,
+                          # calls registerSeoRoutes, serves the SPA, and exports the
+                          # fetch/queue/scheduled entrypoints. No logic, no SQL.
   types.ts                # Shared backend TypeScript types
   validators.ts           # Zod schemas + sanitizeHtml helper
 
@@ -275,6 +291,7 @@ migrations/               # D1 schema & migration files
   0010_backfill_metadata.sql  # Backfill metadata for existing resources
   0011_community_ads.sql      # community_ads, ad_slot_config, ad_stats, ad_internal_pages
   0012_media_variants.sql     # placeholder_blur column on media + media_variants table
+  0013_avatar_urls_to_cdn.sql # Rewrite persisted avatar_url values from /api/download/<key> to CDN URLs
                               # New migrations follow the pattern: NNNN_description.sql
 
 wrangler.jsonc            # Main Worker configuration & bindings
@@ -304,17 +321,17 @@ STOP. Your knowledge of Cloudflare Workers APIs and limits may be outdated. Alwa
 
 ### R2 Storage
 
-- **Public URL:** R2 buckets are not public by default. Use `src/routes/downloads.ts` or `src/routes/uploads.ts` for access.
+- **Public URL:** R2 buckets are not public by default. Use `src/http/routes/downloads.ts` or `src/http/routes/uploads.ts` for access.
 - **Keys:** R2 keys are random UUIDs generated at upload time (e.g. `crypto.randomUUID()`). The key is stored in `media.r2_key` and forms part of all download URLs: `/api/download/<r2_key>`.
 - **Never delete R2 objects directly** without also deleting the corresponding `media` row. Always pair `BUCKET.delete(r2_key)` + `DELETE FROM media WHERE uuid = ?`.
 
 ### Middleware Details
 
 - `securityMiddleware`: Sets `HSTS`, `Content-Security-Policy`, `X-Content-Type-Options`, `X-Frame-Options`, and `CORS`.
-- `rateLimit` (legacy): KV-based rate limiter in `src/middleware/rate-limit.ts`. Key format: `rate_limit:{prefix}:{key}`. Most endpoints now use the **Cloudflare native Rate Limiting bindings** (`RL_STRICT`, `RL_MEDIUM`, `RL_GLOBAL`, `RL_LOGIN`) configured directly in `wrangler.jsonc` and applied in `src/index.ts` via `rateLimit({ binding: c.env.RL_*, keyPrefix: '...' })`.
+- `rateLimit` (legacy): KV-based rate limiter in `src/http/middleware/rate-limit.ts`. Key format: `rate_limit:{prefix}:{key}`. Most endpoints now use the **Cloudflare native Rate Limiting bindings** (`RL_STRICT`, `RL_MEDIUM`, `RL_GLOBAL`, `RL_LOGIN`) configured directly in `wrangler.jsonc` and applied in `src/http/rate-limits.ts` via `rateLimit({ binding: c.env.RL_*, keyPrefix: '...' })`.
 - `getAuthUser`: Helper in `src/auth.ts` to retrieve user from session/cookie.
 
-> **Note:** `GET /api/version` (in `src/routes/system.ts`) is **intentionally public and unauthenticated**. It exposes deployment metadata (version ID, commit hash, compatibility date, Cloudflare Ray ID, colo, country) for debugging and monitoring purposes. This is a deliberate design decision — do not gate it behind auth or flag it as information disclosure.
+> **Note:** `GET /api/version` (in `src/http/routes/system.ts`) is **intentionally public and unauthenticated**. It exposes deployment metadata (version ID, commit hash, compatibility date, Cloudflare Ray ID, colo, country) for debugging and monitoring purposes. This is a deliberate design decision — do not gate it behind auth or flag it as information disclosure.
 
 ## Core Logic & Helpers
 
@@ -467,7 +484,7 @@ Every file uploaded via `PUT /api/upload` (or the multipart flow) creates:
 
 1. An object in **R2** (`BUCKET.put(r2Key, file)`) — the original, served via `/api/download/<r2_key>`.
 2. A row in **`media`** (`uuid`, `r2_key`, `media_type`, `file_name`, `placeholder_blur`).
-3. For images, the upload is also sent to `UPLOAD_QUEUE`. The queue handler (`processImageVariants` in `src/index.ts`) generates 6 variants stored in `MEDIA_BUCKET` and 6 rows in `media_variants`, then writes the base64 blur placeholder to `media.placeholder_blur`.
+3. For images, the upload is also sent to `UPLOAD_QUEUE`. The `queue` handler (`src/http/queue.ts`) calls `MediaProcessingService.processImageVariants` (`src/services/media-processing-service.ts`), which generates 6 variants stored in `MEDIA_BUCKET` and 6 rows in `media_variants`, then writes the base64 blur placeholder to `media.placeholder_blur` (via `MediaVariantRepository`).
 
 The `r2_key` is a random UUID. Original files remain accessible at `/api/download/<r2_key>`. Image variants are served via the **dedicated CDN Worker** (`src/cdn-worker.ts`, deployed separately):
 
@@ -487,7 +504,7 @@ Frontend utilities in `src/frontend/utils.ts`:
 
 #### Orphan Cleanup
 
-A scheduled cron job (`cleanupOrphanedMedia` in `src/index.ts`) runs daily and deletes any `media` record (+ its R2 objects) that is not referenced anywhere. The same logic is exposed manually via `POST /api/admin/cleanup/orphaned-media`.
+A scheduled cron job (`src/http/scheduled.ts`) runs daily and deletes any `media` record (+ its R2 objects) that is not referenced anywhere. It reuses `AdminService.cleanupOrphanedMedia`, the exact same logic exposed manually via `POST /api/admin/cleanup/orphaned-media` — single source of truth.
 
 When deleting an orphaned media record, the cleanup:
 1. Deletes all variant objects from `MEDIA_BUCKET` (queried from `media_variants`).
@@ -517,8 +534,8 @@ A media record is considered **in use** if its `uuid` or `r2_key` appears in any
 
 #### Rules for modifying this system
 
-- **Adding a new place where media can be referenced** (e.g. a new table with a text field that embeds images): add a corresponding `AND NOT EXISTS (SELECT 1 FROM <table> WHERE INSTR(<table>.<column>, m.r2_key) > 0)` clause to **both** the cron query in `src/index.ts` and the admin endpoint queries in `src/routes/admin.ts`.
-- **Adding a new FK reference to `media`** (e.g. a new table with a `media_uuid` column): add it to the `AND m.uuid NOT IN (...)` subquery in the same two files.
+- **Adding a new place where media can be referenced** (e.g. a new table with a text field that embeds images): add a corresponding `AND NOT EXISTS (SELECT 1 FROM <table> WHERE INSTR(<table>.<column>, m.r2_key) > 0)` clause to the shared `ORPHANED_MEDIA_PREDICATE` constant in `src/repositories/admin-repository.ts` — the single source used by the stats, listing, cleanup, and cron queries.
+- **Adding a new FK reference to `media`** (e.g. a new table with a `media_uuid` column): add it to the `AND m.uuid NOT IN (...)` subquery in the same two places.
 - **Deleting a record that owns a media file** (e.g. a blog post with a cover image): always explicitly delete the variant objects from `MEDIA_BUCKET`, the original from `BUCKET`, and the `media` row **before** deleting the parent record. Do not rely on the orphan cron for immediate cleanup of explicitly owned assets.
 - **Never delete a `media` row** without also deleting its variants from `MEDIA_BUCKET`. The `media_variants` rows cascade automatically on `DELETE FROM media`, but the R2 objects in `MEDIA_BUCKET` do not — they must be deleted manually first.
 
@@ -931,4 +948,4 @@ This bundles the new locale import into `public/js/bundle.js`.
 - **i18n out of sync:** Run `npm run i18n-manager CHECK` to identify which keys or locales are missing.
 - **Bundle not updating:** Remember to run `npm run build-frontend` after editing files in `src/frontend/`. In dev mode, use `npm run dev` which runs esbuild in watch mode automatically.
 - **Source maps in production:** The `src/tools/build-frontend.mjs` only emits source maps when the `--dev` flag is passed. Production deploys via `npm run deploy` never include `.map` files.
-- **Orphaned media not cleaned up:** The cron only deletes files older than 24 hours. Check that the new reference type is covered in both the `src/index.ts` cron query and the `src/routes/admin.ts` endpoint. If a new text column embeds images, add `AND NOT EXISTS (SELECT 1 FROM <table> WHERE INSTR(<table>.<column>, m.r2_key) > 0)` to both queries.
+- **Orphaned media not cleaned up:** The cron only deletes files older than 24 hours. Check that the new reference type is covered in the `ORPHANED_MEDIA_PREDICATE` in `src/repositories/admin-repository.ts` (the single predicate shared by the stats, listing, cleanup, and cron queries). If a new text column embeds images, add `AND NOT EXISTS (SELECT 1 FROM <table> WHERE INSTR(<table>.<column>, m.r2_key) > 0)`.
