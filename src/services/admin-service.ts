@@ -31,6 +31,7 @@ import { NotFoundError, ValidationError } from '../domain/errors';
 // =========================================================================================================
 
 const TWENTY_FOUR_HOURS = 24 * 60 * 60; // seconds
+const FORTY_EIGHT_HOURS = 48 * 60 * 60; // seconds
 const VALID_CATEGORIES = ['avatars', 'assets', 'clothes', 'worlds'] as const;
 
 // =========================================================================================================
@@ -49,13 +50,35 @@ export interface OrphanedMediaStats {
 	orphaned_files: { uuid: string; filename: string; type: string; age_hours: number }[];
 	total_media: number;
 	total_resources: number;
+	/** Minimum age (hours) a media must reach before it's eligible — the 24h grace window. */
 	cutoff_hours: number;
+	/** Maximum age (hours) considered — media older than this is out of scope and never auto-cleaned. */
+	window_hours: number;
 }
 
 /** A generic paginated envelope for the admin listings. */
 export interface Paginated<T> {
 	pagination: { page: number; limit: number; total: number; hasNextPage: boolean; hasPrevPage: boolean };
 	rows: T[];
+}
+
+/** The result of the r2_key → uuid unification migration (dry-run or real). */
+export interface MediaUnifyReport {
+	dry_run: boolean;
+	/** Rows examined this pass (r2_key != uuid, capped by `limit`). */
+	candidates: number;
+	/** Rows actually migrated this pass (real run only; 0 on dry-run). */
+	migrated: number;
+	/** Rows that WOULD migrate (dry-run only; 0 on real run). */
+	would_migrate: number;
+	/** Total free-text references that would be rewritten across the examined rows (dry-run only). */
+	text_references: number;
+	/** Rows skipped because their original object was missing in BUCKET (left untouched). */
+	skipped_missing_original: { uuid: string; r2_key: string }[];
+	/** Rows that errored mid-migration (reported, not retried in this pass). */
+	errors: { uuid: string; r2_key: string; error: string }[];
+	/** Rows still not unified after this pass (0 = done). Present after a real run and dry-runs. */
+	remaining?: number;
 }
 
 // =========================================================================================================
@@ -69,8 +92,16 @@ export class AdminService {
 		this.repo = new AdminRepository(db);
 	}
 
+	/** Upper bound of the orphaned-media window: media must be older than this (24h grace) to qualify. */
 	private cutoff(): number {
 		return Math.floor(Date.now() / 1000) - TWENTY_FOUR_HOURS;
+	}
+
+	/** Lower bound of the orphaned-media window: media created before this (>48h old) is out of scope.
+	 *  Bounding the window keeps each stats/cleanup pass to a fixed, recent slice instead of the whole
+	 *  ever-growing history — the cron only ever touches media aged between 24h and 48h. */
+	private windowStart(): number {
+		return Math.floor(Date.now() / 1000) - FORTY_EIGHT_HOURS;
 	}
 
 	// -------------------------------------------------------------------------
@@ -125,10 +156,10 @@ export class AdminService {
 	// Orphaned media
 	// -------------------------------------------------------------------------
 
-	/** Orphaned-media statistics (no deletion). */
+	/** Orphaned-media statistics (no deletion). Scoped to the 24h–48h window like the cleanup. */
 	async orphanedMediaStats(): Promise<OrphanedMediaStats> {
 		const cutoff = this.cutoff();
-		const orphaned = await this.repo.listOrphanedMedia(cutoff);
+		const orphaned = await this.repo.listOrphanedMedia(cutoff, this.windowStart());
 		const [totalMedia, totalResources] = await Promise.all([this.repo.countMedia(), this.repo.countResources()]);
 
 		return {
@@ -142,12 +173,15 @@ export class AdminService {
 			total_media: totalMedia,
 			total_resources: totalResources,
 			cutoff_hours: 24,
+			window_hours: 48,
 		};
 	}
 
-	/** Delete orphaned media (older than 24h) from both R2 buckets + the DB. Returns the count deleted. */
+	/** Delete orphaned media in the 24h–48h age window from both R2 buckets + the DB. Bounding the
+	 *  window keeps each run's workload fixed and recent (media older than 48h is out of scope, so it
+	 *  is never auto-cleaned). Returns the count deleted. */
 	async cleanupOrphanedMedia(bucket: R2Bucket, mediaBucket: R2Bucket): Promise<number> {
-		const orphaned = await this.repo.listOrphanedMediaForCleanup(this.cutoff());
+		const orphaned = await this.repo.listOrphanedMediaForCleanup(this.cutoff(), this.windowStart());
 
 		let deletedCount = 0;
 		for (const media of orphaned) {
@@ -164,9 +198,10 @@ export class AdminService {
 	// Stats / cache / roles
 	// -------------------------------------------------------------------------
 
-	/** Consolidated dashboard metrics. */
+	/** Consolidated dashboard metrics. The orphaned-media count uses the same 24h–48h window as the
+	 *  cleanup so the dashboard number matches what a cleanup run would actually delete. */
 	fetchStats() {
-		return this.repo.fetchStats(this.cutoff());
+		return this.repo.fetchStats(this.cutoff(), this.windowStart());
 	}
 
 	/**
@@ -248,5 +283,81 @@ export class AdminService {
 			});
 		}
 		return rows.length;
+	}
+
+	// -------------------------------------------------------------------------
+	// r2_key → uuid unification migration (Phase 2)
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Unify every media row so its R2 key equals its uuid, collapsing the two historical identifiers
+	 * into one. For each row where `r2_key != uuid`:
+	 *   1. copy the original object in BUCKET from the old key to the uuid key (variants in
+	 *      MEDIA_BUCKET already live under `{uuid}/...`, so they need no move);
+	 *   2. rewrite every free-text reference (avatar URLs, comment/blog markdown) old key → uuid;
+	 *   3. point `media.r2_key` at the uuid;
+	 *   4. only then delete the old object.
+	 *
+	 * The order is load-bearing: the new object and the rewritten text must exist BEFORE the old
+	 * object is deleted, or the orphaned-media predicate (which matches r2_key inside those columns)
+	 * would start deleting in-use media. Idempotent — already-unified rows are skipped by the query,
+	 * and re-running only reprocesses rows that didn't finish. Rows whose old object is missing in R2
+	 * are skipped and reported, never touched.
+	 *
+	 * `dryRun` (default true) performs NO writes: it reads each candidate, checks the original still
+	 * exists in R2, and counts the text references it would rewrite — so you can see the full impact
+	 * before committing. `limit` caps how many rows one pass processes (Worker CPU budget): run it
+	 * repeatedly until `remaining` reaches 0.
+	 */
+	async unifyMediaKeys(bucket: R2Bucket, opts: { dryRun?: boolean; limit?: number } = {}): Promise<MediaUnifyReport> {
+		const dryRun = opts.dryRun ?? true;
+		const pending = await this.repo.listMediaToUnify(opts.limit);
+
+		const report: MediaUnifyReport = {
+			dry_run: dryRun,
+			candidates: pending.length,
+			migrated: 0,
+			would_migrate: 0,
+			text_references: 0,
+			skipped_missing_original: [],
+			errors: [],
+		};
+
+		for (const { uuid, r2_key: oldKey } of pending) {
+			try {
+				const original = await bucket.get(oldKey);
+				if (!original) {
+					// No object to move — leave the row untouched and report it.
+					report.skipped_missing_original.push({ uuid, r2_key: oldKey });
+					continue;
+				}
+
+				if (dryRun) {
+					// Read-only preview: this row would migrate, and here's how much text it touches.
+					report.would_migrate++;
+					report.text_references += await this.repo.countTextReferences(oldKey);
+					continue;
+				}
+
+				// 1. Copy the original to the uuid key, preserving its Content-Type.
+				await bucket.put(uuid, original.body, { httpMetadata: original.httpMetadata });
+
+				// 2. Rewrite free-text references, then 3. repoint the column — text before/with the
+				//    column update so the predicate never sees a stale key.
+				await this.repo.rewriteTextReferences(oldKey, uuid);
+				await this.repo.setMediaKeyToUuid(uuid);
+
+				// 4. Old object is now safe to delete: the new key exists and nothing references the old.
+				await bucket.delete(oldKey);
+
+				report.migrated++;
+			} catch (e) {
+				report.errors.push({ uuid, r2_key: oldKey, error: e instanceof Error ? e.message : String(e) });
+			}
+		}
+
+		// How many candidates are still left after this pass (0 when fully unified).
+		report.remaining = await this.repo.countMediaToUnify();
+		return report;
 	}
 }

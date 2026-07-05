@@ -23,6 +23,7 @@
 // GET  /users?q=&page=                — Paginated user listing.
 // GET  /resources?category=&status=&q=&page= — Paginated resource listing.
 // POST /media/generate-variants       — Enqueue variant backfill for images without variants.
+// POST /media/unify-keys?confirm=&limit= — One-off: make every media's R2 key equal its uuid (dry-run by default).
 // =========================================================================================================
 
 // =========================================================================================================
@@ -184,6 +185,24 @@ admin.get('/resources', async (c) => {
 admin.post('/media/generate-variants', async (c) => {
 	const enqueued = await new AdminService(c.env.DB).backfillVariants(c.env.UPLOAD_QUEUE);
 	return c.json({ enqueued });
+});
+
+// =========================================================================================================
+// POST /api/admin/media/unify-keys?confirm=true&limit=N
+// One-off maintenance migration: collapse the media uuid/r2_key pair so every object's R2 key is its
+// uuid. Copies originals in BUCKET to the uuid key, rewrites free-text references, repoints the column,
+// then deletes the old object. Idempotent + safe to re-run. Defaults to a DRY RUN (no writes) that also
+// counts the text references it would touch; pass ?confirm=true to actually migrate. `limit` caps rows
+// per pass (Worker CPU budget) — re-run until the response's `remaining` is 0. Admin-gated.
+// =========================================================================================================
+
+admin.post('/media/unify-keys', async (c) => {
+	const confirm = c.req.query('confirm') === 'true';
+	const limitRaw = parseInt(c.req.query('limit') || '', 10);
+	const limit = Number.isFinite(limitRaw) && limitRaw > 0 ? limitRaw : undefined;
+
+	const report = await new AdminService(c.env.DB).unifyMediaKeys(c.env.BUCKET, { dryRun: !confirm, limit });
+	return c.json(report);
 });
 
 // =========================================================================================================

@@ -52,28 +52,29 @@ upload.put('/', requireAuth, async (c) => {
 	const { mediaType, mimeType } = await new UploadService().validateFile(file);
 
 	const filename = file.name;
-	const r2Key = crypto.randomUUID();
+	// A media row has a single identity: its `uuid` doubles as its R2 key. The original lives in
+	// BUCKET under the uuid, and the CDN serves variants from MEDIA_BUCKET under `{uuid}/...`.
 	const mediaUuid = crypto.randomUUID();
 
 	try {
-		// Upload to R2 with a strict Content-Type.
-		await c.env.BUCKET.put(r2Key, file, { httpMetadata: { contentType: mimeType } });
+		// Upload to R2 with a strict Content-Type. The object key is the media uuid.
+		await c.env.BUCKET.put(mediaUuid, file, { httpMetadata: { contentType: mimeType } });
 
-		// Persist the media record.
-		await new MediaRepository(c.env.DB).insert(mediaUuid, r2Key, mediaType, filename);
+		// Persist the media record (r2_key === uuid).
+		await new MediaRepository(c.env.DB).insert(mediaUuid, mediaUuid, mediaType, filename);
 
 		// Enqueue async post-processing (runs after the response is sent).
 		c.executionCtx.waitUntil(
 			c.env.UPLOAD_QUEUE.send({
 				media_uuid: mediaUuid,
-				r2_key: r2Key,
+				r2_key: mediaUuid,
 				media_type: mediaType,
 				file_name: filename,
 				uploaded_at: Date.now(),
 			}),
 		);
 
-		return c.json({ media_uuid: mediaUuid, r2_key: r2Key, media_type: mediaType, file_name: filename });
+		return c.json({ media_uuid: mediaUuid, r2_key: mediaUuid, media_type: mediaType, file_name: filename });
 	} catch (e) {
 		console.error('Upload error:', e);
 		return fail(c, 'Upload failed', 500);
@@ -95,16 +96,18 @@ upload.post('/init', requireAuth, async (c) => {
 		return fail(c, 'Invalid media_type. Must be one of: image, video, file', 400);
 	}
 
-	const r2Key = crypto.randomUUID();
+	// The R2 key IS the media uuid (single identity). Generated here so /complete can reuse it as
+	// the media row's uuid without minting a second, unrelated identifier.
+	const mediaUuid = crypto.randomUUID();
 	try {
-		const multipartUpload = await c.env.BUCKET.createMultipartUpload(r2Key, {
+		const multipartUpload = await c.env.BUCKET.createMultipartUpload(mediaUuid, {
 			httpMetadata: { contentType: service.initMimeType(media_type) },
 		});
 
 		// Remember the expected media type for this upload (validated on part 1, trusted on complete).
 		await c.env.VRCSTORAGE_KV.put(`upload_meta:${multipartUpload.uploadId}`, media_type, { expirationTtl: UPLOAD_META_TTL });
 
-		return c.json({ uploadId: multipartUpload.uploadId, key: r2Key });
+		return c.json({ uploadId: multipartUpload.uploadId, key: mediaUuid });
 	} catch (e) {
 		console.error('Init multipart upload error:', e);
 		return fail(c, 'Failed to init upload', 500);
@@ -185,10 +188,10 @@ upload.post('/complete', requireAuth, async (c) => {
 		// Clean up the KV session entry.
 		await c.env.VRCSTORAGE_KV.delete(`upload_meta:${uploadId}`);
 
-		const mediaUuid = crypto.randomUUID();
-		await new MediaRepository(c.env.DB).insert(mediaUuid, key, media_type, filename);
+		// The multipart key IS the media uuid (set in /init), so r2_key === uuid.
+		await new MediaRepository(c.env.DB).insert(key, key, media_type, filename);
 
-		return c.json({ media_uuid: mediaUuid, r2_key: key, media_type, file_name: filename });
+		return c.json({ media_uuid: key, r2_key: key, media_type, file_name: filename });
 	} catch (e) {
 		console.error('Complete multipart upload error:', e);
 		return fail(c, 'Failed to complete upload', 500);

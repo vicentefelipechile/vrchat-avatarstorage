@@ -122,25 +122,27 @@ export class AdminRepository {
 	// Orphaned media
 	// -------------------------------------------------------------------------
 
-	/** Orphaned media rows older than `cutoffTime` (unix seconds), with metadata for the stats view. */
-	listOrphanedMedia(cutoffTime: number): Promise<Media[]> {
+	/** Orphaned media rows in the age window `windowStart <= created_at < cutoffTime` (unix seconds),
+	 *  with metadata for the stats view. The lower bound bounds each pass to a recent slice. */
+	listOrphanedMedia(cutoffTime: number, windowStart: number): Promise<Media[]> {
 		return queryAll<Media>(
 			this.db,
 			`SELECT m.uuid, m.r2_key, m.file_name, m.media_type, m.created_at
 			 FROM media m
-			 WHERE m.created_at < ? AND ${ORPHANED_MEDIA_PREDICATE}`,
-			[cutoffTime],
+			 WHERE m.created_at < ? AND m.created_at >= ? AND ${ORPHANED_MEDIA_PREDICATE}`,
+			[cutoffTime, windowStart],
 		);
 	}
 
-	/** Orphaned media rows older than `cutoffTime`, minimal (uuid + r2_key) for cleanup. */
-	listOrphanedMediaForCleanup(cutoffTime: number): Promise<{ uuid: string; r2_key: string }[]> {
+	/** Orphaned media rows in the age window `windowStart <= created_at < cutoffTime`, minimal
+	 *  (uuid + r2_key) for cleanup. */
+	listOrphanedMediaForCleanup(cutoffTime: number, windowStart: number): Promise<{ uuid: string; r2_key: string }[]> {
 		return queryAll<{ uuid: string; r2_key: string }>(
 			this.db,
 			`SELECT m.uuid, m.r2_key
 			 FROM media m
-			 WHERE m.created_at < ? AND ${ORPHANED_MEDIA_PREDICATE}`,
-			[cutoffTime],
+			 WHERE m.created_at < ? AND m.created_at >= ? AND ${ORPHANED_MEDIA_PREDICATE}`,
+			[cutoffTime, windowStart],
 		);
 	}
 
@@ -170,8 +172,9 @@ export class AdminRepository {
 	// Dashboard stats (batched)
 	// -------------------------------------------------------------------------
 
-	/** All dashboard metrics in one D1 batch. `cutoffTime` scopes the orphaned-media count. */
-	async fetchStats(cutoffTime: number): Promise<{
+	/** All dashboard metrics in one D1 batch. `cutoffTime`/`windowStart` scope the orphaned-media
+	 *  count to the same 24h–48h age window the cleanup uses. */
+	async fetchStats(cutoffTime: number, windowStart: number): Promise<{
 		users: number;
 		avatars: number;
 		assets: number;
@@ -203,8 +206,8 @@ export class AdminRepository {
 			this.db.prepare('SELECT COUNT(*) as count FROM avatar_authors'),
 			this.db.prepare('SELECT COUNT(*) as count FROM media'),
 			this.db
-				.prepare(`SELECT COUNT(*) as count FROM media m WHERE m.created_at < ? AND ${ORPHANED_MEDIA_PREDICATE}`)
-				.bind(cutoffTime),
+				.prepare(`SELECT COUNT(*) as count FROM media m WHERE m.created_at < ? AND m.created_at >= ? AND ${ORPHANED_MEDIA_PREDICATE}`)
+				.bind(cutoffTime, windowStart),
 			this.db.prepare(
 				`SELECT r.uuid, r.title, r.category, r.created_at, u.username as author_username
 				FROM resources r LEFT JOIN users u ON r.author_uuid = u.uuid
@@ -296,5 +299,60 @@ export class AdminRepository {
 			  WHERE media_type = 'image'
 			    AND uuid NOT IN (SELECT DISTINCT media_uuid FROM media_variants)`,
 		);
+	}
+
+	// -------------------------------------------------------------------------
+	// r2_key → uuid unification migration (Phase 2)
+	// -------------------------------------------------------------------------
+
+	/** Media rows whose r2_key still differs from their uuid (i.e. not yet unified). `limit` caps the
+	 *  batch so a single migration pass can't exceed the Worker CPU budget; omit for all rows. */
+	listMediaToUnify(limit?: number): Promise<{ uuid: string; r2_key: string }[]> {
+		return limit && limit > 0
+			? queryAll<{ uuid: string; r2_key: string }>(this.db, 'SELECT uuid, r2_key FROM media WHERE r2_key != uuid LIMIT ?', [limit])
+			: queryAll<{ uuid: string; r2_key: string }>(this.db, 'SELECT uuid, r2_key FROM media WHERE r2_key != uuid');
+	}
+
+	/** How many free-text references a given r2_key has across the columns that can embed it. Read-only;
+	 *  used by the dry-run to preview how much text the migration would rewrite for this key. */
+	async countTextReferences(key: string): Promise<number> {
+		const row = await queryOne<{ n: number }>(
+			this.db,
+			`SELECT
+				(SELECT COUNT(*) FROM users         WHERE INSTR(avatar_url, ?) > 0)
+			  + (SELECT COUNT(*) FROM avatar_authors WHERE INSTR(avatar_url, ?) > 0)
+			  + (SELECT COUNT(*) FROM comments       WHERE INSTR(text,       ?) > 0)
+			  + (SELECT COUNT(*) FROM blog_comments  WHERE INSTR(text,       ?) > 0)
+			  + (SELECT COUNT(*) FROM blog_posts     WHERE INSTR(content,    ?) > 0) AS n`,
+			[key, key, key, key, key],
+		);
+		return row?.n ?? 0;
+	}
+
+	/** Count of media rows still not unified (r2_key != uuid). Used to report progress across batches. */
+	async countMediaToUnify(): Promise<number> {
+		const row = await queryOne<{ count: number }>(this.db, 'SELECT COUNT(*) AS count FROM media WHERE r2_key != uuid');
+		return row?.count ?? 0;
+	}
+
+	/** Point a media row's r2_key at its own uuid (the object has already been copied in R2). */
+	async setMediaKeyToUuid(uuid: string): Promise<void> {
+		await execute(this.db, 'UPDATE media SET r2_key = uuid WHERE uuid = ?', [uuid]);
+	}
+
+	/**
+	 * Rewrite every free-text reference to an old r2_key so it points at the new key (the uuid).
+	 * These columns embed the r2_key inside URLs / markdown, so a plain string REPLACE is required —
+	 * the orphaned-media predicate (INSTR over these same columns) depends on them staying in sync.
+	 * Batched so all four tables move atomically for one media row.
+	 */
+	async rewriteTextReferences(oldKey: string, newKey: string): Promise<void> {
+		await this.db.batch([
+			this.db.prepare('UPDATE users         SET avatar_url = REPLACE(avatar_url, ?, ?) WHERE INSTR(avatar_url, ?) > 0').bind(oldKey, newKey, oldKey),
+			this.db.prepare('UPDATE avatar_authors SET avatar_url = REPLACE(avatar_url, ?, ?) WHERE INSTR(avatar_url, ?) > 0').bind(oldKey, newKey, oldKey),
+			this.db.prepare('UPDATE comments       SET text       = REPLACE(text,       ?, ?) WHERE INSTR(text,       ?) > 0').bind(oldKey, newKey, oldKey),
+			this.db.prepare('UPDATE blog_comments  SET text       = REPLACE(text,       ?, ?) WHERE INSTR(text,       ?) > 0').bind(oldKey, newKey, oldKey),
+			this.db.prepare('UPDATE blog_posts     SET content    = REPLACE(content,    ?, ?) WHERE INSTR(content,    ?) > 0').bind(oldKey, newKey, oldKey),
+		]);
 	}
 }
