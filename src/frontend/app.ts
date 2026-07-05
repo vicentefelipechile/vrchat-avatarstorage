@@ -9,7 +9,7 @@ import { showToast, TimeUnit, initLazyImages } from './utils';
 import type { AuthUser } from './types';
 
 // Views
-import { homeView, homeAfter } from './views/HomeView';
+import { homeView } from './views/HomeView';
 import { categoryView } from './views/CategoryView';
 import { itemView, itemAfter } from './views/ItemView';
 import { loginView, loginAfter } from './views/LoginView';
@@ -67,7 +67,7 @@ window.setLanguage = setLanguage;
 // Route registration
 // =========================================================================
 
-route('/', homeView, { after: homeAfter });
+route('/', homeView);
 route('/category/:category', categoryView);
 route('/item/:id', itemView, { after: itemAfter });
 route('/resource/:id', itemView, { after: itemAfter });

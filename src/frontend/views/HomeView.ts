@@ -63,7 +63,7 @@ export async function homeView(_ctx: RouteContext): Promise<string> {
 		.map((cat) => `<a href="/${cat}" data-link class="category-btn">${t('cats.' + cat)}</a>`)
 		.join('');
 
-	const mainContent = `
+	return `
 		<section class="hero-section">
 			<h1>${t('home.welcome')}</h1>
 			<p>${t('home.browse')}</p>
@@ -76,17 +76,4 @@ export async function homeView(_ctx: RouteContext): Promise<string> {
 		: `<div class="grid">${resources.map(resourceCard).join('')}</div>`
 	}
 		</section>`;
-
-	return `
-		<div class="home-layout" id="home-layout">
-			<div class="home-main" id="home-main">${mainContent}</div>
-		</div>`;
-}
-
-// =========================================================================
-// After
-// =========================================================================
-
-export function homeAfter(_ctx: RouteContext): void {
-	// No-op. (Community ads system removed.)
 }

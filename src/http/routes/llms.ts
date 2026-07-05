@@ -35,12 +35,11 @@ All API endpoints return JSON. Pagination follows a consistent shape: \`{ page, 
 
 ## Site Sections
 
-- [Home](https://vrcstorage.lat/): Landing page with featured content and community ads.
+- [Home](https://vrcstorage.lat/): Landing page with featured content.
 - [Avatars](https://vrcstorage.lat/avatars): Browse and filter VRChat avatars by type, gender, size, platform, SDK, and NSFW flag.
 - [Assets](https://vrcstorage.lat/assets): Browse shaders, tools, prefabs, scripts, and other Unity assets for VRChat.
 - [Clothes](https://vrcstorage.lat/clothes): Browse wearable clothing items compatible with popular VRChat avatar bases.
 - [Blog](https://vrcstorage.lat/blog): Community articles and announcements written by platform staff.
-- [Community](https://vrcstorage.lat/community): Community advertisement pages — creator and studio promotions.
 - [Wiki](https://vrcstorage.lat/wiki/en/home.md): Documentation hub covering setup, tools, shaders, and VRChat guides (raw Markdown).
 - [Upload](https://vrcstorage.lat/upload): Submit a new resource (requires an authenticated account).
 
@@ -219,15 +218,6 @@ GET /api/download/:r2_key
   The r2_key is obtained from the thumbnail_key or media fields of resource/avatar/asset responses.
   Returns the raw file with appropriate Content-Type headers.
   No authentication required for public resources.
-\`\`\`
-
-## Public API — Community Ads
-
-\`\`\`
-GET /api/ads?slot=<slot>
-  Returns active community advertisements for a given display slot.
-  Available slots: sidebar_left | featured_artist | grid_card | detail_banner
-  Response: [{ uuid, title, tagline, slot_type, cta_url, banner_r2_key, card_r2_key, display_weight }]
 \`\`\`
 
 ## Public API — System
