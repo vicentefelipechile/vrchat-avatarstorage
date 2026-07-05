@@ -222,15 +222,11 @@ src/
     icons.ts              # Centralized Lucide icon registry
     utils.ts              # General frontend utilities (incl. showToast)
     admin.ts              # Admin-specific frontend logic
-    ad-components.ts      # Community ad rendering components (banner, card, etc.)
-    ad-prefs.ts           # User ad preferences (opt-out, category filtering)
-    ad-orchestrator.ts    # Unified ad loading orchestrator (mountSidebarSlot, mountFeaturedSlot, mountDetailBannerSlot)
     types.ts              # Frontend-only TypeScript types (RouteContext, ViewFn, etc.)
     views/                # Functional view modules (viewFn + optional afterFn)
-      AdCreateView.ts      AdDetailView.ts    AdminView.ts
-      AssetsView.ts        AuthorView.ts      AvatarsView.ts
-      BlogCreateView.ts    BlogListView.ts    BlogPostView.ts
-      CategoryView.ts      ClothesView.ts     CommunityView.ts
+      AdminView.ts         AssetsView.ts      AuthorView.ts
+      AvatarsView.ts       BlogCreateView.ts  BlogListView.ts
+      BlogPostView.ts      CategoryView.ts    ClothesView.ts
       DMCAView.ts          EditResourceView.ts FavoritesView.ts
       HistoryView.ts       HomeView.ts        ItemView.ts
       LoginView.ts         OAuthRegisterView.ts RegisterView.ts
@@ -266,7 +262,6 @@ public/
     admin.css             # Admin panel styles (legacy, kept for compatibility)
     admin-dashboard.css   # Admin dashboard stats and layout
     authors.css           # Avatar author profile page styles
-    community.css         # Community ads pages (AdCreateView, AdDetailView, CommunityView)
     search.css            # Search bar and filter panel styles
   sw.js                   # Service worker
   js/
@@ -289,7 +284,7 @@ migrations/               # D1 schema & migration files
   0008_category_authors.sql   # avatar_authors table (normalized author profiles)
   0009_category_metadata.sql  # avatar_meta, asset_meta, clothes_meta tables
   0010_backfill_metadata.sql  # Backfill metadata for existing resources
-  0011_community_ads.sql      # community_ads, ad_slot_config, ad_stats, ad_internal_pages
+  0011_community_ads.sql      # (historical) community ads schema — feature removed, tables no longer used
   0012_media_variants.sql     # placeholder_blur column on media + media_variants table
   0013_avatar_urls_to_cdn.sql # Rewrite persisted avatar_url values from /api/download/<key> to CDN URLs
                               # New migrations follow the pattern: NNNN_description.sql
@@ -506,6 +501,8 @@ Frontend utilities in `src/frontend/utils.ts`:
 
 A scheduled cron job (`src/http/scheduled.ts`) runs daily and deletes any `media` record (+ its R2 objects) that is not referenced anywhere. It reuses `AdminService.cleanupOrphanedMedia`, the exact same logic exposed manually via `POST /api/admin/cleanup/orphaned-media` — single source of truth.
 
+The cleanup only considers media inside a bounded **age window**: `created_at` between 24h and 48h ago (`AdminService.cutoff()` / `windowStart()`). The 24h lower bound is a grace period so freshly uploaded media isn't reaped before it's attached; the 48h upper bound keeps each run's workload to a fixed, recent slice instead of the whole ever-growing history. **Consequence:** media that stays orphaned for more than 48h is never auto-cleaned and must be removed manually. The dashboard stats and the manual endpoint use the same window, so their counts match what a run would delete.
+
 When deleting an orphaned media record, the cleanup:
 1. Deletes all variant objects from `MEDIA_BUCKET` (queried from `media_variants`).
 2. Deletes the original from `BUCKET`.
@@ -519,18 +516,15 @@ A media record is considered **in use** if its `uuid` or `r2_key` appears in any
 | Resource reference image           | `resources.reference_image_uuid`                   |
 | Resource gallery file              | `resource_n_media.media_uuid`                      |
 | Blog post cover image              | `blog_posts.cover_image_uuid`                      |
-| Community ad banner image          | `community_ads.banner_media_uuid`                  |
-| Community ad card image            | `community_ads.card_media_uuid`                    |
 | User avatar                        | `INSTR(users.avatar_url, m.r2_key)`                |
 | Image embedded in resource comment | `INSTR(comments.text, m.r2_key)`                   |
 | Image embedded in blog comment     | `INSTR(blog_comments.text, m.r2_key)`              |
 | Image embedded in blog post body   | `INSTR(blog_posts.content, m.r2_key)`              |
-| Image embedded in ad internal page | `INSTR(ad_internal_pages.content, m.r2_key)`       |
 
 > **Important:** Comments embed images as Markdown (`![alt](/api/download/<r2_key>)`). Because there is no FK between `media` and `comments`, the cleanup uses `INSTR` to scan comment text for the `r2_key`. This means:
 >
 > - Images in **active** comments are protected from deletion.
-> - Once a comment is deleted, the image becomes orphaned and will be removed by the **next** cron run (within 24 hours).
+> - Once a comment is deleted, the image becomes orphaned and will be removed by a cron run — but only while it falls inside the 24h–48h age window (see above). An image whose media is already older than 48h when its last reference is removed will **not** be auto-cleaned.
 
 #### Rules for modifying this system
 
@@ -948,4 +942,4 @@ This bundles the new locale import into `public/js/bundle.js`.
 - **i18n out of sync:** Run `npm run i18n-manager CHECK` to identify which keys or locales are missing.
 - **Bundle not updating:** Remember to run `npm run build-frontend` after editing files in `src/frontend/`. In dev mode, use `npm run dev` which runs esbuild in watch mode automatically.
 - **Source maps in production:** The `src/tools/build-frontend.mjs` only emits source maps when the `--dev` flag is passed. Production deploys via `npm run deploy` never include `.map` files.
-- **Orphaned media not cleaned up:** The cron only deletes files older than 24 hours. Check that the new reference type is covered in the `ORPHANED_MEDIA_PREDICATE` in `src/repositories/admin-repository.ts` (the single predicate shared by the stats, listing, cleanup, and cron queries). If a new text column embeds images, add `AND NOT EXISTS (SELECT 1 FROM <table> WHERE INSTR(<table>.<column>, m.r2_key) > 0)`.
+- **Orphaned media not cleaned up:** The cron only deletes media inside the 24h–48h age window (see "Orphan Cleanup"); anything older than 48h is out of scope by design and must be removed manually. If the media is inside the window, check that the new reference type is covered in the `ORPHANED_MEDIA_PREDICATE` in `src/repositories/admin-repository.ts` (the single predicate shared by the stats, listing, cleanup, and cron queries). If a new text column embeds images, add `AND NOT EXISTS (SELECT 1 FROM <table> WHERE INSTR(<table>.<column>, m.r2_key) > 0)`.
