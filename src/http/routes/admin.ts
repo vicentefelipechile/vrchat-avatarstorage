@@ -60,7 +60,7 @@ admin.get('/pending', async (c) => {
 // =========================================================================================================
 
 admin.post('/resource/:uuid/approve', async (c) => {
-	await new AdminService(c.env.DB).approveResource(c.req.param('uuid'), c.env.VRCSTORAGE_KV);
+	await new AdminService(c.env.DB).approveResource(c.req.param('uuid'), c.env.VRCSTORAGE_KV, c.env.FEED);
 	return c.json({ success: true });
 });
 

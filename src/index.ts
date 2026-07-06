@@ -20,6 +20,7 @@ import { registerSeoRoutes } from './http/seo';
 import { DomainError } from './domain/errors';
 import { handleQueue } from './http/queue';
 import { handleScheduled } from './http/scheduled';
+import { FeedRoom } from './durable-objects/feed-room';
 
 import resourceRoutes from './http/routes/resources';
 import userRoutes from './http/routes/users';
@@ -37,6 +38,8 @@ import avatarsRoutes from './http/routes/avatars';
 import assetsRoutes from './http/routes/assets';
 import clothesRoutes from './http/routes/clothes';
 import authorsRoutes from './http/routes/authors';
+import updatesRoutes from './http/routes/updates';
+import feedRoutes from './http/routes/feed';
 import llmsRoute from './http/routes/llms';
 
 // =========================================================================================================
@@ -84,6 +87,8 @@ app.route('/api/avatars', avatarsRoutes);
 app.route('/api/assets', assetsRoutes);
 app.route('/api/clothes', clothesRoutes);
 app.route('/api/authors', authorsRoutes);
+app.route('/api/updates', updatesRoutes);
+app.route('/api/feed', feedRoutes);
 
 // LLMs.txt — AI scraper context file (llmstxt.org spec)
 app.route('/llms.txt', llmsRoute);
@@ -103,6 +108,15 @@ app.get('/*', async (c) => {
 	}
 	return asset;
 });
+
+// =========================================================================================================
+// Durable Objects
+// =========================================================================================================
+// Re-exported so the runtime can instantiate the class named in wrangler.jsonc's durable_objects
+// binding. FeedRoom is the transport for real-time feed events (see src/durable-objects/feed-room.ts).
+// =========================================================================================================
+
+export { FeedRoom };
 
 // =========================================================================================================
 // Worker Entrypoints

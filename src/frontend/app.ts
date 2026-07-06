@@ -6,6 +6,8 @@ import { route, notFound, navigateTo, initRouter } from './router';
 import { setLanguage, getCurrentLang, t } from './i18n';
 import { DataCache } from './cache';
 import { showToast, TimeUnit, initLazyImages } from './utils';
+import { initUpdatesPoller } from './updates';
+import { initFeedClient } from './feed';
 import type { AuthUser } from './types';
 
 // Views
@@ -396,6 +398,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 	// Boot
 	updateNavDOM();
 	initRouter();
+
+	// Reconcile changes other users make: live over WebSocket, with polling as the fallback.
+	// The poller starts first so the feed client can suspend/resume it across the socket lifecycle.
+	initUpdatesPoller();
+	initFeedClient();
 
 	// Flash toast — shown after a full-page redirect (e.g. after standard login)
 	const flashRaw = sessionStorage.getItem('flash_toast');

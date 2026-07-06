@@ -21,6 +21,8 @@
 import type { AuthUser } from '../auth';
 import type { DB } from '../db/client';
 import { CommentRepository, type HydratedComment } from '../repositories/comment-repository';
+import { ChangeFeedRepository } from '../repositories/change-feed-repository';
+import { FeedPublisher } from './feed-publisher';
 import { verifyTurnstile } from '../helpers/turnstile';
 import { ValidationError, NotFoundError, ForbiddenError } from '../domain/errors';
 
@@ -50,9 +52,11 @@ export interface CreatedComment {
 
 export class CommentService {
 	private readonly repo: CommentRepository;
+	private readonly changeFeed: ChangeFeedRepository;
 
 	constructor(db: DB) {
 		this.repo = new CommentRepository(db);
+		this.changeFeed = new ChangeFeedRepository(db);
 	}
 
 	// -------------------------------------------------------------------------
@@ -80,6 +84,7 @@ export class CommentService {
 		text: string,
 		token: string,
 		turnstileSecret: string,
+		feed: Env['FEED'],
 	): Promise<CreatedComment> {
 		const author = await this.repo.findAvatarByUsername(user.username);
 		if (!author) throw new NotFoundError('User not found');
@@ -93,6 +98,11 @@ export class CommentService {
 
 		const uuid = crypto.randomUUID();
 		await this.repo.insert(uuid, resourceUuid, user.uuid, text);
+
+		// Announce the comment. The insert already succeeded, so neither the durable bump nor the live
+		// broadcast may fail the request — a miss only leaves it unannounced until the next change.
+		await this.changeFeed.bump('comments', resourceUuid).catch(() => {});
+		await new FeedPublisher(feed).publish({ scope: 'comments', action: 'created', entityId: resourceUuid });
 
 		return {
 			uuid,

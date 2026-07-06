@@ -25,6 +25,22 @@
 			"remote": false
 		},
 	],
+	"durable_objects": {
+		"bindings": [
+			{
+				"name": "FEED",
+				"class_name": "FeedRoom",
+			},
+		],
+	},
+	"migrations": [
+		{
+			"tag": "v1",
+			"new_sqlite_classes": [
+				"FeedRoom"
+			],
+		},
+	],
 	"r2_buckets": [
 		{
 			"bucket_name": "vrcstorage",

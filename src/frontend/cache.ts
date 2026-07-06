@@ -321,4 +321,33 @@ export const DataCache = {
 				.forEach((k) => localStorage.removeItem(k));
 		}
 	},
+
+	// =========================================================================================================
+	// clearScope(prefix)
+	// Evicts every cached URL that starts with `prefix` from both memory and localStorage.
+	// =========================================================================================================
+
+	/**
+	 * Evicts all cache entries whose URL begins with `prefix`, across both the in-memory Map and
+	 * localStorage. This covers keys carrying query params — e.g. `clearScope('/api/avatars')` drops
+	 * `/api/avatars?page=1`, `/api/avatars?gender=female`, and every other filtered variant at once.
+	 *
+	 * A remote change arrives as a coarse scope, not an exact URL, so per-URL `clear()` cannot reach
+	 * the paginated/filtered keys it invalidated. `clearScope` bridges that granularity gap: the next
+	 * read of any matching URL misses the cache and re-fetches fresh data from the API.
+	 *
+	 * @param prefix - URL prefix to match. All keys where `key.startsWith(prefix)` are evicted.
+	 */
+	clearScope(prefix: string): void {
+		// In-memory layer — collect first, then delete, to avoid mutating the Map mid-iteration.
+		for (const url of [...this.cache.keys()]) {
+			if (url.startsWith(prefix)) this.cache.delete(url);
+		}
+
+		// localStorage layer — keys are stored as `cache:<url>`, so match against the prefixed form.
+		const storagePrefix = `${CACHE_PREFIX}${prefix}`;
+		Object.keys(localStorage)
+			.filter((k) => k.startsWith(storagePrefix))
+			.forEach((k) => localStorage.removeItem(k));
+	},
 };

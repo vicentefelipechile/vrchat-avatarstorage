@@ -112,7 +112,7 @@ blog.post('/', requireAdmin, async (c) => {
 	const parsed = BlogPostSchema.safeParse(await c.req.json());
 	if (!parsed.success) return fail(c, 'Validation error', 400, parsed.error.issues);
 
-	const result = await new BlogService(c.env.DB).createPost(c.get('user').uuid, parsed.data);
+	const result = await new BlogService(c.env.DB).createPost(c.get('user').uuid, parsed.data, c.env.FEED);
 	await invalidateBlogListCache(c.env.VRCSTORAGE_KV);
 
 	return c.json(result);

@@ -255,6 +255,28 @@ export interface UserFavoriteWithResource extends UserFavorite {
 }
 
 // =========================================================================
+// REAL-TIME FEED
+// =========================================================================
+
+/**
+ * A content scope the real-time feed and the change-feed poller both speak. Each scope maps to a set
+ * of frontend cache prefixes it invalidates. Shared so the DO event, the change_feed table, and the
+ * frontend clients all agree on one vocabulary.
+ */
+export type FeedScope = 'avatars' | 'assets' | 'clothes' | 'blog' | 'comments';
+
+/**
+ * A live event broadcast by the FeedRoom Durable Object to every connected client. It carries only a
+ * scope + the affected entity id, never business data — the client invalidates the matching cache
+ * prefixes and re-fetches from the API, which stays the single source of truth.
+ */
+export interface FeedEvent {
+	scope: FeedScope;
+	action: 'created';
+	entityId: string;
+}
+
+// =========================================================================
 // CLOUDFLARE QUEUES
 // =========================================================================
 

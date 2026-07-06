@@ -684,5 +684,13 @@
 		"modeSimple": "简单模式",
 		"modeAdvanced": "高级模式",
 		"sendEmail": "通过电子邮件发送"
+	},
+	"updates": {
+		"avatars": "有新的模型可用",
+		"assets": "有新的资源可用",
+		"clothes": "有新的服装可用",
+		"blog": "博客有新动态",
+		"comments": "有新评论发布",
+		"multiple": "有新内容可用"
 	}
 }

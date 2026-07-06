@@ -64,6 +64,7 @@ comments.post('/:resourceId', requireAuth, async (c) => {
 			parsed.data.text,
 			parsed.data.token || '',
 			c.env.TURNSTILE_SECRET_KEY,
+			c.env.FEED,
 		);
 		return c.json(result);
 	} catch (e) {

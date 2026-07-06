@@ -1,9 +1,7 @@
 // ============================================================================
 // i18n.ts — Translation loader
-// Locale files live in public/js/i18n/ and are served as separate static files.
-// They are imported statically here so esbuild bundles them INTO the bundle.
-// The user requested locale files separate — if you want truly lazy loading,
-// swap these for dynamic fetch() calls instead.
+// Locale files live in public/i18n/ as plain JSON and are imported statically
+// here, so esbuild bundles every locale into public/js/bundle.js.
 // ============================================================================
 
 import es from '../../public/i18n/es.json';

@@ -26,6 +26,8 @@ import type { DB } from '../db/client';
 import type { BlogPostWithAuthor } from '../types';
 import { BlogPostRepository } from '../repositories/blog-post-repository';
 import { BlogCommentRepository, type BlogComment } from '../repositories/blog-comment-repository';
+import { ChangeFeedRepository } from '../repositories/change-feed-repository';
+import { FeedPublisher } from './feed-publisher';
 import { verifyTurnstile } from '../helpers/turnstile';
 import { NotFoundError, ForbiddenError } from '../domain/errors';
 
@@ -73,10 +75,12 @@ export interface CreatedBlogComment {
 export class BlogService {
 	private readonly posts: BlogPostRepository;
 	private readonly comments: BlogCommentRepository;
+	private readonly changeFeed: ChangeFeedRepository;
 
 	constructor(db: DB) {
 		this.posts = new BlogPostRepository(db);
 		this.comments = new BlogCommentRepository(db);
+		this.changeFeed = new ChangeFeedRepository(db);
 	}
 
 	// -------------------------------------------------------------------------
@@ -129,7 +133,7 @@ export class BlogService {
 	// -------------------------------------------------------------------------
 
 	/** Create a post; generates a unique slug. Returns the summary payload the legacy handler returned. */
-	async createPost(authorUuid: string, input: CreatePostInput): Promise<{ uuid: string; slug: string; title: string; author_display: string; created_at: number }> {
+	async createPost(authorUuid: string, input: CreatePostInput, feed: Env['FEED']): Promise<{ uuid: string; slug: string; title: string; author_display: string; created_at: number }> {
 		const uuid = crypto.randomUUID();
 		const slug = await this.uniqueSlug(this.slugify(input.title));
 		const now = Math.floor(Date.now() / 1000);
@@ -145,6 +149,11 @@ export class BlogService {
 			input.author_display,
 			now,
 		);
+
+		// Announce the post. The insert already succeeded, so neither the durable bump nor the live
+		// broadcast may fail the request — a miss only leaves it unannounced until the next change.
+		await this.changeFeed.bump('blog', uuid).catch(() => {});
+		await new FeedPublisher(feed).publish({ scope: 'blog', action: 'created', entityId: uuid });
 
 		return { uuid, slug, title: input.title, author_display: input.author_display, created_at: now };
 	}

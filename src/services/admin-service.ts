@@ -24,6 +24,8 @@
 import type { DB } from '../db/client';
 import type { UploadQueueMessage } from '../types';
 import { AdminRepository, type PendingResourceRow, type AdminUserRow } from '../repositories/admin-repository';
+import { ChangeFeedRepository, type ChangeScope } from '../repositories/change-feed-repository';
+import { FeedPublisher } from './feed-publisher';
 import { NotFoundError, ValidationError } from '../domain/errors';
 
 // =========================================================================================================
@@ -87,9 +89,11 @@ export interface MediaUnifyReport {
 
 export class AdminService {
 	private readonly repo: AdminRepository;
+	private readonly changeFeed: ChangeFeedRepository;
 
 	constructor(db: DB) {
 		this.repo = new AdminRepository(db);
+		this.changeFeed = new ChangeFeedRepository(db);
 	}
 
 	/** Upper bound of the orphaned-media window: media must be older than this (24h grace) to qualify. */
@@ -119,12 +123,19 @@ export class AdminService {
 	}
 
 	/** Approve a pending resource (activate + invalidate its category caches). Throws NotFoundError. */
-	async approveResource(uuid: string, kv: KVNamespace): Promise<void> {
+	async approveResource(uuid: string, kv: KVNamespace, feed: Env['FEED']): Promise<void> {
 		const category = await this.repo.findResourceCategory(uuid);
 		if (category === null) throw new NotFoundError('Resource not found');
 
 		await this.repo.setResourceActive(uuid, 1);
 		await this.invalidateResourceCaches(kv, category);
+
+		// Approval is the moment the resource becomes public, so this is where the feed learns of it —
+		// not creation, when it is still hidden pending review. The category is the feed scope. Both the
+		// durable bump and the live broadcast are best-effort: neither may undo the committed approval.
+		const scope = category as ChangeScope;
+		await this.changeFeed.bump(scope, uuid).catch(() => {});
+		await new FeedPublisher(feed).publish({ scope, action: 'created', entityId: uuid });
 	}
 
 	/** Deactivate an approved resource (+ invalidate its category caches). Throws NotFoundError. */

@@ -717,5 +717,13 @@
 		"notFoundTitle": "Yazar Bulunamadı",
 		"noResources": "Bu yazarın henüz ilgili kaynağı yok.",
 		"avatarsTitle": "Avatarlar"
+	},
+	"updates": {
+		"avatars": "Yeni avatarlar mevcut",
+		"assets": "Yeni varlıklar mevcut",
+		"clothes": "Yeni kıyafetler mevcut",
+		"blog": "Blogda yeni etkinlik",
+		"comments": "Yeni yorumlar yayınlandı",
+		"multiple": "Yeni içerik mevcut"
 	}
 }

@@ -192,21 +192,24 @@ src/
     routes/               # Thin HTTP handlers (route layer) — one file per API domain
       admin.ts            assets.ts     authors.ts    avatars.ts
       blog.ts             clothes.ts    comments.ts   downloads.ts
-      favorites.ts        llms.ts       oauth.ts      resources.ts
-      system.ts           two-factor.ts uploads.ts    users.ts
-      wiki.ts
+      favorites.ts        feed.ts       llms.ts       oauth.ts
+      resources.ts        system.ts     two-factor.ts updates.ts
+      uploads.ts          users.ts      wiki.ts
+  durable-objects/        # Durable Object classes (transport layer — no domain logic, no SQL)
+    feed-room.ts          # FeedRoom — global WebSocket-hibernation fan-out for live feed events
   services/               # Business logic (service layer), env-agnostic — one file per domain
     admin-service.ts      asset-service.ts    author-service.ts   avatar-service.ts
-    blog-service.ts       clothes-service.ts  comment-service.ts  download-service.ts
-    favorite-service.ts   media-processing-service.ts             oauth-service.ts
-    resource-service.ts   two-factor-service.ts                   upload-service.ts
-    user-service.ts       wiki-comment-service.ts
+    blog-service.ts       change-feed-service.ts                  clothes-service.ts
+    comment-service.ts    download-service.ts favorite-service.ts feed-publisher.ts
+    media-processing-service.ts               oauth-service.ts    resource-service.ts
+    two-factor-service.ts upload-service.ts   user-service.ts     wiki-comment-service.ts
   repositories/           # ALL SQL (repository layer) — one file per table
     admin-repository.ts       asset-repository.ts       author-repository.ts
     avatar-repository.ts      blog-comment-repository.ts blog-post-repository.ts
-    clothes-repository.ts     comment-repository.ts     favorite-repository.ts
-    media-repository.ts       media-variant-repository.ts oauth-repository.ts
-    resource-repository.ts    user-repository.ts        wiki-comment-repository.ts
+    change-feed-repository.ts clothes-repository.ts     comment-repository.ts
+    favorite-repository.ts    media-repository.ts       media-variant-repository.ts
+    oauth-repository.ts       resource-repository.ts    user-repository.ts
+    wiki-comment-repository.ts
   tools/
     i18n-manager.mjs      # CLI script: add/inspect translation keys (npm run i18n-manager)
     build-frontend.mjs    # esbuild script: bundles src/frontend/ → public/js/bundle.js
@@ -216,6 +219,9 @@ src/
     router.ts             # History API SPA router (route/navigateTo/initRouter)
     i18n.ts               # i18n loader (wraps dynamic import of locale files)
     cache.ts              # DataCache — two-layer cache: in-memory Map + localStorage (survives reloads)
+    feed.ts               # FeedClient — live WebSocket to /api/feed/live (suspends the poller while up)
+    updates.ts            # Polling fallback — GET /api/updates cursor poller
+    feed-scopes.ts        # Shared scope→cache-prefix map + reconciler used by feed.ts and updates.ts
     comment-editor.ts     # Shared Markdown editor component (toolbar, image upload, Turnstile)
     diff.ts               # Content diff utilities
     filter-panel.ts       # Reusable faceted filter panel (used in AvatarsView, etc.)
@@ -266,9 +272,10 @@ public/
   sw.js                   # Service worker
   js/
     bundle.js             # Compiled frontend bundle (output of esbuild, DO NOT EDIT)
-    i18n/                 # Locale files — plain JSON (`{ "key": "value" }`, NOT ES modules)
-      cn.json  de.json  en.json  es.json  fr.json  it.json
-      jp.json  nl.json  pl.json  pt.json  ru.json  tr.json
+                          # Locale JSON is imported by src/frontend/i18n.ts and bundled in here
+  i18n/                   # Locale files — plain JSON (`{ "key": "value" }`, NOT ES modules)
+    cn.json  de.json  en.json  es.json  fr.json  it.json
+    jp.json  nl.json  pl.json  pt.json  ru.json  tr.json
   wiki/                   # Markdown wiki articles (multi-language)
     cn/ de/ en/ es/ fr/ it/ jp/ nl/ pl/ pt/ ru/ tr/
     └── <topic>.md        # 23 articles per language (home, faq, setup, poiyomi, ...)
@@ -353,7 +360,7 @@ The frontend is **TypeScript-first** and compiled with esbuild:
 - **Source:** `src/frontend/` directory (TypeScript).
 - **Output:** `public/js/bundle.js` (single IIFE bundle, minified in production).
 - **Source Maps:** Only emitted in dev mode (`--dev` flag). Never included in production builds.
-- **i18n files** in `public/js/i18n/` are **not** bundled — they are plain `.json` files loaded at runtime by `src/frontend/i18n.ts`. Do not convert them to ES modules.
+- **i18n files** in `public/i18n/` are plain `.json` files (`{ "key": "value" }`). `src/frontend/i18n.ts` imports them statically, so esbuild bundles them into `public/js/bundle.js`. Do not convert them to ES modules — keep them as plain JSON objects.
 - The build script is `src/tools/build-frontend.mjs`. Do not edit the output `bundle.js` directly.
 
 ### Icons
@@ -389,10 +396,10 @@ All visual feedback or ephemeral messages to the user (success, error, loading s
 
 ### i18n (Frontend)
 
-Locale files live in `public/js/i18n/` as **plain JSON files** (e.g. `en.json`, `es.json`). They are NOT ES modules — do not use `export default`.
+Locale files live in `public/i18n/` as **plain JSON files** (e.g. `en.json`, `es.json`). They are NOT ES modules — do not use `export default`.
 
 - **Supported locales:** `cn`, `de`, `en`, `es`, `fr`, `it`, `jp`, `nl`, `pl`, `pt`, `ru`, `tr`.
-- **Loader:** `src/frontend/i18n.ts` handles dynamic locale loading via `fetch()` + `JSON.parse()`.
+- **Loader:** `src/frontend/i18n.ts` imports every locale JSON statically and holds them in the `translations` map; esbuild bundles them into `public/js/bundle.js` (no runtime `fetch()`). `t(path)` resolves the dot-path in the current locale, falling back to `en`, then to the raw `path` string.
 - **No Fallbacks:** NEVER use fallback strings with the `t()` function (e.g., avoid `t('key') || 'Fallback'`). Just use `t('key')`. Fallbacks make it harder to detect missing translations.
 - **Consistency check:** Run `npm run i18n-manager CHECK` to detect missing keys across all locale files (compact one-line-per-key output). Exits with code `1` if issues are found (CI-safe).
 - **NO ENGLISH PLACEHOLDERS IN OTHER LANGUAGES:** It is **EXPLICITLY FORBIDDEN** to use English text as placeholder translations in non‑English locale files. The i18n system already falls back to English when a key is missing; writing English strings in other locale files defeats the purpose of translation and makes missing keys invisible. Agents MUST generate proper translations for all supported languages—use machine translation if necessary, but never copy English strings verbatim into `de.json`, `es.json`, etc.
@@ -532,6 +539,47 @@ A media record is considered **in use** if its `uuid` or `r2_key` appears in any
 - **Adding a new FK reference to `media`** (e.g. a new table with a `media_uuid` column): add it to the `AND m.uuid NOT IN (...)` subquery in the same two places.
 - **Deleting a record that owns a media file** (e.g. a blog post with a cover image): always explicitly delete the variant objects from `MEDIA_BUCKET`, the original from `BUCKET`, and the `media` row **before** deleting the parent record. Do not rely on the orphan cron for immediate cleanup of explicitly owned assets.
 - **Never delete a `media` row** without also deleting its variants from `MEDIA_BUCKET`. The `media_variants` rows cascade automatically on `DELETE FROM media`, but the R2 objects in `MEDIA_BUCKET` do not — they must be deleted manually first.
+
+### Change Feed (Real-Time Updates)
+
+The frontend poller (`src/frontend/updates.ts`) hits `GET /api/updates?since=<ms>` on an interval and learns which content **scopes** changed. Each scope maps to a set of `DataCache` URL prefixes it invalidates via `DataCache.clearScope(prefix)`, so the next read re-fetches fresh data from the API. The scopes are `avatars | assets | clothes | blog | comments`. The API is the single source of truth — an update carries only a scope + timestamp, never business data.
+
+The backend records changes in the `change_feed` table (migration `0014_change_feed.sql`) through `ChangeFeedRepository.bump(scope, entityId)`, exposed to the poller as a read via `ChangeFeedService.latest`.
+
+#### Rule: bump on becoming PUBLIC, not on creation
+
+A `bump` announces content to every connected user, so it must fire at the moment the content becomes **publicly visible**, not when the row is first written:
+
+- **Resources (avatars / assets / clothes)** are created with `is_active = 0` and stay hidden until staff review. The bump therefore lives in `AdminService.approveResource` (where `is_active` flips to `1`), **not** in `AvatarService.create` / `AssetService.create` / `ClothesService.create`. The resource's `category` is the feed scope. Bumping at creation would notify everyone about content they cannot yet see — a phantom notification.
+- **Comments and blog posts** have no moderation gate; they are visible the instant they are written, so their bump lives in `CommentService.create` / `BlogService.createPost`.
+
+#### Rule: the bump is best-effort
+
+The mutation has already persisted before the bump runs, so a feed-write failure must never fail the request or roll back the change. Call it as `await this.changeFeed.bump(scope, id).catch(() => {})`. The only consequence of a dropped bump is that this one change goes unannounced until the next change refreshes the feed.
+
+**When adding a new gated content type** (created hidden, published later): put the bump — and the live broadcast (below) — at the publish/approve step, never at creation. **When adding a new instantly-public content type**: bump + broadcast at creation. In both cases add the scope to `FeedScope` in `src/types.ts` (the single source of vocabulary; `ChangeScope` aliases it) and to the `SCOPE_PREFIXES` / `SCOPE_LABELS` maps in `src/frontend/feed-scopes.ts` (with matching `updates.<scope>` i18n keys), or the frontend will neither invalidate nor announce it.
+
+### Live Feed (Durable Object)
+
+Alongside the poller, a WebSocket path delivers the same updates in real time. A single global **`FeedRoom`** Durable Object holds every connected client's socket and fans events out to all of them; the frontend `FeedClient` (`src/frontend/feed.ts`) keeps one socket open per session. When the socket is up, `FeedClient` **suspends the poller** so a change is never delivered twice; when it drops, the poller resumes and covers the gap. Both paths funnel through the same reconciler in `src/frontend/feed-scopes.ts` (`reconcileScopes` → cache invalidation + one coalesced toast + `content-updated` event), so live and fallback behave identically.
+
+#### The DO is a transport layer, not a domain layer
+
+Same discipline as route vs. repository: the DO carries bytes, it does not hold business logic.
+
+- **`FeedRoom`** (`src/durable-objects/feed-room.ts`): only `acceptWebSocket` + the hibernation handlers (`webSocketMessage` / `webSocketClose` / `webSocketError`) + `broadcast` (via `getWebSockets`). No SQL, no domain rules. It never reads or owns business data — D1 is the single source of truth, and the event carries only a scope + entity id.
+- **`FeedPublisher`** (`src/services/feed-publisher.ts`): the bridge a domain service uses to broadcast. Services depend on this narrow publisher, never on the raw `FEED` namespace, and receive the namespace as a method parameter (like any other env collaborator) so they stay env-agnostic.
+- **`FeedEvent` / `FeedScope`** (`src/types.ts`): the typed contract shared backend↔frontend. No `any`.
+- **`FeedClient`** (`src/frontend/feed.ts`): one socket, backoff reconnect, event → shared reconciler.
+
+#### DO rules
+
+- The class **extends `DurableObject<Env>`** and lives in `src/durable-objects/`. It is **re-exported from `src/index.ts`** so the runtime can instantiate the class named in the `durable_objects` binding.
+- Use **WebSocket Hibernation**: `this.ctx.acceptWebSocket(server)`, never `server.accept()`. Per-connection state that must survive eviction goes in `ws.serializeAttachment(...)`, never an in-memory `Map`.
+- Broadcasting is **best-effort**, exactly like the bump: the mutation already committed, so `FeedPublisher.publish` swallows failures. A missed live event is recovered by the poller.
+- **Compatibility date note:** `webSocketClose` is handled explicitly because the current `compatibility_date` (`2026-02-12`) predates `web_socket_auto_reply_to_close` (needs `>= 2026-04-07`). If that flag is ever enabled, the explicit close can be revisited.
+- **Retrieve current Cloudflare docs before changing DO code** (the Workers-specifics rule above applies): the Hibernation API and wrangler migration syntax are the kind of thing that drifts.
+- **Adding a new DO class:** add its binding to `durable_objects.bindings` and a new `migrations` entry (`new_sqlite_classes`) in `wrangler.jsonc`, re-export the class from `src/index.ts`, and run `npm run cf-typegen` so `env.<BINDING>` is typed.
 
 ### CSS Architecture
 
@@ -885,9 +933,9 @@ Use bold for UI label names and inline code for values and field identifiers.
 
 When adding a new language to the project, follow **ALL** of these steps in order:
 
-#### Step 1: Create the locale file (`public/js/i18n/<code>.json`)
+#### Step 1: Create the locale file (`public/i18n/<code>.json`)
 
-1. Copy `public/js/i18n/en.json` as the template (it is the reference locale and always has the complete set of keys).
+1. Copy `public/i18n/en.json` as the template (it is the reference locale and always has the complete set of keys).
 2. Translate **every** value to the target language. Keep all keys in English.
 3. The file format is **plain JSON** — a single JSON object `{ "key": "value", ... }`. Do NOT use `export default` or any JS syntax.
 4. DO NOT add or remove keys — maintain exact structural parity with `en.json`.
@@ -895,8 +943,8 @@ When adding a new language to the project, follow **ALL** of these steps in orde
 #### Step 2: Register the locale in the frontend loader
 
 1. Open `src/frontend/i18n.ts`.
-2. Add the new locale code to the loader's switch/map so it fetches `/js/i18n/<code>.json` at runtime.
-3. Verify the loader correctly parses the JSON response.
+2. Add a static `import <code> from '../../public/i18n/<code>.json';` and add the code to the `translations` map so esbuild bundles it.
+3. Rebuild the frontend (Step 6) so the new import lands in `public/js/bundle.js`.
 
 #### Step 3: Add the language to the HTML selector
 

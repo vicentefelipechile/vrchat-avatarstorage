@@ -792,5 +792,13 @@
 		"notFoundTitle": "Autor no encontrado",
 		"noResources": "Este autor aún no tiene recursos relacionados.",
 		"avatarsTitle": "Avatares"
+	},
+	"updates": {
+		"avatars": "Nuevos avatares disponibles",
+		"assets": "Nuevos assets disponibles",
+		"clothes": "Nueva ropa disponible",
+		"blog": "Nueva actividad en el blog",
+		"comments": "Nuevos comentarios publicados",
+		"multiple": "Nuevo contenido disponible"
 	}
 }

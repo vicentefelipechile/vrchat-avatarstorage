@@ -717,5 +717,13 @@
 		"notFoundTitle": "Auteur niet gevonden",
 		"noResources": "Deze auteur heeft nog geen gerelateerde resources.",
 		"avatarsTitle": "Avatars"
+	},
+	"updates": {
+		"avatars": "Nieuwe avatars beschikbaar",
+		"assets": "Nieuwe assets beschikbaar",
+		"clothes": "Nieuwe kleding beschikbaar",
+		"blog": "Nieuwe blogactiviteit",
+		"comments": "Nieuwe reacties geplaatst",
+		"multiple": "Nieuwe inhoud beschikbaar"
 	}
 }
