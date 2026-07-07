@@ -51,12 +51,24 @@ export class MediaProcessingService {
 	/**
 	 * Generate + store all variants and the blur placeholder for one image. Throws if the original
 	 * is missing in R2 (the queue handler will retry). Idempotent: re-running overwrites variants.
+	 *
+	 * Animated GIFs are the exception: they can't be re-encoded to webp/png without losing the
+	 * animation, so they are stored as a single `original/gif` variant that serves the untouched
+	 * original (see processGif). Everything else generates the full 6-variant set.
 	 */
 	async processImageVariants(mediaUuid: string, r2Key: string): Promise<void> {
 		const originalObj = await this.bucket.get(r2Key);
 		if (!originalObj) throw new Error(`Original not found in BUCKET: ${r2Key}`);
 
+		// GIFs can be large (animated). Sniff the 4-byte signature from R2 metadata range before
+		// materialising anything, so an animated GIF is copied by stream instead of buffered whole.
+		if (await this.isGifObject(r2Key)) {
+			await this.processGif(mediaUuid, r2Key);
+			return;
+		}
+
 		const originalBytes = new Uint8Array(await originalObj.arrayBuffer());
+
 		const toStream = (): ReadableStream<Uint8Array> =>
 			new ReadableStream({
 				start(controller) {
@@ -80,14 +92,62 @@ export class MediaProcessingService {
 			rows.push({ res: v.res, format: v.format, r2Key: variantKey, fileSize: variantBuffer.byteLength });
 		}
 
-		const placeholderResult = await this.images
-			.input(toStream())
+		const placeholder = await this.buildBlurPlaceholder(originalBytes);
+		await this.variants.saveVariantsAndPlaceholder(mediaUuid, rows, placeholder);
+	}
+
+	/**
+	 * Store an animated GIF as its own `original/gif` variant: the untouched original is streamed
+	 * R2→R2 into MEDIA_BUCKET under `{uuid}/original.gif` so the CDN serves it like any other
+	 * variant, and a single index row records it. Nothing is buffered in memory — animated GIFs run
+	 * tens of MB and materialising them (or running them through the Images binding for a blur)
+	 * overruns the worker. There is no blur placeholder for GIFs. This keeps the animation intact
+	 * while leaving the media covered by media_variants (so it no longer counts as missing).
+	 */
+	private async processGif(mediaUuid: string, r2Key: string): Promise<void> {
+		const originalObj = await this.bucket.get(r2Key);
+		if (!originalObj) throw new Error(`Original not found in BUCKET: ${r2Key}`);
+
+		const variantKey = `${mediaUuid}/original.gif`;
+		await this.mediaBucket.put(variantKey, originalObj.body, { httpMetadata: { contentType: 'image/gif' } });
+
+		const rows: VariantRow[] = [{ res: 'original', format: 'gif', r2Key: variantKey, fileSize: originalObj.size }];
+		await this.variants.saveVariantsAndPlaceholder(mediaUuid, rows, null);
+	}
+
+	/** Read the first 4 bytes from R2 (ranged GET) and test the GIF signature — no full download. */
+	private async isGifObject(r2Key: string): Promise<boolean> {
+		const head = await this.bucket.get(r2Key, { range: { offset: 0, length: 4 } });
+		if (!head) return false;
+		const bytes = new Uint8Array(await head.arrayBuffer());
+		return isGif(bytes);
+	}
+
+	/** 8×8 blur placeholder as a base64 webp data URI (a static frame for GIFs). */
+	private async buildBlurPlaceholder(originalBytes: Uint8Array): Promise<string> {
+		const stream = new ReadableStream<Uint8Array>({
+			start(controller) {
+				controller.enqueue(originalBytes);
+				controller.close();
+			},
+		});
+
+		const result = await this.images
+			.input(stream)
 			.transform({ width: 8, height: 8, fit: 'cover' })
 			.output({ format: 'image/webp', quality: 10 });
 
-		const placeholderBuffer = await placeholderResult.response().arrayBuffer();
-		const placeholderBase64 = btoa(String.fromCharCode(...new Uint8Array(placeholderBuffer)));
-
-		await this.variants.saveVariantsAndPlaceholder(mediaUuid, rows, `data:image/webp;base64,${placeholderBase64}`);
+		const buffer = await result.response().arrayBuffer();
+		const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
+		return `data:image/webp;base64,${base64}`;
 	}
+}
+
+// =========================================================================================================
+// Helpers
+// =========================================================================================================
+
+/** True if the bytes start with the GIF signature (`GIF8` — both 87a and 89a). */
+function isGif(bytes: Uint8Array): boolean {
+	return bytes[0] === 0x47 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x38;
 }

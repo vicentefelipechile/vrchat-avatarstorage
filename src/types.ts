@@ -35,7 +35,7 @@ export interface CreateUser {
 
 export type MediaType = 'image' | 'video' | 'file';
 export type MediaResolution = 'low' | 'med' | 'original';
-export type MediaFormat = 'webp' | 'png';
+export type MediaFormat = 'webp' | 'png' | 'gif';
 
 export interface Media {
 	uuid: string;

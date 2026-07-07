@@ -63,7 +63,8 @@ app.onError((err, c) => {
 	if (err instanceof z.ZodError) {
 		return c.json({ error: 'Validation error', details: err.issues }, 400);
 	}
-	console.error(err);
+	// Log the message and stack (not the bare Error object, which tail renders as just "Error").
+	console.error('Unhandled error:', err instanceof Error ? err.stack ?? err.message : String(err));
 	return c.json({ error: 'Internal Server Error' }, 500);
 });
 

@@ -106,7 +106,7 @@ export async function blogPostView(ctx: RouteContext): Promise<string> {
 	const { isAdmin } = window.appState;
 
 	const coverHtml = post.cover_image_uuid
-		? `<div class="blog-post-cover"><img src="${mediaUrl(post.cover_image_uuid, 'original')}" alt="${esc(post.title)}"></div>`
+		? `<div class="blog-post-cover"><img src="${mediaUrl(post.cover_image_uuid, 'original', 'png')}" alt="${esc(post.title)}"></div>`
 		: '';
 
 	const adminActions = isAdmin

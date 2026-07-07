@@ -285,7 +285,7 @@ async function uploadAndInsertImage(file: File, textarea: HTMLTextAreaElement): 
 		if (!res.ok) throw new Error(await res.text());
 
 		const data = (await res.json()) as { r2_key: string; media_uuid: string };
-		const markdown = `![image](${mediaUrl(data.media_uuid, 'original')})`;
+		const markdown = `![image](${mediaUrl(data.media_uuid, 'original', 'png')})`;
 		const pos = textarea.selectionStart;
 		textarea.setRangeText('\n\n' + markdown + '\n\n', pos, pos, 'end');
 		textarea.focus();

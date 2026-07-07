@@ -201,7 +201,7 @@ function buildGallery(res: Resource): { html: string; images: string[] } {
 					</div>`;
 			} else if (media.media_type === 'image') {
 				const thumbUrl = media.uuid ? mediaUrl(media.uuid, 'low') : fallbackUrl;
-				const fullUrl = media.uuid ? mediaUrl(media.uuid, 'original') : fallbackUrl;
+				const fullUrl = media.uuid ? mediaUrl(media.uuid, 'original', 'png') : fallbackUrl;
 				const idx = images.length;
 				images.push(fullUrl);
 				html += `

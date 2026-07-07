@@ -343,9 +343,10 @@ export const AssetMetaSchema = z.object({
  */
 export const AssetFilterSchema = z.object({
 	asset_type: 		AssetMetaSchema.shape.asset_type.optional().catch(undefined),
-	platform: 			AssetMetaSchema.shape.platform.optional().catch(undefined),
-	sdk_version: 		AssetMetaSchema.shape.sdk_version.optional().catch(undefined),
-	unity_version: 		AssetMetaSchema.shape.unity_version.optional().catch(undefined),
+	// Unwrap the meta-schema's `.default()` so an absent facet applies no filter (else it silently forces platform/sdk/unity).
+	platform: 			AssetMetaSchema.shape.platform.unwrap().optional().catch(undefined),
+	sdk_version: 		AssetMetaSchema.shape.sdk_version.unwrap().optional().catch(undefined),
+	unity_version: 		AssetMetaSchema.shape.unity_version.unwrap().optional().catch(undefined),
 	is_nsfw: 			z.enum(BOOLEAN_STRING).optional().catch(undefined),
 	page: 				z.coerce.number().int().min(1).catch(1).default(1),
 	limit: 				z.coerce.number().int().min(1).max(60).catch(24).default(24),
@@ -369,8 +370,9 @@ export const AvatarFilterSchema = z.object({
 	avatar_gender: 		AvatarMetaSchema.shape.gender.optional().catch(undefined),
 	avatar_size: 		AvatarMetaSchema.shape.avatar_size.optional().catch(undefined),
 	avatar_type: 		AvatarMetaSchema.shape.avatar_type.optional().catch(undefined),
-	platform: 			AvatarMetaSchema.shape.platform.optional().catch(undefined),
-	sdk_version: 		AvatarMetaSchema.shape.sdk_version.optional().catch(undefined),
+	// Unwrap the meta-schema's `.default()` so an absent facet applies no filter (else it silently forces platform/sdk).
+	platform: 			AvatarMetaSchema.shape.platform.unwrap().optional().catch(undefined),
+	sdk_version: 		AvatarMetaSchema.shape.sdk_version.unwrap().optional().catch(undefined),
 	// Boolean flags come as '0'/'1' strings from URLSearchParams
 	is_nsfw: 			z.enum(BOOLEAN_STRING).optional().catch(undefined),
 	has_physbones: 		z.enum(BOOLEAN_STRING).optional().catch(undefined),
@@ -414,7 +416,8 @@ export const ClothesMetaSchema = z.object({
 export const ClothesFilterSchema = z.object({
 	gender_fit: 		ClothesMetaSchema.shape.gender_fit.optional().catch(undefined),
 	clothing_type: 		ClothesMetaSchema.shape.clothing_type.optional().catch(undefined),
-	platform: 			ClothesMetaSchema.shape.platform.optional().catch(undefined),
+	// Unwrap the meta-schema's `.default()` so an absent facet applies no filter (else it silently forces platform).
+	platform: 			ClothesMetaSchema.shape.platform.unwrap().optional().catch(undefined),
 	is_base: 			z.enum(BOOLEAN_STRING).optional().catch(undefined),
 	is_nsfw: 			z.enum(BOOLEAN_STRING).optional().catch(undefined),
 	has_physbones: 		z.enum(BOOLEAN_STRING).optional().catch(undefined),

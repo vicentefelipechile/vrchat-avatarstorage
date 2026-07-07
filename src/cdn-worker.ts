@@ -5,22 +5,18 @@
 // Deployed separately from the main API Worker.
 // Custom domain: cdn.vrcstorage.lat
 //
-// URL format: https://cdn.vrcstorage.lat/{uuid}?res=[low|med|original]&format=[webp|png]
+// URL format: https://cdn.vrcstorage.lat/{uuid}?res=[low|med|original]&format=[webp|png|gif]
 //
-// Falls back to the original in BUCKET (with short TTL) if variants are not yet generated.
+// Serves only pre-processed variants from MEDIA_BUCKET. Every image is fully covered (animated
+// GIFs live as a single `{uuid}/original.gif` variant), so an absent variant is a 404 — the CDN
+// never reaches into the originals bucket.
 // =========================================================================================================
 
-interface CdnEnv {
-	MEDIA_BUCKET: R2Bucket;
-	BUCKET: R2Bucket;
-	DB: D1Database;
-}
-
 const VALID_RES = new Set<string>(['low', 'med', 'original']);
-const VALID_FORMAT = new Set<string>(['webp', 'png']);
+const VALID_FORMAT = new Set<string>(['webp', 'png', 'gif']);
 
 export default {
-	async fetch(request: Request, env: CdnEnv): Promise<Response> {
+	async fetch(request: Request, env: Env): Promise<Response> {
 		const url = new URL(request.url);
 
 		const uuid = url.pathname.replace(/^\//, '');
@@ -37,26 +33,27 @@ export default {
 		const object = await env.MEDIA_BUCKET.get(variantKey);
 
 		if (object) {
-			const headers = new Headers();
-			headers.set('Content-Type', `image/${format}`);
-			headers.set('Cache-Control', 'public, max-age=31536000, immutable');
-			headers.set('X-Content-Type-Options', 'nosniff');
-			headers.set('ETag', object.httpEtag);
-			return new Response(object.body, { headers });
+			return serveVariant(object, format);
 		}
 
-		// Variants not yet generated — fall back to the original from BUCKET
-		const media = await env.DB.prepare('SELECT r2_key FROM media WHERE uuid = ?').bind(uuid).first<{ r2_key: string }>();
-		if (!media) return new Response('Not found', { status: 404 });
+		// Animated GIFs have no webp/png variants — they live only as `{uuid}/original.gif`. When the
+		// requested variant is absent, serve the GIF (if any) so callers asking for webp/png still get
+		// the animation, without needing to know the media is a GIF.
+		if (format !== 'gif') {
+			const gif = await env.MEDIA_BUCKET.get(`${uuid}/original.gif`);
+			if (gif) return serveVariant(gif, 'gif');
+		}
 
-		const fallback = await env.BUCKET.get(media.r2_key);
-		if (!fallback) return new Response('Not found', { status: 404 });
-
-		const fallbackHeaders = new Headers();
-		fallback.writeHttpMetadata(fallbackHeaders);
-		fallbackHeaders.set('X-Content-Type-Options', 'nosniff');
-		fallbackHeaders.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
-		fallbackHeaders.set('X-Variant-Status', 'pending');
-		return new Response(fallback.body, { headers: fallbackHeaders });
+		return new Response('Not found', { status: 404 });
 	},
 };
+
+/** Serve a processed variant object from MEDIA_BUCKET with immutable cache headers. */
+function serveVariant(object: R2ObjectBody, format: string): Response {
+	const headers = new Headers();
+	headers.set('Content-Type', `image/${format}`);
+	headers.set('Cache-Control', 'public, max-age=31536000, immutable');
+	headers.set('X-Content-Type-Options', 'nosniff');
+	headers.set('ETag', object.httpEtag);
+	return new Response(object.body, { headers });
+}

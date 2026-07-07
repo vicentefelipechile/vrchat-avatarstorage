@@ -35,18 +35,21 @@ export class MediaVariantRepository {
 	/**
 	 * Persist all generated variants + the blur placeholder for one media in a single batch. The
 	 * caller has already written the variant objects to MEDIA_BUCKET; this only records them and
-	 * sets `media.placeholder_blur`. `INSERT OR REPLACE` keeps re-runs (backfill) idempotent.
+	 * sets `media.placeholder_blur`. `INSERT OR REPLACE` keeps re-runs (backfill) idempotent. A
+	 * `null` placeholder (animated GIFs, which get no blur) leaves `media.placeholder_blur` untouched.
 	 */
-	async saveVariantsAndPlaceholder(mediaUuid: string, variants: VariantRow[], placeholderDataUri: string): Promise<void> {
+	async saveVariantsAndPlaceholder(mediaUuid: string, variants: VariantRow[], placeholderDataUri: string | null): Promise<void> {
 		const statements: D1PreparedStatement[] = variants.map((v) =>
 			this.db
 				.prepare('INSERT OR REPLACE INTO media_variants (media_uuid, res, format, r2_key, file_size) VALUES (?, ?, ?, ?, ?)')
 				.bind(mediaUuid, v.res, v.format, v.r2Key, v.fileSize),
 		);
 
-		statements.push(
-			this.db.prepare('UPDATE media SET placeholder_blur = ? WHERE uuid = ?').bind(placeholderDataUri, mediaUuid),
-		);
+		if (placeholderDataUri !== null) {
+			statements.push(
+				this.db.prepare('UPDATE media SET placeholder_blur = ? WHERE uuid = ?').bind(placeholderDataUri, mediaUuid),
+			);
+		}
 
 		await this.db.batch(statements);
 	}

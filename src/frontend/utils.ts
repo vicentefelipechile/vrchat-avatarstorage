@@ -223,7 +223,7 @@ export function showToast(message: string, type: ToastType = 'info', duration = 
 
 const CDN_BASE = 'https://cdn.vrcstorage.lat';
 
-export function mediaUrl(uuid: string, res: 'low' | 'med' | 'original' = 'med', format: 'webp' | 'png' = 'webp'): string {
+export function mediaUrl(uuid: string, res: 'low' | 'med' | 'original' = 'med', format: 'webp' | 'png' | 'gif' = 'webp'): string {
 	return `${CDN_BASE}/${uuid}?res=${res}&format=${format}`;
 }
 
