@@ -4,7 +4,7 @@
 
 import { t } from '../i18n';
 import { DataCache } from '../cache';
-import { renderMarkdown, showToast } from '../utils';
+import { renderMarkdown, showToast, uploadChunked, CHUNK_SIZE } from '../utils';
 import { navigateTo } from '../router';
 import type { RouteContext } from '../types';
 
@@ -24,8 +24,16 @@ const SIZE_LIMITS = {
 };
 
 const MAX_IMAGE_DIMENSION = 4096;
+const MAX_GALLERY_FILES = 8;
+const MAX_MAIN_FILES = 3;
 const VALID_EXTENSIONS = ['.rar', '.zip', '.unitypackage', '.blend'];
-const CHUNK_SIZE = 30 * 1024 * 1024;
+
+// Mirrors a File[] onto a file input so the native `.files` list stays in sync with our state.
+function syncInputFiles(input: HTMLInputElement, files: File[]): void {
+	const dt = new DataTransfer();
+	files.forEach((f) => dt.items.add(f));
+	input.files = dt.files;
+}
 
 function validateImageDimensions(file: File): Promise<ImageDimCheck> {
 	return new Promise((resolve) => {
@@ -100,48 +108,6 @@ function uploadWithProgress(url: string, fd: FormData, onProgress: (p: number) =
 		xhr.onerror = () => reject(new Error('Network error'));
 		xhr.send(fd);
 	});
-}
-
-async function uploadLargeFile(file: File, onProgress: (p: number) => void): Promise<{ r2_key: string; media_uuid: string }> {
-	const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
-
-	const initRes = await fetch('/api/upload/init', {
-		method: 'POST',
-		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify({ filename: file.name, media_type: 'file' }),
-	});
-	if (!initRes.ok) throw new Error('Failed to initialize upload');
-	const { uploadId, key } = (await initRes.json()) as { uploadId: string; key: string };
-
-	const parts: object[] = [];
-	let loaded = 0;
-
-	for (let i = 0; i < totalChunks; i++) {
-		const start = i * CHUNK_SIZE;
-		const chunk = file.slice(start, Math.min(start + CHUNK_SIZE, file.size));
-		const partRes = await fetch('/api/upload/part', {
-			method: 'PUT',
-			headers: {
-				'X-Upload-ID': uploadId,
-				'X-Key': key,
-				'X-Part-Number': String(i + 1),
-				'Content-Type': 'application/octet-stream',
-			},
-			body: chunk,
-		});
-		if (!partRes.ok) throw new Error(`Failed to upload part ${i + 1}`);
-		parts.push(await partRes.json());
-		loaded += chunk.size;
-		onProgress((loaded / file.size) * 100);
-	}
-
-	const completeRes = await fetch('/api/upload/complete', {
-		method: 'POST',
-		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify({ uploadId, key, parts, filename: file.name, media_type: 'file' }),
-	});
-	if (!completeRes.ok) throw new Error('Failed to complete upload');
-	return completeRes.json() as Promise<{ r2_key: string; media_uuid: string }>;
 }
 
 // =========================================================================
@@ -221,18 +187,16 @@ function buildAvatarMetaFields(): string {
 			</div>
 		</div>
 
-		<div class="upload-grid" style="margin-top:8px">
-			<div class="form-group">
-				<label><strong>${t('meta.avatar.extras')}</strong></label>
-				<div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:6px;flex-direction:column">
-					<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="av-nsfw"> ${t('meta.features.nsfw')}</label>
-					<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="av-physbones"> ${t('meta.features.physbones')}</label>
-					<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="av-dps"> ${t('meta.features.dps')}</label>
-					<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="av-facetracking"> ${t('meta.features.facetracking')}</label>
-					<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="av-gogoloco"> ${t('meta.features.gogoloco')}</label>
-					<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="av-toggles"> ${t('meta.features.toggles')}</label>
-					<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="av-questoptimized"> ${t('meta.features.questOptimized')}</label>
-				</div>
+		<div class="form-group" style="margin-top:8px">
+			<label><strong>${t('meta.avatar.extras')}</strong></label>
+			<div class="chip-toggle-grid">
+				<label class="chip-toggle"><input type="checkbox" id="av-nsfw"><span>${t('meta.features.nsfw')}</span></label>
+				<label class="chip-toggle"><input type="checkbox" id="av-physbones"><span>${t('meta.features.physbones')}</span></label>
+				<label class="chip-toggle"><input type="checkbox" id="av-dps"><span>${t('meta.features.dps')}</span></label>
+				<label class="chip-toggle"><input type="checkbox" id="av-facetracking"><span>${t('meta.features.facetracking')}</span></label>
+				<label class="chip-toggle"><input type="checkbox" id="av-gogoloco"><span>${t('meta.features.gogoloco')}</span></label>
+				<label class="chip-toggle"><input type="checkbox" id="av-toggles"><span>${t('meta.features.toggles')}</span></label>
+				<label class="chip-toggle"><input type="checkbox" id="av-questoptimized"><span>${t('meta.features.questOptimized')}</span></label>
 			</div>
 		</div>
 	</div>`;
@@ -434,8 +398,9 @@ export async function uploadView(_ctx: RouteContext): Promise<string> {
 
 				<div class="form-group">
 					<label><strong>${t('upload.backupLinks')}</strong></label>
-					<textarea id="backup-links" rows="3" placeholder="https://example.com/backup1&#10;https://example.com/backup2" style="width:100%;font-family:monospace;resize:vertical"></textarea>
-					<small style="color:var(--text-muted)">${t('upload.backupLinksHint')}</small>
+					<div id="backup-links-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:8px"></div>
+					<button type="button" id="add-backup-link" class="btn" style="padding:8px 14px">+ ${t('upload.addBackup')}</button>
+					<small style="display:block;margin-top:6px;color:var(--text-muted)">${t('upload.backupLinksHint')}</small>
 				</div>
 
 				<div class="form-group" style="margin:20px 0">
@@ -676,53 +641,92 @@ export async function uploadAfter(_ctx: RouteContext): Promise<void> {
 	// Reference image preview
 	// -----------------------------------------------------------------------
 
-	let selectedRefFiles: File[] = [];
-	const renderRefPreview = () => {
-		referencePreview.innerHTML = '';
+	const selectedRefFiles: File[] = [];
+	// Cache one object URL per File so re-renders reuse the same blob URL instead of
+	// creating a new one — otherwise every <img> reloads and the gallery flickers.
+	const refUrlCache = new Map<File, string>();
+
+	const refUrlFor = (file: File): string => {
+		let url = refUrlCache.get(file);
+		if (!url) {
+			url = URL.createObjectURL(file);
+			refUrlCache.set(file, url);
+		}
+		return url;
+	};
+
+	// Maps each surviving preview node to its File so removals touch only that node.
+	const refItemNodes = new Map<File, HTMLElement>();
+	let refWarnNode: HTMLElement | null = null;
+
+	// Updates the over-limit warning banner and per-item dimming without rebuilding nodes,
+	// so surviving <img> elements never reload (no flicker).
+	const refreshRefLimitState = () => {
+		const over = selectedRefFiles.length > MAX_GALLERY_FILES;
+		if (over && !refWarnNode) {
+			refWarnNode = document.createElement('div');
+			refWarnNode.textContent = t('upload.tooManyImages');
+			refWarnNode.style.cssText = 'color:#e05c5c;font-weight:bold;margin-bottom:8px';
+			referencePreview.prepend(refWarnNode);
+		} else if (!over && refWarnNode) {
+			refWarnNode.remove();
+			refWarnNode = null;
+		}
 		selectedRefFiles.forEach((file, idx) => {
-			const isVideo = file.type.startsWith('video/');
-			const url = URL.createObjectURL(file);
-			const item = createPreviewItem(isVideo ? 'video' : 'img', url, file.name, () => {
-				selectedRefFiles.splice(idx, 1);
-				const dt = new DataTransfer();
-				selectedRefFiles.forEach((f) => dt.items.add(f));
-				referenceInput.files = dt.files;
-				renderRefPreview();
-			});
-			referencePreview.appendChild(item);
+			const node = refItemNodes.get(file);
+			if (node) node.style.opacity = idx >= MAX_GALLERY_FILES ? '0.45' : '1';
 		});
 	};
 
-	referenceInput.addEventListener('change', async (e) => {
-		const files = Array.from((e.target as HTMLInputElement).files ?? []);
-		if (files.length > 8) {
-			showToast(t('upload.maxFiles') || 'Max 8 files', 'warning');
-			referenceInput.value = '';
-			selectedRefFiles = [];
-			renderRefPreview();
-			return;
+	const removeRefFile = (file: File) => {
+		const idx = selectedRefFiles.indexOf(file);
+		if (idx === -1) return;
+		selectedRefFiles.splice(idx, 1);
+		refItemNodes.get(file)?.remove();
+		refItemNodes.delete(file);
+		const url = refUrlCache.get(file);
+		if (url) {
+			URL.revokeObjectURL(url);
+			refUrlCache.delete(file);
 		}
-		for (const f of files) {
+		syncInputFiles(referenceInput, selectedRefFiles);
+		refreshRefLimitState();
+	};
+
+	// Appends preview nodes for files not yet rendered; existing nodes are left untouched.
+	const renderRefPreview = () => {
+		selectedRefFiles.forEach((file) => {
+			if (refItemNodes.has(file)) return;
+			const isVideo = file.type.startsWith('video/');
+			const item = createPreviewItem(isVideo ? 'video' : 'img', refUrlFor(file), file.name, () => removeRefFile(file));
+			refItemNodes.set(file, item);
+			referencePreview.appendChild(item);
+		});
+		refreshRefLimitState();
+	};
+
+	referenceInput.addEventListener('change', async (e) => {
+		const input = e.target as HTMLInputElement;
+		const incoming = Array.from(input.files ?? []);
+		for (const f of incoming) {
 			const maxSize = f.type.startsWith('video/') ? SIZE_LIMITS.video : SIZE_LIMITS.image;
 			if (f.size > maxSize) {
 				showToast(`File "${f.name}" too large.`, 'warning');
-				referenceInput.value = '';
-				selectedRefFiles = [];
-				renderRefPreview();
-				return;
+				continue;
 			}
 			if (f.type.startsWith('image/')) {
 				const c = await validateImageDimensions(f);
 				if (!c.valid) {
 					showToast(`Image "${f.name}": ${c.error}`, 'error');
-					referenceInput.value = '';
-					selectedRefFiles = [];
-					renderRefPreview();
-					return;
+					continue;
 				}
 			}
+			selectedRefFiles.push(f);
 		}
-		selectedRefFiles = files;
+		// Clear the native input so re-picking the same file fires change again; state lives in selectedRefFiles.
+		input.value = '';
+		syncInputFiles(referenceInput, selectedRefFiles);
+		if (selectedRefFiles.length > MAX_GALLERY_FILES) showToast(t('upload.tooManyImages'), 'warning');
 		renderRefPreview();
 	});
 
@@ -730,24 +734,22 @@ export async function uploadAfter(_ctx: RouteContext): Promise<void> {
 	// Main file validation
 	// -----------------------------------------------------------------------
 
-	fileInput.addEventListener('change', (e) => {
-		const files = Array.from((e.target as HTMLInputElement).files ?? []);
-		fileInfo.innerHTML = '';
-		uploadError.textContent = '';
-		if (files.length > 3) {
-			fileInfo.innerHTML = `<span style="color:red">✗ ${t('upload.errorMaxFiles')}</span>`;
-			uploadError.textContent = t('upload.errorMaxFiles');
-			fileInput.value = '';
-			return;
-		}
+	const selectedMainFiles: File[] = [];
 
-		let allValid = true;
-		files.forEach((file) => {
+	// Renders the main-file list with per-file remove buttons and flags any past the limit.
+	const renderFileInfo = () => {
+		fileInfo.innerHTML = '';
+		if (selectedMainFiles.length > MAX_MAIN_FILES) {
+			const warn = document.createElement('div');
+			warn.textContent = t('upload.tooManyFiles');
+			warn.style.cssText = 'color:#e05c5c;font-weight:bold;margin-bottom:8px';
+			fileInfo.appendChild(warn);
+		}
+		const maxMb = (SIZE_LIMITS.file / 1024 / 1024).toFixed(0);
+		selectedMainFiles.forEach((file, idx) => {
 			const isValidExt = VALID_EXTENSIONS.some((ext) => file.name.toLowerCase().endsWith(ext));
 			const isValidSize = file.size <= SIZE_LIMITS.file;
-			if (!isValidExt || !isValidSize) allValid = false;
 			const mb = (file.size / 1024 / 1024).toFixed(2);
-			const maxMb = (SIZE_LIMITS.file / 1024 / 1024).toFixed(0);
 			let color = 'green',
 				sym = '✓',
 				msg = `${file.name} (${mb} MB)`;
@@ -760,18 +762,86 @@ export async function uploadAfter(_ctx: RouteContext): Promise<void> {
 				sym = '✗';
 				msg += ` - ${t('upload.errorFileTooLarge')} (max ${maxMb}MB)`;
 			}
-			const div = document.createElement('div');
+
+			const row = document.createElement('div');
+			row.style.cssText = 'display:flex;align-items:center;gap:8px;margin:2px 0';
+			if (idx >= MAX_MAIN_FILES) row.style.opacity = '0.45';
+
+			const remove = document.createElement('button');
+			remove.type = 'button';
+			remove.textContent = '✕';
+			remove.style.cssText =
+				'background:#dc3545;color:white;border:none;border-radius:3px;width:20px;height:20px;cursor:pointer;font-weight:bold;flex:none';
+			remove.onclick = () => {
+				selectedMainFiles.splice(idx, 1);
+				syncInputFiles(fileInput, selectedMainFiles);
+				renderFileInfo();
+			};
+
 			const span = document.createElement('span');
 			span.style.color = color;
 			span.textContent = `${sym} ${msg}`;
-			div.appendChild(span);
-			fileInfo.appendChild(div);
+
+			row.append(remove, span);
+			fileInfo.appendChild(row);
 		});
-		if (!allValid) {
-			uploadError.textContent = `${t('upload.error')}: Invalid files.`;
-			fileInput.value = '';
-		}
+	};
+
+	fileInput.addEventListener('change', (e) => {
+		const input = e.target as HTMLInputElement;
+		const incoming = Array.from(input.files ?? []);
+		uploadError.textContent = '';
+		selectedMainFiles.push(...incoming);
+		// Clear the native input so re-picking the same file fires change again; state lives in selectedMainFiles.
+		input.value = '';
+		syncInputFiles(fileInput, selectedMainFiles);
+		if (selectedMainFiles.length > MAX_MAIN_FILES) showToast(t('upload.tooManyFiles'), 'warning');
+		renderFileInfo();
 	});
+
+	// -----------------------------------------------------------------------
+	// Backup links — dynamic list
+	// -----------------------------------------------------------------------
+
+	const backupLinksList = document.getElementById('backup-links-list')!;
+	const addBackupBtn = document.getElementById('add-backup-link')!;
+
+	const addBackupRow = (value = '') => {
+		const row = document.createElement('div');
+		row.style.cssText = 'display:flex;gap:8px;align-items:center';
+
+		const input = document.createElement('input');
+		input.type = 'url';
+		input.className = 'form-control backup-link-input';
+		input.placeholder = t('upload.backupUrlPlaceholder');
+		input.value = value;
+		input.style.flex = '1';
+
+		const remove = document.createElement('button');
+		remove.type = 'button';
+		remove.className = 'btn';
+		remove.textContent = t('upload.removeBackup');
+		remove.style.cssText = 'padding:8px 12px;flex:none';
+		remove.onclick = () => row.remove();
+
+		row.append(input, remove);
+		backupLinksList.appendChild(row);
+		input.focus();
+	};
+
+	addBackupBtn.addEventListener('click', () => addBackupRow());
+
+	// Reads the backup-link inputs into link objects, skipping blank rows.
+	const collectBackupLinks = (startOrder: number) =>
+		Array.from(backupLinksList.querySelectorAll<HTMLInputElement>('.backup-link-input'))
+			.map((el) => el.value.trim())
+			.filter(Boolean)
+			.map((url, i) => ({
+				link_url: url,
+				link_title: 'Backup ' + (i + 1),
+				link_type: 'download',
+				display_order: startOrder + i + 1,
+			}));
 
 	// -----------------------------------------------------------------------
 	// Client-side meta validation
@@ -898,6 +968,18 @@ export async function uploadAfter(_ctx: RouteContext): Promise<void> {
 			return;
 		}
 
+		// Enforce the file-count limits: the user can pick extra, but must trim before submitting.
+		if (selectedRefFiles.length > MAX_GALLERY_FILES) {
+			uploadError.textContent = t('upload.tooManyImages');
+			showToast(t('upload.tooManyImages'), 'error');
+			return;
+		}
+		if (selectedMainFiles.length > MAX_MAIN_FILES) {
+			uploadError.textContent = t('upload.tooManyFiles');
+			showToast(t('upload.tooManyFiles'), 'error');
+			return;
+		}
+
 		btn.disabled = true;
 		btn.textContent = t('upload.uploading');
 		uploadError.textContent = '';
@@ -924,8 +1006,8 @@ export async function uploadAfter(_ctx: RouteContext): Promise<void> {
 			window.removeEventListener('beforeunload', preventNav);
 			return;
 		}
-		if (mainFiles.length > 3) {
-			uploadError.textContent = `${t('upload.error')}: Max 3 files`;
+		if (mainFiles.length > MAX_MAIN_FILES) {
+			uploadError.textContent = t('upload.tooManyFiles');
 			resetState();
 			window.removeEventListener('beforeunload', preventNav);
 			return;
@@ -982,7 +1064,7 @@ export async function uploadAfter(_ctx: RouteContext): Promise<void> {
 
 				let fileData: { r2_key: string; media_uuid: string };
 				if (f.size > CHUNK_SIZE) {
-					fileData = await uploadLargeFile(f, (p) => updateProgress(label, p));
+					fileData = await uploadChunked(f, 'file', (p) => updateProgress(label, p));
 				} else {
 					const fd = new FormData();
 					fd.append('file', f);
@@ -1004,19 +1086,7 @@ export async function uploadAfter(_ctx: RouteContext): Promise<void> {
 				version: '1.0',
 			}));
 
-			const backupLinksRaw = (document.getElementById('backup-links') as HTMLTextAreaElement).value;
-			const extra = backupLinksRaw
-				? backupLinksRaw
-					.split('\n')
-					.map((u) => u.trim())
-					.filter(Boolean)
-					.map((url, i) => ({
-						link_url: url,
-						link_title: 'Backup ' + (i + 1),
-						link_type: 'download',
-						display_order: fileLinks.length + i + 1,
-					}))
-				: [];
+			const extra = collectBackupLinks(fileLinks.length);
 
 			const endpointMap: Record<string, string> = {
 				avatars: '/api/avatars',

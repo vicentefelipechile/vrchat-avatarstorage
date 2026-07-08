@@ -326,7 +326,12 @@
 			"platform": "プラットフォームを選択",
 			"clothesGender": "デザイン性別を選択",
 			"clothesType": "服装タイプを選択"
-		}
+		},
+		"tooManyImages": "アップロードする画像が多すぎます。最大8枚までアップロードできます。",
+		"tooManyFiles": "ファイルが多すぎます。最大3個までアップロードできます。",
+		"addBackup": "バックアップを追加",
+		"removeBackup": "削除",
+		"backupUrlPlaceholder": "https://drive.google.com/..."
 	},
 	"cats": {
 		"avatars": "アバター",

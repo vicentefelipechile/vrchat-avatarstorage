@@ -12,7 +12,7 @@ label {
 	font-weight: bold;
 }
 
-input,
+input:not([type='checkbox']):not([type='radio']),
 select,
 textarea {
 	padding: 8px;
@@ -22,6 +22,14 @@ textarea {
 	background-color: var(--bg-input);
 	color: var(--text-main);
 	width: 100%;
+}
+
+input[type='checkbox'],
+input[type='radio'] {
+	width: auto;
+	margin: 0;
+	flex: none;
+	cursor: pointer;
 }
 
 .clear-form {
@@ -47,6 +55,60 @@ textarea {
 	font-family: inherit;
 	background-color: var(--bg-input);
 	color: var(--text-main);
+}
+
+/* ---- Chip toggles (checkbox groups rendered as clickable boxes) ---- */
+.chip-toggle-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+	gap: 8px;
+	margin-top: 6px;
+}
+
+.chip-toggle {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	margin-bottom: 0;
+	padding: 10px 12px;
+	border: 2px solid var(--border-color);
+	background: var(--bg-input);
+	color: var(--text-main);
+	font-weight: bold;
+	text-align: center;
+	cursor: pointer;
+	user-select: none;
+	transition:
+		background 0.12s ease,
+		color 0.12s ease,
+		opacity 0.12s ease;
+	opacity: 0.7;
+}
+
+.chip-toggle:hover {
+	opacity: 1;
+}
+
+/* Hide the native checkbox; the whole chip is the control. */
+.chip-toggle input {
+	position: absolute;
+	opacity: 0;
+	width: 0;
+	height: 0;
+	margin: 0;
+	pointer-events: none;
+}
+
+/* Active state: invert to the button palette so it reads as clearly "on". */
+.chip-toggle:has(input:checked) {
+	background: var(--btn-bg);
+	color: var(--btn-text);
+	opacity: 1;
+}
+
+.chip-toggle:focus-within {
+	outline: 2px solid var(--text-link);
+	outline-offset: 2px;
 }
 
 /* ---- Upload grid ---- */

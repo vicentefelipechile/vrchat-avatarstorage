@@ -336,7 +336,12 @@
 			"platform": "Platform seç",
 			"clothesGender": "Tasarım cinsiyeti seç",
 			"clothesType": "Giyim türü seç"
-		}
+		},
+		"tooManyImages": "Yüklenecek çok fazla görsel var, en fazla 8 tane yükleyebilirsin.",
+		"tooManyFiles": "Çok fazla dosya var, en fazla 3 tane yükleyebilirsin.",
+		"addBackup": "Yeni yedek ekle",
+		"removeBackup": "Kaldır",
+		"backupUrlPlaceholder": "https://drive.google.com/..."
 	},
 	"cats": {
 		"avatars": "Avatarlar",

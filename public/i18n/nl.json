@@ -336,7 +336,12 @@
 			"platform": "Selecteer platform",
 			"clothesGender": "Selecteer ontwerp geslacht",
 			"clothesType": "Selecteer kledingtype"
-		}
+		},
+		"tooManyImages": "Te veel afbeeldingen om te uploaden, je kunt er maximaal 8 uploaden.",
+		"tooManyFiles": "Te veel bestanden, je kunt er maximaal 3 uploaden.",
+		"addBackup": "Nieuwe back-up toevoegen",
+		"removeBackup": "Verwijderen",
+		"backupUrlPlaceholder": "https://drive.google.com/..."
 	},
 	"cats": {
 		"avatars": "Avatars",

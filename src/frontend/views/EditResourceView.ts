@@ -12,8 +12,6 @@ import { t } from '../i18n';
 // Helpers — Upload
 // =========================================================================
 
-const CHUNK_SIZE = 30 * 1024 * 1024;
-
 function uploadWithProgress(url: string, fd: FormData, onProgress: (p: number) => void): Promise<{ r2_key: string; media_uuid: string }> {
 	return new Promise((resolve, reject) => {
 		const xhr = new XMLHttpRequest();
@@ -35,46 +33,6 @@ function uploadWithProgress(url: string, fd: FormData, onProgress: (p: number) =
 		xhr.onerror = () => reject(new Error('Network error'));
 		xhr.send(fd);
 	});
-}
-
-async function uploadLargeFile(file: File, onProgress: (p: number) => void): Promise<{ r2_key: string; media_uuid: string }> {
-	const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
-	const initRes = await fetch('/api/upload/init', {
-		method: 'POST',
-		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify({ filename: file.name, media_type: 'file' }),
-	});
-	if (!initRes.ok) throw new Error('Failed to initialize upload');
-	const { uploadId, key } = (await initRes.json()) as { uploadId: string; key: string };
-
-	const parts: object[] = [];
-	let loaded = 0;
-	for (let i = 0; i < totalChunks; i++) {
-		const start = i * CHUNK_SIZE;
-		const chunk = file.slice(start, Math.min(start + CHUNK_SIZE, file.size));
-		const partRes = await fetch('/api/upload/part', {
-			method: 'PUT',
-			headers: {
-				'X-Upload-ID': uploadId,
-				'X-Key': key,
-				'X-Part-Number': String(i + 1),
-				'Content-Type': 'application/octet-stream',
-			},
-			body: chunk,
-		});
-		if (!partRes.ok) throw new Error(`Failed to upload part ${i + 1}`);
-		parts.push(await partRes.json());
-		loaded += chunk.size;
-		onProgress((loaded / file.size) * 100);
-	}
-
-	const completeRes = await fetch('/api/upload/complete', {
-		method: 'POST',
-		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify({ uploadId, key, parts, filename: file.name, media_type: 'file' }),
-	});
-	if (!completeRes.ok) throw new Error('Failed to complete upload');
-	return completeRes.json() as Promise<{ r2_key: string; media_uuid: string }>;
 }
 
 // =========================================================================

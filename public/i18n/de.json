@@ -336,7 +336,12 @@
 			"platform": "Plattform auswählen",
 			"clothesGender": "Design-Geschlecht auswählen",
 			"clothesType": "Kleidungstyp auswählen"
-		}
+		},
+		"tooManyImages": "Zu viele Bilder zum Hochladen, du kannst maximal 8 hochladen.",
+		"tooManyFiles": "Zu viele Dateien, du kannst maximal 3 hochladen.",
+		"addBackup": "Neue Sicherung hinzufügen",
+		"removeBackup": "Entfernen",
+		"backupUrlPlaceholder": "https://drive.google.com/..."
 	},
 	"cats": {
 		"avatars": "Avatare",

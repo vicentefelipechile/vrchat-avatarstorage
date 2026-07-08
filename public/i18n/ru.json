@@ -326,7 +326,12 @@
 			"platform": "Выберите платформу",
 			"clothesGender": "Выберите пол дизайна",
 			"clothesType": "Выберите тип одежды"
-		}
+		},
+		"tooManyImages": "Слишком много изображений для загрузки, можно загрузить максимум 8.",
+		"tooManyFiles": "Слишком много файлов, можно загрузить максимум 3.",
+		"addBackup": "Добавить новый бэкап",
+		"removeBackup": "Удалить",
+		"backupUrlPlaceholder": "https://drive.google.com/..."
 	},
 	"cats": {
 		"avatars": "Аватары",

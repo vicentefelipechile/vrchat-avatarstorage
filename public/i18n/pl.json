@@ -336,7 +336,12 @@
 			"platform": "Wybierz platformę",
 			"clothesGender": "Wybierz płeć projektu",
 			"clothesType": "Wybierz typ odzieży"
-		}
+		},
+		"tooManyImages": "Zbyt wiele zdjęć do przesłania, możesz przesłać maksymalnie 8.",
+		"tooManyFiles": "Zbyt wiele plików, możesz przesłać maksymalnie 3.",
+		"addBackup": "Dodaj nową kopię zapasową",
+		"removeBackup": "Usuń",
+		"backupUrlPlaceholder": "https://drive.google.com/..."
 	},
 	"cats": {
 		"avatars": "Awatary",

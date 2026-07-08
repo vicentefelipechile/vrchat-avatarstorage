@@ -326,7 +326,12 @@
 			"platform": "Sélectionner la plateforme",
 			"clothesGender": "Sélectionner le genre du design",
 			"clothesType": "Sélectionner le type de vêtement"
-		}
+		},
+		"tooManyImages": "Trop d'images à téléverser, vous pouvez en téléverser 8 au maximum.",
+		"tooManyFiles": "Trop de fichiers, vous pouvez en téléverser 3 au maximum.",
+		"addBackup": "Ajouter une nouvelle sauvegarde",
+		"removeBackup": "Supprimer",
+		"backupUrlPlaceholder": "https://drive.google.com/..."
 	},
 	"cats": {
 		"avatars": "Avatars",

@@ -326,7 +326,12 @@
 			"platform": "选择平台",
 			"clothesGender": "选择设计性别",
 			"clothesType": "选择服装类型"
-		}
+		},
+		"tooManyImages": "上传的图片过多，最多只能上传8张。",
+		"tooManyFiles": "文件过多，最多只能上传3个。",
+		"addBackup": "添加新备份",
+		"removeBackup": "移除",
+		"backupUrlPlaceholder": "https://drive.google.com/..."
 	},
 	"cats": {
 		"avatars": "虚拟形象",

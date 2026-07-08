@@ -326,7 +326,12 @@
 			"platform": "Select platform",
 			"clothesGender": "Select design gender",
 			"clothesType": "Select clothing type"
-		}
+		},
+		"tooManyImages": "Too many images to upload, you can upload a maximum of 8.",
+		"tooManyFiles": "Too many files, you can upload a maximum of 3.",
+		"addBackup": "Add new backup",
+		"removeBackup": "Remove",
+		"backupUrlPlaceholder": "https://drive.google.com/..."
 	},
 	"cats": {
 		"avatars": "Avatars",

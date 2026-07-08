@@ -433,7 +433,12 @@
 			"platform": "Selecciona la plataforma",
 			"clothesGender": "Selecciona el género de la ropa",
 			"clothesType": "Selecciona el tipo de prenda"
-		}
+		},
+		"tooManyImages": "Demasiadas fotos para subir, solo puedes subir como máximo 8.",
+		"tooManyFiles": "Demasiados archivos, solo puedes subir como máximo 3.",
+		"addBackup": "Añadir nuevo respaldo",
+		"removeBackup": "Quitar",
+		"backupUrlPlaceholder": "https://drive.google.com/..."
 	},
 	"cats": {
 		"avatars": "Avatares",
