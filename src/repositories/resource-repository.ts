@@ -53,6 +53,7 @@ export interface ResourceListRow {
 	download_count: number;
 	created_at: number;
 	thumbnail_key: string | null;
+	placeholder_blur: string | null;
 }
 
 /** The joined detail row — flat, with prefixed metadata columns. Kept as-is from the
@@ -88,6 +89,7 @@ export class ResourceRepository {
 				'r.download_count',
 				'm.r2_key as thumbnail_key',
 				'm.uuid as thumbnail_media_uuid',
+				'm.placeholder_blur',
 			])
 			.join('INNER JOIN media m ON r.thumbnail_uuid = m.uuid')
 			.join('LEFT JOIN users u ON r.author_uuid = u.uuid')
@@ -117,6 +119,7 @@ export class ResourceRepository {
 				'r.download_count',
 				'r.created_at',
 				'm.r2_key AS thumbnail_key',
+				'm.placeholder_blur',
 			])
 			.join('INNER JOIN media m ON r.thumbnail_uuid = m.uuid')
 			.where('r.is_active = 1')
@@ -305,7 +308,7 @@ const DETAIL_SQL = `
 		cm.base_avatar_name_raw AS cl_base_avatar_name_raw,
 		cm.base_avatar_uuid     AS cl_base_avatar_uuid,
 		COALESCE((
-			SELECT json_group_array(json_object('uuid', m.uuid, 'r2_key', m.r2_key, 'media_type', m.media_type))
+			SELECT json_group_array(json_object('uuid', m.uuid, 'r2_key', m.r2_key, 'media_type', m.media_type, 'placeholder_blur', m.placeholder_blur))
 			FROM media m JOIN resource_n_media rnm ON m.uuid = rnm.media_uuid
 			WHERE rnm.resource_uuid = r.uuid
 		), '[]') AS media_files_json,

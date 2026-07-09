@@ -214,6 +214,7 @@ function mapListRow(row: ClothesListRow) {
 		title: row.title,
 		thumbnail_key: row.thumbnail_key,
 		thumbnail_media_uuid: row.thumbnail_media_uuid,
+		placeholder_blur: row.placeholder_blur,
 		download_count: row.download_count,
 		created_at: row.created_at,
 		meta: {

@@ -4,7 +4,7 @@
 
 import { t } from '../i18n';
 import { DataCache } from '../cache';
-import { showToast, TimeUnit, mediaUrl } from '../utils';
+import { showToast, TimeUnit, mediaUrl, progressiveImg } from '../utils';
 import { deleteComment, approveResource, rejectResource, deactivateResource } from '../admin';
 import { icons } from '../icons';
 import { commentEditorHtml, initCommentEditor } from '../comment-editor';
@@ -162,8 +162,15 @@ function downloadSection(res: Resource): string {
 		</div>`;
 }
 
-function buildGallery(res: Resource): { html: string; images: string[] } {
-	const images: string[] = [];
+/** A lightbox slide: `preview` is the low-res variant (already cached by the gallery thumbnail, shown
+ *  instantly) and `full` is the full-res original swapped in once it finishes loading. */
+interface LightboxImage {
+	preview: string;
+	full: string;
+}
+
+function buildGallery(res: Resource): { html: string; images: LightboxImage[] } {
+	const images: LightboxImage[] = [];
 	let html = '';
 
 	const hasMedia = (res.mediaFiles?.length ?? 0) > 0;
@@ -177,7 +184,7 @@ function buildGallery(res: Resource): { html: string; images: string[] } {
 	if (hasThumbnail) {
 		const url = `/api/download/${res.thumbnail_key}`;
 		const idx = images.length;
-		images.push(url);
+		images.push({ preview: url, full: url });
 		html += `
 			<div class="gallery-item">
 				<div class="gallery-item-link" data-lightbox-index="${idx}" style="display:block;width:100%;height:100%;cursor:zoom-in">
@@ -200,14 +207,17 @@ function buildGallery(res: Resource): { html: string; images: string[] } {
 						</video>
 					</div>`;
 			} else if (media.media_type === 'image') {
-				const thumbUrl = media.uuid ? mediaUrl(media.uuid, 'low') : fallbackUrl;
 				const fullUrl = media.uuid ? mediaUrl(media.uuid, 'original', 'png') : fallbackUrl;
+				const previewUrl = media.uuid ? mediaUrl(media.uuid, 'low') : fallbackUrl;
 				const idx = images.length;
-				images.push(fullUrl);
+				images.push({ preview: previewUrl, full: fullUrl });
+				const imgHtml = media.uuid
+					? progressiveImg({ uuid: media.uuid, placeholder: media.placeholder_blur ?? null, res: 'low', alt: 'Gallery Image' })
+					: `<img src="${fallbackUrl}" alt="Gallery Image" loading="lazy">`;
 				html += `
 					<div class="gallery-item">
 						<div class="gallery-item-link" data-lightbox-index="${idx}" style="display:block;width:100%;height:100%;cursor:zoom-in">
-							<img src="${thumbUrl}" alt="Gallery Image" loading="lazy">
+							${imgHtml}
 						</div>
 					</div>`;
 			}
@@ -281,7 +291,7 @@ function renderCommentsList(comments: Comment[], isAdmin: boolean): string {
 		.join('');
 }
 
-function setupLightbox(images: string[]): void {
+function setupLightbox(images: LightboxImage[]): void {
 	if (!images.length) return;
 
 	const overlay = document.getElementById('lightbox-overlay')!;
@@ -295,6 +305,9 @@ function setupLightbox(images: string[]): void {
 	const ZOOM_SCALE = 2.5;
 	let current = 0;
 	let isZoomed = false;
+
+	// Full-res URLs that have finished downloading — reopening one of these skips the low-res preview.
+	const loadedFull = new Set<string>();
 
 	const MARGIN = 0.09;
 	const remap = (v: number) => Math.min(Math.max(((v - MARGIN) / (1 - 2 * MARGIN)) * 100, 0), 100);
@@ -330,7 +343,26 @@ function setupLightbox(images: string[]): void {
 
 	const open = (idx: number) => {
 		current = ((idx % images.length) + images.length) % images.length;
-		imgEl.src = images[current];
+		const slide = images[current];
+
+		// Once a slide's full-res original has downloaded it stays cached, so reopening or paging back
+		// to it shows the sharp image directly — no low-res flash. Only the first view of a slide falls
+		// back to its preview (instant, already cached by the gallery thumbnail) and swaps to full on
+		// load. Guarding the swap on `current` keeps a slow original from overwriting a slide the user
+		// paged past.
+		if (slide.full === slide.preview || loadedFull.has(slide.full)) {
+			imgEl.src = slide.full;
+		} else {
+			imgEl.src = slide.preview;
+			const target = current;
+			const full = new Image();
+			full.onload = () => {
+				loadedFull.add(slide.full);
+				if (current === target) imgEl.src = slide.full;
+			};
+			full.src = slide.full;
+		}
+
 		setZoom(false);
 		counter.textContent = `${current + 1} / ${images.length}`;
 		overlay.classList.add('active');
@@ -483,7 +515,7 @@ export async function itemAfter(ctx: RouteContext): Promise<void> {
 	// Recover lightbox images from data attribute
 	const box = document.querySelector<HTMLElement>('.details-box');
 	const lightboxData = box?.dataset.lightbox;
-	const lightboxImages: string[] = lightboxData ? JSON.parse(decodeURIComponent(lightboxData)) : [];
+	const lightboxImages: LightboxImage[] = lightboxData ? JSON.parse(decodeURIComponent(lightboxData)) : [];
 
 	setupLightbox(lightboxImages);
 

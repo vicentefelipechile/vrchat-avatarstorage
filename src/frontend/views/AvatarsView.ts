@@ -10,7 +10,7 @@ import { t } from '../i18n';
 import { buildFilterPanel, initFilterPanel, FilterType } from '../filter-panel';
 import type { RouteContext } from '../types';
 import { DataCache } from '../cache';
-import { TimeUnit, mediaUrl, initLazyImages } from '../utils';
+import { TimeUnit, progressiveImg, initLazyImages } from '../utils';
 
 // =========================================================================
 // Types
@@ -21,6 +21,7 @@ interface AvatarResource {
 	title: string;
 	thumbnail_key: string | null;
 	thumbnail_media_uuid: string | null;
+	placeholder_blur: string | null;
 	download_count: number;
 	created_at: number;
 	meta: {
@@ -62,7 +63,7 @@ function avatarCard(res: AvatarResource): string {
 			: '';
 
 	const imgHtml = res.thumbnail_media_uuid
-		? `<div class="card-image"><img src="${mediaUrl(res.thumbnail_media_uuid, 'low')}" alt="${title}" loading="lazy"><span class="card-badge">${res.meta.avatar_type}</span></div>`
+		? `<div class="card-image">${progressiveImg({ uuid: res.thumbnail_media_uuid, placeholder: res.placeholder_blur, res: 'low', alt: title })}<span class="card-badge">${res.meta.avatar_type}</span></div>`
 		: `<div class="card-image card-image-placeholder"><span class="card-badge">${res.meta.avatar_type}</span></div>`;
 
 	return `<div class="card">
@@ -255,6 +256,7 @@ export function avatarsAfter(ctx: RouteContext): void {
 
         resultsEl.innerHTML = await buildResults(newParams);
         resultsEl.style.opacity = '1';
+        initLazyImages();
 
         // Re-bindear el sort select porque fue recreado
         bindSortSelect(newParams);

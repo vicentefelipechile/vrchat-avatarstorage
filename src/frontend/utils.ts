@@ -227,6 +227,13 @@ export function mediaUrl(uuid: string, res: 'low' | 'med' | 'original' = 'med', 
 	return `${CDN_BASE}/${uuid}?res=${res}&format=${format}`;
 }
 
+/**
+ * CDN URLs that have finished decoding in this page session. A cached URL renders straight to its sharp
+ * image — no blur placeholder, no swap — so revisiting a view (clicking "Inicio", paging, filtering)
+ * shows already-seen images instantly instead of flashing blur every time.
+ */
+const loadedUrls = new Set<string>();
+
 export function progressiveImg(opts: {
 	uuid: string;
 	placeholder: string | null;
@@ -235,8 +242,15 @@ export function progressiveImg(opts: {
 	className?: string;
 }): string {
 	const { uuid, placeholder, res = 'med', alt = '', className = '' } = opts;
-	const src = placeholder ?? mediaUrl(uuid, res);
 	const dataSrc = mediaUrl(uuid, res);
+
+	// Seen this exact URL already this session: skip the blur entirely and point straight at the real
+	// image. The browser serves it from memory cache, so it paints sharp on the first frame.
+	if (loadedUrls.has(dataSrc)) {
+		return `<img src="${dataSrc}" alt="${alt}" class="${className}" loading="lazy" />`;
+	}
+
+	const src = placeholder ?? dataSrc;
 	const blurStyle = placeholder ? 'filter:blur(8px);transition:filter 0.4s ease' : '';
 	return `<img
 		src="${src}"
@@ -248,25 +262,63 @@ export function progressiveImg(opts: {
 	/>`;
 }
 
-export function initLazyImages(): void {
-	const observer = new IntersectionObserver(
+/** Swaps a lazy image to its real source, clearing the blur and recording the URL as loaded. */
+function revealLazyImage(img: HTMLImageElement, dataSrc: string): void {
+	img.onload = () => {
+		img.style.filter = '';
+		loadedUrls.add(dataSrc);
+	};
+	img.src = dataSrc;
+}
+
+let _lazyObserver: IntersectionObserver | null = null;
+
+function getLazyObserver(): IntersectionObserver {
+	if (_lazyObserver) return _lazyObserver;
+	_lazyObserver = new IntersectionObserver(
 		(entries) => {
 			entries.forEach((entry) => {
 				if (!entry.isIntersecting) return;
 				const img = entry.target as HTMLImageElement;
 				const dataSrc = img.dataset.src;
-				if (!dataSrc) return;
-				img.onload = () => {
-					img.style.filter = '';
-				};
-				img.src = dataSrc;
-				observer.unobserve(img);
+				_lazyObserver!.unobserve(img);
+				if (dataSrc) revealLazyImage(img, dataSrc);
 			});
 		},
 		{ rootMargin: '200px' },
 	);
+	return _lazyObserver;
+}
 
-	document.querySelectorAll<HTMLImageElement>('img.lazy-img[data-src]').forEach((img) => observer.observe(img));
+/**
+ * Binds every not-yet-bound `img.lazy-img[data-src]`. Each image first probes the browser cache by
+ * pointing `src` at the real URL: on a disk-cache hit (survives a full reload) `complete` is already
+ * true, so the blur is dropped synchronously with no swap. Otherwise it falls back to the blur-up
+ * IntersectionObserver. Idempotent — already-bound images are skipped, so callers may re-run this after
+ * any partial re-render (filter/pagination) without stacking observers or reloading in-flight images.
+ */
+export function initLazyImages(): void {
+	const observer = getLazyObserver();
+	document.querySelectorAll<HTMLImageElement>('img.lazy-img[data-src]:not([data-lazy-bound])').forEach((img) => {
+		img.dataset.lazyBound = '1';
+		const dataSrc = img.dataset.src;
+		if (!dataSrc) return;
+
+		// Optimistic cache probe: assigning a cached URL makes `complete` true synchronously. Keep the
+		// blur placeholder (the original `src`) so we can restore it on a miss.
+		const placeholderSrc = img.getAttribute('src');
+		img.src = dataSrc;
+		if (img.complete && img.naturalWidth > 0) {
+			img.style.filter = '';
+			loadedUrls.add(dataSrc);
+			return;
+		}
+
+		// Cache miss — restore the blur placeholder until the image scrolls into view.
+		if (placeholderSrc) img.src = placeholderSrc;
+		else img.removeAttribute('src');
+		observer.observe(img);
+	});
 }
 
 // =========================================================================================================

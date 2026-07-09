@@ -115,6 +115,7 @@ export class AuthorRepository {
 		return queryAll<Record<string, unknown>>(
 			this.db,
 			`SELECT r.uuid, r.title, r.download_count, r.created_at, m.r2_key AS thumbnail_key, m.uuid AS thumbnail_media_uuid,
+				m.placeholder_blur,
 				am.gender, am.avatar_type, am.platform, am.is_nsfw
 			FROM resources r
 			INNER JOIN avatar_meta am ON r.uuid = am.resource_uuid

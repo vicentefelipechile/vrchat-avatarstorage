@@ -60,6 +60,7 @@ export interface AvatarListRow {
 	created_at: number;
 	thumbnail_key: string | null;
 	thumbnail_media_uuid: string | null;
+	placeholder_blur: string | null;
 	gender: string;
 	avatar_size: string;
 	avatar_type: string;
@@ -152,6 +153,7 @@ export class AvatarRepository {
 				r.created_at,
 				m.r2_key AS thumbnail_key,
 				m.uuid AS thumbnail_media_uuid,
+				m.placeholder_blur,
 				am.gender,
 				am.avatar_size,
 				am.avatar_type,

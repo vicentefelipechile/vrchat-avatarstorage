@@ -60,6 +60,7 @@ export interface MediaFile {
 	uuid?: string;
 	r2_key: string;
 	media_type: 'image' | 'video' | 'file';
+	placeholder_blur?: string | null;
 }
 
 export interface ResourceAuthor {
@@ -115,6 +116,7 @@ export interface Resource {
 	thumbnail_key?: string;
 	thumbnail_uuid?: string | null;
 	thumbnail_media_uuid?: string | null;
+	placeholder_blur?: string | null;
 	reference_image_key?: string | null;
 	reference_image_media_uuid?: string | null;
 	is_active: number;

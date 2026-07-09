@@ -30,6 +30,7 @@ export interface FavoriteRow {
 	created_at: number;
 	updated_at: number;
 	thumbnail_key: string | null;
+	placeholder_blur: string | null;
 	author_username: string | null;
 	author_avatar: string | null;
 	display_order: number;
@@ -71,6 +72,7 @@ export class FavoriteRepository {
 				r.created_at,
 				r.updated_at,
 				m.r2_key AS thumbnail_key,
+				m.placeholder_blur,
 				u.username AS author_username,
 				u.avatar_url AS author_avatar,
 				uf.display_order,

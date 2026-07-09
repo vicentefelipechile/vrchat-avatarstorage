@@ -4,7 +4,7 @@
 
 import { DataCache } from '../cache';
 import { t } from '../i18n';
-import { stripMarkdown, TimeUnit, mediaUrl } from '../utils';
+import { stripMarkdown, TimeUnit, progressiveImg } from '../utils';
 import type { RouteContext, Resource } from '../types';
 
 // =========================================================================
@@ -24,7 +24,7 @@ function resourceCard(res: Resource): string {
 			<a href="/item/${res.uuid}" data-link class="card-link">
 				${res.thumbnail_media_uuid
 		? `<div class="card-image">
-					<img src="${mediaUrl(res.thumbnail_media_uuid, 'low')}" alt="${title}" loading="lazy">
+					${progressiveImg({ uuid: res.thumbnail_media_uuid, placeholder: res.placeholder_blur ?? null, res: 'low', alt: title })}
 					<span class="card-badge">${categoryLabel}</span>
 				</div>`
 		: `<div class="card-image card-image-placeholder">

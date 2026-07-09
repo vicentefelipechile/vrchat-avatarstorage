@@ -4,7 +4,7 @@
 
 import { DataCache } from '../cache';
 import { t } from '../i18n';
-import { stripMarkdown, mediaUrl } from '../utils';
+import { stripMarkdown, progressiveImg } from '../utils';
 import type { RouteContext } from '../types';
 
 // =========================================================================
@@ -15,6 +15,7 @@ interface Favorite {
 	uuid: string;
 	thumbnail_key?: string;
 	thumbnail_uuid?: string;
+	placeholder_blur?: string | null;
 	title: string;
 	description?: string;
 	category: string;
@@ -45,7 +46,7 @@ function favoriteCard(fav: Favorite): string {
 				${
 					fav.thumbnail_uuid
 						? `<div class="card-image">
-						<img src="${mediaUrl(fav.thumbnail_uuid, 'low')}" alt="${title}" loading="lazy">
+						${progressiveImg({ uuid: fav.thumbnail_uuid, placeholder: fav.placeholder_blur ?? null, res: 'low', alt: title })}
 						<span class="card-badge">${categoryLabel}</span>
 					</div>`
 						: `<div class="card-image card-image-placeholder">

@@ -51,6 +51,7 @@ export interface AssetListRow {
 	created_at: number;
 	thumbnail_key: string | null;
 	thumbnail_media_uuid: string | null;
+	placeholder_blur: string | null;
 	asset_type: string;
 	is_nsfw: number;
 	unity_version: string;
@@ -124,6 +125,7 @@ export class AssetRepository {
 				r.created_at,
 				m.r2_key AS thumbnail_key,
 				m.uuid AS thumbnail_media_uuid,
+				m.placeholder_blur,
 				am.asset_type,
 				am.is_nsfw,
 				am.unity_version,

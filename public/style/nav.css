@@ -26,6 +26,16 @@ nav .container {
 .logo {
 	flex-shrink: 0;
 	font-weight: bold;
+	color: var(--text-link);
+	text-decoration: none;
+	cursor: pointer;
+	padding: 9px 10px;
+	border: 2px solid transparent;
+}
+
+.logo:hover {
+	border-color: var(--border-color);
+	background-color: var(--bg-card);
 }
 
 /* ---- Nav links (center, grows to fill space) ---- */
