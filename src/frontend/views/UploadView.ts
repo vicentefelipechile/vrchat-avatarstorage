@@ -342,6 +342,7 @@ export async function uploadView(_ctx: RouteContext): Promise<string> {
 		<div style="max-width:1200px;margin:0 auto">
 			<h1>${t('upload.title')}</h1>
 			<form id="upload-form">
+				<fieldset id="upload-fieldset" style="border:0;margin:0;padding:0;min-width:0">
 				<div class="form-group">
 					<label><strong>${t('upload.name')} ${t('upload.required')}</strong></label>
 					<input type="text" id="title" required placeholder="${t('upload.resourceName')}" style="width:100%">
@@ -415,6 +416,7 @@ export async function uploadView(_ctx: RouteContext): Promise<string> {
 
 				<div id="upload-error" style="color:red;margin-bottom:10px"></div>
 				<button type="submit" id="upload-submit-btn" class="btn" style="width:100%;padding:15px;font-size:16px">${t('upload.btn')}</button>
+				</fieldset>
 			</form>
 		</div>`;
 }
@@ -950,8 +952,10 @@ export async function uploadAfter(_ctx: RouteContext): Promise<void> {
 		e.preventDefault();
 
 		const btn = form.querySelector<HTMLButtonElement>('#upload-submit-btn')!;
+		const fieldset = form.querySelector<HTMLFieldSetElement>('#upload-fieldset')!;
 		const nav = document.querySelector<HTMLElement>('nav');
 		const resetState = () => {
+			fieldset.disabled = false;
 			btn.disabled = false;
 			btn.textContent = t('upload.btn');
 			nav?.style.setProperty('pointer-events', 'auto');
@@ -980,6 +984,10 @@ export async function uploadAfter(_ctx: RouteContext): Promise<void> {
 			return;
 		}
 
+		// Disable the whole form for the duration of the upload — `fieldset[disabled]` locks every control
+		// inside it (inputs, selects, textarea, and the dynamic remove/backup buttons) so nothing can change
+		// mid-upload. The submit button lives inside the fieldset, so keep its own label in sync separately.
+		fieldset.disabled = true;
 		btn.disabled = true;
 		btn.textContent = t('upload.uploading');
 		uploadError.textContent = '';
