@@ -40,6 +40,7 @@ import clothesRoutes from './http/routes/clothes';
 import authorsRoutes from './http/routes/authors';
 import updatesRoutes from './http/routes/updates';
 import feedRoutes from './http/routes/feed';
+import collectionsRoutes from './http/routes/collections';
 import llmsRoute from './http/routes/llms';
 
 // =========================================================================================================
@@ -82,6 +83,7 @@ app.route('/api/wiki', wikiRoutes);
 app.route('/api/upload', uploadRoutes);
 app.route('/api/download', downloadRoutes);
 app.route('/api/favorites', favoritesRoutes);
+app.route('/api/collections', collectionsRoutes);
 app.route('/api/admin', adminRoutes);
 app.route('/api', systemRoutes);
 app.route('/api/avatars', avatarsRoutes);

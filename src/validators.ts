@@ -125,14 +125,32 @@ export const CommentSchema = z.object({
 
 export const AddFavoriteSchema = z.object({
 	resource_uuid: z.uuid('Invalid resource UUID'),
+	collection_uuid: z.uuid('Invalid collection UUID').optional(),
 });
 
-export const FavoriteOrderSchema = z.object({
-	resource_uuid: z.uuid('Invalid resource UUID'),
-	move_to_top: z
-		.boolean()
-		.optional()
-		.transform((val) => val ?? false),
+export const FavoriteReorderSchema = z.object({
+	ordered_uuids: z.array(z.uuid('Invalid UUID')).max(500),
+	collection_uuid: z.uuid('Invalid collection UUID').nullable(),
+});
+
+export const FavoriteMoveSchema = z.object({
+	collection_uuid: z.uuid('Invalid collection UUID').nullable(),
+});
+
+// ============================================================================
+// Collection Schemas
+// ============================================================================
+
+export const CreateCollectionSchema = z.object({
+	name: z
+		.string()
+		.min(1, 'Name is required')
+		.max(50, 'Name too long')
+		.transform((val) => sanitizeHtml(val)),
+});
+
+export const CollectionReorderSchema = z.object({
+	ordered_uuids: z.array(z.uuid('Invalid UUID')).max(20),
 });
 
 // ============================================================================

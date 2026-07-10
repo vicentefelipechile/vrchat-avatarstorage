@@ -7,9 +7,6 @@
 //
 // Two endpoints (check, ids) are reachable anonymously and must return a benign body
 // instead of 401 — they use optionalAuth. The rest require a session.
-//
-// The JSON responses are identical to the legacy handlers so the existing frontend
-// works unchanged.
 // =========================================================================================================
 
 // =========================================================================================================
@@ -19,7 +16,7 @@
 import { Hono } from 'hono';
 import { requireAuth, optionalAuth, type AuthVariables } from '../middleware/auth';
 import { FavoriteService } from '../../services/favorite-service';
-import { AddFavoriteSchema, FavoriteOrderSchema } from '../../validators';
+import { AddFavoriteSchema, FavoriteReorderSchema, FavoriteMoveSchema } from '../../validators';
 import { fail } from '../responses';
 
 // =========================================================================================================
@@ -30,20 +27,17 @@ const favorites = new Hono<{ Bindings: Env; Variables: AuthVariables }>();
 
 // =========================================================================================================
 // GET /api/favorites
-// Returns all favorites of the authenticated user (paginated).
+// Returns favorites for the authenticated user, scoped to a collection.
+// Query params: ?collection=<uuid> (specific collection), ?collection=all (all),
+// omitted = uncategorized.
 // =========================================================================================================
 
 favorites.get('/', requireAuth, async (c) => {
-	const page = Math.max(1, parseInt(c.req.query('page') || '1', 10));
-	const limit = Math.min(60, Math.max(1, parseInt(c.req.query('limit') || '20', 10)));
+	const collectionParam = c.req.query('collection');
+	const collectionUuid: string | null | 'all' = collectionParam === 'all' ? 'all' : collectionParam ?? null;
 
-	try {
-		const result = await new FavoriteService(c.env.DB).list(c.get('user').uuid, page, limit);
-		return c.json(result);
-	} catch (e) {
-		console.error('Favorites list error:', e);
-		return fail(c, 'Failed to fetch favorites', 500);
-	}
+	const result = await new FavoriteService(c.env.DB).list(c.get('user').uuid, collectionUuid);
+	return c.json(result);
 });
 
 // =========================================================================================================
@@ -55,13 +49,8 @@ favorites.get('/ids', optionalAuth, async (c) => {
 	const user = c.get('user');
 	if (!user) return c.json({ favorites: [] });
 
-	try {
-		const ids = await new FavoriteService(c.env.DB).listIds(user.uuid);
-		return c.json({ favorites: ids });
-	} catch (e) {
-		console.error('Favorites ids error:', e);
-		return fail(c, 'Failed to fetch favorites', 500);
-	}
+	const ids = await new FavoriteService(c.env.DB).listIds(user.uuid);
+	return c.json({ favorites: ids });
 });
 
 // =========================================================================================================
@@ -73,18 +62,13 @@ favorites.get('/check/:resourceUuid', optionalAuth, async (c) => {
 	const user = c.get('user');
 	if (!user) return c.json({ is_favorite: false });
 
-	try {
-		const isFavorite = await new FavoriteService(c.env.DB).isFavorite(user.uuid, c.req.param('resourceUuid')!);
-		return c.json({ is_favorite: isFavorite });
-	} catch (e) {
-		console.error('Favorites check error:', e);
-		return fail(c, 'Failed to check favorite', 500);
-	}
+	const isFavorite = await new FavoriteService(c.env.DB).isFavorite(user.uuid, c.req.param('resourceUuid')!);
+	return c.json({ is_favorite: isFavorite });
 });
 
 // =========================================================================================================
 // POST /api/favorites
-// Adds a resource to favorites.
+// Adds a resource to favorites, optionally into a specific collection.
 // =========================================================================================================
 
 favorites.post('/', requireAuth, async (c) => {
@@ -98,18 +82,13 @@ favorites.post('/', requireAuth, async (c) => {
 	const parsed = AddFavoriteSchema.safeParse(body);
 	if (!parsed.success) return fail(c, 'Validation error', 400, parsed.error.issues);
 
-	try {
-		const result = await new FavoriteService(c.env.DB).add(c.get('user'), parsed.data.resource_uuid);
-		return c.json(result);
-	} catch (e) {
-		console.error('Favorites add error:', e);
-		throw e;
-	}
+	const result = await new FavoriteService(c.env.DB).add(c.get('user'), parsed.data.resource_uuid, parsed.data.collection_uuid);
+	return c.json(result);
 });
 
 // =========================================================================================================
 // POST /api/favorites/reorder
-// Moves a favorite to the top (reorder).
+// Batch-reorders favorites within a collection. Receives the full ordered list of UUIDs.
 // =========================================================================================================
 
 favorites.post('/reorder', requireAuth, async (c) => {
@@ -120,16 +99,31 @@ favorites.post('/reorder', requireAuth, async (c) => {
 		return fail(c, 'Invalid JSON', 400);
 	}
 
-	const parsed = FavoriteOrderSchema.safeParse(body);
+	const parsed = FavoriteReorderSchema.safeParse(body);
 	if (!parsed.success) return fail(c, 'Validation error', 400, parsed.error.issues);
 
+	await new FavoriteService(c.env.DB).reorder(c.get('user'), parsed.data.ordered_uuids, parsed.data.collection_uuid);
+	return c.json({ success: true });
+});
+
+// =========================================================================================================
+// PUT /api/favorites/:resourceUuid/collection
+// Moves a favorite to a different collection (or uncategorized if null).
+// =========================================================================================================
+
+favorites.put('/:resourceUuid/collection', requireAuth, async (c) => {
+	let body: unknown;
 	try {
-		await new FavoriteService(c.env.DB).reorder(c.get('user'), parsed.data.resource_uuid, parsed.data.move_to_top);
-		return c.json({ success: true });
-	} catch (e) {
-		console.error('Favorites reorder error:', e);
-		throw e;
+		body = await c.req.json();
+	} catch {
+		return fail(c, 'Invalid JSON', 400);
 	}
+
+	const parsed = FavoriteMoveSchema.safeParse(body);
+	if (!parsed.success) return fail(c, 'Validation error', 400, parsed.error.issues);
+
+	await new FavoriteService(c.env.DB).moveToCollection(c.get('user'), c.req.param('resourceUuid')!, parsed.data.collection_uuid);
+	return c.json({ success: true });
 });
 
 // =========================================================================================================
@@ -138,13 +132,8 @@ favorites.post('/reorder', requireAuth, async (c) => {
 // =========================================================================================================
 
 favorites.delete('/:resourceUuid', requireAuth, async (c) => {
-	try {
-		await new FavoriteService(c.env.DB).remove(c.get('user'), c.req.param('resourceUuid')!);
-		return c.json({ success: true });
-	} catch (e) {
-		console.error('Favorites delete error:', e);
-		throw e;
-	}
+	await new FavoriteService(c.env.DB).remove(c.get('user'), c.req.param('resourceUuid')!);
+	return c.json({ success: true });
 });
 
 // =========================================================================================================

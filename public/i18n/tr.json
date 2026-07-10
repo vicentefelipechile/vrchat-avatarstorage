@@ -730,5 +730,22 @@
 		"blog": "Blogda yeni etkinlik",
 		"comments": "Yeni yorumlar yayınlandı",
 		"multiple": "Yeni içerik mevcut"
+	},
+	"favorites": {
+		"all": "Tümü",
+		"uncategorized": "Koleksiyonsuz",
+		"moveUp": "Yukarı taşı",
+		"moveDown": "Aşağı taşı",
+		"moveToCollection": "Koleksiyona taşı",
+		"dragToReorder": "Sıralamak için sürükle",
+		"maxReached": "Bu koleksiyon için maksimum favori sayısına ulaşıldı"
+	},
+	"collections": {
+		"create": "Yeni koleksiyon",
+		"rename": "Yeniden adlandır",
+		"delete": "Koleksiyonu sil",
+		"confirmDelete": "Bu koleksiyondaki favoriler Koleksiyonsuz'a taşınacak. Devam edilsin mi?",
+		"namePlaceholder": "Koleksiyon adı",
+		"maxReached": "Maksimum koleksiyon sayısına ulaşıldı"
 	}
 }

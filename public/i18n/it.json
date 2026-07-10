@@ -730,5 +730,22 @@
 		"blog": "Nuova attività sul blog",
 		"comments": "Nuovi commenti pubblicati",
 		"multiple": "Nuovi contenuti disponibili"
+	},
+	"favorites": {
+		"all": "Tutti",
+		"uncategorized": "Senza collezione",
+		"moveUp": "Sposta su",
+		"moveDown": "Sposta giù",
+		"moveToCollection": "Sposta nella collezione",
+		"dragToReorder": "Trascina per riordinare",
+		"maxReached": "Numero massimo di preferiti raggiunto per questa collezione"
+	},
+	"collections": {
+		"create": "Nuova collezione",
+		"rename": "Rinomina",
+		"delete": "Elimina collezione",
+		"confirmDelete": "I preferiti di questa collezione verranno spostati in Senza collezione. Continuare?",
+		"namePlaceholder": "Nome della collezione",
+		"maxReached": "Numero massimo di collezioni raggiunto"
 	}
 }

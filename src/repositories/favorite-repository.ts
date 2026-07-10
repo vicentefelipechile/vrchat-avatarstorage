@@ -2,11 +2,9 @@
 // FAVORITE REPOSITORY
 // =========================================================================================================
 // The ONLY place `user_favorites` SQL lives, plus the read-side join into `resources`/
-// `media`/`users` that hydrates a user's favorites list. Ordering (display_order) and
-// the existence checks are expressed here as plain queries; the service decides what the
-// results mean (already-favorited, not-found, etc.).
-//
-// Methods return DB row types; mapping to the API shape is the service's job.
+// `media`/`users` that hydrates a user's favorites list. Ordering (display_order) is
+// scoped per user per collection. Methods return DB row types; mapping to the API shape
+// is the service's job.
 // =========================================================================================================
 
 // =========================================================================================================
@@ -35,6 +33,7 @@ export interface FavoriteRow {
 	author_avatar: string | null;
 	display_order: number;
 	favorite_created_at: number;
+	collection_uuid: string | null;
 }
 
 // =========================================================================================================
@@ -48,18 +47,37 @@ export class FavoriteRepository {
 	// Reads
 	// -------------------------------------------------------------------------
 
-	/** Total active favorites for a user (for pagination). */
-	async count(userUuid: string): Promise<number> {
+	/** Total active favorites for a user in a specific collection (NULL = uncategorized). */
+	async countInCollection(userUuid: string, collectionUuid: string | null): Promise<number> {
 		const row = await queryOne<{ total: number }>(
 			this.db,
-			'SELECT COUNT(*) AS total FROM user_favorites WHERE user_uuid = ?',
+			collectionUuid === null
+				? 'SELECT COUNT(*) AS total FROM user_favorites uf JOIN resources r ON uf.resource_uuid = r.uuid WHERE uf.user_uuid = ? AND uf.collection_uuid IS NULL AND r.is_active = 1'
+				: 'SELECT COUNT(*) AS total FROM user_favorites uf JOIN resources r ON uf.resource_uuid = r.uuid WHERE uf.user_uuid = ? AND uf.collection_uuid = ? AND r.is_active = 1',
+			collectionUuid === null ? [userUuid] : [userUuid, collectionUuid],
+		);
+		return row?.total ?? 0;
+	}
+
+	/** Total active favorites for a user across all collections (for "All" tab). */
+	async countAll(userUuid: string): Promise<number> {
+		const row = await queryOne<{ total: number }>(
+			this.db,
+			'SELECT COUNT(*) AS total FROM user_favorites uf JOIN resources r ON uf.resource_uuid = r.uuid WHERE uf.user_uuid = ? AND r.is_active = 1',
 			[userUuid],
 		);
 		return row?.total ?? 0;
 	}
 
-	/** A page of a user's favorites, hydrated with resource + author fields, ordered for display. */
-	list(userUuid: string, limit: number, offset: number): Promise<FavoriteRow[]> {
+	/**
+	 * A user's favorites in a specific collection, hydrated with resource + author fields.
+	 * Capped at 500 (no pagination). Pass `null` for uncategorized.
+	 */
+	list(userUuid: string, collectionUuid: string | null): Promise<FavoriteRow[]> {
+		const whereClause =
+			collectionUuid === null ? 'uf.user_uuid = ? AND uf.collection_uuid IS NULL' : 'uf.user_uuid = ? AND uf.collection_uuid = ?';
+		const params = collectionUuid === null ? [userUuid] : [userUuid, collectionUuid];
+
 		return queryAll<FavoriteRow>(
 			this.db,
 			`SELECT
@@ -76,15 +94,47 @@ export class FavoriteRepository {
 				u.username AS author_username,
 				u.avatar_url AS author_avatar,
 				uf.display_order,
-				uf.created_at AS favorite_created_at
+				uf.created_at AS favorite_created_at,
+				uf.collection_uuid
+			FROM user_favorites uf
+			JOIN resources r ON uf.resource_uuid = r.uuid
+			JOIN media m ON r.thumbnail_uuid = m.uuid
+			JOIN users u ON r.author_uuid = u.uuid
+			WHERE ${whereClause} AND r.is_active = 1
+			ORDER BY uf.display_order DESC, uf.created_at DESC
+			LIMIT 500`,
+			params,
+		);
+	}
+
+	/** All favorites across all collections (for "All" tab). Read-only, no reorder. */
+	listAll(userUuid: string): Promise<FavoriteRow[]> {
+		return queryAll<FavoriteRow>(
+			this.db,
+			`SELECT
+				r.uuid,
+				r.title,
+				r.description,
+				r.category,
+				r.thumbnail_uuid,
+				r.download_count,
+				r.created_at,
+				r.updated_at,
+				m.r2_key AS thumbnail_key,
+				m.placeholder_blur,
+				u.username AS author_username,
+				u.avatar_url AS author_avatar,
+				uf.display_order,
+				uf.created_at AS favorite_created_at,
+				uf.collection_uuid
 			FROM user_favorites uf
 			JOIN resources r ON uf.resource_uuid = r.uuid
 			JOIN media m ON r.thumbnail_uuid = m.uuid
 			JOIN users u ON r.author_uuid = u.uuid
 			WHERE uf.user_uuid = ? AND r.is_active = 1
 			ORDER BY uf.display_order DESC, uf.created_at DESC
-			LIMIT ? OFFSET ?`,
-			[userUuid, limit, offset],
+			LIMIT 500`,
+			[userUuid],
 		);
 	}
 
@@ -94,6 +144,18 @@ export class FavoriteRepository {
 			this.db,
 			'SELECT resource_uuid FROM user_favorites WHERE user_uuid = ?',
 			[userUuid],
+		);
+		return rows.map((r) => r.resource_uuid);
+	}
+
+	/** Resource UUIDs in a specific collection (for reorder validation). */
+	async listUuidsInCollection(userUuid: string, collectionUuid: string | null): Promise<string[]> {
+		const rows = await queryAll<{ resource_uuid: string }>(
+			this.db,
+			collectionUuid === null
+				? 'SELECT resource_uuid FROM user_favorites WHERE user_uuid = ? AND collection_uuid IS NULL'
+				: 'SELECT resource_uuid FROM user_favorites WHERE user_uuid = ? AND collection_uuid = ?',
+			collectionUuid === null ? [userUuid] : [userUuid, collectionUuid],
 		);
 		return rows.map((r) => r.resource_uuid);
 	}
@@ -118,12 +180,14 @@ export class FavoriteRepository {
 		return row?.display_order ?? null;
 	}
 
-	/** Highest display_order among a user's favorites (0 if they have none). */
-	async maxOrder(userUuid: string): Promise<number> {
+	/** Highest display_order in a specific collection (0 if empty). */
+	async maxOrderInCollection(userUuid: string, collectionUuid: string | null): Promise<number> {
 		const row = await queryOne<{ max_order: number | null }>(
 			this.db,
-			'SELECT MAX(display_order) AS max_order FROM user_favorites WHERE user_uuid = ?',
-			[userUuid],
+			collectionUuid === null
+				? 'SELECT MAX(display_order) AS max_order FROM user_favorites WHERE user_uuid = ? AND collection_uuid IS NULL'
+				: 'SELECT MAX(display_order) AS max_order FROM user_favorites WHERE user_uuid = ? AND collection_uuid = ?',
+			collectionUuid === null ? [userUuid] : [userUuid, collectionUuid],
 		);
 		return row?.max_order ?? 0;
 	}
@@ -141,12 +205,12 @@ export class FavoriteRepository {
 	// Writes
 	// -------------------------------------------------------------------------
 
-	/** Insert a favorite with an explicit display_order. */
-	async insert(userUuid: string, resourceUuid: string, displayOrder: number): Promise<void> {
+	/** Insert a favorite with an explicit display_order and optional collection. */
+	async insert(userUuid: string, resourceUuid: string, displayOrder: number, collectionUuid: string | null): Promise<void> {
 		await execute(
 			this.db,
-			'INSERT INTO user_favorites (user_uuid, resource_uuid, display_order) VALUES (?, ?, ?)',
-			[userUuid, resourceUuid, displayOrder],
+			'INSERT INTO user_favorites (user_uuid, resource_uuid, display_order, collection_uuid) VALUES (?, ?, ?, ?)',
+			[userUuid, resourceUuid, displayOrder, collectionUuid],
 		);
 	}
 
@@ -160,12 +224,19 @@ export class FavoriteRepository {
 		return result.meta.changes ?? 0;
 	}
 
-	/** Update a favorite's display_order. */
-	async updateOrder(userUuid: string, resourceUuid: string, displayOrder: number): Promise<void> {
+	/** Move a favorite to a different collection and assign it to the end of that collection's order. */
+	async updateCollection(userUuid: string, resourceUuid: string, collectionUuid: string | null, displayOrder: number): Promise<void> {
 		await execute(
 			this.db,
-			'UPDATE user_favorites SET display_order = ? WHERE user_uuid = ? AND resource_uuid = ?',
-			[displayOrder, userUuid, resourceUuid],
+			'UPDATE user_favorites SET collection_uuid = ?, display_order = ? WHERE user_uuid = ? AND resource_uuid = ?',
+			[collectionUuid, displayOrder, userUuid, resourceUuid],
 		);
+	}
+
+	/** Returns a prepared statement for batch-updating a favorite's display_order. */
+	buildUpdateOrder(userUuid: string, resourceUuid: string, displayOrder: number): D1PreparedStatement {
+		return this.db
+			.prepare('UPDATE user_favorites SET display_order = ? WHERE user_uuid = ? AND resource_uuid = ?')
+			.bind(displayOrder, userUuid, resourceUuid);
 	}
 }

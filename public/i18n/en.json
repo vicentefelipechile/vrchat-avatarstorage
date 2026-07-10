@@ -685,6 +685,23 @@
 		"noResources": "This author has not any resources related yet.",
 		"avatarsTitle": "Avatares"
 	},
+	"favorites": {
+		"all": "All",
+		"uncategorized": "Uncategorized",
+		"moveUp": "Move up",
+		"moveDown": "Move down",
+		"moveToCollection": "Move to collection",
+		"dragToReorder": "Drag to reorder",
+		"maxReached": "Maximum favorites reached for this collection"
+	},
+	"collections": {
+		"create": "New collection",
+		"rename": "Rename",
+		"delete": "Delete collection",
+		"confirmDelete": "Favorites in this collection will be moved to Uncategorized. Continue?",
+		"namePlaceholder": "Collection name",
+		"maxReached": "Maximum collections reached"
+	},
 	"updates": {
 		"avatars": "New avatars available",
 		"assets": "New assets available",

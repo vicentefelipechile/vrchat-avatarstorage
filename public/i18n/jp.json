@@ -692,5 +692,22 @@
 		"blog": "ブログに新しい更新があります",
 		"comments": "新しいコメントが投稿されました",
 		"multiple": "新しいコンテンツが利用可能です"
+	},
+	"favorites": {
+		"all": "すべて",
+		"uncategorized": "未分類",
+		"moveUp": "上へ移動",
+		"moveDown": "下へ移動",
+		"moveToCollection": "コレクションに移動",
+		"dragToReorder": "ドラッグして並べ替え",
+		"maxReached": "このコレクションのお気に入り上限に達しました"
+	},
+	"collections": {
+		"create": "新しいコレクション",
+		"rename": "名前変更",
+		"delete": "コレクションを削除",
+		"confirmDelete": "このコレクションのお気に入りは未分類に移動されます。続けますか？",
+		"namePlaceholder": "コレクション名",
+		"maxReached": "コレクションの上限に達しました"
 	}
 }

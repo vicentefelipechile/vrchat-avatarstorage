@@ -697,5 +697,22 @@
 		"blog": "博客有新动态",
 		"comments": "有新评论发布",
 		"multiple": "有新内容可用"
+	},
+	"favorites": {
+		"all": "全部",
+		"uncategorized": "未分类",
+		"moveUp": "上移",
+		"moveDown": "下移",
+		"moveToCollection": "移至收藏夹",
+		"dragToReorder": "拖动排序",
+		"maxReached": "此收藏夹已达到最大收藏数"
+	},
+	"collections": {
+		"create": "新建收藏夹",
+		"rename": "重命名",
+		"delete": "删除收藏夹",
+		"confirmDelete": "此收藏夹中的收藏将移至未分类。是否继续？",
+		"namePlaceholder": "收藏夹名称",
+		"maxReached": "已达到最大收藏夹数"
 	}
 }

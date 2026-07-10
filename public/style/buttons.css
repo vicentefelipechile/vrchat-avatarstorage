@@ -108,26 +108,6 @@
 	background: var(--btn-hover);
 }
 
-.favorite-card-footer {
-	display: flex;
-	flex-direction: column;
-	gap: 8px;
-}
-
-.favorite-actions {
-	display: grid;
-	grid-template-columns: 1fr 1fr;
-	gap: 8px;
-}
-
-.favorite-remove {
-	background: #6c757d;
-}
-
-.favorite-remove:hover {
-	background: #5a6268;
-}
-
 /* ---- Square / icon variants ---- */
 .btn-square {
 	display: block;

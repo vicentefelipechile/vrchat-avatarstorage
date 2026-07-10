@@ -46,6 +46,8 @@ This guide is for agentic coding agents (like yourself) operating in the VRCStor
 | **Generate Types**       | `npm run cf-typegen` (updates `worker-configuration.d.ts` from `wrangler.jsonc`)         |
 | **Manage i18n**          | `npm run i18n-manager [ADD\|FILL\|LIST\|CHECK] ...` (see [i18n section](#i18n-frontend)) |
 | **Seed DB**              | `npm run seed` (populates local D1 with test data via `src/test/setup/populate.ts`)      |
+| **Start (Dev)**          | `npm start` (shorthand for `wrangler dev`)                                               |
+| **Password Recovery**    | `npm run user-passrecover` (reset user password via wrangler d1)                         |
 | **Linting**              | `npx prettier --check src/` (Formatting check — only src/ directory)                     |
 
 ## Code Style & Conventions
@@ -191,29 +193,32 @@ src/
       security.ts         # Security headers middleware
     routes/               # Thin HTTP handlers (route layer) — one file per API domain
       admin.ts            assets.ts     authors.ts    avatars.ts
-      blog.ts             clothes.ts    comments.ts   downloads.ts
-      favorites.ts        feed.ts       llms.ts       oauth.ts
-      resources.ts        system.ts     two-factor.ts updates.ts
-      uploads.ts          users.ts      wiki.ts
+      blog.ts             clothes.ts    collections.ts comments.ts
+      downloads.ts        favorites.ts  feed.ts       llms.ts
+      oauth.ts            resources.ts  system.ts     two-factor.ts
+      updates.ts          uploads.ts    users.ts      wiki.ts
   durable-objects/        # Durable Object classes (transport layer — no domain logic, no SQL)
     feed-room.ts          # FeedRoom — global WebSocket-hibernation fan-out for live feed events
   services/               # Business logic (service layer), env-agnostic — one file per domain
     admin-service.ts      asset-service.ts    author-service.ts   avatar-service.ts
     blog-service.ts       change-feed-service.ts                  clothes-service.ts
-    comment-service.ts    download-service.ts favorite-service.ts feed-publisher.ts
-    media-processing-service.ts               oauth-service.ts    resource-service.ts
-    two-factor-service.ts upload-service.ts   user-service.ts     wiki-comment-service.ts
+    collection-service.ts comment-service.ts  download-service.ts favorite-service.ts
+    feed-publisher.ts     media-processing-service.ts             oauth-service.ts
+    resource-service.ts   two-factor-service.ts upload-service.ts user-service.ts
+    wiki-comment-service.ts
   repositories/           # ALL SQL (repository layer) — one file per table
     admin-repository.ts       asset-repository.ts       author-repository.ts
     avatar-repository.ts      blog-comment-repository.ts blog-post-repository.ts
-    change-feed-repository.ts clothes-repository.ts     comment-repository.ts
-    favorite-repository.ts    media-repository.ts       media-variant-repository.ts
+    change-feed-repository.ts clothes-repository.ts     collection-repository.ts
+    comment-repository.ts     favorite-repository.ts    media-repository.ts
+    media-variant-repository.ts
     oauth-repository.ts       resource-repository.ts    user-repository.ts
     wiki-comment-repository.ts
   tools/
     i18n-manager.mjs      # CLI script: add/inspect translation keys (npm run i18n-manager)
     build-frontend.mjs    # esbuild script: bundles src/frontend/ → public/js/bundle.js
                           # --dev flag enables source maps; --watch flag enables watch mode
+    user-passrecover.mjs  # CLI script: reset user password via wrangler d1 (npm run user-passrecover)
   frontend/               # TypeScript SPA source (compiled by esbuild)
     app.ts                # Entry point: route registration, nav, auth, boot
     router.ts             # History API SPA router (route/navigateTo/initRouter)
@@ -268,6 +273,7 @@ public/
     admin.css             # Admin panel styles (legacy, kept for compatibility)
     admin-dashboard.css   # Admin dashboard stats and layout
     authors.css           # Avatar author profile page styles
+    favorites.css         # Favorites view: collection tabs, compact cards, drag-and-drop
     search.css            # Search bar and filter panel styles
   sw.js                   # Service worker
   js/
@@ -278,7 +284,7 @@ public/
     jp.json  nl.json  pl.json  pt.json  ru.json  tr.json
   wiki/                   # Markdown wiki articles (multi-language)
     cn/ de/ en/ es/ fr/ it/ jp/ nl/ pl/ pt/ ru/ tr/
-    └── <topic>.md        # 23 articles per language (home, faq, setup, poiyomi, ...)
+    └── <topic>.md        # 25 articles per language (home, faq, setup, poiyomi, ...)
 
 migrations/               # D1 schema & migration files
   0001_initial.sql        # Initial schema
@@ -294,10 +300,13 @@ migrations/               # D1 schema & migration files
   0011_community_ads.sql      # (historical) community ads schema — feature removed, tables no longer used
   0012_media_variants.sql     # placeholder_blur column on media + media_variants table
   0013_avatar_urls_to_cdn.sql # Rewrite persisted avatar_url values from /api/download/<key> to CDN URLs
+  0014_change_feed.sql        # change_feed table for real-time update scopes
+  0015_media_variants_gif_format.sql # GIF format support in media_variants
+  0016_collections.sql        # user_collections table + collection_uuid FK on user_favorites
                               # New migrations follow the pattern: NNNN_description.sql
 
 wrangler.jsonc            # Main Worker configuration & bindings
-wrangler-cdn.jsonc        # CDN Worker configuration (MEDIA_BUCKET, BUCKET, DB only)
+wrangler-cdn.jsonc        # CDN Worker configuration (MEDIA_BUCKET only)
 tsconfig.json             # Backend TypeScript config
 tsconfig.frontend.json    # Frontend TypeScript config (for type-checking only)
 ```
@@ -750,7 +759,7 @@ The repository contains a multi-language wiki in `public/wiki/`.
 - **Routing:** The frontend (`WikiView.ts`) fetches `/wiki/{lang}/{topic}.md` based on `getCurrentLang()`. If the file does not exist, it **falls back to the English version**. If neither exists, an error message is shown. The view detects non-existent files by checking if Cloudflare returned the SPA shell (HTML) instead of Markdown.
 - **Verification:** Prohibited to include unverified links. Verify all URLs before adding them.
 - **Translations:** Request user confirmation before translating to all supported languages.
-- **Article list (24 topics):** `home`, `faq`, `setup`, `poiyomi`, `vrcfury`, `modular-avatar`, `physbones`, `syncdances`, `vrcquesttools`, `gogoloco`, `gogoloco-nsfw`, `desktop-puppeteer`, `gesture-manager-emulator`, `action-menu`, `parameter`, `unityhub-error`, `gogoloco-remove`, `nsfw-essentials`, `sps`, `inside-view`, `pcs`, `haptics`, `dps`, `justkisssfx`.
+- **Article list (25 topics):** `home`, `faq`, `setup`, `poiyomi`, `vrcfury`, `modular-avatar`, `physbones`, `syncdances`, `vrcquesttools`, `gogoloco`, `gogoloco-nsfw`, `desktop-puppeteer`, `gesture-manager-emulator`, `action-menu`, `parameter`, `unityhub-error`, `gogoloco-remove`, `nsfw-essentials`, `sps`, `inside-view`, `pcs`, `haptics`, `dps`, `justkisssfx`, `avatar-categories`.
 
 #### Article Structure
 
@@ -963,7 +972,7 @@ This must report **0 missing keys** and **0 orphan keys**. Fix any issues before
 #### Step 5: Create the wiki directory (`public/wiki/<code>/`)
 
 1. Create the directory `public/wiki/<code>/`.
-2. You must create **all 23 `.md` files** (listed above) translated to the target language.
+2. You must create **all 25 `.md` files** (listed above) translated to the target language.
 3. Use the English (`public/wiki/en/`) articles as the reference source.
 4. Preserve all Markdown formatting: badges, `> [!NOTE]` alerts, tables, internal links (`/wiki?topic=slug`), and the `## References` section.
 5. **Do not translate**: tool names (Poiyomi, VRCFury, etc.), URLs, code snippets, or Unity menu paths (keep them in English for discoverability).
