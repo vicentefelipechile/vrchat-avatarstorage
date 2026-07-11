@@ -7,9 +7,10 @@
 //
 // URL format: https://cdn.vrcstorage.lat/{uuid}?res=[low|med|original]&format=[webp|png|gif]
 //
-// Serves only pre-processed variants from MEDIA_BUCKET. Every image is fully covered (animated
-// GIFs live as a single `{uuid}/original.gif` variant), so the CDN never reaches into the originals
-// bucket. When a variant is absent — the window between upload and the queue finishing its variants,
+// Serves only pre-processed variants from MEDIA_BUCKET. Every image is fully covered (animated media —
+// GIF, animated WebP, APNG — lives as a single `{uuid}/original.{gif|webp|png}` variant in its native
+// format), so the CDN never reaches into the originals bucket. When a variant is absent — the window
+// between upload and the queue finishing its variants,
 // where the original exists but no variant does — the CDN serves a localized "processing" placeholder
 // (`_placeholder/processing.{lang}.webp`, chosen from Accept-Language) with a short cache, so the browser
 // paints a valid image instead of a broken icon and re-fetches until the real variant lands. Only if no
@@ -18,6 +19,14 @@
 
 const VALID_RES = new Set<string>(['low', 'med', 'original']);
 const VALID_FORMAT = new Set<string>(['webp', 'png', 'gif']);
+
+/**
+ * Native formats animated media can be stored under as its single `original` variant (GIF, animated
+ * WebP, APNG). Tried in order when the requested variant is absent, so an animated original is served
+ * whatever res/format was asked for. GIF first: it's the only format that is *always* animated, so it
+ * can't be confused with a static original of the same extension.
+ */
+const ANIMATED_FALLBACK_FORMATS = ['gif', 'webp', 'png'] as const;
 
 /** Languages we ship a processing placeholder for. `en` is the fallback and must always exist in R2. */
 const PLACEHOLDER_LANGS = new Set<string>(['en', 'es', 'pt', 'fr', 'de', 'it', 'nl', 'pl', 'tr', 'ru', 'cn', 'jp']);
@@ -47,12 +56,15 @@ export default {
 			return serveVariant(object, format);
 		}
 
-		// Animated GIFs have no webp/png variants — they live only as `{uuid}/original.gif`. When the
-		// requested variant is absent, serve the GIF (if any) so callers asking for webp/png still get
-		// the animation, without needing to know the media is a GIF.
-		if (format !== 'gif') {
-			const gif = await env.MEDIA_BUCKET.get(`${uuid}/original.gif`);
-			if (gif) return serveVariant(gif, 'gif');
+		// Animated media (GIF, animated WebP, APNG) has no resized/re-encoded variants — it lives only
+		// as a single `{uuid}/original.{gif|webp|png}` in its native format. When the requested variant
+		// is absent, serve that animated original (if any) so callers asking for any res/format still
+		// get the animation, without needing to know the media is animated. Skip the format that was
+		// already tried above.
+		for (const animFormat of ANIMATED_FALLBACK_FORMATS) {
+			if (animFormat === format && res === 'original') continue;
+			const anim = await env.MEDIA_BUCKET.get(`${uuid}/original.${animFormat}`);
+			if (anim) return serveVariant(anim, animFormat);
 		}
 
 		// No variant yet: the queue is still generating them (or the media doesn't exist). Serve the
