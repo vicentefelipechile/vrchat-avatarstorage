@@ -62,6 +62,7 @@ export const LinkSchema = z.object({
 	link_title: z
 		.string()
 		.optional()
+		.nullable()
 		.transform((val) => (val ? sanitizeHtml(val) : val)),
 	link_type: z.enum(['download', 'demo', 'documentation', 'general']).default('general'),
 	display_order: z.number().int().optional(),

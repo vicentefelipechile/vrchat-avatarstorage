@@ -1128,6 +1128,7 @@ export async function uploadAfter(_ctx: RouteContext): Promise<void> {
 				DataCache.clear('/api/resources/latest');
 				DataCache.clear(`/api/resources?category=${category}`);
 				window.removeEventListener('beforeunload', preventNav);
+				resetState();
 				navigateTo('/item/' + data.uuid);
 			} else {
 				const err = (await res.json()) as { error?: string };
