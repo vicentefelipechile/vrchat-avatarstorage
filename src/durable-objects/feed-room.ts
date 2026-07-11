@@ -55,9 +55,18 @@ export class FeedRoom extends DurableObject<Env> {
 	/**
 	 * Closes the server end when a client disconnects. Done explicitly because the current compatibility
 	 * date predates `web_socket_auto_reply_to_close`; without this the half-closed socket would linger.
+	 *
+	 * The runtime reports the close `code` the client sent, which may be a reserved value that `close()`
+	 * refuses to echo (1005 "no status", 1006 "abnormal" — the norm on a page reload or tab close). Only
+	 * the application range (1000 and 3000–4999) is safe to forward; anything else closes without a code.
 	 */
 	override async webSocketClose(ws: WebSocket, code: number, _reason: string, _wasClean: boolean): Promise<void> {
-		ws.close(code, 'client disconnected');
+		const canForward = code === 1000 || (code >= 3000 && code <= 4999);
+		if (canForward) {
+			ws.close(code, 'client disconnected');
+		} else {
+			ws.close();
+		}
 	}
 
 	override async webSocketError(_ws: WebSocket, _error: unknown): Promise<void> {
