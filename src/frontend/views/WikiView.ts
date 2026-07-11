@@ -2,9 +2,9 @@
 // views/WikiView.ts — Wiki browser with sidebar navigation and comments
 // =========================================================================
 
-import { t, getCurrentLang } from '../i18n';
-import { DataCache } from '../cache';
-import { renderTurnstile, renderMarkdown, showToast, TimeUnit } from '../utils';
+import { t, getCurrentLang } from '../core/i18n';
+import { DataCache } from '../core/cache';
+import { renderTurnstile, renderMarkdown, showToast, TimeUnit } from '../lib/utils';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import type { RouteContext } from '../types';

@@ -2,8 +2,8 @@
 // views/OAuthRegisterView.ts — Complete OAuth registration (username pick)
 // =========================================================================
 
-import { t } from '../i18n';
-import { navigateTo } from '../router';
+import { t } from '../core/i18n';
+import { navigateTo } from '../core/router';
 import type { RouteContext } from '../types';
 
 // =========================================================================

@@ -2,7 +2,7 @@
 // views/DMCAView.ts — DMCA takedown notice builder (simple + advanced)
 // =========================================================================
 
-import { t } from '../i18n';
+import { t } from '../core/i18n';
 import type { RouteContext } from '../types';
 
 // =========================================================================

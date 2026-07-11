@@ -3,10 +3,10 @@
 // =========================================================================
 
 import type { RouteContext, Resource, ResourceLink, MediaFile } from '../types';
-import { htmlDecode, renderMarkdown, showToast, mediaUrl } from '../utils';
-import { navigateTo } from '../router';
-import { DataCache } from '../cache';
-import { t } from '../i18n';
+import { htmlDecode, renderMarkdown, showToast, mediaUrl } from '../lib/utils';
+import { navigateTo } from '../core/router';
+import { DataCache } from '../core/cache';
+import { t } from '../core/i18n';
 
 // =========================================================================
 // Helpers — Upload

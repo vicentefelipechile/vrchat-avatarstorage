@@ -2,12 +2,12 @@
 // app.ts — Entry point: auth, nav, route registration
 // =========================================================================
 
-import { route, notFound, navigateTo, initRouter } from './router';
-import { setLanguage, getCurrentLang, t } from './i18n';
-import { DataCache } from './cache';
-import { showToast, TimeUnit, initLazyImages, initMediaPolling } from './utils';
-import { initUpdatesPoller } from './updates';
-import { initFeedClient } from './feed';
+import { route, notFound, navigateTo, initRouter } from './core/router';
+import { setLanguage, getCurrentLang, t } from './core/i18n';
+import { DataCache } from './core/cache';
+import { showToast, TimeUnit, initLazyImages, initMediaPolling } from './lib/utils';
+import { initUpdatesPoller } from './features/updates';
+import { initFeedClient } from './features/feed';
 import type { AuthUser } from './types';
 
 // Views

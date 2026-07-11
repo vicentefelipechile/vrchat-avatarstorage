@@ -6,11 +6,11 @@
 // Imports
 // =========================================================================
 
-import { getIcon } from '../icons';
-import { t } from '../i18n';
+import { getIcon } from '../lib/icons';
+import { t } from '../core/i18n';
 import type { RouteContext } from '../types';
-import { DataCache } from '../cache';
-import { TimeUnit, progressiveImg, htmlDecode } from '../utils';
+import { DataCache } from '../core/cache';
+import { TimeUnit, progressiveImg, htmlDecode } from '../lib/utils';
 
 interface AvatarAuthor {
 	uuid: string;

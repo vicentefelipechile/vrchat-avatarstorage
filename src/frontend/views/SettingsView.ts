@@ -3,8 +3,8 @@
 // =========================================================================
 
 import QRCode from 'qrcode';
-import { t } from '../i18n';
-import { renderTurnstile, resizeImage, showToast, loadingBtn, mediaUrl } from '../utils';
+import { t } from '../core/i18n';
+import { renderTurnstile, resizeImage, showToast, loadingBtn, mediaUrl } from '../lib/utils';
 import type { RouteContext } from '../types';
 
 // =========================================================================

@@ -2,8 +2,8 @@
 // views/BlogListView.ts — Blog post listing with pagination
 // =========================================================================
 
-import { t } from '../i18n';
-import { mediaUrl } from '../utils';
+import { t } from '../core/i18n';
+import { mediaUrl } from '../lib/utils';
 import type { RouteContext } from '../types';
 
 // =========================================================================

@@ -12,7 +12,7 @@
 // Persistent entries skip the TTL check and are kept until explicitly cleared via `clear()`.
 // =========================================================================================================
 
-import { TimeUnit } from "./utils";
+import { TimeUnit } from '../lib/time';
 
 // =========================================================================================================
 // Interfaces

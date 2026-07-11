@@ -2,10 +2,10 @@
 // views/UploadView.ts — Resource upload form with chunked upload support
 // =========================================================================
 
-import { t } from '../i18n';
-import { DataCache } from '../cache';
-import { renderMarkdown, showToast, uploadChunked, CHUNK_SIZE } from '../utils';
-import { navigateTo } from '../router';
+import { t } from '../core/i18n';
+import { DataCache } from '../core/cache';
+import { renderMarkdown, showToast, uploadChunked, CHUNK_SIZE } from '../lib/utils';
+import { navigateTo } from '../core/router';
 import type { RouteContext } from '../types';
 
 // =========================================================================

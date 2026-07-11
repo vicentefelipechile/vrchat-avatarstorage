@@ -7,9 +7,9 @@
 // Imports
 // =========================================================================
 
-import { t } from '../i18n';
-import { showToast, mediaUrl } from '../utils';
-import { navigateTo } from '../router';
+import { t } from '../core/i18n';
+import { showToast, mediaUrl } from '../lib/utils';
+import { navigateTo } from '../core/router';
 import type { RouteContext, Resource } from '../types';
 
 // =========================================================================

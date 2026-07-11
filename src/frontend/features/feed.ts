@@ -15,7 +15,7 @@
 // Imports
 // =========================================================================================================
 
-import { TimeUnit } from './utils';
+import { TimeUnit } from '../lib/utils';
 import { reconcileScopes, type FeedScope } from './feed-scopes';
 import { suspendPolling, resumePolling } from './updates';
 

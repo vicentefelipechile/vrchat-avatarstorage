@@ -2,11 +2,11 @@
 // views/HistoryView.ts — Revision history with word-level and meta diff
 // =========================================================================
 
-import { DataCache } from '../cache';
-import { t } from '../i18n';
-import { diffString } from '../diff';
+import { DataCache } from '../core/cache';
+import { t } from '../core/i18n';
+import { diffString } from '../lib/diff';
 import type { RouteContext, Resource } from '../types';
-import { TimeUnit } from '../utils';
+import { TimeUnit } from '../lib/utils';
 
 // =========================================================================
 // Types

@@ -2,9 +2,9 @@
 // views/RegisterView.ts — New account registration
 // =========================================================================
 
-import { t } from '../i18n';
-import { renderTurnstile, showToast } from '../utils';
-import { navigateTo } from '../router';
+import { t } from '../core/i18n';
+import { renderTurnstile, showToast } from '../lib/utils';
+import { navigateTo } from '../core/router';
 import type { RouteContext } from '../types';
 
 // =========================================================================

@@ -3,10 +3,10 @@
 // drag-and-drop reorder, up/down buttons, and a move-to-collection dropdown.
 // =========================================================================
 
-import { DataCache } from '../cache';
-import { t } from '../i18n';
-import { icons } from '../icons';
-import { stripMarkdown, progressiveImg, showToast } from '../utils';
+import { DataCache } from '../core/cache';
+import { t } from '../core/i18n';
+import { icons } from '../lib/icons';
+import { stripMarkdown, progressiveImg, showToast } from '../lib/utils';
 import type { RouteContext } from '../types';
 
 // =========================================================================

@@ -4,18 +4,18 @@
 // here, so esbuild bundles every locale into public/js/bundle.js.
 // ============================================================================
 
-import es from '../../public/i18n/es.json';
-import en from '../../public/i18n/en.json';
-import ru from '../../public/i18n/ru.json';
-import jp from '../../public/i18n/jp.json';
-import cn from '../../public/i18n/cn.json';
-import fr from '../../public/i18n/fr.json';
-import pt from '../../public/i18n/pt.json';
-import de from '../../public/i18n/de.json';
-import it from '../../public/i18n/it.json';
-import pl from '../../public/i18n/pl.json';
-import nl from '../../public/i18n/nl.json';
-import tr from '../../public/i18n/tr.json';
+import es from '../../../public/i18n/es.json';
+import en from '../../../public/i18n/en.json';
+import ru from '../../../public/i18n/ru.json';
+import jp from '../../../public/i18n/jp.json';
+import cn from '../../../public/i18n/cn.json';
+import fr from '../../../public/i18n/fr.json';
+import pt from '../../../public/i18n/pt.json';
+import de from '../../../public/i18n/de.json';
+import it from '../../../public/i18n/it.json';
+import pl from '../../../public/i18n/pl.json';
+import nl from '../../../public/i18n/nl.json';
+import tr from '../../../public/i18n/tr.json';
 
 type Translations = Record<string, unknown>;
 

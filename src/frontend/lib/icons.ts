@@ -2,7 +2,7 @@
 // frontend/icons.ts — Centralised icon helpers built on top of lucide
 //
 // Usage:
-//   import { icons } from '../icons';
+//   import { icons } from '../lib/icons';
 //   html += icons.bold();          // 16×16 by default
 //   html += icons.heart(20);       // custom size
 //   html += icon(SomeLucideIcon);  // generic escape hatch

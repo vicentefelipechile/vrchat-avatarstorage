@@ -8,16 +8,16 @@
 //   initMarkdownToolbar(el)     → Only wires toolbar + paste/pick on an existing textarea
 //
 // Usage — standalone toolbar (e.g. blog content editor):
-//   import { markdownToolbarHtml, initMarkdownToolbar } from '../comment-editor';
+//   import { markdownToolbarHtml, initMarkdownToolbar } from '../features/comment-editor';
 //   // inside viewFn:
 //   `<div class="blog-editor">${markdownToolbarHtml()}<textarea id="my-ta">...</textarea></div>`
 //   // inside afterFn:
 //   initMarkdownToolbar(document.getElementById('my-ta') as HTMLTextAreaElement);
 // =============================================================================
 
-import { t } from './i18n';
-import { renderTurnstile, showToast, mediaUrl } from './utils';
-import { icons } from './icons';
+import { t } from '../core/i18n';
+import { renderTurnstile, showToast, mediaUrl } from '../lib/utils';
+import { icons } from '../lib/icons';
 
 // -------------------------------------------------------------------------
 // Markdown action definitions

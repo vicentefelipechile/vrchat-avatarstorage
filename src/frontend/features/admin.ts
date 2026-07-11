@@ -1,7 +1,7 @@
-import { DataCache } from './cache';
-import { t } from './i18n';
-import { showToast } from './utils';
-import { showConfirm } from './confirm';
+import { DataCache } from '../core/cache';
+import { t } from '../core/i18n';
+import { showToast } from '../lib/utils';
+import { showConfirm } from '../lib/confirm';
 
 export async function deleteComment(uuid: string): Promise<void> {
 	const ok = await showConfirm({ message: t('admin.deleteConfirm'), confirmText: t('admin.delete'), danger: true });

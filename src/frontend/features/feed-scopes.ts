@@ -11,9 +11,9 @@
 // Imports
 // =========================================================================================================
 
-import { DataCache } from './cache';
-import { showToast, TimeUnit } from './utils';
-import { t } from './i18n';
+import { DataCache } from '../core/cache';
+import { showToast, TimeUnit } from '../lib/utils';
+import { t } from '../core/i18n';
 
 // =========================================================================================================
 // Types

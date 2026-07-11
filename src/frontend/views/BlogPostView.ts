@@ -2,10 +2,10 @@
 // views/BlogPostView.ts — Blog post reader with comments
 // =========================================================================
 
-import { t } from '../i18n';
-import { navigateTo } from '../router';
-import { renderMarkdown, showToast, mediaUrl, htmlDecode } from '../utils';
-import { commentEditorHtml, initCommentEditor } from '../comment-editor';
+import { t } from '../core/i18n';
+import { navigateTo } from '../core/router';
+import { renderMarkdown, showToast, mediaUrl, htmlDecode } from '../lib/utils';
+import { commentEditorHtml, initCommentEditor } from '../features/comment-editor';
 import type { RouteContext } from '../types';
 
 // =========================================================================

@@ -2,13 +2,14 @@
 // views/ItemView.ts — Resource detail page with gallery, comments, lightbox
 // =========================================================================
 
-import { t } from '../i18n';
-import { DataCache } from '../cache';
-import { TimeUnit, mediaUrl, progressiveImg, downloadHost, htmlDecode, initLazyImages, initMediaPolling, type HostInfo } from '../utils';
-import { deleteComment, approveResource, rejectResource, deactivateResource } from '../admin';
-import { icons, getIcon } from '../icons';
-import { commentEditorHtml, initCommentEditor } from '../comment-editor';
-import { navigateTo } from '../router';
+import { t } from '../core/i18n';
+import { DataCache } from '../core/cache';
+import { TimeUnit, mediaUrl, progressiveImg, htmlDecode, initLazyImages, initMediaPolling } from '../lib/utils';
+import { downloadHost, type HostInfo } from '../lib/download-hosts';
+import { deleteComment, approveResource, rejectResource, deactivateResource } from '../features/admin';
+import { icons, getIcon } from '../lib/icons';
+import { commentEditorHtml, initCommentEditor } from '../features/comment-editor';
+import { navigateTo } from '../core/router';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import type { RouteContext, Resource, Comment, ResourceLink, AvatarMeta, AssetMeta, ClothesMeta } from '../types';

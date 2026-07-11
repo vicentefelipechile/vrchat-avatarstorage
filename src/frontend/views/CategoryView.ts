@@ -6,9 +6,9 @@
 // Imports
 // =========================================================================
 
-import { DataCache } from '../cache';
-import { t } from '../i18n';
-import { stripMarkdown, TimeUnit, progressiveImg } from '../utils';
+import { DataCache } from '../core/cache';
+import { t } from '../core/i18n';
+import { stripMarkdown, TimeUnit, progressiveImg } from '../lib/utils';
 import type { RouteContext, Resource } from '../types';
 
 // =========================================================================

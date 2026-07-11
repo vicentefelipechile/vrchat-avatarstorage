@@ -2,10 +2,10 @@
 // views/BlogCreateView.ts — Create / edit a blog post (admin only)
 // =========================================================================
 
-import { t } from '../i18n';
-import { navigateTo } from '../router';
-import { renderMarkdown, showToast, mediaUrl } from '../utils';
-import { markdownToolbarHtml, initMarkdownToolbar } from '../comment-editor';
+import { t } from '../core/i18n';
+import { navigateTo } from '../core/router';
+import { renderMarkdown, showToast, mediaUrl } from '../lib/utils';
+import { markdownToolbarHtml, initMarkdownToolbar } from '../features/comment-editor';
 import type { RouteContext } from '../types';
 
 // =========================================================================
