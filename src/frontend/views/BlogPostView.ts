@@ -4,7 +4,7 @@
 
 import { t } from '../i18n';
 import { navigateTo } from '../router';
-import { renderMarkdown, showToast, mediaUrl } from '../utils';
+import { renderMarkdown, showToast, mediaUrl, htmlDecode } from '../utils';
 import { commentEditorHtml, initCommentEditor } from '../comment-editor';
 import type { RouteContext } from '../types';
 
@@ -99,7 +99,7 @@ export async function blogPostView(ctx: RouteContext): Promise<string> {
 		return `<p class="error-text">${t('common.error')}</p>`;
 	}
 
-	document.title = `VRCStorage — ${post.title}`;
+	document.title = `VRCStorage — ${htmlDecode(post.title)}`;
 
 	const date = new Date(post.created_at * 1000).toLocaleDateString();
 	const authorName = post.author_display === 'team' ? t('blog.team') : (post.author_username ?? '');

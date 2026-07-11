@@ -10,7 +10,7 @@ import { getIcon } from '../icons';
 import { t } from '../i18n';
 import type { RouteContext } from '../types';
 import { DataCache } from '../cache';
-import { TimeUnit, progressiveImg } from '../utils';
+import { TimeUnit, progressiveImg, htmlDecode } from '../utils';
 
 interface AvatarAuthor {
 	uuid: string;
@@ -112,7 +112,7 @@ export async function authorView(ctx: RouteContext): Promise<string> {
 	if (!data) return `<p class="error-message">${t('common.loadError')}</p>`;
 
 	const { author, avatars, pagination } = data;
-	document.title = `${author.name} — VRCStorage`;
+	document.title = `${htmlDecode(author.name)} — VRCStorage`;
 
 	const avatarHtml = author.avatar_url
 		? `<img class="author-profile-avatar" src="${author.avatar_url}" alt="${author.name}" loading="lazy">`

@@ -840,7 +840,9 @@ export async function uploadAfter(_ctx: RouteContext): Promise<void> {
 			.filter(Boolean)
 			.map((url, i) => ({
 				link_url: url,
-				link_title: 'Backup ' + (i + 1),
+				// No title: the detail view names the button after the recognised host (Google Drive, MEGA, …),
+				// falling back to "Backup N" only when the host is unknown.
+				link_title: null,
 				link_type: 'download',
 				display_order: startOrder + i + 1,
 			}));

@@ -187,7 +187,14 @@
 			"tabPreview": "Voorbeeld",
 			"previewEmpty": "Nog niets om te bekijken."
 		},
-		"specifications": "Specificaties"
+		"specifications": "Specificaties",
+		"noDownloads": "Geen downloads beschikbaar.",
+		"approved": "Bron goedgekeurd.",
+		"deactivated": "Bron gedeactiveerd.",
+		"downloadPrimary": "Downloaden",
+		"downloadServer": "Downloadserver",
+		"originalArticle": "Origineel artikel",
+		"localServer": "Lokale server"
 	},
 	"edit": {
 		"title": "Bron bewerken",
@@ -753,5 +760,10 @@
 		"namePlaceholder": "Collectienaam",
 		"maxReached": "Maximum collecties bereikt",
 		"created": "Verzameling «{name}» aangemaakt"
+	},
+	"confirm": {
+		"title": "Bevestigen",
+		"confirm": "Bevestigen",
+		"cancel": "Annuleren"
 	}
 }

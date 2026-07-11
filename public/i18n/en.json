@@ -177,7 +177,14 @@
 			"tabPreview": "Preview",
 			"previewEmpty": "Nothing to preview yet."
 		},
-		"specifications": "Specifications"
+		"specifications": "Specifications",
+		"noDownloads": "No downloads available.",
+		"approved": "Resource approved.",
+		"deactivated": "Resource deactivated.",
+		"downloadPrimary": "Download",
+		"downloadServer": "Download server",
+		"originalArticle": "Original article",
+		"localServer": "Local server"
 	},
 	"edit": {
 		"title": "Edit Resource",
@@ -715,5 +722,10 @@
 		"blog": "New blog activity",
 		"comments": "New comments posted",
 		"multiple": "New content available"
+	},
+	"confirm": {
+		"title": "Confirm",
+		"confirm": "Confirm",
+		"cancel": "Cancel"
 	}
 }

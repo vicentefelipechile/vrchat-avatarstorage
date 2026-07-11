@@ -36,7 +36,12 @@ import {
 	User,
 	MessageCircle,
 	Check,
+	Download,
+	Cloud,
+	HardDrive,
+	Package,
 } from 'lucide';
+import { siGoogledrive, siMega, siMediafire, siDropbox, siDiscord, siGithub, siGumroad, siPayhip, siItchdotio } from 'simple-icons';
 
 // Lucide's internal node data: [tagName, attrs, children?]
 type LucideNode = [string, Record<string, string | number>, LucideNode[]?];
@@ -65,6 +70,18 @@ export function icon(iconData: LucideIconData, size = 16, extraAttrs = ''): stri
 	return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"${extraAttrs ? ' ' + extraAttrs : ''}>${inner}</svg>`;
 }
 
+// simple-icons exports each brand mark as an object; only its single SVG `path` is needed to draw it.
+type SimpleIcon = { path: string };
+
+/**
+ * Renders a simple-icons brand mark (Google Drive, MEGA, …) as an inline SVG. Unlike Lucide's stroked
+ * line icons, these are filled single paths; `fill="currentColor"` keeps them monochromatic so a brand
+ * logo sits next to a Lucide icon without clashing with the flat, single-colour design.
+ */
+export function brandIcon(data: SimpleIcon, size = 16): string {
+	return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="${data.path}"/></svg>`;
+}
+
 /**
  * Pre-bound icon shortcuts. Each function accepts an optional `size` argument.
  * Add new entries here as other views require them.
@@ -87,6 +104,10 @@ export const icons = {
 	edit: (size = 16, extraAttrs = '') => icon(Pencil as unknown as LucideIconData, size, extraAttrs),
 	history: (size = 16, extraAttrs = '') => icon(History as unknown as LucideIconData, size, extraAttrs),
 	check: (size = 16, extraAttrs = '') => icon(Check as unknown as LucideIconData, size, extraAttrs),
+	download: (size = 16, extraAttrs = '') => icon(Download as unknown as LucideIconData, size, extraAttrs),
+	cloud: (size = 16, extraAttrs = '') => icon(Cloud as unknown as LucideIconData, size, extraAttrs),
+	'hard-drive': (size = 16, extraAttrs = '') => icon(HardDrive as unknown as LucideIconData, size, extraAttrs),
+	package: (size = 16, extraAttrs = '') => icon(Package as unknown as LucideIconData, size, extraAttrs),
 	x: (size = 16, extraAttrs = '') => icon(X as unknown as LucideIconData, size, extraAttrs),
 	plus: (size = 16, extraAttrs = '') => icon(Plus as unknown as LucideIconData, size, extraAttrs),
 	trash: (size = 16, extraAttrs = '') => icon(Trash2 as unknown as LucideIconData, size, extraAttrs),
@@ -103,6 +124,18 @@ export const icons = {
 	'credit-card': (size = 16, extraAttrs = '') => icon(CreditCard as unknown as LucideIconData, size, extraAttrs),
 	user: (size = 16, extraAttrs = '') => icon(User as unknown as LucideIconData, size, extraAttrs),
 	'message-circle': (size = 16, extraAttrs = '') => icon(MessageCircle as unknown as LucideIconData, size, extraAttrs),
+
+	// Download-host brand marks (simple-icons). Keyed by simple-icons slug; hosts without a mark fall back
+	// to a Lucide icon in the download-host table. Brand marks ignore extraAttrs — they take size only.
+	googledrive: (size = 16) => brandIcon(siGoogledrive, size),
+	mega: (size = 16) => brandIcon(siMega, size),
+	mediafire: (size = 16) => brandIcon(siMediafire, size),
+	dropbox: (size = 16) => brandIcon(siDropbox, size),
+	discord: (size = 16) => brandIcon(siDiscord, size),
+	github: (size = 16) => brandIcon(siGithub, size),
+	gumroad: (size = 16) => brandIcon(siGumroad, size),
+	payhip: (size = 16) => brandIcon(siPayhip, size),
+	itchdotio: (size = 16) => brandIcon(siItchdotio, size),
 } as const;
 
 /**

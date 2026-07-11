@@ -177,7 +177,14 @@
 			"tabPreview": "プレビュー",
 			"previewEmpty": "まだプレビューするものがありません。"
 		},
-		"specifications": "仕様"
+		"specifications": "仕様",
+		"noDownloads": "利用可能なダウンロードはありません。",
+		"approved": "リソースを承認しました。",
+		"deactivated": "リソースを無効化しました。",
+		"downloadPrimary": "ダウンロード",
+		"downloadServer": "ダウンロードサーバー",
+		"originalArticle": "オリジナル記事",
+		"localServer": "ローカルサーバー"
 	},
 	"edit": {
 		"title": "リソースを編集",
@@ -715,5 +722,10 @@
 		"namePlaceholder": "コレクション名",
 		"maxReached": "コレクションの上限に達しました",
 		"created": "コレクション「{name}」を作成しました"
+	},
+	"confirm": {
+		"title": "確認",
+		"confirm": "確認",
+		"cancel": "キャンセル"
 	}
 }

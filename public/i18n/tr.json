@@ -187,7 +187,14 @@
 			"tabPreview": "Önizleme",
 			"previewEmpty": "Henüz önizlenecek bir şey yok."
 		},
-		"specifications": "Özellikler"
+		"specifications": "Özellikler",
+		"noDownloads": "Kullanılabilir indirme yok.",
+		"approved": "Kaynak onaylandı.",
+		"deactivated": "Kaynak devre dışı bırakıldı.",
+		"downloadPrimary": "İndir",
+		"downloadServer": "İndirme sunucusu",
+		"originalArticle": "Orijinal sayfa",
+		"localServer": "Yerel sunucu"
 	},
 	"edit": {
 		"title": "Kaynağı Düzenle",
@@ -753,5 +760,10 @@
 		"namePlaceholder": "Koleksiyon adı",
 		"maxReached": "Maksimum koleksiyon sayısına ulaşıldı",
 		"created": "«{name}» koleksiyonu oluşturuldu"
+	},
+	"confirm": {
+		"title": "Onayla",
+		"confirm": "Onayla",
+		"cancel": "İptal"
 	}
 }

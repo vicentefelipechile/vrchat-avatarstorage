@@ -177,7 +177,14 @@
 			"tabPreview": "Предпросмотр",
 			"previewEmpty": "Пока нечего просматривать."
 		},
-		"specifications": "Характеристики"
+		"specifications": "Характеристики",
+		"noDownloads": "Нет доступных загрузок.",
+		"approved": "Ресурс одобрен.",
+		"deactivated": "Ресурс деактивирован.",
+		"downloadPrimary": "Скачать",
+		"downloadServer": "Сервер загрузки",
+		"originalArticle": "Оригинальная страница",
+		"localServer": "Локальный сервер"
 	},
 	"edit": {
 		"title": "Редактировать Ресурс",
@@ -715,5 +722,10 @@
 		"namePlaceholder": "Название коллекции",
 		"maxReached": "Достигнут лимит коллекций",
 		"created": "Коллекция «{name}» создана"
+	},
+	"confirm": {
+		"title": "Подтвердить",
+		"confirm": "Подтвердить",
+		"cancel": "Отмена"
 	}
 }

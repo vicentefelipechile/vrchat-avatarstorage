@@ -29,7 +29,7 @@ This guide is for agentic coding agents (like yourself) operating in the VRCStor
 - **Cron:** Scheduled worker runs daily at `0 3 * * *` UTC — the `scheduled` handler (`src/http/scheduled.ts`) reuses `AdminService.cleanupOrphanedMedia`.
 - **Validation:** [Zod](https://zod.dev/) for request body and parameter validation.
 - **Frontend Bundler:** [esbuild](https://esbuild.github.io/) — compiles `src/frontend/` → `public/js/bundle.js`.
-- **Icons:** [lucide](https://lucide.dev/) — icon library used via centralized `src/frontend/icons.ts` module.
+- **Icons:** [lucide](https://lucide.dev/) (UI line icons) + [simple-icons](https://simpleicons.org/) (download-host brand marks) — both wrapped by the centralized `src/frontend/icons.ts` module.
 
 ## Common Commands
 
@@ -374,11 +374,29 @@ The frontend is **TypeScript-first** and compiled with esbuild:
 
 ### Icons
 
-Icons are managed via a centralized registry in `src/frontend/icons.ts`, built on the `lucide` package.
+Icons are managed via a centralized registry in `src/frontend/icons.ts`, built on the `lucide` package (line icons) and `simple-icons` (brand marks).
 
 - Import icons from `./icons` — never inline raw SVG strings in views.
 - The module exports a typed `getIcon(name, size?)` function that returns an SVG string.
 - This ensures consistent sizing and stroke width across the entire UI.
+- **Lucide** icons (UI chrome) are registered via the `icon()` renderer. **simple-icons** brand marks (download-host logos: Google Drive, MEGA, Gumroad, itch.io, …) are registered via the `brandIcon()` renderer in the same file. Import only the specific `si*` marks you need — esbuild tree-shakes them, so the 3400-icon library never bundles whole.
+- Brand marks render in `fill="currentColor"`, **not** the brand hex, so they stay flat and monochromatic like the rest of the design. Register a new download host by adding its `si*` import + registry entry, then referencing that key from `KNOWN_HOSTS` (see [Download-host recognition](#download-host-recognition)).
+
+### Download-host recognition
+
+The resource detail page (`ItemView`) labels every download link by its origin site instead of a bare "Backup N". `downloadHost(url)` in `src/frontend/utils.ts` resolves a URL to a `HostInfo` — `{ label, icon, kind }`:
+
+- **`kind`** classifies the link's role and drives its caption and prominence:
+  - `'local'` — our own R2 file (a `/api/download/…` link, relative or fully-qualified). Highlighted as a primary source; caption `item.localServer`.
+  - `'server'` — an external download mirror (Google Drive, MEGA, MediaFire, workupload, …); caption `item.downloadServer`.
+  - `'article'` — the storefront/original listing the file comes from (BOOTH, Gumroad, Payhip, itch.io, …); caption `item.originalArticle`.
+- **`kind` is a property of the host, not the link's position.** A store link reads as the original article wherever it sits in the list; every R2 file reads as a local server. Do not infer role from ordering.
+- **`label`** is the human name (`Google Drive`, `MEGA`, `VRCStorage`, …). These are **brand/proper names and are never localized** — they come from `KNOWN_HOSTS` string literals, never `t()`. Only the `kind` captions above go through `t()`.
+- **`icon`** is a key into the `icons.ts` registry — a simple-icons brand slug where a mark exists, else a Lucide fallback.
+
+`KNOWN_HOSTS` (ordered most-specific first) is the single table matching a hostname to its `label`/`icon`/`kind`. Unknown hosts fall back to the bare hostname, a globe icon, and `'server'`. To add a host: add a `KNOWN_HOSTS` row; if it needs a brand mark, register that mark in `icons.ts` first (see [Icons](#icons)).
+
+The button label in `ItemView` prefers a link's own title, then the recognised host name, then `Backup N`. A stored generic `"Backup N"` title (older uploads hardcoded one) is treated as no title so the host name still wins. New uploads store `link_title: null` for backup links — the view derives the label.
 
 ### Shared Markdown & Comment Editor
 
@@ -511,7 +529,7 @@ GET https://cdn.vrcstorage.lat/{uuid}?res=[low|med|original]&format=[webp|png]
 Frontend utilities in `src/frontend/utils.ts`:
 - `mediaUrl(uuid, res?, format?)` — constructs a CDN URL.
 - `progressiveImg(opts)` — renders an `<img>` with blur-up loading (uses `data-src` + `.lazy-img` class).
-- `initLazyImages()` — wires an `IntersectionObserver` to replace blurred placeholders with real images. Called from `app.ts` on every `route-changed` event.
+- `initLazyImages()` — resolves `.lazy-img[data-src]` images against the browser cache (dropping the blur synchronously on a hit) and wires an `IntersectionObserver` to blur-up the rest. Idempotent — already-bound images are skipped, so it is safe to call repeatedly. Fired globally from `app.ts` on every `route-changed` event; list views (`AvatarsView`/`ClothesView`/`AssetsView`) and `ItemView` also call it inside their `after` fn so the cache probe runs in the same tick the DOM lands — this removes the low-res flash when reopening a resource whose thumbnails are already cached (the trailing `route-changed` pass is then a no-op).
 
 #### Orphan Cleanup
 

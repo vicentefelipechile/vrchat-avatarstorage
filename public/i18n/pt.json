@@ -177,7 +177,14 @@
 			"tabPreview": "Pré-visualização",
 			"previewEmpty": "Nada para pré-visualizar ainda."
 		},
-		"specifications": "Especificações"
+		"specifications": "Especificações",
+		"noDownloads": "Nenhum download disponível.",
+		"approved": "Recurso aprovado.",
+		"deactivated": "Recurso desativado.",
+		"downloadPrimary": "Baixar",
+		"downloadServer": "Servidor de download",
+		"originalArticle": "Artigo original",
+		"localServer": "Servidor local"
 	},
 	"edit": {
 		"title": "Editar Recurso",
@@ -715,5 +722,10 @@
 		"namePlaceholder": "Nome da coleção",
 		"maxReached": "Máximo de coleções atingido",
 		"created": "Coleção «{name}» criada"
+	},
+	"confirm": {
+		"title": "Confirmar",
+		"confirm": "Confirmar",
+		"cancel": "Cancelar"
 	}
 }

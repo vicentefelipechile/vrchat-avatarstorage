@@ -187,7 +187,14 @@
 			"tabPreview": "Podgląd",
 			"previewEmpty": "Nie ma jeszcze nic do podglądu."
 		},
-		"specifications": "Specyfikacje"
+		"specifications": "Specyfikacje",
+		"noDownloads": "Brak dostępnych pobrań.",
+		"approved": "Zasób zatwierdzony.",
+		"deactivated": "Zasób dezaktywowany.",
+		"downloadPrimary": "Pobierz",
+		"downloadServer": "Serwer pobierania",
+		"originalArticle": "Oryginalny artykuł",
+		"localServer": "Serwer lokalny"
 	},
 	"edit": {
 		"title": "Edytuj zasób",
@@ -754,5 +761,10 @@
 		"namePlaceholder": "Nazwa kolekcji",
 		"maxReached": "Osiągnięto limit kolekcji",
 		"created": "Utworzono kolekcję „{name}”"
+	},
+	"confirm": {
+		"title": "Potwierdź",
+		"confirm": "Potwierdź",
+		"cancel": "Anuluj"
 	}
 }

@@ -1,9 +1,11 @@
 import { DataCache } from './cache';
 import { t } from './i18n';
 import { showToast } from './utils';
+import { showConfirm } from './confirm';
 
 export async function deleteComment(uuid: string): Promise<void> {
-	if (!confirm(t('admin.deleteConfirm'))) return;
+	const ok = await showConfirm({ message: t('admin.deleteConfirm'), confirmText: t('admin.delete'), danger: true });
+	if (!ok) return;
 
 	try {
 		const res = await fetch(`/api/comments/${uuid}`, { method: 'DELETE' });
@@ -21,12 +23,13 @@ export async function deleteComment(uuid: string): Promise<void> {
 	}
 }
 
-export async function approveResource(uuid: string): Promise<void> {
+export async function approveResource(uuid: string, onDone?: () => void | Promise<void>): Promise<void> {
 	try {
 		const res = await fetch(`/api/admin/resource/${uuid}/approve`, { method: 'POST' });
 		if (res.ok) {
 			DataCache.clear(`/api/resources/${uuid}`);
-			location.reload();
+			showToast(t('item.approved'), 'success');
+			await onDone?.();
 		} else {
 			showToast('Error approving resource', 'error');
 		}
@@ -37,7 +40,8 @@ export async function approveResource(uuid: string): Promise<void> {
 }
 
 export async function rejectResource(uuid: string): Promise<void> {
-	if (!confirm(t('item.confirmReject'))) return;
+	const ok = await showConfirm({ message: t('item.confirmReject'), confirmText: t('item.reject'), danger: true });
+	if (!ok) return;
 	try {
 		const res = await fetch(`/api/admin/resource/${uuid}/reject`, { method: 'POST' });
 		if (res.ok) {
@@ -52,13 +56,15 @@ export async function rejectResource(uuid: string): Promise<void> {
 	}
 }
 
-export async function deactivateResource(uuid: string): Promise<void> {
-	if (!confirm(t('item.confirmDeactivate'))) return;
+export async function deactivateResource(uuid: string, onDone?: () => void | Promise<void>): Promise<void> {
+	const ok = await showConfirm({ message: t('item.confirmDeactivate'), confirmText: t('item.deactivate'), danger: true });
+	if (!ok) return;
 	try {
 		const res = await fetch(`/api/admin/resource/${uuid}/deactivate`, { method: 'POST' });
 		if (res.ok) {
 			DataCache.clear(`/api/resources/${uuid}`);
-			location.reload();
+			showToast(t('item.deactivated'), 'success');
+			await onDone?.();
 		} else {
 			showToast('Error deactivating resource', 'error');
 		}

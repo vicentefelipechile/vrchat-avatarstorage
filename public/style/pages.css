@@ -564,3 +564,58 @@ footer p {
 	text-align: center;
 	color: var(--text-muted);
 }
+
+/* ============================================================
+   CONFIRM MODAL (showConfirm)
+   ============================================================ */
+.confirm-overlay {
+	display: none;
+	position: fixed;
+	inset: 0;
+	background: rgba(0, 0, 0, 0.75);
+	z-index: 10001;
+	align-items: center;
+	justify-content: center;
+	padding: 20px;
+}
+
+.confirm-overlay.active {
+	display: flex;
+}
+
+.confirm-modal {
+	background: var(--bg-card);
+	border: 2px solid var(--border-color);
+	max-width: 420px;
+	width: 100%;
+	padding: 24px 30px;
+}
+
+.confirm-title {
+	margin: 0 0 12px 0;
+	font-size: 1.05rem;
+}
+
+.confirm-message {
+	margin: 0 0 20px 0;
+	line-height: 1.6;
+	color: var(--text-main);
+	word-break: break-word;
+}
+
+.confirm-actions {
+	display: flex;
+	justify-content: flex-end;
+	gap: 10px;
+	flex-wrap: wrap;
+}
+
+@media (max-width: 480px) {
+	.confirm-modal {
+		padding: 18px 16px;
+	}
+
+	.confirm-actions .btn {
+		flex: 1;
+	}
+}

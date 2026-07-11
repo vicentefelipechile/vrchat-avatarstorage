@@ -177,7 +177,14 @@
 			"tabPreview": "预览",
 			"previewEmpty": "暂无可预览的内容。"
 		},
-		"specifications": "规格"
+		"specifications": "规格",
+		"noDownloads": "没有可用的下载。",
+		"approved": "资源已批准。",
+		"deactivated": "资源已停用。",
+		"downloadPrimary": "下载",
+		"downloadServer": "下载服务器",
+		"originalArticle": "原始页面",
+		"localServer": "本地服务器"
 	},
 	"edit": {
 		"title": "编辑资源",
@@ -720,5 +727,10 @@
 		"namePlaceholder": "收藏夹名称",
 		"maxReached": "已达到最大收藏夹数",
 		"created": "已创建收藏集「{name}」"
+	},
+	"confirm": {
+		"title": "确认",
+		"confirm": "确认",
+		"cancel": "取消"
 	}
 }

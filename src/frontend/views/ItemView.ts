@@ -4,10 +4,11 @@
 
 import { t } from '../i18n';
 import { DataCache } from '../cache';
-import { showToast, TimeUnit, mediaUrl, progressiveImg } from '../utils';
+import { TimeUnit, mediaUrl, progressiveImg, downloadHost, htmlDecode, initLazyImages, type HostInfo } from '../utils';
 import { deleteComment, approveResource, rejectResource, deactivateResource } from '../admin';
-import { icons } from '../icons';
+import { icons, getIcon } from '../icons';
 import { commentEditorHtml, initCommentEditor } from '../comment-editor';
+import { navigateTo } from '../router';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import type { RouteContext, Resource, Comment, ResourceLink, AvatarMeta, AssetMeta, ClothesMeta } from '../types';
@@ -128,6 +129,44 @@ function renderCategoryMeta(res: Resource): string {
 		</div>
 		<hr>`;
 }
+// Older resources stored an auto-generated "Backup N" as the link title; it is treated as no title so the
+// host name still wins over that placeholder.
+const GENERIC_BACKUP_TITLE = /^backup\s*\d+$/i;
+
+/** The caption under a download button, naming what kind of source it is. */
+function kindCaption(kind: HostInfo['kind']): string {
+	if (kind === 'local') return t('item.localServer');
+	if (kind === 'article') return t('item.originalArticle');
+	return t('item.downloadServer');
+}
+
+/** One download button. Links served from our own R2 ('local') are highlighted as the files we host; every
+ *  other link is a secondary source that surfaces its origin site's brand mark and name. `label` names the
+ *  button — a link's own title, else its recognised host, else "Backup N". */
+function downloadButton(url: string, title: string | null | undefined, fallbackIndex: number): string {
+	const host = downloadHost(url);
+	const highlighted = host.kind === 'local';
+
+	let label: string;
+	if (title && !GENERIC_BACKUP_TITLE.test(title.trim())) {
+		label = title;
+	} else if (host.label && host.icon !== 'globe') {
+		label = host.label;
+	} else {
+		label = `${t('item.backup')} ${fallbackIndex}`;
+	}
+
+	// A local file leads with the download glyph; external sources show their host mark.
+	const icon = getIcon(highlighted ? 'download' : host.icon, 18);
+	const sub = `<span class="download-host">${kindCaption(host.kind)}</span>`;
+	return `
+		<a href="${url}" target="_blank" rel="noopener" class="download-btn${highlighted ? '' : ' secondary'}">
+			${icon}
+			<span class="download-file-name">${label}</span>
+			${sub}
+		</a>`;
+}
+
 function downloadSection(res: Resource): string {
 	const { user } = window.appState;
 	if (!user) {
@@ -140,26 +179,19 @@ function downloadSection(res: Resource): string {
 	}
 
 	const downloadLinks: ResourceLink[] = (res.links ?? []).filter((l) => l.link_type === 'download');
+	let buttons: string;
+
 	if (downloadLinks.length > 0) {
-		const linksHtml = downloadLinks
-			.map((link, i) => {
-				const text = link.link_title ?? `${t('item.backup')} ${downloadLinks.slice(0, i).filter((l) => !l.link_title).length + 1}`;
-				const style = link.link_title ? '' : ' style="background:#555"';
-				return `<a href="${link.link_url}" target="_blank" class="btn"${style}>${text}</a>`;
-			})
-			.join('');
-		return `<div style="display:flex;gap:10px;flex-wrap:wrap">${linksHtml}</div>`;
+		buttons = downloadLinks.map((link, i) => downloadButton(link.link_url, link.link_title, i + 1)).join('');
+	} else {
+		// Legacy fallback: a single main URL plus loose backup URLs.
+		const main = res.downloadUrl ? downloadButton(res.downloadUrl, null, 1) : '';
+		const backups = (res.backupUrls ?? []).map((url, i) => downloadButton(url, null, i + 1)).join('');
+		buttons = main + backups;
 	}
 
-	// Legacy fallback
-	const backups = (res.backupUrls ?? [])
-		.map((url, i) => `<a href="${url}" target="_blank" class="btn" style="background:#666">${t('item.backup')} ${i + 1}</a>`)
-		.join('');
-	return `
-		<div style="display:flex;gap:10px;flex-wrap:wrap">
-			<a href="${res.downloadUrl}" target="_blank" class="btn">${t('item.downloadMain')}</a>
-			${backups}
-		</div>`;
+	if (!buttons) return `<p class="download-empty">${t('item.noDownloads')}</p>`;
+	return `<div class="download-buttons">${buttons}</div>`;
 }
 
 /** A lightbox slide: `preview` is the low-res variant (already cached by the gallery thumbnail, shown
@@ -187,7 +219,7 @@ function buildGallery(res: Resource): { html: string; images: LightboxImage[] } 
 		images.push({ preview: url, full: url });
 		html += `
 			<div class="gallery-item">
-				<div class="gallery-item-link" data-lightbox-index="${idx}" style="display:block;width:100%;height:100%;cursor:zoom-in">
+				<div class="gallery-item-link" data-lightbox-index="${idx}" data-full-src="${url}">
 					<img src="${url}" alt="Thumbnail" loading="lazy">
 				</div>
 			</div>`;
@@ -216,7 +248,7 @@ function buildGallery(res: Resource): { html: string; images: LightboxImage[] } 
 					: `<img src="${fallbackUrl}" alt="Gallery Image" loading="lazy">`;
 				html += `
 					<div class="gallery-item">
-						<div class="gallery-item-link" data-lightbox-index="${idx}" style="display:block;width:100%;height:100%;cursor:zoom-in">
+						<div class="gallery-item-link" data-lightbox-index="${idx}" data-full-src="${fullUrl}">
 							${imgHtml}
 						</div>
 					</div>`;
@@ -231,25 +263,24 @@ function buildGallery(res: Resource): { html: string; images: LightboxImage[] } 
 function adminActionsHtml(res: Resource): string {
 	const { isAdmin, user } = window.appState;
 	const isOwner = user && res.author && user.username === res.author.username;
+	const pending = !res.is_active || res.is_active === 0;
 
-	if (!res.is_active || res.is_active === 0) {
+	if (pending) {
 		if (isAdmin) {
 			return `
-				<hr>
-				<div style="background:#fff3cd;color:#856404;padding:15px;border:2px solid #ffeeba;margin-top:10px;margin-bottom:20px">
-					<h3>${t('item.adminPanel')}</h3>
-					<p>${t('item.pendingApproval')}</p>
-					<div style="display:flex;gap:10px;flex-wrap:wrap">
-						<button class="btn" style="background-color:#28a745" id="btn-approve-${res.uuid}">${t('item.approve')}</button>
-						<button class="btn" style="background-color:#dc3545" id="btn-reject-${res.uuid}">${t('item.reject')}</button>
+				<div class="admin-panel admin-panel--pending">
+					<h3 class="admin-panel-title">${icons.monitor(16)} ${t('item.adminPanel')}</h3>
+					<p class="admin-panel-note">${t('item.pendingApproval')}</p>
+					<div class="admin-panel-actions">
+						<button class="btn" id="btn-approve-${res.uuid}">${icons.check(16)} ${t('item.approve')}</button>
+						<button class="btn btn-danger" id="btn-reject-${res.uuid}">${icons.x(16)} ${t('item.reject')}</button>
 					</div>
 				</div>`;
 		}
 		if (isOwner) {
 			return `
-				<hr>
-				<div style="background:#fff3cd;color:#856404;padding:15px;border:2px solid #ffeeba;margin-top:10px;margin-bottom:20px">
-					<p>${t('item.underReview')}</p>
+				<div class="admin-panel admin-panel--pending">
+					<p class="admin-panel-note">${t('item.underReview')}</p>
 				</div>`;
 		}
 		return '';
@@ -257,10 +288,10 @@ function adminActionsHtml(res: Resource): string {
 
 	if (isAdmin) {
 		return `
-			<div style="background:#d1ecf1;color:#0c5460;padding:15px;border:2px solid #bee5eb;margin-top:10px;margin-bottom:20px">
-				<h3>${t('item.adminPanel')}</h3>
-				<div style="display:flex;gap:10px;flex-wrap:wrap">
-					<button class="btn" style="background-color:#ffc107;color:black" id="btn-deactivate-${res.uuid}">${t('item.deactivate')}</button>
+			<div class="admin-panel">
+				<h3 class="admin-panel-title">${icons.monitor(16)} ${t('item.adminPanel')}</h3>
+				<div class="admin-panel-actions">
+					<button class="btn btn-danger" id="btn-deactivate-${res.uuid}">${t('item.deactivate')}</button>
 				</div>
 			</div>`;
 	}
@@ -268,23 +299,29 @@ function adminActionsHtml(res: Resource): string {
 }
 
 function renderCommentsList(comments: Comment[], isAdmin: boolean): string {
-	if (!comments?.length) return `<p>${t('item.noComments')}</p>`;
+	if (!comments?.length) return `<p class="comments-empty">${t('item.noComments')}</p>`;
 
 	return comments
 		.map((c) => {
 			const content = DOMPurify.sanitize(marked.parse(c.text) as string);
+			const when = new Date(c.timestamp).toLocaleString();
+
+			const del = isAdmin
+				? `<button type="button" class="comment-delete" data-comment-id="${c.uuid}" title="${t('admin.delete')}" aria-label="${t('admin.delete')}">${icons.trash(15)}</button>`
+				: '';
 
 			return `
-			<div id="comment-${c.uuid}" class="comment" style="display:flex;gap:10px">
-				<div style="flex-shrink:0">
-					<img src="${c.author_avatar}" alt="${c.author}" class="comment-avatar">
-				</div>
-				<div style="flex-grow:1">
-					<div style="font-weight:bold;margin-bottom:5px;display:flex;justify-content:space-between;align-items:center">
-						<span>${c.author} <span style="font-weight:normal;font-size:0.8em;color:var(--text-muted)">(${new Date(c.timestamp).toLocaleString()})</span></span>
-						${isAdmin ? `<button onclick="deleteComment('${c.uuid}')" class="btn" style="padding:2px 5px;font-size:0.8em;background:#ff4444;color:white">${t('admin.delete')}</button>` : ''}
+			<div id="comment-${c.uuid}" class="comment">
+				<img src="${c.author_avatar}" alt="${c.author}" class="comment-avatar">
+				<div class="comment-body">
+					<div class="comment-meta">
+						<div class="comment-byline">
+							<span class="comment-author">${c.author}</span>
+							<time class="comment-date">${when}</time>
+						</div>
+						${del}
 					</div>
-					<div class="markdown-body" style="word-break:break-word">${content}</div>
+					<div class="markdown-body comment-content">${content}</div>
 				</div>
 			</div>`;
 		})
@@ -427,7 +464,7 @@ export async function itemView(ctx: RouteContext): Promise<string> {
 		return `<h1>${t('item.notFound')}</h1>`;
 	}
 
-	document.title = `VRCStorage — ${res.title}`;
+	document.title = `VRCStorage — ${htmlDecode(res.title)}`;
 
 	const { user, isAdmin } = window.appState;
 	const category = res.category ? t('cats.' + res.category) || res.category : t('common.unknown');
@@ -517,15 +554,39 @@ export async function itemAfter(ctx: RouteContext): Promise<void> {
 	const lightboxData = box?.dataset.lightbox;
 	const lightboxImages: LightboxImage[] = lightboxData ? JSON.parse(decodeURIComponent(lightboxData)) : [];
 
+	// Resolve the gallery thumbnails against the browser cache now, in the same tick the DOM lands, rather
+	// than waiting for the trailing `route-changed`. On a return visit the low-res variant is already
+	// cached, so this drops the blur before the first paint — no low-res flash when reopening an item.
+	// Idempotent, so the later `route-changed` pass is a no-op here.
+	initLazyImages();
+
 	setupLightbox(lightboxImages);
 
-	// Admin actions
-	document.getElementById(`btn-approve-${uuid}`)?.addEventListener('click', () => approveResource(uuid));
-	document.getElementById(`btn-reject-${uuid}`)?.addEventListener('click', () => rejectResource(uuid));
-	document.getElementById(`btn-deactivate-${uuid}`)?.addEventListener('click', () => deactivateResource(uuid));
+	// Warm the full-res original into the browser cache on first hover, so opening the lightbox is
+	// instant. `once` fires the fetch a single time per thumbnail; the browser cache dedupes it against
+	// the lightbox's own later request.
+	document.querySelectorAll<HTMLElement>('.gallery-item-link[data-full-src]').forEach((el) => {
+		el.addEventListener(
+			'mouseenter',
+			() => {
+				if (el.dataset.fullSrc) new Image().src = el.dataset.fullSrc;
+			},
+			{ once: true },
+		);
+	});
 
-	// Expose deleteComment
-	(window as unknown as Record<string, unknown>)['deleteComment'] = deleteComment;
+	// Admin actions — re-render the view in place (the DataCache entry is cleared by the action, so this
+	// re-fetches the fresh resource) instead of a full page reload.
+	const rerender = () => navigateTo(location.pathname, true);
+	document.getElementById(`btn-approve-${uuid}`)?.addEventListener('click', () => approveResource(uuid, rerender));
+	document.getElementById(`btn-reject-${uuid}`)?.addEventListener('click', () => rejectResource(uuid));
+	document.getElementById(`btn-deactivate-${uuid}`)?.addEventListener('click', () => deactivateResource(uuid, rerender));
+
+	// Comment deletion (admin) — delegated so it survives comment-list re-renders.
+	commentsContainer.addEventListener('click', (e) => {
+		const btn = (e.target as HTMLElement).closest<HTMLElement>('.comment-delete');
+		if (btn?.dataset.commentId) deleteComment(btn.dataset.commentId);
+	});
 
 	// Favorite button
 	const btnFavorite = document.getElementById('btn-favorite') as HTMLButtonElement | null;
