@@ -18,6 +18,7 @@ interface Favorite {
 	thumbnail_key?: string;
 	thumbnail_uuid?: string;
 	placeholder_blur?: string | null;
+	processed?: number;
 	title: string;
 	description?: string;
 	category: string;
@@ -73,7 +74,7 @@ function favoriteCard(fav: Favorite): string {
 					<div class="card-image${fav.thumbnail_uuid ? '' : ' card-image-placeholder'}">
 						${
 							fav.thumbnail_uuid
-								? progressiveImg({ uuid: fav.thumbnail_uuid, placeholder: fav.placeholder_blur ?? null, res: 'low', alt: title })
+								? progressiveImg({ uuid: fav.thumbnail_uuid, placeholder: fav.placeholder_blur ?? null, res: 'low', alt: title, processed: fav.processed !== 0 })
 								: ''
 						}
 						<span class="card-badge">${categoryLabel}</span>

@@ -61,6 +61,8 @@ export interface MediaFile {
 	r2_key: string;
 	media_type: 'image' | 'video' | 'file';
 	placeholder_blur?: string | null;
+	/** 1 once the CDN variants exist; 0 while the upload queue is still processing the image. */
+	processed?: number;
 }
 
 export interface ResourceAuthor {
@@ -117,6 +119,10 @@ export interface Resource {
 	thumbnail_uuid?: string | null;
 	thumbnail_media_uuid?: string | null;
 	placeholder_blur?: string | null;
+	/** List rows: 1/0 from SQL (EXISTS variants). Detail uses `thumbnail_processed` instead. */
+	processed?: number;
+	/** Detail only: whether the thumbnail media has finished processing (its CDN variants exist). */
+	thumbnail_processed?: boolean;
 	reference_image_key?: string | null;
 	reference_image_media_uuid?: string | null;
 	is_active: number;

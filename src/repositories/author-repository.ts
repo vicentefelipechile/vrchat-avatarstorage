@@ -16,6 +16,7 @@
 
 import { queryOne, queryAll, execute, type DB } from '../db/client';
 import type { AvatarAuthorRow } from '../db/schema';
+import { processedExpr } from '../db/schema';
 
 // =========================================================================================================
 // Types
@@ -116,6 +117,7 @@ export class AuthorRepository {
 			this.db,
 			`SELECT r.uuid, r.title, r.download_count, r.created_at, m.r2_key AS thumbnail_key, m.uuid AS thumbnail_media_uuid,
 				m.placeholder_blur,
+				${processedExpr('m')},
 				am.gender, am.avatar_type, am.platform, am.is_nsfw
 			FROM resources r
 			INNER JOIN avatar_meta am ON r.uuid = am.resource_uuid

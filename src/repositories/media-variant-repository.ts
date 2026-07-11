@@ -10,7 +10,7 @@
 // Imports
 // =========================================================================================================
 
-import type { DB } from '../db/client';
+import { queryOne, type DB } from '../db/client';
 import type { MediaResolution, MediaFormat } from '../types';
 
 // =========================================================================================================
@@ -52,5 +52,19 @@ export class MediaVariantRepository {
 		}
 
 		await this.db.batch(statements);
+	}
+
+	/**
+	 * True once at least one variant row exists for this media — i.e. the queue has finished the image
+	 * pipeline and the CDN can serve it. This is the source of truth for a media's "processed" state;
+	 * nothing is persisted on `media` itself, so it can never desync from the actual variants.
+	 */
+	async existsFor(mediaUuid: string): Promise<boolean> {
+		const row = await queryOne<{ present: number }>(
+			this.db,
+			'SELECT EXISTS(SELECT 1 FROM media_variants WHERE media_uuid = ?) AS present',
+			[mediaUuid],
+		);
+		return row?.present === 1;
 	}
 }

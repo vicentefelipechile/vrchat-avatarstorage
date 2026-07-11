@@ -15,6 +15,7 @@
 
 import { queryOne, queryAll, type DB } from '../db/client';
 import type { AssetMetaRow } from '../db/schema';
+import { processedExpr } from '../db/schema';
 
 // =========================================================================================================
 // Types
@@ -52,6 +53,7 @@ export interface AssetListRow {
 	thumbnail_key: string | null;
 	thumbnail_media_uuid: string | null;
 	placeholder_blur: string | null;
+	processed: number;
 	asset_type: string;
 	is_nsfw: number;
 	unity_version: string;
@@ -126,6 +128,7 @@ export class AssetRepository {
 				m.r2_key AS thumbnail_key,
 				m.uuid AS thumbnail_media_uuid,
 				m.placeholder_blur,
+				${processedExpr('m')},
 				am.asset_type,
 				am.is_nsfw,
 				am.unity_version,

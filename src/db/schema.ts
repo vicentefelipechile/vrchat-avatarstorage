@@ -19,6 +19,21 @@ export type ResourceCategory = (typeof RESOURCE_CATEGORIES)[number];
 export type LinkType = 'download' | 'demo' | 'documentation' | 'general';
 
 // =========================================================================================================
+// Shared SQL fragments
+// =========================================================================================================
+
+/**
+ * A `processed` (0/1) select expression: 1 once the media has CDN variants, i.e. the upload queue has
+ * finished the image pipeline. Correlates on a media alias — pass the alias the surrounding query uses
+ * for the `media` row (e.g. `m`, `tm`). The frontend reads this to decide whether to show the image or
+ * the "processing" placeholder + poll for readiness. Kept here so every listing/detail query derives
+ * the state the same way instead of persisting a column on `media` that could desync.
+ */
+export function processedExpr(mediaAlias: string): string {
+	return `EXISTS(SELECT 1 FROM media_variants mv WHERE mv.media_uuid = ${mediaAlias}.uuid) AS processed`;
+}
+
+// =========================================================================================================
 // resources
 // =========================================================================================================
 

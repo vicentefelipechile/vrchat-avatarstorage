@@ -16,6 +16,7 @@
 
 import { queryOne, queryAll, type DB } from '../db/client';
 import type { AvatarMetaRow } from '../db/schema';
+import { processedExpr } from '../db/schema';
 
 // =========================================================================================================
 // Types
@@ -61,6 +62,7 @@ export interface AvatarListRow {
 	thumbnail_key: string | null;
 	thumbnail_media_uuid: string | null;
 	placeholder_blur: string | null;
+	processed: number;
 	gender: string;
 	avatar_size: string;
 	avatar_type: string;
@@ -154,6 +156,7 @@ export class AvatarRepository {
 				m.r2_key AS thumbnail_key,
 				m.uuid AS thumbnail_media_uuid,
 				m.placeholder_blur,
+				${processedExpr('m')},
 				am.gender,
 				am.avatar_size,
 				am.avatar_type,

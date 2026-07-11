@@ -276,6 +276,7 @@ function mapDetail(row: ResourceDetailRow, isLoggedIn: boolean) {
 		updated_at: r.updated_at,
 		thumbnail_key: r.thumbnail_key ?? null,
 		thumbnail_media_uuid: r.thumbnail_media_uuid ?? null,
+		thumbnail_processed: r.thumbnail_processed === 1,
 		reference_image_key: r.reference_image_key ?? null,
 		reference_image_media_uuid: r.reference_image_media_uuid ?? null,
 		meta: mapMeta(r),

@@ -4,7 +4,7 @@
 
 import { t } from '../i18n';
 import { DataCache } from '../cache';
-import { TimeUnit, mediaUrl, progressiveImg, downloadHost, htmlDecode, initLazyImages, type HostInfo } from '../utils';
+import { TimeUnit, mediaUrl, progressiveImg, downloadHost, htmlDecode, initLazyImages, initMediaPolling, type HostInfo } from '../utils';
 import { deleteComment, approveResource, rejectResource, deactivateResource } from '../admin';
 import { icons, getIcon } from '../icons';
 import { commentEditorHtml, initCommentEditor } from '../comment-editor';
@@ -244,7 +244,7 @@ function buildGallery(res: Resource): { html: string; images: LightboxImage[] } 
 				const idx = images.length;
 				images.push({ preview: previewUrl, full: fullUrl });
 				const imgHtml = media.uuid
-					? progressiveImg({ uuid: media.uuid, placeholder: media.placeholder_blur ?? null, res: 'low', alt: 'Gallery Image' })
+					? progressiveImg({ uuid: media.uuid, placeholder: media.placeholder_blur ?? null, res: 'low', alt: 'Gallery Image', processed: media.processed !== 0 })
 					: `<img src="${fallbackUrl}" alt="Gallery Image" loading="lazy">`;
 				html += `
 					<div class="gallery-item">
@@ -559,6 +559,7 @@ export async function itemAfter(ctx: RouteContext): Promise<void> {
 	// cached, so this drops the blur before the first paint — no low-res flash when reopening an item.
 	// Idempotent, so the later `route-changed` pass is a no-op here.
 	initLazyImages();
+	initMediaPolling();
 
 	setupLightbox(lightboxImages);
 

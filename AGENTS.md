@@ -518,18 +518,27 @@ Every file uploaded via `PUT /api/upload` (or the multipart flow) creates:
 The `r2_key` is a random UUID. Original files remain accessible at `/api/download/<r2_key>`. Image variants are served via the **dedicated CDN Worker** (`src/cdn-worker.ts`, deployed separately):
 
 ```
-GET https://cdn.vrcstorage.lat/{uuid}?res=[low|med|original]&format=[webp|png]
+GET https://cdn.vrcstorage.lat/{uuid}?res=[low|med|original]&format=[webp|png|gif]
 ```
 
 - **CDN Worker:** `src/cdn-worker.ts` — a standalone raw-fetch Worker (no Hono, no middleware) deployed via `wrangler-cdn.jsonc`. Custom domain `cdn.vrcstorage.lat` configured in Cloudflare dashboard (Workers & Pages → vrcstorage-cdn → Settings → Triggers → Custom Domains). The main API Worker has no CDN route.
-- **Variants:** 6 files per image in `MEDIA_BUCKET` with keys `{uuid}/{res}.{format}`. Fallback to `BUCKET` original if variants are not yet ready (short cache TTL, `X-Variant-Status: pending` header).
+- **Variants:** 6 files per image in `MEDIA_BUCKET` with keys `{uuid}/{res}.{format}` (animated GIFs live as a single `{uuid}/original.gif`). The CDN never touches `BUCKET`.
+- **Processing placeholder:** while the queue is still generating variants there is no `{uuid}/…` object yet, so the CDN serves a localized `_placeholder/processing.{lang}.webp` from `MEDIA_BUCKET` with `Cache-Control: no-store` (status `200`, not `404`, so `<img>` never shows a broken icon and re-fetches until the real variant lands). The CDN picks the language from `Accept-Language` (falling back to `en`), so `en` must always be present. There is one placeholder per supported language (`en es pt fr de it nl pl tr ru cn jp`), living in `MEDIA_BUCKET` under `_placeholder/` and mirrored under `public/processing/{lang}.webp`. They are **cover-safe** — all content sits in a centered safe zone on a flat background, so `object-fit: cover` into any card aspect ratio (short landscape, square, tall) never clips the headline. To re-upload from the mirrored copies:
+  ```
+  for lang in en es pt fr de it nl pl tr ru cn jp; do \
+    wrangler r2 object put "vrcstorage-media/_placeholder/processing.$lang.webp" \
+      --file="public/processing/$lang.webp" --content-type=image/webp --remote; \
+  done
+  ```
+- **Processing status:** `GET /api/media/:uuid/status` → `{ processed }` (true once `media_variants` has rows for the uuid). Listing/detail queries also expose this per media as a derived `processed` (0/1) column via `processedExpr()` in `src/db/schema.ts` — nothing is persisted on `media`, so it can't desync from the variants.
 - **Blur placeholder:** 8×8 WebP stored as a base64 data URI in `media.placeholder_blur`. Frontend reads it to display a blurred preview while the real image loads.
 - **Backfill:** `POST /api/admin/media/generate-variants` re-queues all images that have no variants yet.
 
 Frontend utilities in `src/frontend/utils.ts`:
 - `mediaUrl(uuid, res?, format?)` — constructs a CDN URL.
-- `progressiveImg(opts)` — renders an `<img>` with blur-up loading (uses `data-src` + `.lazy-img` class).
+- `progressiveImg(opts)` — renders an `<img>` with blur-up loading (uses `data-src` + `.lazy-img` class). Pass `processed: false` for a media whose variants aren't ready; it tags the image `data-processing` (with its uuid/res) so it can be swapped once the queue finishes.
 - `initLazyImages()` — resolves `.lazy-img[data-src]` images against the browser cache (dropping the blur synchronously on a hit) and wires an `IntersectionObserver` to blur-up the rest. Idempotent — already-bound images are skipped, so it is safe to call repeatedly. Fired globally from `app.ts` on every `route-changed` event; list views (`AvatarsView`/`ClothesView`/`AssetsView`) and `ItemView` also call it inside their `after` fn so the cache probe runs in the same tick the DOM lands — this removes the low-res flash when reopening a resource whose thumbnails are already cached (the trailing `route-changed` pass is then a no-op).
+- `initMediaPolling()` — polls `GET /api/media/:uuid/status` (per-uuid, with backoff) for every `img[data-processing]` on the page, and once a media reports ready points all its images at the real variant and clears the marker. Idempotent and called next to every `initLazyImages()` call, so a resource just uploaded swaps from the processing placeholder to the real image without a reload.
 
 #### Orphan Cleanup
 

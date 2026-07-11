@@ -15,6 +15,7 @@
 
 import { queryOne, queryAll, type DB } from '../db/client';
 import type { ClothesMetaRow } from '../db/schema';
+import { processedExpr } from '../db/schema';
 
 // =========================================================================================================
 // Types
@@ -53,6 +54,7 @@ export interface ClothesListRow {
 	thumbnail_key: string | null;
 	thumbnail_media_uuid: string | null;
 	placeholder_blur: string | null;
+	processed: number;
 	gender_fit: string;
 	clothing_type: string;
 	is_base: number;
@@ -131,6 +133,7 @@ export class ClothesRepository {
 				m.r2_key AS thumbnail_key,
 				m.uuid AS thumbnail_media_uuid,
 				m.placeholder_blur,
+				${processedExpr('m')},
 				cm.gender_fit,
 				cm.clothing_type,
 				cm.is_base,

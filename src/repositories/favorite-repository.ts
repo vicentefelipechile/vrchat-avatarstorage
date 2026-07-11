@@ -12,6 +12,7 @@
 // =========================================================================================================
 
 import { queryOne, queryAll, execute, type DB } from '../db/client';
+import { processedExpr } from '../db/schema';
 
 // =========================================================================================================
 // Types
@@ -29,6 +30,7 @@ export interface FavoriteRow {
 	updated_at: number;
 	thumbnail_key: string | null;
 	placeholder_blur: string | null;
+	processed: number;
 	author_username: string | null;
 	author_avatar: string | null;
 	display_order: number;
@@ -92,6 +94,7 @@ export class FavoriteRepository {
 				r.updated_at,
 				m.r2_key AS thumbnail_key,
 				m.placeholder_blur,
+				${processedExpr('m')},
 				u.username AS author_username,
 				u.avatar_url AS author_avatar,
 				uf.display_order,
@@ -124,6 +127,7 @@ export class FavoriteRepository {
 				r.updated_at,
 				m.r2_key AS thumbnail_key,
 				m.placeholder_blur,
+				${processedExpr('m')},
 				u.username AS author_username,
 				u.avatar_url AS author_avatar,
 				uf.display_order,

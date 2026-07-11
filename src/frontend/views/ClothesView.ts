@@ -10,7 +10,7 @@ import { t } from '../i18n';
 import { buildFilterPanel, FilterType, initFilterPanel } from '../filter-panel';
 import type { RouteContext } from '../types';
 import { DataCache } from '../cache';
-import { TimeUnit, progressiveImg, initLazyImages } from '../utils';
+import { TimeUnit, progressiveImg, initLazyImages, initMediaPolling } from '../utils';
 
 // =========================================================================
 // Types
@@ -22,6 +22,7 @@ interface ClothesResource {
 	thumbnail_key: string | null;
 	thumbnail_media_uuid: string | null;
 	placeholder_blur: string | null;
+	processed: boolean;
 	download_count: number;
 	created_at: number;
 	meta: {
@@ -50,7 +51,7 @@ function clothesCard(res: ClothesResource): string {
 	const date = new Date(res.created_at * 1000).toLocaleDateString();
 
 	const imgHtml = res.thumbnail_media_uuid
-		? `<div class="card-image">${progressiveImg({ uuid: res.thumbnail_media_uuid, placeholder: res.placeholder_blur, res: 'low', alt: title })}<span class="card-badge">${res.meta.clothing_type}</span></div>`
+		? `<div class="card-image">${progressiveImg({ uuid: res.thumbnail_media_uuid, placeholder: res.placeholder_blur, res: 'low', alt: title, processed: res.processed })}<span class="card-badge">${res.meta.clothing_type}</span></div>`
 		: `<div class="card-image card-image-placeholder"><span class="card-badge">${res.meta.clothing_type}</span></div>`;
 
 	return `<div class="card">
@@ -223,6 +224,7 @@ export function clothesAfter(ctx: RouteContext): void {
 		resultsEl.innerHTML = await buildResults(newParams);
 		resultsEl.style.opacity = '1';
 		initLazyImages();
+		initMediaPolling();
 
 		bindSortSelect(newParams);
 	}
