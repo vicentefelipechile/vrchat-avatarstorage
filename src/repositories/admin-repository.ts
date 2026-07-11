@@ -21,7 +21,8 @@ import type { Resource, Media } from '../types';
 
 /** The orphaned-media predicate, shared by the stats count, the listing, and the cleanup. A media
  *  row is orphaned when nothing references it: no resource thumbnail/reference/attachment, no blog
- *  cover, and no free-text mention in avatars, comments, blog comments, or post bodies. */
+ *  cover, and no free-text mention in user avatars, author avatars, comments, blog comments, or
+ *  post bodies. */
 const ORPHANED_MEDIA_PREDICATE = `
 	m.uuid NOT IN (
 		SELECT thumbnail_uuid FROM resources WHERE thumbnail_uuid IS NOT NULL
@@ -29,10 +30,11 @@ const ORPHANED_MEDIA_PREDICATE = `
 		UNION SELECT media_uuid FROM resource_n_media
 		UNION SELECT cover_image_uuid FROM blog_posts WHERE cover_image_uuid IS NOT NULL
 	)
-	AND NOT EXISTS (SELECT 1 FROM users         WHERE INSTR(users.avatar_url,       m.r2_key) > 0)
-	AND NOT EXISTS (SELECT 1 FROM comments      WHERE INSTR(comments.text,          m.r2_key) > 0)
-	AND NOT EXISTS (SELECT 1 FROM blog_comments WHERE INSTR(blog_comments.text,     m.r2_key) > 0)
-	AND NOT EXISTS (SELECT 1 FROM blog_posts    WHERE INSTR(blog_posts.content,     m.r2_key) > 0)`;
+	AND NOT EXISTS (SELECT 1 FROM users          WHERE INSTR(users.avatar_url,          m.r2_key) > 0)
+	AND NOT EXISTS (SELECT 1 FROM avatar_authors WHERE INSTR(avatar_authors.avatar_url, m.r2_key) > 0)
+	AND NOT EXISTS (SELECT 1 FROM comments       WHERE INSTR(comments.text,             m.r2_key) > 0)
+	AND NOT EXISTS (SELECT 1 FROM blog_comments  WHERE INSTR(blog_comments.text,        m.r2_key) > 0)
+	AND NOT EXISTS (SELECT 1 FROM blog_posts     WHERE INSTR(blog_posts.content,        m.r2_key) > 0)`;
 
 // =========================================================================================================
 // Types
@@ -344,7 +346,7 @@ export class AdminRepository {
 	 * Rewrite every free-text reference to an old r2_key so it points at the new key (the uuid).
 	 * These columns embed the r2_key inside URLs / markdown, so a plain string REPLACE is required —
 	 * the orphaned-media predicate (INSTR over these same columns) depends on them staying in sync.
-	 * Batched so all four tables move atomically for one media row.
+	 * Batched so all five tables move atomically for one media row.
 	 */
 	async rewriteTextReferences(oldKey: string, newKey: string): Promise<void> {
 		await this.db.batch([
