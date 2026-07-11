@@ -738,7 +738,12 @@
 		"moveDown": "Aşağı taşı",
 		"moveToCollection": "Koleksiyona taşı",
 		"dragToReorder": "Sıralamak için sürükle",
-		"maxReached": "Bu koleksiyon için maksimum favori sayısına ulaşıldı"
+		"maxReached": "Bu koleksiyon için maksimum favori sayısına ulaşıldı",
+		"noCollection": "Koleksiyonsuz",
+		"noOtherCollections": "Başka koleksiyon yok",
+		"movedTo": "{item}, {collection} koleksiyonuna taşındı",
+		"itemOne": "favori",
+		"itemMany": "favori"
 	},
 	"collections": {
 		"create": "Yeni koleksiyon",
@@ -746,6 +751,7 @@
 		"delete": "Koleksiyonu sil",
 		"confirmDelete": "Bu koleksiyondaki favoriler Koleksiyonsuz'a taşınacak. Devam edilsin mi?",
 		"namePlaceholder": "Koleksiyon adı",
-		"maxReached": "Maksimum koleksiyon sayısına ulaşıldı"
+		"maxReached": "Maksimum koleksiyon sayısına ulaşıldı",
+		"created": "«{name}» koleksiyonu oluşturuldu"
 	}
 }

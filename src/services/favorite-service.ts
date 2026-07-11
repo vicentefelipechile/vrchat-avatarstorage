@@ -96,8 +96,11 @@ export class FavoriteService {
 		const count = await this.repo.countInCollection(user.uuid, targetCollection);
 		if (count >= MAX_PER_COLLECTION) throw new ValidationError('Maximum favorites reached for this collection');
 
+		// A new favorite lands at the end of both its collection's order and the global order;
+		// the two are tracked independently from here on.
 		const newOrder = (await this.repo.maxOrderInCollection(user.uuid, targetCollection)) + GAP;
-		await this.repo.insert(user.uuid, resourceUuid, newOrder, targetCollection);
+		const newGlobalOrder = (await this.repo.maxGlobalOrder(user.uuid)) + GAP;
+		await this.repo.insert(user.uuid, resourceUuid, newOrder, newGlobalOrder, targetCollection);
 
 		return { success: true, resource_uuid: resourceUuid };
 	}
@@ -109,21 +112,32 @@ export class FavoriteService {
 	}
 
 	/**
-	 * Batch-reorder favorites within a collection. Receives the full ordered list of
-	 * resource UUIDs as they appear in the UI (first = top). Assigns descending
-	 * display_order values with large gaps.
+	 * Batch-reorder favorites. Receives the full ordered list of resource UUIDs as they
+	 * appear in the UI (first = top). Assigns descending order values with large gaps.
+	 *
+	 * The target decides which order column is written, and the two are fully independent:
+	 *   - `'all'`  → the global order (the "All" tab). Never touches any collection's order.
+	 *   - uuid/null → that collection's (or the uncategorized bucket's) order. Never touches
+	 *                 the global order.
 	 */
-	async reorder(user: AuthUser, orderedUuids: string[], collectionUuid: string | null): Promise<void> {
+	async reorder(user: AuthUser, orderedUuids: string[], collectionUuid: string | null | 'all'): Promise<void> {
 		if (orderedUuids.length === 0) return;
 
-		const owned = new Set(await this.repo.listUuidsInCollection(user.uuid, collectionUuid));
+		const isGlobal = collectionUuid === 'all';
+
+		const owned = new Set(
+			isGlobal ? await this.repo.listAllUuids(user.uuid) : await this.repo.listUuidsInCollection(user.uuid, collectionUuid),
+		);
 		for (const uuid of orderedUuids) {
 			if (!owned.has(uuid)) throw new ValidationError('Favorite not found in this collection');
 		}
 
-		const statements = orderedUuids.map((uuid, i) =>
-			this.repo.buildUpdateOrder(user.uuid, uuid, (orderedUuids.length - i) * GAP),
-		);
+		const statements = orderedUuids.map((uuid, i) => {
+			const order = (orderedUuids.length - i) * GAP;
+			return isGlobal
+				? this.repo.buildUpdateGlobalOrder(user.uuid, uuid, order)
+				: this.repo.buildUpdateOrder(user.uuid, uuid, order);
+		});
 
 		// D1 batch limit is 100 statements; chunk if needed.
 		for (let start = 0; start < statements.length; start += BATCH_CHUNK) {

@@ -130,7 +130,8 @@ export const AddFavoriteSchema = z.object({
 
 export const FavoriteReorderSchema = z.object({
 	ordered_uuids: z.array(z.uuid('Invalid UUID')).max(500),
-	collection_uuid: z.uuid('Invalid collection UUID').nullable(),
+	// null = uncategorized bucket, 'all' = global order across every collection, uuid = a specific collection.
+	collection_uuid: z.union([z.literal('all'), z.uuid('Invalid collection UUID')]).nullable(),
 });
 
 export const FavoriteMoveSchema = z.object({

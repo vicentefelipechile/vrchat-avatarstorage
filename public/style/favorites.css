@@ -1,15 +1,41 @@
 /* =============================================================================
-   favorites.css — Collection tabs, compact cards, drag-and-drop
+   favorites.css — Collection tabs, favorite card grid, move dropdown, drag-drop
    ============================================================================= */
+
+/* ---- Header panel (title + count + tabs, one bordered unit) ---- */
+
+.favorites-header {
+	margin-bottom: 30px;
+	background: var(--bg-card);
+	border: 2px solid var(--border-color);
+}
+
+.favorites-header-top {
+	display: flex;
+	align-items: baseline;
+	gap: 12px;
+	flex-wrap: wrap;
+	padding: 18px 20px 14px;
+}
+
+.favorites-header-top h1 {
+	margin: 0;
+	line-height: 1;
+}
+
+.favorites-header-count {
+	color: var(--text-muted);
+	font-size: 0.82rem;
+}
 
 /* ---- Tab bar ---- */
 
 .favorites-tabs {
 	display: flex;
 	overflow-x: auto;
+	overflow-y: hidden;
 	gap: 0;
-	border-bottom: 2px solid var(--border-color);
-	margin-bottom: 20px;
+	border-top: 2px solid var(--border-color);
 	scrollbar-width: thin;
 }
 
@@ -17,17 +43,16 @@
 	display: flex;
 	align-items: center;
 	gap: 6px;
-	padding: 10px 16px;
+	padding: 11px 16px;
 	background: none;
 	border: none;
-	border-bottom: 2px solid transparent;
-	margin-bottom: -2px;
+	border-right: 2px solid var(--border-light);
 	color: var(--text-muted);
 	font-family: inherit;
 	font-size: 0.85rem;
 	cursor: pointer;
 	white-space: nowrap;
-	transition: color 0.2s ease, border-color 0.2s ease;
+	transition: color 0.2s ease, background 0.2s ease;
 	position: relative;
 }
 
@@ -36,10 +61,16 @@
 	background: var(--bg-hover);
 }
 
+/* Active = solid inverted block; a flat brutalist selection with no partial edges. */
 .favorites-tab.active {
-	color: var(--text-main);
-	border-bottom-color: var(--text-main);
+	color: var(--btn-text);
+	background: var(--btn-bg);
 	font-weight: bold;
+}
+
+.favorites-tab.active .favorites-tab-count {
+	color: var(--btn-text);
+	opacity: 0.75;
 }
 
 .favorites-tab-count {
@@ -64,6 +95,7 @@
 .favorites-tab-add {
 	color: var(--text-muted);
 	opacity: 0.7;
+	border-right: none;
 }
 
 .favorites-tab-add:hover {
@@ -71,24 +103,22 @@
 }
 
 .collection-create-input {
-	padding: 8px 12px;
+	display: block;
+	width: 100%;
+	padding: 11px 20px;
 	border: none;
-	border-bottom: 2px solid var(--text-main);
-	margin-bottom: -2px;
+	border-top: 2px solid var(--border-color);
 	background: var(--bg-input);
 	color: var(--text-main);
 	font-family: inherit;
 	font-size: 0.85rem;
 	outline: none;
-	width: 150px;
 }
 
 /* ---- Context menu ---- */
 
 .collection-context-menu {
-	position: absolute;
-	top: 100%;
-	left: 0;
+	position: fixed;
 	z-index: 1000;
 	background: var(--bg-dropdown);
 	border: 2px solid var(--border-color);
@@ -115,119 +145,146 @@
 	background: var(--bg-hover);
 }
 
-/* ---- Compact card ---- */
+/* ---- Card grid: max 4 per row ---- */
 
-#favorites-grid {
-	display: flex;
-	flex-direction: column;
-	gap: 0;
+.favorites-grid {
+	grid-template-columns: repeat(4, 1fr);
 }
 
-.favorite-compact {
-	display: flex;
+@media (max-width: 1000px) {
+	.favorites-grid {
+		grid-template-columns: repeat(3, 1fr);
+	}
+}
+
+@media (max-width: 768px) {
+	.favorites-grid {
+		grid-template-columns: repeat(2, 1fr);
+	}
+}
+
+@media (max-width: 480px) {
+	.favorites-grid {
+		grid-template-columns: 1fr;
+	}
+}
+
+/* ---- Favorite card ---- */
+
+.favorite-card {
+	position: relative;
+}
+
+.favorite-card-top {
+	position: relative;
+}
+
+.favorite-card-image-link {
+	display: block;
+}
+
+/* The category badge is absolutely positioned inside .card-image (position:relative),
+   so it always sits top-left over the thumbnail — the shared cards.css rule handles it. */
+
+.favorite-card .card-image {
+	height: 130px;
+}
+
+.favorite-card .card-body {
+	gap: 8px;
+}
+
+.favorite-card-title {
+	color: var(--text-main);
+	text-decoration: none;
+	font-weight: bold;
+	font-size: 0.9rem;
+	line-height: 1.3;
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+}
+
+.favorite-card-title:hover {
+	text-decoration: underline;
+}
+
+/* ---- Collection tag ---- */
+
+.favorite-collection-tag {
+	display: inline-flex;
 	align-items: center;
-	gap: 12px;
-	padding: 10px 14px;
-	border: 2px solid var(--border-color);
-	border-bottom: none;
-	background: var(--bg-card);
-	transition: background 0.15s ease;
+	gap: 4px;
+	font-size: 0.72rem;
+	color: var(--text-muted);
+	overflow: hidden;
 }
 
-.favorite-compact:last-child {
-	border-bottom: 2px solid var(--border-color);
+.favorite-collection-tag svg {
+	flex-shrink: 0;
 }
 
-.favorite-compact:hover {
-	background: var(--bg-hover);
+.favorite-collection-tag-name {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 
-/* ---- Drag handle ---- */
+/* ---- Drag handle (top-right corner over the thumbnail) ---- */
 
 .drag-handle {
+	position: absolute;
+	top: 6px;
+	right: 6px;
+	z-index: 3;
 	cursor: grab;
-	color: var(--text-muted);
-	touch-action: none;
-	flex-shrink: 0;
+	color: var(--btn-text);
+	background: var(--btn-bg);
+	border: 1px solid var(--border-color);
+	padding: 3px;
 	display: flex;
 	align-items: center;
+	touch-action: none;
 	user-select: none;
+	opacity: 0;
+	transition: opacity 0.15s ease;
+}
+
+.favorite-card:hover .drag-handle {
+	opacity: 1;
 }
 
 .drag-handle:active {
 	cursor: grabbing;
 }
 
-.drag-handle-spacer {
-	width: 18px;
-	flex-shrink: 0;
-}
+/* ---- Card actions ---- */
 
-/* ---- Thumbnail ---- */
-
-.favorite-thumb {
-	flex-shrink: 0;
-	width: 56px;
-	height: 56px;
-	overflow: hidden;
-	display: block;
-}
-
-.favorite-thumb img {
-	width: 100%;
-	height: 100%;
-	object-fit: cover;
-	display: block;
-}
-
-.favorite-thumb-placeholder {
-	width: 56px;
-	height: 56px;
-	background: var(--bg-hover);
-}
-
-/* ---- Info ---- */
-
-.favorite-info {
-	flex: 1;
-	min-width: 0;
-	display: flex;
-	flex-direction: column;
-	gap: 4px;
-}
-
-.favorite-title {
-	color: var(--text-main);
-	text-decoration: none;
-	font-weight: bold;
-	font-size: 0.9rem;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-}
-
-.favorite-title:hover {
-	text-decoration: underline;
-}
-
-/* ---- Action buttons ---- */
-
-.favorite-actions-compact {
+.favorite-card-actions {
 	display: flex;
 	align-items: center;
 	gap: 4px;
-	flex-shrink: 0;
+	margin-top: auto;
+	padding-top: 8px;
+	border-top: 1px solid var(--border-light);
+}
+
+.favorite-order-btns {
+	display: flex;
+	gap: 2px;
 }
 
 .favorite-collection-wrap {
 	position: relative;
+	margin-left: auto;
 }
 
 /* ---- Collection dropdown ---- */
 
 .collection-dropdown {
 	position: absolute;
-	top: 100%;
+	bottom: 100%;
 	right: 0;
 	z-index: 1000;
 	background: var(--bg-dropdown);
@@ -255,61 +312,49 @@
 	background: var(--bg-hover);
 }
 
+.collection-dropdown-empty {
+	padding: 8px 12px;
+	color: var(--text-muted);
+	font-size: 0.78rem;
+	white-space: nowrap;
+}
+
 /* ---- Drag states ---- */
 
-.favorite-compact.dragging {
+.favorite-card.dragging {
 	opacity: 0.3;
 }
 
 .drag-ghost {
-	opacity: 0.85;
-	box-shadow: 4px 4px 0 var(--border-color);
+	opacity: 0.9;
+	box-shadow: 4px 4px 0 var(--shadow-hover);
 }
 
-.drag-indicator {
-	height: 2px;
-	background: var(--text-main);
-	margin: -1px 0;
+/* Drop slot marker: occupies one grid cell so neighbours don't collapse mid-drag. */
+.favorite-drop-placeholder {
+	border: 2px dashed var(--border-color);
+	background: var(--bg-hover);
 }
 
 /* ---- Mobile ---- */
 
 @media (max-width: 600px) {
-	.favorites-tabs {
-		gap: 0;
-		padding: 0 4px;
+	.favorites-header-top {
+		padding: 14px 14px 10px;
 	}
 
 	.favorites-tab {
-		padding: 8px 10px;
+		padding: 9px 12px;
 		font-size: 0.78rem;
-	}
-
-	.favorite-compact {
-		padding: 8px 10px;
-		gap: 8px;
-	}
-
-	.favorite-thumb {
-		width: 44px;
-		height: 44px;
-	}
-
-	.favorite-thumb-placeholder {
-		width: 44px;
-		height: 44px;
-	}
-
-	.favorite-title {
-		font-size: 0.8rem;
-	}
-
-	.favorite-actions-compact {
-		gap: 2px;
 	}
 
 	.favorites-tab-count,
 	.favorites-tab-menu {
 		display: none;
+	}
+
+	/* Touch has no hover — keep the drag handle visible. */
+	.drag-handle {
+		opacity: 1;
 	}
 }

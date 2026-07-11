@@ -735,7 +735,12 @@
 		"moveDown": "Nach unten",
 		"moveToCollection": "In Sammlung verschieben",
 		"dragToReorder": "Ziehen zum Sortieren",
-		"maxReached": "Maximale Favoriten für diese Sammlung erreicht"
+		"maxReached": "Maximale Favoriten für diese Sammlung erreicht",
+		"noCollection": "Keine Sammlung",
+		"noOtherCollections": "Keine weiteren Sammlungen",
+		"movedTo": "{item} nach {collection} verschoben",
+		"itemOne": "Favorit",
+		"itemMany": "Favoriten"
 	},
 	"collections": {
 		"create": "Neue Sammlung",
@@ -743,6 +748,7 @@
 		"delete": "Sammlung löschen",
 		"confirmDelete": "Favoriten in dieser Sammlung werden zu Ohne Sammlung verschoben. Fortfahren?",
 		"namePlaceholder": "Sammlungsname",
-		"maxReached": "Maximale Sammlungen erreicht"
+		"maxReached": "Maximale Sammlungen erreicht",
+		"created": "Sammlung «{name}» erstellt"
 	}
 }

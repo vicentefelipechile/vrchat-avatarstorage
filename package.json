@@ -31,10 +31,10 @@
 	"dependencies": {
 		"@hapi/iron": "7.0.1",
 		"bcryptjs": "3.0.3",
-		"dompurify": "^3.4.0",
+		"dompurify": "3.4.0",
 		"hono": "4.12.14",
 		"lucide": "1.7.0",
-		"marked": "^17.0.5",
+		"marked": "17.0.5",
 		"otpauth": "9.5.0",
 		"qrcode": "1.5.4",
 		"tsx": "4.21.0",

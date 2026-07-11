@@ -700,7 +700,12 @@
 		"moveDown": "Descendre",
 		"moveToCollection": "Déplacer vers une collection",
 		"dragToReorder": "Glisser pour réorganiser",
-		"maxReached": "Nombre maximum de favoris atteint pour cette collection"
+		"maxReached": "Nombre maximum de favoris atteint pour cette collection",
+		"noCollection": "Sans collection",
+		"noOtherCollections": "Aucune autre collection",
+		"movedTo": "{item} déplacé vers {collection}",
+		"itemOne": "favori",
+		"itemMany": "favoris"
 	},
 	"collections": {
 		"create": "Nouvelle collection",
@@ -708,6 +713,7 @@
 		"delete": "Supprimer la collection",
 		"confirmDelete": "Les favoris de cette collection seront déplacés vers Sans collection. Continuer ?",
 		"namePlaceholder": "Nom de la collection",
-		"maxReached": "Nombre maximum de collections atteint"
+		"maxReached": "Nombre maximum de collections atteint",
+		"created": "Collection « {name} » créée"
 	}
 }

@@ -738,7 +738,12 @@
 		"moveDown": "Omlaag",
 		"moveToCollection": "Verplaats naar collectie",
 		"dragToReorder": "Sleep om te sorteren",
-		"maxReached": "Maximum favorieten bereikt voor deze collectie"
+		"maxReached": "Maximum favorieten bereikt voor deze collectie",
+		"noCollection": "Geen verzameling",
+		"noOtherCollections": "Geen andere verzamelingen",
+		"movedTo": "{item} verplaatst naar {collection}",
+		"itemOne": "favoriet",
+		"itemMany": "favorieten"
 	},
 	"collections": {
 		"create": "Nieuwe collectie",
@@ -746,6 +751,7 @@
 		"delete": "Collectie verwijderen",
 		"confirmDelete": "Favorieten in deze collectie worden verplaatst naar Zonder collectie. Doorgaan?",
 		"namePlaceholder": "Collectienaam",
-		"maxReached": "Maximum collecties bereikt"
+		"maxReached": "Maximum collecties bereikt",
+		"created": "Verzameling «{name}» aangemaakt"
 	}
 }

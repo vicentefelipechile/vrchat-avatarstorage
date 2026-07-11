@@ -705,7 +705,12 @@
 		"moveDown": "下移",
 		"moveToCollection": "移至收藏夹",
 		"dragToReorder": "拖动排序",
-		"maxReached": "此收藏夹已达到最大收藏数"
+		"maxReached": "此收藏夹已达到最大收藏数",
+		"noCollection": "无收藏集",
+		"noOtherCollections": "没有其他收藏集",
+		"movedTo": "已将 {item} 移动到 {collection}",
+		"itemOne": "收藏",
+		"itemMany": "收藏"
 	},
 	"collections": {
 		"create": "新建收藏夹",
@@ -713,6 +718,7 @@
 		"delete": "删除收藏夹",
 		"confirmDelete": "此收藏夹中的收藏将移至未分类。是否继续？",
 		"namePlaceholder": "收藏夹名称",
-		"maxReached": "已达到最大收藏夹数"
+		"maxReached": "已达到最大收藏夹数",
+		"created": "已创建收藏集「{name}」"
 	}
 }

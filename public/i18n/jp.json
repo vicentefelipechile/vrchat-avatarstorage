@@ -700,7 +700,12 @@
 		"moveDown": "下へ移動",
 		"moveToCollection": "コレクションに移動",
 		"dragToReorder": "ドラッグして並べ替え",
-		"maxReached": "このコレクションのお気に入り上限に達しました"
+		"maxReached": "このコレクションのお気に入り上限に達しました",
+		"noCollection": "コレクションなし",
+		"noOtherCollections": "他のコレクションはありません",
+		"movedTo": "{item} を {collection} に移動しました",
+		"itemOne": "お気に入り",
+		"itemMany": "お気に入り"
 	},
 	"collections": {
 		"create": "新しいコレクション",
@@ -708,6 +713,7 @@
 		"delete": "コレクションを削除",
 		"confirmDelete": "このコレクションのお気に入りは未分類に移動されます。続けますか？",
 		"namePlaceholder": "コレクション名",
-		"maxReached": "コレクションの上限に達しました"
+		"maxReached": "コレクションの上限に達しました",
+		"created": "コレクション「{name}」を作成しました"
 	}
 }

@@ -32,6 +32,7 @@ export interface FavoriteRow {
 	author_username: string | null;
 	author_avatar: string | null;
 	display_order: number;
+	global_order: number;
 	favorite_created_at: number;
 	collection_uuid: string | null;
 }
@@ -94,6 +95,7 @@ export class FavoriteRepository {
 				u.username AS author_username,
 				u.avatar_url AS author_avatar,
 				uf.display_order,
+				uf.global_order,
 				uf.created_at AS favorite_created_at,
 				uf.collection_uuid
 			FROM user_favorites uf
@@ -125,6 +127,7 @@ export class FavoriteRepository {
 				u.username AS author_username,
 				u.avatar_url AS author_avatar,
 				uf.display_order,
+				uf.global_order,
 				uf.created_at AS favorite_created_at,
 				uf.collection_uuid
 			FROM user_favorites uf
@@ -132,7 +135,7 @@ export class FavoriteRepository {
 			JOIN media m ON r.thumbnail_uuid = m.uuid
 			JOIN users u ON r.author_uuid = u.uuid
 			WHERE uf.user_uuid = ? AND r.is_active = 1
-			ORDER BY uf.display_order DESC, uf.created_at DESC
+			ORDER BY uf.global_order DESC, uf.created_at DESC
 			LIMIT 500`,
 			[userUuid],
 		);
@@ -156,6 +159,16 @@ export class FavoriteRepository {
 				? 'SELECT resource_uuid FROM user_favorites WHERE user_uuid = ? AND collection_uuid IS NULL'
 				: 'SELECT resource_uuid FROM user_favorites WHERE user_uuid = ? AND collection_uuid = ?',
 			collectionUuid === null ? [userUuid] : [userUuid, collectionUuid],
+		);
+		return rows.map((r) => r.resource_uuid);
+	}
+
+	/** All favorited resource UUIDs for a user, across every collection (for global reorder validation). */
+	async listAllUuids(userUuid: string): Promise<string[]> {
+		const rows = await queryAll<{ resource_uuid: string }>(
+			this.db,
+			'SELECT resource_uuid FROM user_favorites WHERE user_uuid = ?',
+			[userUuid],
 		);
 		return rows.map((r) => r.resource_uuid);
 	}
@@ -192,6 +205,16 @@ export class FavoriteRepository {
 		return row?.max_order ?? 0;
 	}
 
+	/** Highest global_order across all of a user's favorites (0 if none). Drives the "All" tab. */
+	async maxGlobalOrder(userUuid: string): Promise<number> {
+		const row = await queryOne<{ max_order: number | null }>(
+			this.db,
+			'SELECT MAX(global_order) AS max_order FROM user_favorites WHERE user_uuid = ?',
+			[userUuid],
+		);
+		return row?.max_order ?? 0;
+	}
+
 	/** Minimal resource existence/activity lookup used to validate an add. */
 	findResource(resourceUuid: string): Promise<{ uuid: string; is_active: number } | null> {
 		return queryOne<{ uuid: string; is_active: number }>(
@@ -205,12 +228,22 @@ export class FavoriteRepository {
 	// Writes
 	// -------------------------------------------------------------------------
 
-	/** Insert a favorite with an explicit display_order and optional collection. */
-	async insert(userUuid: string, resourceUuid: string, displayOrder: number, collectionUuid: string | null): Promise<void> {
+	/**
+	 * Insert a favorite with explicit orders and optional collection. `displayOrder` places
+	 * it within its collection; `globalOrder` places it in the "All" view — the two are
+	 * independent so reordering one never disturbs the other.
+	 */
+	async insert(
+		userUuid: string,
+		resourceUuid: string,
+		displayOrder: number,
+		globalOrder: number,
+		collectionUuid: string | null,
+	): Promise<void> {
 		await execute(
 			this.db,
-			'INSERT INTO user_favorites (user_uuid, resource_uuid, display_order, collection_uuid) VALUES (?, ?, ?, ?)',
-			[userUuid, resourceUuid, displayOrder, collectionUuid],
+			'INSERT INTO user_favorites (user_uuid, resource_uuid, display_order, global_order, collection_uuid) VALUES (?, ?, ?, ?, ?)',
+			[userUuid, resourceUuid, displayOrder, globalOrder, collectionUuid],
 		);
 	}
 
@@ -233,10 +266,17 @@ export class FavoriteRepository {
 		);
 	}
 
-	/** Returns a prepared statement for batch-updating a favorite's display_order. */
+	/** Prepared statement for batch-updating a favorite's within-collection display_order. */
 	buildUpdateOrder(userUuid: string, resourceUuid: string, displayOrder: number): D1PreparedStatement {
 		return this.db
 			.prepare('UPDATE user_favorites SET display_order = ? WHERE user_uuid = ? AND resource_uuid = ?')
 			.bind(displayOrder, userUuid, resourceUuid);
+	}
+
+	/** Prepared statement for batch-updating a favorite's global_order (the "All" view). */
+	buildUpdateGlobalOrder(userUuid: string, resourceUuid: string, globalOrder: number): D1PreparedStatement {
+		return this.db
+			.prepare('UPDATE user_favorites SET global_order = ? WHERE user_uuid = ? AND resource_uuid = ?')
+			.bind(globalOrder, userUuid, resourceUuid);
 	}
 }

@@ -692,7 +692,12 @@
 		"moveDown": "Move down",
 		"moveToCollection": "Move to collection",
 		"dragToReorder": "Drag to reorder",
-		"maxReached": "Maximum favorites reached for this collection"
+		"maxReached": "Maximum favorites reached for this collection",
+		"noCollection": "No collection",
+		"noOtherCollections": "No other collections",
+		"movedTo": "{item} moved to {collection}",
+		"itemOne": "favorite",
+		"itemMany": "favorites"
 	},
 	"collections": {
 		"create": "New collection",
@@ -700,7 +705,8 @@
 		"delete": "Delete collection",
 		"confirmDelete": "Favorites in this collection will be moved to Uncategorized. Continue?",
 		"namePlaceholder": "Collection name",
-		"maxReached": "Maximum collections reached"
+		"maxReached": "Maximum collections reached",
+		"created": "Collection \"{name}\" created"
 	},
 	"updates": {
 		"avatars": "New avatars available",

@@ -1,6 +1,6 @@
 // =========================================================================
-// views/FavoritesView.ts — Favorites with collections, drag-and-drop
-// reorder, up/down buttons, and move-to-collection dropdown.
+// views/FavoritesView.ts — Favorites grouped into collections. Card grid with
+// drag-and-drop reorder, up/down buttons, and a move-to-collection dropdown.
 // =========================================================================
 
 import { DataCache } from '../cache';
@@ -19,7 +19,10 @@ interface Favorite {
 	thumbnail_uuid?: string;
 	placeholder_blur?: string | null;
 	title: string;
+	description?: string;
 	category: string;
+	download_count?: number;
+	created_at?: number;
 	collection_uuid: string | null;
 }
 
@@ -42,7 +45,8 @@ interface CollectionsResponse {
 // State
 // =========================================================================
 
-let activeCollection: string | null | 'all' = null;
+// 'all' = every favorite (default landing tab), uuid = a specific collection.
+let activeCollection: string | 'all' = 'all';
 let collections: Collection[] = [];
 let reorderTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -50,39 +54,45 @@ let reorderTimer: ReturnType<typeof setTimeout> | null = null;
 // Helpers
 // =========================================================================
 
-function favoriteCard(fav: Favorite, isReadOnly: boolean): string {
-	const title = stripMarkdown(fav.title).substring(0, 40);
+/** Human name for a collection uuid, or the "no collection" label when null. */
+function collectionName(uuid: string | null): string {
+	if (uuid === null) return t('favorites.noCollection');
+	return collections.find((c) => c.uuid === uuid)?.name ?? t('favorites.noCollection');
+}
+
+function favoriteCard(fav: Favorite): string {
+	const title = stripMarkdown(fav.title).substring(0, 50);
 	const categoryLabel = t('cats.' + fav.category) || fav.category;
+	const colName = collectionName(fav.collection_uuid);
 
 	return `
-		<div class="favorite-compact" data-resource-id="${fav.uuid}">
-			${
-				isReadOnly
-					? '<div class="drag-handle-spacer"></div>'
-					: `<div class="drag-handle" title="${t('favorites.dragToReorder')}">${icons['grip-vertical'](18)}</div>`
-			}
-			<a href="/item/${fav.uuid}" data-link class="favorite-thumb">
-				${
-					fav.thumbnail_uuid
-						? progressiveImg({ uuid: fav.thumbnail_uuid, placeholder: fav.placeholder_blur ?? null, res: 'low', alt: title, size: 56 })
-						: '<div class="favorite-thumb-placeholder"></div>'
-				}
-			</a>
-			<div class="favorite-info">
-				<a href="/item/${fav.uuid}" data-link class="favorite-title">${title}${fav.title.length > 40 ? '\u2026' : ''}</a>
-				<span class="card-badge">${categoryLabel}</span>
+		<div class="card favorite-card" data-resource-id="${fav.uuid}" data-collection="${fav.collection_uuid ?? ''}">
+			<div class="favorite-card-top">
+				<div class="drag-handle" title="${t('favorites.dragToReorder')}">${icons['grip-vertical'](16)}</div>
+				<a href="/item/${fav.uuid}" data-link class="card-link favorite-card-image-link">
+					<div class="card-image${fav.thumbnail_uuid ? '' : ' card-image-placeholder'}">
+						${
+							fav.thumbnail_uuid
+								? progressiveImg({ uuid: fav.thumbnail_uuid, placeholder: fav.placeholder_blur ?? null, res: 'low', alt: title })
+								: ''
+						}
+						<span class="card-badge">${categoryLabel}</span>
+					</div>
+				</a>
 			</div>
-			<div class="favorite-actions-compact">
-				${
-					isReadOnly
-						? ''
-						: `<button class="btn-icon favorite-move-up" data-uuid="${fav.uuid}" title="${t('favorites.moveUp')}">${icons['chevron-up'](16)}</button>
-				<button class="btn-icon favorite-move-down" data-uuid="${fav.uuid}" title="${t('favorites.moveDown')}">${icons['chevron-down'](16)}</button>`
-				}
-				<div class="favorite-collection-wrap">
-					<button class="btn-icon favorite-collection-btn" data-uuid="${fav.uuid}" title="${t('favorites.moveToCollection')}">${icons['folder-open'](16)}</button>
+			<div class="card-body">
+				<a href="/item/${fav.uuid}" data-link class="favorite-card-title">${title}${fav.title.length > 50 ? '…' : ''}</a>
+				<span class="favorite-collection-tag">${icons['folder-open'](12)} <span class="favorite-collection-tag-name">${colName}</span></span>
+				<div class="favorite-card-actions">
+					<div class="favorite-order-btns">
+						<button class="btn-icon favorite-move-up" data-uuid="${fav.uuid}" title="${t('favorites.moveUp')}">${icons['chevron-up'](16)}</button>
+						<button class="btn-icon favorite-move-down" data-uuid="${fav.uuid}" title="${t('favorites.moveDown')}">${icons['chevron-down'](16)}</button>
+					</div>
+					<div class="favorite-collection-wrap">
+						<button class="btn-icon favorite-collection-btn" data-uuid="${fav.uuid}" title="${t('favorites.moveToCollection')}">${icons['folder-open'](16)}</button>
+					</div>
+					<button class="btn-icon favorite-remove-btn" data-uuid="${fav.uuid}" title="${t('common.removeFavorite')}">${icons.x(16)}</button>
 				</div>
-				<button class="btn-icon favorite-remove-btn" data-uuid="${fav.uuid}" title="${t('common.removeFavorite')}">${icons.x(16)}</button>
 			</div>
 		</div>`;
 }
@@ -92,9 +102,6 @@ function tabBar(): string {
 
 	tabs.push(
 		`<button class="favorites-tab${activeCollection === 'all' ? ' active' : ''}" data-collection="all">${t('favorites.all')}</button>`,
-	);
-	tabs.push(
-		`<button class="favorites-tab${activeCollection === null ? ' active' : ''}" data-collection="uncategorized">${t('favorites.uncategorized')}</button>`,
 	);
 
 	for (const col of collections) {
@@ -112,24 +119,28 @@ function tabBar(): string {
 	return `<div class="favorites-tabs">${tabs.join('')}</div>`;
 }
 
-function collectionDropdown(fav: Favorite): string {
+/** The move-to-collection choices for a favorite currently in `currentCollection`. */
+function collectionDropdown(currentCollection: string | null): string {
 	const options: string[] = [];
 
-	if (activeCollection !== null && activeCollection !== 'all') {
-		options.push(`<button class="collection-dropdown-item" data-target="uncategorized">${t('favorites.uncategorized')}</button>`);
+	// Offer "no collection" only when the favorite is currently inside one.
+	if (currentCollection !== null) {
+		options.push(`<button class="collection-dropdown-item" data-target="uncategorized">${t('favorites.noCollection')}</button>`);
 	}
 
 	for (const col of collections) {
-		if (col.uuid === activeCollection) continue;
-		if (col.uuid === fav.collection_uuid) continue;
+		if (col.uuid === currentCollection) continue;
 		options.push(`<button class="collection-dropdown-item" data-target="${col.uuid}">${col.name}</button>`);
+	}
+
+	if (options.length === 0) {
+		options.push(`<span class="collection-dropdown-empty">${t('favorites.noOtherCollections')}</span>`);
 	}
 
 	return `<div class="collection-dropdown">${options.join('')}</div>`;
 }
 
 function scheduleReorder(): void {
-	if (activeCollection === 'all') return;
 	if (reorderTimer) clearTimeout(reorderTimer);
 
 	reorderTimer = setTimeout(async () => {
@@ -151,7 +162,7 @@ function scheduleReorder(): void {
 }
 
 function updateUpDownState(): void {
-	const cards = document.querySelectorAll<HTMLElement>('#favorites-grid .favorite-compact');
+	const cards = document.querySelectorAll<HTMLElement>('#favorites-grid .favorite-card');
 	cards.forEach((card, i) => {
 		const up = card.querySelector<HTMLButtonElement>('.favorite-move-up');
 		const down = card.querySelector<HTMLButtonElement>('.favorite-move-down');
@@ -166,15 +177,37 @@ function updateUpDownState(): void {
 	});
 }
 
+/** Refresh a card's collection tag after it was moved, without re-fetching. */
+function updateCardCollection(card: HTMLElement, collectionUuid: string | null): void {
+	card.dataset.collection = collectionUuid ?? '';
+	const nameEl = card.querySelector<HTMLElement>('.favorite-collection-tag-name');
+	if (nameEl) nameEl.textContent = collectionName(collectionUuid);
+}
+
+/** Bump a collection tab's visible count by a delta, keeping local state in sync. */
+function adjustCollectionCount(collectionUuid: string | null, delta: number): void {
+	if (collectionUuid === null) return;
+	const col = collections.find((c) => c.uuid === collectionUuid);
+	if (col) col.favorite_count = Math.max(0, col.favorite_count + delta);
+
+	const tab = document.querySelector<HTMLElement>(`.favorites-tab[data-collection="${collectionUuid}"] .favorites-tab-count`);
+	if (tab && col) tab.textContent = String(col.favorite_count);
+}
+
+function showEmptyMessage(): void {
+	const grid = document.getElementById('favorites-grid');
+	if (grid) grid.outerHTML = `<p class="empty-message">${t('common.noFavorites')}</p>`;
+}
+
 // =========================================================================
 // View
 // =========================================================================
 
 export async function favoritesView(ctx: RouteContext): Promise<string> {
-	document.title = `VRCStorage \u2014 ${t('nav.favorites')}`;
+	document.title = `VRCStorage — ${t('nav.favorites')}`;
 
 	const collectionParam = ctx.query.get('collection');
-	activeCollection = collectionParam === 'all' ? 'all' : collectionParam ?? null;
+	activeCollection = collectionParam && collectionParam !== 'all' ? collectionParam : 'all';
 
 	try {
 		const colData = (await DataCache.fetch('/api/collections')) as CollectionsResponse;
@@ -183,12 +216,12 @@ export async function favoritesView(ctx: RouteContext): Promise<string> {
 		collections = [];
 	}
 
-	const apiUrl =
-		activeCollection === 'all'
-			? '/api/favorites?collection=all'
-			: activeCollection === null
-				? '/api/favorites'
-				: `/api/favorites?collection=${activeCollection}`;
+	// A tab may have been deleted or the URL hand-edited — fall back to "all".
+	if (activeCollection !== 'all' && !collections.some((c) => c.uuid === activeCollection)) {
+		activeCollection = 'all';
+	}
+
+	const apiUrl = activeCollection === 'all' ? '/api/favorites?collection=all' : `/api/favorites?collection=${activeCollection}`;
 
 	let data: FavoritesResponse = { favorites: [] };
 	try {
@@ -198,19 +231,24 @@ export async function favoritesView(ctx: RouteContext): Promise<string> {
 	}
 
 	const favs = data.favorites ?? [];
-	const isReadOnly = activeCollection === 'all';
+	const subtitle =
+		activeCollection === 'all'
+			? `${favs.length} ${favs.length === 1 ? t('favorites.itemOne') : t('favorites.itemMany')}`
+			: `${favs.length} ${favs.length === 1 ? t('favorites.itemOne') : t('favorites.itemMany')} · ${collectionName(activeCollection)}`;
 
 	return `
-		<div class="page-header">
-			<h1>${t('nav.favorites')}</h1>
+		<div class="favorites-header">
+			<div class="favorites-header-top">
+				<h1>${t('nav.favorites')}</h1>
+				<span class="favorites-header-count">${subtitle}</span>
+			</div>
+			${tabBar()}
 		</div>
-
-		${tabBar()}
 
 		${
 			favs.length === 0
 				? `<p class="empty-message">${t('common.noFavorites')}</p>`
-				: `<div id="favorites-grid">${favs.map((f) => favoriteCard(f, isReadOnly)).join('')}</div>`
+				: `<div id="favorites-grid" class="grid favorites-grid">${favs.map(favoriteCard).join('')}</div>`
 		}`;
 }
 
@@ -226,7 +264,7 @@ export function favoritesAfter(_ctx: RouteContext): void {
 	wireMoveUpDown();
 	wireRemove();
 	wireCollectionDropdowns();
-	if (activeCollection !== 'all') wireDragAndDrop();
+	wireDragAndDrop();
 }
 
 // =========================================================================
@@ -240,7 +278,7 @@ function wireTabClicks(): void {
 			if (target.closest('.favorites-tab-menu')) return;
 
 			const col = tab.dataset.collection!;
-			const href = col === 'uncategorized' ? '/favorites' : `/favorites?collection=${col}`;
+			const href = col === 'all' ? '/favorites' : `/favorites?collection=${col}`;
 			window.history.pushState(null, '', href);
 			window.dispatchEvent(new PopStateEvent('popstate'));
 		});
@@ -259,20 +297,25 @@ function wireCollectionCreate(): void {
 		const existing = document.querySelector('.collection-create-input');
 		if (existing) return;
 
+		const tabs = addBtn.closest('.favorites-tabs')!;
 		const input = document.createElement('input');
 		input.type = 'text';
 		input.className = 'collection-create-input';
 		input.placeholder = t('collections.namePlaceholder');
 		input.maxLength = 50;
-		addBtn.parentElement!.insertBefore(input, addBtn);
+		// Its own strip below the tab row, so it doesn't distort the tabs.
+		tabs.insertAdjacentElement('afterend', input);
 		input.focus();
 
+		let submitting = false;
 		const submit = async () => {
+			if (submitting) return;
 			const name = input.value.trim();
 			if (!name) {
 				input.remove();
 				return;
 			}
+			submitting = true;
 			try {
 				await fetch('/api/collections', {
 					method: 'POST',
@@ -280,7 +323,7 @@ function wireCollectionCreate(): void {
 					body: JSON.stringify({ name }),
 				});
 				DataCache.clear('/api/collections');
-				showToast(name, 'success');
+				showToast(t('collections.created').replace('{name}', name), 'success');
 				window.history.pushState(null, '', '/favorites');
 				window.dispatchEvent(new PopStateEvent('popstate'));
 			} catch {
@@ -310,7 +353,12 @@ function wireCollectionMenu(): void {
 				<button class="collection-ctx-rename">${icons.edit(14)} ${t('collections.rename')}</button>
 				<button class="collection-ctx-delete">${icons.trash(14)} ${t('collections.delete')}</button>
 			`;
-			menuBtn.parentElement!.appendChild(menu);
+			// Appended to <body> and positioned via fixed coords so it escapes the tab bar's
+			// horizontal scroll clipping instead of being cut off inside it.
+			const rect = menuBtn.getBoundingClientRect();
+			menu.style.top = `${rect.bottom + 2}px`;
+			menu.style.left = `${rect.left}px`;
+			document.body.appendChild(menu);
 
 			menu.querySelector('.collection-ctx-rename')!.addEventListener('click', async (ev) => {
 				ev.stopPropagation();
@@ -365,7 +413,7 @@ function wireMoveUpDown(): void {
 		btn.addEventListener('click', (e) => {
 			e.preventDefault();
 			e.stopPropagation();
-			const card = btn.closest<HTMLElement>('.favorite-compact')!;
+			const card = btn.closest<HTMLElement>('.favorite-card')!;
 			const prev = card.previousElementSibling as HTMLElement | null;
 			if (prev) {
 				card.parentElement!.insertBefore(card, prev);
@@ -379,7 +427,7 @@ function wireMoveUpDown(): void {
 		btn.addEventListener('click', (e) => {
 			e.preventDefault();
 			e.stopPropagation();
-			const card = btn.closest<HTMLElement>('.favorite-compact')!;
+			const card = btn.closest<HTMLElement>('.favorite-card')!;
 			const next = card.nextElementSibling as HTMLElement | null;
 			if (next) {
 				card.parentElement!.insertBefore(next, card);
@@ -403,16 +451,15 @@ function wireRemove(): void {
 			if (!confirm(t('common.removeFavorite') + '?')) return;
 
 			const uuid = btn.dataset.uuid!;
-			const card = btn.closest<HTMLElement>('.favorite-compact');
+			const card = btn.closest<HTMLElement>('.favorite-card');
+			const prevCollection = card?.dataset.collection ? card.dataset.collection : null;
 			card?.remove();
 
-			const remaining = document.querySelectorAll('#favorites-grid .favorite-compact');
-			if (remaining.length === 0) {
-				const grid = document.getElementById('favorites-grid');
-				if (grid) grid.outerHTML = `<p class="empty-message">${t('common.noFavorites')}</p>`;
-			} else {
-				updateUpDownState();
-			}
+			adjustCollectionCount(prevCollection, -1);
+
+			const remaining = document.querySelectorAll('#favorites-grid .favorite-card');
+			if (remaining.length === 0) showEmptyMessage();
+			else updateUpDownState();
 
 			try {
 				await fetch(`/api/favorites/${uuid}`, { method: 'DELETE' });
@@ -440,6 +487,7 @@ function wireCollectionDropdowns(): void {
 			e.stopPropagation();
 
 			const uuid = btn.dataset.uuid!;
+			const card = btn.closest<HTMLElement>('.favorite-card')!;
 			const wrap = btn.closest<HTMLElement>('.favorite-collection-wrap')!;
 
 			const existing = wrap.querySelector('.collection-dropdown');
@@ -450,41 +498,17 @@ function wireCollectionDropdowns(): void {
 
 			closeAllDropdowns();
 
-			const fav: Favorite = { uuid, title: '', category: '', collection_uuid: activeCollection === 'all' ? null : activeCollection };
-			wrap.insertAdjacentHTML('beforeend', collectionDropdown(fav));
+			const currentCollection = card.dataset.collection ? card.dataset.collection : null;
+			wrap.insertAdjacentHTML('beforeend', collectionDropdown(currentCollection));
 
 			const dropdown = wrap.querySelector<HTMLElement>('.collection-dropdown')!;
 			dropdown.querySelectorAll<HTMLButtonElement>('.collection-dropdown-item').forEach((item) => {
-				item.addEventListener('click', async (ev) => {
+				item.addEventListener('click', (ev) => {
 					ev.stopPropagation();
 					const target = item.dataset.target!;
-					const collectionUuid = target === 'uncategorized' ? null : target;
-
+					const targetCollection = target === 'uncategorized' ? null : target;
 					dropdown.remove();
-
-					const card = btn.closest<HTMLElement>('.favorite-compact');
-					card?.remove();
-
-					const remaining = document.querySelectorAll('#favorites-grid .favorite-compact');
-					if (remaining.length === 0) {
-						const grid = document.getElementById('favorites-grid');
-						if (grid) grid.outerHTML = `<p class="empty-message">${t('common.noFavorites')}</p>`;
-					} else {
-						updateUpDownState();
-					}
-
-					try {
-						await fetch(`/api/favorites/${uuid}/collection`, {
-							method: 'PUT',
-							headers: { 'Content-Type': 'application/json' },
-							body: JSON.stringify({ collection_uuid: collectionUuid }),
-						});
-						DataCache.clear('/api/favorites');
-						DataCache.clear('/api/collections');
-						showToast(t('favorites.moveToCollection'), 'success');
-					} catch {
-						showToast(t('common.networkError'), 'error');
-					}
+					moveFavoriteToCollection(uuid, card, currentCollection, targetCollection);
 				});
 			});
 
@@ -499,109 +523,155 @@ function wireCollectionDropdowns(): void {
 	});
 }
 
+/**
+ * Move a favorite to another collection with optimistic UI. On the "all" tab the card
+ * stays put (only its collection tag + the target count update); on a collection tab the
+ * card leaves the current view.
+ */
+async function moveFavoriteToCollection(
+	uuid: string,
+	card: HTMLElement,
+	fromCollection: string | null,
+	toCollection: string | null,
+): Promise<void> {
+	if (fromCollection === toCollection) return;
+
+	if (activeCollection === 'all') {
+		updateCardCollection(card, toCollection);
+	} else {
+		card.remove();
+		const remaining = document.querySelectorAll('#favorites-grid .favorite-card');
+		if (remaining.length === 0) showEmptyMessage();
+		else updateUpDownState();
+	}
+
+	adjustCollectionCount(fromCollection, -1);
+	adjustCollectionCount(toCollection, 1);
+
+	const title = stripMarkdown(card.querySelector('.favorite-card-title')?.textContent ?? '').substring(0, 40);
+	const destName = collectionName(toCollection);
+	showToast(t('favorites.movedTo').replace('{item}', title).replace('{collection}', destName), 'success');
+
+	try {
+		await fetch(`/api/favorites/${uuid}/collection`, {
+			method: 'PUT',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ collection_uuid: toCollection }),
+		});
+		DataCache.clear('/api/favorites');
+		DataCache.clear('/api/collections');
+	} catch {
+		showToast(t('common.networkError'), 'error');
+	}
+}
+
 // =========================================================================
 // Drag and drop (Pointer Events)
 // =========================================================================
 
+// The dragged card itself is NEVER re-inserted during the drag — reordering the
+// pointer-captured element mid-gesture makes the browser drop the capture and fire a
+// spurious pointercancel (the "stuck cursor" bug). Instead the capture lives on the
+// stable grid, a floating ghost follows the pointer, and a placeholder marks the drop
+// slot. The real card only moves once, on pointerup.
 function wireDragAndDrop(): void {
 	const grid = document.getElementById('favorites-grid');
 	if (!grid) return;
 
-	const handles = grid.querySelectorAll<HTMLElement>('.drag-handle');
 	let dragCard: HTMLElement | null = null;
 	let ghost: HTMLElement | null = null;
-	let startY = 0;
+	let placeholder: HTMLElement | null = null;
+	let pointerId = -1;
+	let offsetX = 0;
 	let offsetY = 0;
 
-	handles.forEach((handle) => {
-		handle.addEventListener('pointerdown', (e: PointerEvent) => {
-			e.preventDefault();
-			handle.setPointerCapture(e.pointerId);
+	const cleanup = (): void => {
+		ghost?.remove();
+		placeholder?.remove();
+		dragCard?.classList.remove('dragging');
+		if (pointerId !== -1 && grid.hasPointerCapture(pointerId)) grid.releasePointerCapture(pointerId);
+		ghost = null;
+		placeholder = null;
+		dragCard = null;
+		pointerId = -1;
+		document.removeEventListener('keydown', onKeyDown);
+	};
 
-			dragCard = handle.closest<HTMLElement>('.favorite-compact')!;
-			const rect = dragCard.getBoundingClientRect();
-			startY = e.clientY;
-			offsetY = e.clientY - rect.top;
+	const onKeyDown = (e: KeyboardEvent): void => {
+		// Escape aborts the drag and restores the normal cursor — no reload ever needed.
+		if (e.key === 'Escape') cleanup();
+	};
 
-			ghost = dragCard.cloneNode(true) as HTMLElement;
-			ghost.classList.add('drag-ghost');
-			ghost.style.position = 'fixed';
-			ghost.style.left = `${rect.left}px`;
-			ghost.style.top = `${rect.top}px`;
-			ghost.style.width = `${rect.width}px`;
-			ghost.style.zIndex = '10000';
-			ghost.style.pointerEvents = 'none';
-			document.body.appendChild(ghost);
+	grid.addEventListener('pointerdown', (e: PointerEvent) => {
+		const handle = (e.target as HTMLElement).closest<HTMLElement>('.drag-handle');
+		if (!handle) return;
+		e.preventDefault();
 
-			dragCard.classList.add('dragging');
-		});
+		dragCard = handle.closest<HTMLElement>('.favorite-card')!;
+		const rect = dragCard.getBoundingClientRect();
+		offsetX = e.clientX - rect.left;
+		offsetY = e.clientY - rect.top;
+		pointerId = e.pointerId;
+		grid.setPointerCapture(pointerId);
 
-		handle.addEventListener('pointermove', (e: PointerEvent) => {
-			if (!dragCard || !ghost) return;
+		// Placeholder occupies the card's slot so surrounding cards don't collapse.
+		placeholder = document.createElement('div');
+		placeholder.className = 'favorite-drop-placeholder';
+		placeholder.style.height = `${rect.height}px`;
+		dragCard.parentElement!.insertBefore(placeholder, dragCard.nextSibling);
 
-			ghost.style.top = `${e.clientY - offsetY}px`;
+		ghost = dragCard.cloneNode(true) as HTMLElement;
+		ghost.classList.add('drag-ghost');
+		ghost.style.position = 'fixed';
+		ghost.style.left = `${rect.left}px`;
+		ghost.style.top = `${rect.top}px`;
+		ghost.style.width = `${rect.width}px`;
+		ghost.style.margin = '0';
+		ghost.style.zIndex = '10000';
+		ghost.style.pointerEvents = 'none';
+		document.body.appendChild(ghost);
 
-			const cards = Array.from(grid.querySelectorAll<HTMLElement>('.favorite-compact:not(.dragging)'));
-
-			grid.querySelectorAll('.drag-indicator').forEach((ind) => ind.remove());
-
-			let insertBefore: HTMLElement | null = null;
-			for (const card of cards) {
-				const rect = card.getBoundingClientRect();
-				const midY = rect.top + rect.height / 2;
-				if (e.clientY < midY) {
-					insertBefore = card;
-					break;
-				}
-			}
-
-			const indicator = document.createElement('div');
-			indicator.className = 'drag-indicator';
-			if (insertBefore) {
-				grid.insertBefore(indicator, insertBefore);
-			} else {
-				grid.appendChild(indicator);
-			}
-		});
-
-		handle.addEventListener('pointerup', (e: PointerEvent) => {
-			if (!dragCard || !ghost) return;
-			handle.releasePointerCapture(e.pointerId);
-
-			ghost.remove();
-			ghost = null;
-
-			grid.querySelectorAll('.drag-indicator').forEach((ind) => ind.remove());
-			dragCard.classList.remove('dragging');
-
-			const cards = Array.from(grid.querySelectorAll<HTMLElement>('.favorite-compact:not(.dragging)'));
-			let insertBefore: HTMLElement | null = null;
-			for (const card of cards) {
-				const rect = card.getBoundingClientRect();
-				const midY = rect.top + rect.height / 2;
-				if (e.clientY < midY) {
-					insertBefore = card;
-					break;
-				}
-			}
-
-			if (insertBefore && insertBefore !== dragCard) {
-				grid.insertBefore(dragCard, insertBefore);
-			} else if (!insertBefore) {
-				grid.appendChild(dragCard);
-			}
-
-			dragCard = null;
-			updateUpDownState();
-			scheduleReorder();
-		});
-
-		handle.addEventListener('pointercancel', () => {
-			if (ghost) ghost.remove();
-			if (dragCard) dragCard.classList.remove('dragging');
-			grid.querySelectorAll('.drag-indicator').forEach((ind) => ind.remove());
-			ghost = null;
-			dragCard = null;
-		});
+		dragCard.classList.add('dragging');
+		document.addEventListener('keydown', onKeyDown);
 	});
+
+	grid.addEventListener('pointermove', (e: PointerEvent) => {
+		if (!dragCard || !ghost || !placeholder) return;
+
+		ghost.style.left = `${e.clientX - offsetX}px`;
+		ghost.style.top = `${e.clientY - offsetY}px`;
+
+		const target = cardUnderPoint(grid, e.clientX, e.clientY);
+		if (target) {
+			// Grid flows left-to-right then top-to-bottom: which side of a card's midline the
+			// pointer is on decides whether the placeholder lands before or after it.
+			const rect = target.getBoundingClientRect();
+			const after = e.clientX > rect.left + rect.width / 2;
+			grid.insertBefore(placeholder, after ? target.nextElementSibling : target);
+		}
+	});
+
+	const finish = (): void => {
+		if (!dragCard || !placeholder) return cleanup();
+
+		// The one and only DOM move of the real card: drop it where the placeholder sits.
+		grid.insertBefore(dragCard, placeholder);
+		cleanup();
+
+		updateUpDownState();
+		scheduleReorder();
+	};
+
+	grid.addEventListener('pointerup', finish);
+	grid.addEventListener('pointercancel', cleanup);
+}
+
+/** The grid card whose box contains the point (skips the dragged card and the placeholder). */
+function cardUnderPoint(grid: HTMLElement, x: number, y: number): HTMLElement | null {
+	const cards = Array.from(grid.querySelectorAll<HTMLElement>('.favorite-card:not(.dragging)'));
+	for (const card of cards) {
+		const rect = card.getBoundingClientRect();
+		if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) return card;
+	}
+	return null;
 }
