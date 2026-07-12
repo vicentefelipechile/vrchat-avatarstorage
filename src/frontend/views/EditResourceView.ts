@@ -3,7 +3,7 @@
 // =========================================================================
 
 import type { RouteContext, Resource, ResourceLink, MediaFile } from '../types';
-import { htmlDecode, renderMarkdown, showToast, mediaUrl } from '../lib/utils';
+import { htmlDecode, renderMarkdown, showToast, mediaUrl, videoUrl } from '../lib/utils';
 import { navigateTo } from '../core/router';
 import { DataCache } from '../core/cache';
 import { t } from '../core/i18n';
@@ -713,11 +713,14 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 		}
 
 		for (const mf of visibleFiles) {
-			// Media (image/video) → CDN by uuid; a private 'file' would stay on /api/download.
+			// Media → CDN by uuid: a video plays from its normalized MP4, an image from its `med` variant;
+			// a private 'file' would stay on /api/download.
 			const src =
-				mf.uuid && (mf.media_type === 'image' || mf.media_type === 'video')
-					? mediaUrl(mf.uuid, mf.media_type === 'video' ? 'original' : 'med')
-					: `/api/download/${mf.r2_key}`;
+				mf.uuid && mf.media_type === 'video'
+					? videoUrl(mf.uuid)
+					: mf.uuid && mf.media_type === 'image'
+						? mediaUrl(mf.uuid, 'med')
+						: `/api/download/${mf.r2_key}`;
 			currentGalleryEl.appendChild(
 				createImagePreview(src, mf.media_type, undefined, false, () => {
 					removedMediaUuids.add(mf.uuid || '');

@@ -29,11 +29,27 @@ export interface ValidFileType {
  * Format: { signature: string, mediaType: string, name: string, customValidator?: function }
  */
 export type FileSignature = {
+	/** The magic byte sequence that identifies the file type */
 	signature: string;
+	/** The media type associated with the file */
 	mediaType: MediaType;
+	/** The name of the file type */
 	name: string;
+	/** A custom validator function for additional checks */
 	customValidator?: (buffer: ArrayBuffer) => boolean;
 };
+
+/**
+ * Major brands (bytes 8-11 of the `ftyp` box) emitted by common MP4 encoders.
+ * Covers the ISO Base Media brands used by ffmpeg, browsers/MediaRecorder, phones,
+ * and editors. Trailing spaces are significant — brands are always 4 bytes.
+ */
+const MP4_BRANDS = new Set([
+	'isom', 'iso2', 'iso4', 'iso5', 'iso6',
+	'mp41', 'mp42',
+	'avc1', 'dash', 'M4V ', 'M4A ',
+	'qt  ', 'MSNV',
+]);
 
 export const FILE_SIGNATURES: FileSignature[] = [
 	// Images
@@ -67,7 +83,8 @@ export const FILE_SIGNATURES: FileSignature[] = [
 	// Videos
 	// MP4: bytes[0..3] = box size (variable, e.g. 0x00000018), bytes[4..7] = 'ftyp'.
 	// The leading zeros in the box size make a short prefix anchor reliable enough;
-	// the customValidator confirms 'ftyp' at offset 4 and the brand at offset 8.
+	// the customValidator confirms 'ftyp' at offset 4 and that the major brand at
+	// offset 8 is one of the ISO-BMFF / MPEG-4 brands real encoders emit.
 	{
 		signature: '000000',
 		mediaType: 'video',
@@ -75,8 +92,9 @@ export const FILE_SIGNATURES: FileSignature[] = [
 		customValidator: (buffer: ArrayBuffer) => {
 			const arr = new Uint8Array(buffer);
 			const ftyp = [...arr.slice(4, 8)].map((b) => String.fromCharCode(b)).join('');
+			if (ftyp !== 'ftyp') return false;
 			const brand = [...arr.slice(8, 12)].map((b) => String.fromCharCode(b)).join('');
-			return ftyp === 'ftyp' && brand === 'MSNV';
+			return MP4_BRANDS.has(brand);
 		},
 	},
 	{ signature: '1A45DF', mediaType: 'video', name: 'WEBM' },

@@ -21,11 +21,12 @@ This guide is for agentic coding agents (like yourself) operating in the VRCStor
 - **Database:** Cloudflare D1 (SQLite) - Accessible via `c.env.DB`
 - **Storage:** Two Cloudflare R2 buckets:
   - `BUCKET` (`vrcstorage`) — originals + all non-image files (zip, rar, blend, mp4). Accessible via `c.env.BUCKET`.
-  - `MEDIA_BUCKET` (`vrcstorage-media`) — pre-processed image variants only (6 per image). Accessible via `c.env.MEDIA_BUCKET`.
+  - `MEDIA_BUCKET` (`vrcstorage-media`) — pre-processed public media: 6 variants per image, plus each video's animated GIF poster (`{uuid}/original.gif`) and normalized MP4 (`{uuid}/video.mp4`). Accessible via `c.env.MEDIA_BUCKET`.
 - **Images:** Cloudflare Images binding (`IMAGES`) — used by the queue handler to generate image variants and blur placeholders. Configured in `wrangler.jsonc` (main Worker only; the CDN Worker does not need this binding).
 - **KV Cache:** Cloudflare KV - Accessible via `c.env.VRCSTORAGE_KV` (used by legacy rate-limit middleware).
 - **Rate Limiting:** Cloudflare native Rate Limiting bindings — `RL_STRICT` (1/60s), `RL_MEDIUM` (100/60s), `RL_GLOBAL` (500/60s), `RL_LOGIN` (10/60s). Configured in `wrangler.jsonc`.
-- **Queues:** Cloudflare Queues — `UPLOAD_QUEUE` binding for async upload post-processing. After a file is stored, the `queue` handler (`src/http/queue.ts` → `MediaProcessingService`) generates 6 image variants (low/med/original × webp/png) and a blur placeholder stored in D1.
+- **Queues:** Cloudflare Queues — `UPLOAD_QUEUE` binding for async upload post-processing. After a file is stored, the `queue` handler (`src/http/queue.ts` → `MediaProcessingService`) generates 6 image variants (low/med/original × webp/png) and a blur placeholder stored in D1 for images. For **videos** it normalizes the upload to an H.264/AAC MP4 (`{uuid}/video.mp4`) via the Media Transformations binding and builds an animated GIF poster (`{uuid}/original.gif`) from frames sampled by duration.
+- **Media Transformations:** Cloudflare Media Transformations binding (`MEDIA`) — used by the queue handler to normalize videos to MP4 and extract poster frames from R2. Configured in `wrangler.jsonc` (main Worker only). Input limits: <100MB, ≤10min; `mode:'frame'` outputs jpg/png, `mode:'video'` outputs MP4 H.264/AAC (no WebM). The duration it needs for frame scheduling is parsed from the normalized MP4's `mvhd` box (`src/helpers/mp4-duration.ts`); the GIF poster is assembled in-Worker (`src/helpers/gif-encoder.ts`, `node:zlib` inflate) since there is no native animated output.
 - **Cron:** Scheduled worker runs daily at `0 3 * * *` UTC — the `scheduled` handler (`src/http/scheduled.ts`) reuses `AdminService.cleanupOrphanedMedia`.
 - **Validation:** [Zod](https://zod.dev/) for request body and parameter validation.
 - **Frontend Bundler:** [esbuild](https://esbuild.github.io/) — compiles `src/frontend/` → `public/js/bundle.js`.
@@ -518,11 +519,11 @@ Every file uploaded via `PUT /api/upload` (or the multipart flow) creates:
 The `r2_key` is a random UUID. Original files remain accessible at `/api/download/<r2_key>`. Image variants are served via the **dedicated CDN Worker** (`src/cdn-worker.ts`, deployed separately):
 
 ```
-GET https://cdn.vrcstorage.lat/{uuid}?res=[low|med|original]&format=[webp|png|gif]
+GET https://cdn.vrcstorage.lat/{uuid}?res=[low|med|original]&format=[webp|png|gif|video]
 ```
 
 - **CDN Worker:** `src/cdn-worker.ts` — a standalone raw-fetch Worker (no Hono, no middleware) deployed via `wrangler-cdn.jsonc`. Custom domain `cdn.vrcstorage.lat` configured in Cloudflare dashboard (Workers & Pages → vrcstorage-cdn → Settings → Triggers → Custom Domains). The main API Worker has no CDN route.
-- **Variants:** 6 files per image in `MEDIA_BUCKET` with keys `{uuid}/{res}.{format}` (animated GIFs live as a single `{uuid}/original.gif`). The CDN never touches `BUCKET`.
+- **Variants:** 6 files per image in `MEDIA_BUCKET` with keys `{uuid}/{res}.{format}` (animated GIFs live as a single `{uuid}/original.gif`). A **video** has two variants: its animated poster (`{uuid}/original.gif`, served for image formats — cards/lightbox use `?format=gif`) and its normalized MP4 (`{uuid}/video.mp4`, served for `?format=video` with **HTTP Range** so `<video>` can seek). The CDN never touches `BUCKET` — the raw uploaded video stays private there while only the normalized MP4 + poster are public. Video requests skip the processing placeholder (a 404 lets `<video>` retry until the queue finishes; an image placeholder isn't a valid video body). Both video variants carry a row in `media_variants` (`format='mp4'` / `format='gif'`), so a video counts as processed and is covered by the orphan cleanup.
 - **Processing placeholder:** while the queue is still generating variants there is no `{uuid}/…` object yet, so the CDN serves a localized `_placeholder/processing.{lang}.webp` from `MEDIA_BUCKET` with `Cache-Control: no-store` (status `200`, not `404`, so `<img>` never shows a broken icon and re-fetches until the real variant lands). The CDN picks the language from `Accept-Language` (falling back to `en`), so `en` must always be present. There is one placeholder per supported language (`en es pt fr de it nl pl tr ru cn jp`), living in `MEDIA_BUCKET` under `_placeholder/` and mirrored under `public/processing/{lang}.webp`. They are **cover-safe** — all content sits in a centered safe zone on a flat background, so `object-fit: cover` into any card aspect ratio (short landscape, square, tall) never clips the headline. To re-upload from the mirrored copies:
   ```
   for lang in en es pt fr de it nl pl tr ru cn jp; do \
@@ -532,10 +533,13 @@ GET https://cdn.vrcstorage.lat/{uuid}?res=[low|med|original]&format=[webp|png|gi
   ```
 - **Processing status:** `GET /api/media/:uuid/status` → `{ processed }` (true once `media_variants` has rows for the uuid). Listing/detail queries also expose this per media as a derived `processed` (0/1) column via `processedExpr()` in `src/db/schema.ts` — nothing is persisted on `media`, so it can't desync from the variants.
 - **Blur placeholder:** 8×8 WebP stored as a base64 data URI in `media.placeholder_blur`. Frontend reads it to display a blurred preview while the real image loads.
-- **Backfill:** `POST /api/admin/media/generate-variants` re-queues all images that have no variants yet.
+- **Backfill:** `POST /api/admin/media/generate-variants` re-queues all images and videos that have no variants yet.
 
 Frontend utilities in `src/frontend/utils.ts`:
-- `mediaUrl(uuid, res?, format?)` — constructs a CDN URL.
+- `mediaUrl(uuid, res?, format?)` — constructs a CDN URL (`format` one of `webp|png|gif`; a video poster uses `gif`).
+- `videoUrl(uuid)` — constructs the `?format=video` CDN URL for a normalized MP4 (Range-served).
+
+**Video playback (`ItemView`):** a video in the gallery renders as its animated GIF poster with a play badge (`.gallery-video-badge`), not an inline `<video>`. Clicking opens the shared lightbox, which mounts a [Video.js](https://videojs.com/) player on demand over the `?format=video` MP4 (poster = `?format=gif`). Video.js is bundled statically (`import videojs`) and its CSS is vendored to `public/style/videojs.css` (the CSP blocks external CDNs). The control bar has a custom `DownloadButton` component whose click triggers a real file download (`<a download>`) of the MP4, named from the resource title. The player is `dispose()`d on every slide change and on close so a paged-past video never keeps playing.
 - `progressiveImg(opts)` — renders an `<img>` with blur-up loading (uses `data-src` + `.lazy-img` class). Pass `processed: false` for a media whose variants aren't ready; it tags the image `data-processing` (with its uuid/res) so it can be swapped once the queue finishes.
 - `initLazyImages()` — resolves `.lazy-img[data-src]` images against the browser cache (dropping the blur synchronously on a hit) and wires an `IntersectionObserver` to blur-up the rest. Idempotent — already-bound images are skipped, so it is safe to call repeatedly. Fired globally from `app.ts` on every `route-changed` event; list views (`AvatarsView`/`ClothesView`/`AssetsView`) and `ItemView` also call it inside their `after` fn so the cache probe runs in the same tick the DOM lands — this removes the low-res flash when reopening a resource whose thumbnails are already cached (the trailing `route-changed` pass is then a no-op).
 - `initMediaPolling()` — polls `GET /api/media/:uuid/status` (per-uuid, with backoff) for every `img[data-processing]` on the page, and once a media reports ready points all its images at the real variant and clears the marker. Idempotent and called next to every `initLazyImages()` call, so a resource just uploaded swaps from the processing placeholder to the real image without a reload.

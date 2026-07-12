@@ -14,4 +14,4 @@ export { showToast, type ToastType } from './toast';
 export { renderTurnstile } from './turnstile';
 export { CHUNK_SIZE, uploadChunked, type ChunkedUploadResult } from './upload';
 export { downloadHost, type DownloadKind, type HostInfo } from './download-hosts';
-export { resizeImage, mediaUrl, progressiveImg, initLazyImages, initMediaPolling } from './media';
+export { resizeImage, mediaUrl, videoUrl, progressiveImg, initLazyImages, initMediaPolling } from './media';

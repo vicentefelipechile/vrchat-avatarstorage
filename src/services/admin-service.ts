@@ -283,12 +283,12 @@ export class AdminService {
 
 	/** Enqueue a variant-generation job for every image lacking variants. Returns the enqueued count. */
 	async backfillVariants(queue: Queue<UploadQueueMessage>): Promise<number> {
-		const rows = await this.repo.listImagesWithoutVariants();
+		const rows = await this.repo.listMediaWithoutVariants();
 		for (const row of rows) {
 			await queue.send({
 				media_uuid: row.uuid,
 				r2_key: row.r2_key,
-				media_type: 'image',
+				media_type: row.media_type,
 				file_name: 'backfill',
 				uploaded_at: Date.now(),
 			});

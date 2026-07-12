@@ -11,7 +11,7 @@
 // =========================================================================================================
 
 import { queryOne, type DB } from '../db/client';
-import type { MediaResolution, MediaFormat } from '../types';
+import type { MediaResolution, VariantFormat } from '../types';
 
 // =========================================================================================================
 // Types
@@ -20,7 +20,7 @@ import type { MediaResolution, MediaFormat } from '../types';
 /** One generated variant to index (an object already stored in MEDIA_BUCKET). */
 export interface VariantRow {
 	res: MediaResolution;
-	format: MediaFormat;
+	format: VariantFormat;
 	r2Key: string;
 	fileSize: number;
 }

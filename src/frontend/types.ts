@@ -118,6 +118,8 @@ export interface Resource {
 	thumbnail_key?: string;
 	thumbnail_uuid?: string | null;
 	thumbnail_media_uuid?: string | null;
+	/** List rows: media_type of the thumbnail. A `video` thumbnail is served as its animated GIF poster. */
+	thumbnail_media_type?: 'image' | 'video' | 'file';
 	placeholder_blur?: string | null;
 	/** List rows: 1/0 from SQL (EXISTS variants). Detail uses `thumbnail_processed` instead. */
 	processed?: number;

@@ -35,7 +35,15 @@ export interface CreateUser {
 
 export type MediaType = 'image' | 'video' | 'file';
 export type MediaResolution = 'low' | 'med' | 'original';
+
+// Image/poster variant formats served by the CDN as images. The image pipeline builds `image/${format}`
+// mime types from these, so only image formats belong here (a video's poster is an animated `gif`).
 export type MediaFormat = 'webp' | 'png' | 'gif';
+
+// Every format a `media_variants` row (and the CDN) can carry: the image formats above plus `mp4`, the
+// normalized video the CDN streams. Kept distinct from `MediaFormat` so image-only code (the 6-variant
+// pipeline, `image/${format}` mime derivation) can never be handed a video format.
+export type VariantFormat = MediaFormat | 'mp4';
 
 export interface Media {
 	uuid: string;

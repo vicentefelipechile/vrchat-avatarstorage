@@ -293,12 +293,13 @@ export class AdminRepository {
 	// Media variant backfill
 	// -------------------------------------------------------------------------
 
-	/** Image media that has no processed variants yet (candidates for backfill enqueue). */
-	listImagesWithoutVariants(): Promise<{ uuid: string; r2_key: string }[]> {
-		return queryAll<{ uuid: string; r2_key: string }>(
+	/** Image/video media that has no variants yet (candidates for backfill enqueue). Videos are included so
+	 *  a video uploaded before the pipeline existed (or one that failed) gets its MP4 + poster regenerated. */
+	listMediaWithoutVariants(): Promise<{ uuid: string; r2_key: string; media_type: 'image' | 'video' }[]> {
+		return queryAll<{ uuid: string; r2_key: string; media_type: 'image' | 'video' }>(
 			this.db,
-			`SELECT uuid, r2_key FROM media
-			  WHERE media_type = 'image'
+			`SELECT uuid, r2_key, media_type FROM media
+			  WHERE media_type IN ('image', 'video')
 			    AND uuid NOT IN (SELECT DISTINCT media_uuid FROM media_variants)`,
 		);
 	}

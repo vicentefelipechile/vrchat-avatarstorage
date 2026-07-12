@@ -37,6 +37,7 @@ interface AuthorProfileResponse {
 		title: string;
 		thumbnail_key: string | null;
 		thumbnail_media_uuid: string | null;
+		thumbnail_media_type: 'image' | 'video' | 'file';
 		placeholder_blur: string | null;
 		processed: number;
 		download_count: number;
@@ -69,7 +70,7 @@ function socialLink(url: string | null, label: string, iconName: string): string
 function avatarMiniCard(item: AuthorProfileResponse['avatars'][number]): string {
 	const title = item.title.substring(0, 50);
 	const imgHtml = item.thumbnail_media_uuid
-		? `<div class="card-image">${progressiveImg({ uuid: item.thumbnail_media_uuid, placeholder: item.placeholder_blur, res: 'low', alt: title, processed: item.processed === 1 })}<span class="card-badge">${item.avatar_type}</span></div>`
+		? `<div class="card-image">${progressiveImg({ uuid: item.thumbnail_media_uuid, placeholder: item.placeholder_blur, res: 'low', alt: title, processed: item.processed === 1, format: item.thumbnail_media_type === 'video' ? 'gif' : 'webp' })}<span class="card-badge">${item.avatar_type}</span></div>`
 		: `<div class="card-image card-image-placeholder"><span class="card-badge">${item.avatar_type}</span></div>`;
 
 	return `<div class="card">

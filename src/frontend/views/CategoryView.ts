@@ -42,7 +42,7 @@ function resourceCard(res: Resource): string {
 				${
 					res.thumbnail_uuid
 						? `<div class="card-image">
-						${progressiveImg({ uuid: res.thumbnail_uuid, placeholder: res.placeholder_blur ?? null, res: 'low', alt: title, processed: res.processed !== 0 })}
+						${progressiveImg({ uuid: res.thumbnail_uuid, placeholder: res.placeholder_blur ?? null, res: 'low', alt: title, processed: res.processed !== 0, format: res.thumbnail_media_type === 'video' ? 'gif' : 'webp' })}
 						<span class="card-badge">${categoryLabel}</span>
 					</div>`
 						: `<div class="card-image card-image-placeholder">

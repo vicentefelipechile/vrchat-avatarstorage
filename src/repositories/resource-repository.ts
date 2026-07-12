@@ -53,6 +53,7 @@ export interface ResourceListRow {
 	download_count: number;
 	created_at: number;
 	thumbnail_key: string | null;
+	thumbnail_media_type: 'image' | 'video' | 'file';
 	placeholder_blur: string | null;
 	processed: number;
 }
@@ -90,6 +91,7 @@ export class ResourceRepository {
 				'r.download_count',
 				'm.r2_key as thumbnail_key',
 				'm.uuid as thumbnail_media_uuid',
+				'm.media_type as thumbnail_media_type',
 				'm.placeholder_blur',
 				processedExpr('m'),
 			])
@@ -121,6 +123,7 @@ export class ResourceRepository {
 				'r.download_count',
 				'r.created_at',
 				'm.r2_key AS thumbnail_key',
+				'm.media_type AS thumbnail_media_type',
 				'm.placeholder_blur',
 				processedExpr('m'),
 			])

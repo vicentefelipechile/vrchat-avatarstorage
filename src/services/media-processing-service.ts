@@ -17,6 +17,8 @@
 import type { DB } from '../db/client';
 import type { MediaResolution, MediaFormat } from '../types';
 import { MediaVariantRepository, type VariantRow } from '../repositories/media-variant-repository';
+import { encodeAnimatedGif } from '../helpers/gif-encoder';
+import { parseMp4DurationSeconds, MP4_HEADER_PROBE_BYTES } from '../helpers/mp4-duration';
 
 // =========================================================================================================
 // Constants
@@ -32,6 +34,30 @@ const MEDIA_VARIANTS: Array<{ res: MediaResolution; format: MediaFormat; maxWidt
 	{ res: 'original', format: 'png', quality: 90 },
 ];
 
+/** MEDIA_BUCKET key of a video's normalized MP4 (served by the CDN as `?format=video`). */
+const videoVariantKey = (uuid: string): string => `${uuid}/video.mp4`;
+
+/** MEDIA_BUCKET key of a video's animated poster (served by the CDN as `?format=gif`). */
+const posterVariantKey = (uuid: string): string => `${uuid}/original.gif`;
+
+/**
+ * How many poster frames to sample by video duration (seconds). More frames give a livelier preview but
+ * cost one MEDIA `frame` transformation each, so the count stays small and flat. A duration we can't parse
+ * falls back to the first bucket (a single frame → a still GIF).
+ */
+const FRAME_SCHEDULE: Array<{ maxSeconds: number; frames: number }> = [
+	{ maxSeconds: 10, frames: 1 },
+	{ maxSeconds: 30, frames: 3 },
+	{ maxSeconds: 60, frames: 5 },
+	{ maxSeconds: Infinity, frames: 8 },
+];
+
+/** Width the poster frames are extracted at — matches the `med` image variant so cards stay consistent. */
+const POSTER_WIDTH = 800;
+
+/** Per-frame delay of the poster GIF (ms). ~500ms reads as a slow, glanceable loop, not a choppy clip. */
+const POSTER_FRAME_DELAY_MS = 500;
+
 // =========================================================================================================
 // Service
 // =========================================================================================================
@@ -44,6 +70,7 @@ export class MediaProcessingService {
 		private readonly images: ImagesBinding,
 		private readonly bucket: R2Bucket,
 		private readonly mediaBucket: R2Bucket,
+		private readonly media: MediaBinding,
 	) {
 		this.variants = new MediaVariantRepository(db);
 	}
@@ -96,6 +123,85 @@ export class MediaProcessingService {
 
 		const placeholder = await this.buildBlurPlaceholder(originalBytes);
 		await this.variants.saveVariantsAndPlaceholder(mediaUuid, rows, placeholder);
+	}
+
+	/**
+	 * Process an uploaded video: normalize it to an H.264/AAC MP4 (via the Media Transformations binding),
+	 * store that MP4 in MEDIA_BUCKET for the CDN to stream, sample a handful of frames by duration, encode
+	 * them into an animated GIF poster, and index both as variants in one batch. Throws (queue retries) if
+	 * the original is missing or the binding can't process the input — e.g. a video over the binding's
+	 * 100MB / 10-minute limits, in which case the message eventually dead-letters rather than looping. There
+	 * is no blur placeholder for video (its poster is the animated GIF). Idempotent: re-running overwrites.
+	 */
+	async processVideo(mediaUuid: string, r2Key: string): Promise<void> {
+		const originalObj = await this.bucket.get(r2Key);
+		if (!originalObj) throw new Error(`Original not found in BUCKET: ${r2Key}`);
+
+		// 1. Normalize to a web-optimized MP4 and store it R2→R2 (streamed, never buffered whole).
+		const normalized = this.media.input(originalObj.body).output({ mode: 'video', audio: true });
+		await this.mediaBucket.put(videoVariantKey(mediaUuid), await normalized.media(), {
+			httpMetadata: { contentType: 'video/mp4' },
+		});
+
+		// 2. Read the normalized MP4's duration to decide how many poster frames to sample.
+		const durationSeconds = await this.readVideoDuration(mediaUuid);
+		const frameCount = frameCountFor(durationSeconds);
+
+		// 3. Extract the frames (evenly spread across the clip) as PNGs from the normalized MP4.
+		const frames = await this.extractFrames(mediaUuid, durationSeconds, frameCount);
+
+		// 4. Encode the frames into one animated GIF poster and store it as the `original.gif` variant.
+		const gif = encodeAnimatedGif(frames, POSTER_FRAME_DELAY_MS);
+		const posterKey = posterVariantKey(mediaUuid);
+		await this.mediaBucket.put(posterKey, gif, { httpMetadata: { contentType: 'image/gif' } });
+
+		// 5. Index both variants (no blur placeholder for video) in a single batch.
+		const videoObj = await this.mediaBucket.head(videoVariantKey(mediaUuid));
+		const rows: VariantRow[] = [
+			{ res: 'original', format: 'mp4', r2Key: videoVariantKey(mediaUuid), fileSize: videoObj?.size ?? 0 },
+			{ res: 'original', format: 'gif', r2Key: posterKey, fileSize: gif.byteLength },
+		];
+		await this.variants.saveVariantsAndPlaceholder(mediaUuid, rows, null);
+	}
+
+	/** Duration (seconds) of the normalized MP4 from its `mvhd` box, or null when it can't be parsed. */
+	private async readVideoDuration(mediaUuid: string): Promise<number | null> {
+		const head = await this.mediaBucket.get(videoVariantKey(mediaUuid), {
+			range: { offset: 0, length: MP4_HEADER_PROBE_BYTES },
+		});
+		if (!head) return null;
+		return parseMp4DurationSeconds(await head.arrayBuffer());
+	}
+
+	/**
+	 * Extract `count` PNG frames from the normalized MP4, spread evenly across the clip. Timestamps are
+	 * clamped a hair inside the duration so the last sample never lands past the final frame. When the
+	 * duration is unknown, frames are sampled at fixed early offsets instead.
+	 */
+	private async extractFrames(mediaUuid: string, durationSeconds: number | null, count: number): Promise<ArrayBuffer[]> {
+		const source = () => this.mediaBucket.get(videoVariantKey(mediaUuid));
+
+		const times: number[] = [];
+		for (let i = 0; i < count; i++) {
+			if (durationSeconds && durationSeconds > 0) {
+				// Spread across [0, duration): frame i at (i + 0.5)/count of the way in.
+				times.push(Math.min(durationSeconds * 0.98, (durationSeconds * (i + 0.5)) / count));
+			} else {
+				times.push(i); // unknown duration: 0s, 1s, 2s, ...
+			}
+		}
+
+		const frames: ArrayBuffer[] = [];
+		for (const t of times) {
+			const obj = await source();
+			if (!obj) throw new Error(`Normalized video vanished from MEDIA_BUCKET: ${mediaUuid}`);
+			const result = this.media
+				.input(obj.body)
+				.transform({ width: POSTER_WIDTH })
+				.output({ mode: 'frame', time: `${t.toFixed(2)}s`, format: 'png' });
+			frames.push(await (await result.response()).arrayBuffer());
+		}
+		return frames;
 	}
 
 	/**
@@ -159,6 +265,15 @@ export class MediaProcessingService {
 // =========================================================================================================
 // Helpers
 // =========================================================================================================
+
+/** Poster frame count for a video duration (seconds), per FRAME_SCHEDULE. Unknown duration → first bucket. */
+function frameCountFor(durationSeconds: number | null): number {
+	const seconds = durationSeconds ?? 0;
+	for (const step of FRAME_SCHEDULE) {
+		if (seconds <= step.maxSeconds) return step.frames;
+	}
+	return FRAME_SCHEDULE[FRAME_SCHEDULE.length - 1].frames;
+}
 
 /** True if the bytes start with the GIF signature (`GIF8` — both 87a and 89a). */
 function isGif(bytes: Uint8Array): boolean {

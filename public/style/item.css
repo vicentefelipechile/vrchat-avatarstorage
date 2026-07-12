@@ -312,6 +312,43 @@
 	background: #000;
 }
 
+/* Video preview: the poster fills the tile like an image, with a play badge overlaid to signal it
+   opens a player. `--video` links keep the pointer cursor (play) rather than the image zoom cursor. */
+.gallery-item-link--video {
+	cursor: pointer;
+	position: relative;
+}
+
+.gallery-video-badge {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 56px;
+	height: 56px;
+	border-radius: 50%;
+	background: rgba(0, 0, 0, 0.55);
+	color: #fff;
+	border: 2px solid rgba(255, 255, 255, 0.9);
+	pointer-events: none;
+	transition:
+		background 0.2s ease,
+		transform 0.2s ease;
+}
+
+/* Nudge the triangle to look optically centred inside the circle. */
+.gallery-video-badge svg {
+	margin-left: 3px;
+}
+
+.gallery-item:hover .gallery-video-badge {
+	background: var(--btn-bg, rgba(0, 0, 0, 0.75));
+	transform: translate(-50%, -50%) scale(1.08);
+}
+
 @media (max-width: 768px) {
 	.gallery-grid {
 		grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
@@ -358,6 +395,52 @@
 	user-select: none;
 	-webkit-user-drag: none;
 	border: 2px solid var(--border-color);
+}
+
+/* The image and video wraps swap via the `hidden` attribute; it must beat the explicit `display:flex`
+   above so only the active medium shows. */
+#lightbox-img-wrap[hidden],
+#lightbox-video-wrap[hidden] {
+	display: none;
+}
+
+/* The Video.js player in the lightbox: capped to the same 90vw/90vh viewport box as images, centred,
+   with the branded border. `fluid` keeps the player at the video's aspect ratio inside this box. */
+#lightbox-video-wrap {
+	width: min(90vw, 1280px);
+	max-width: 90vw;
+	max-height: 90vh;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+#lightbox-video-wrap .video-js {
+	width: 100%;
+	max-height: 90vh;
+	border: 2px solid var(--border-color);
+	background: #000;
+}
+
+/* Download button in the Video.js control bar. Video.js renders control buttons via an icon
+   placeholder; this draws a download glyph into it with a CSS mask so it inherits the bar's colour. */
+.video-js .vjs-download-button {
+	cursor: pointer;
+}
+
+.video-js .vjs-download-button .vjs-icon-placeholder::before {
+	content: '';
+	display: inline-block;
+	width: 1.8em;
+	height: 100%;
+	vertical-align: middle;
+	background-color: currentColor;
+	-webkit-mask: var(--vjs-download-icon) center / 1.1em no-repeat;
+	mask: var(--vjs-download-icon) center / 1.1em no-repeat;
+}
+
+:root {
+	--vjs-download-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4'/%3E%3Cpolyline points='7 10 12 15 17 10'/%3E%3Cline x1='12' y1='15' x2='12' y2='3'/%3E%3C/svg%3E");
 }
 
 .lightbox-btn {

@@ -58,6 +58,14 @@ export function mediaUrl(uuid: string, res: 'low' | 'med' | 'original' = 'med', 
 	return `${CDN_BASE}/${uuid}?res=${res}&format=${format}`;
 }
 
+/**
+ * CDN URL for a video's normalized MP4 (served with HTTP Range so `<video>` can seek). A video's animated
+ * poster is a separate image variant — use `mediaUrl(uuid, res, 'gif')` for that.
+ */
+export function videoUrl(uuid: string): string {
+	return `${CDN_BASE}/${uuid}?format=video`;
+}
+
 // =========================================================================
 // Progressive / lazy images
 // =========================================================================
@@ -76,15 +84,16 @@ export function progressiveImg(opts: {
 	alt?: string;
 	className?: string;
 	processed?: boolean;
+	format?: 'webp' | 'png' | 'gif';
 }): string {
-	const { uuid, placeholder, res = 'med', alt = '', className = '', processed = true } = opts;
-	const dataSrc = mediaUrl(uuid, res);
+	const { uuid, placeholder, res = 'med', alt = '', className = '', processed = true, format = 'webp' } = opts;
+	const dataSrc = mediaUrl(uuid, res, format);
 
 	// Not processed yet: the queue is still generating variants, so the CDN serves the shared
 	// "processing" placeholder for this URL. Tag the image with its uuid so initMediaPolling can poll
 	// for readiness and swap in the real variant without a reload. It still goes through the normal lazy
 	// path below — the only difference is the data-processing marker.
-	const processingAttr = processed ? '' : ` data-processing="1" data-uuid="${uuid}" data-res="${res}"`;
+	const processingAttr = processed ? '' : ` data-processing="1" data-uuid="${uuid}" data-res="${res}" data-format="${format}"`;
 
 	// Seen this exact URL already this session: skip the blur entirely and point straight at the real
 	// image. The browser serves it from memory cache, so it paints sharp on the first frame. Only for
@@ -184,7 +193,8 @@ const pollingUuids = new Set<string>();
 function swapProcessedImages(uuid: string): void {
 	document.querySelectorAll<HTMLImageElement>(`img[data-processing][data-uuid="${uuid}"]`).forEach((img) => {
 		const res = (img.dataset.res as 'low' | 'med' | 'original') ?? 'med';
-		const real = mediaUrl(uuid, res);
+		const format = (img.dataset.format as 'webp' | 'png' | 'gif') ?? 'webp';
+		const real = mediaUrl(uuid, res, format);
 		img.removeAttribute('data-processing');
 		img.src = real;
 		img.style.filter = '';

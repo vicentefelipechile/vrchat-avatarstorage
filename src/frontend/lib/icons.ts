@@ -37,6 +37,7 @@ import {
 	MessageCircle,
 	Check,
 	Download,
+	Play,
 	Cloud,
 	HardDrive,
 	Package,
@@ -68,6 +69,16 @@ function renderNode(node: LucideNode): string {
 export function icon(iconData: LucideIconData, size = 16, extraAttrs = ''): string {
 	const inner = iconData.map(renderNode).join('');
 	return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"${extraAttrs ? ' ' + extraAttrs : ''}>${inner}</svg>`;
+}
+
+/**
+ * Renders a Lucide icon as a solid glyph — `fill="currentColor"` and no stroke — instead of the
+ * default line style. Used for marks that read better filled at small sizes over imagery (e.g. a
+ * play triangle on a video poster).
+ */
+export function filledIcon(iconData: LucideIconData, size = 16): string {
+	const inner = iconData.map(renderNode).join('');
+	return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true">${inner}</svg>`;
 }
 
 // simple-icons exports each brand mark as an object; only its single SVG `path` is needed to draw it.
@@ -105,6 +116,10 @@ export const icons = {
 	history: (size = 16, extraAttrs = '') => icon(History as unknown as LucideIconData, size, extraAttrs),
 	check: (size = 16, extraAttrs = '') => icon(Check as unknown as LucideIconData, size, extraAttrs),
 	download: (size = 16, extraAttrs = '') => icon(Download as unknown as LucideIconData, size, extraAttrs),
+	// Filled play triangle for video-preview badges. Built via `filledIcon` so the glyph is solid
+	// (`fill="currentColor"`, no stroke) and reads at a glance over a poster frame, unlike the stroked
+	// line icons elsewhere.
+	play: (size = 16) => filledIcon(Play as unknown as LucideIconData, size),
 	cloud: (size = 16, extraAttrs = '') => icon(Cloud as unknown as LucideIconData, size, extraAttrs),
 	'hard-drive': (size = 16, extraAttrs = '') => icon(HardDrive as unknown as LucideIconData, size, extraAttrs),
 	package: (size = 16, extraAttrs = '') => icon(Package as unknown as LucideIconData, size, extraAttrs),

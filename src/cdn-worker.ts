@@ -5,20 +5,22 @@
 // Deployed separately from the main API Worker.
 // Custom domain: cdn.vrcstorage.lat
 //
-// URL format: https://cdn.vrcstorage.lat/{uuid}?res=[low|med|original]&format=[webp|png|gif]
+// URL format: https://cdn.vrcstorage.lat/{uuid}?res=[low|med|original]&format=[webp|png|gif|video]
 //
-// Serves only pre-processed variants from MEDIA_BUCKET. Every image is fully covered (animated media —
-// GIF, animated WebP, APNG — lives as a single `{uuid}/original.{gif|webp|png}` variant in its native
-// format), so the CDN never reaches into the originals bucket. When a variant is absent — the window
-// between upload and the queue finishing its variants,
-// where the original exists but no variant does — the CDN serves a localized "processing" placeholder
+// Serves only pre-processed variants from MEDIA_BUCKET. Images are fully covered (animated media — GIF,
+// animated WebP, APNG — lives as a single `{uuid}/original.{gif|webp|png}` variant in its native format).
+// A video is covered by two variants: its animated poster (`{uuid}/original.gif`, served for image
+// formats) and its normalized MP4 (`{uuid}/video.mp4`, served for `format=video` with HTTP Range so the
+// browser can seek). The CDN never reaches into the originals bucket. When a variant is absent — the
+// window between upload and the queue finishing — the CDN serves a localized "processing" placeholder
 // (`_placeholder/processing.{lang}.webp`, chosen from Accept-Language) with a short cache, so the browser
 // paints a valid image instead of a broken icon and re-fetches until the real variant lands. Only if no
-// placeholder at all is present does a request 404.
+// placeholder at all is present does a request 404. (Video requests skip the placeholder — a `<video>`
+// element handles a transient 404 by retrying, and an image placeholder isn't a valid video body.)
 // =========================================================================================================
 
 const VALID_RES = new Set<string>(['low', 'med', 'original']);
-const VALID_FORMAT = new Set<string>(['webp', 'png', 'gif']);
+const VALID_FORMAT = new Set<string>(['webp', 'png', 'gif', 'video']);
 
 /**
  * Native formats animated media can be stored under as its single `original` variant (GIF, animated
@@ -47,6 +49,12 @@ export default {
 
 		if (!VALID_RES.has(res) || !VALID_FORMAT.has(format)) {
 			return new Response('Invalid res or format parameter', { status: 400 });
+		}
+
+		// Video: stream the normalized MP4 with Range support (seek/scrub). No processing placeholder —
+		// a 404 lets the <video> element retry until the queue finishes normalizing.
+		if (format === 'video') {
+			return serveVideo(request, env, `${uuid}/video.mp4`);
 		}
 
 		const variantKey = `${uuid}/${res}.${format}`;
@@ -118,6 +126,76 @@ function pickLang(header: string | null): string {
 		if (PLACEHOLDER_LANGS.has(mapped)) return mapped;
 	}
 	return DEFAULT_LANG;
+}
+
+/**
+ * Stream a normalized MP4 from MEDIA_BUCKET with HTTP Range support so `<video>` can seek. Honours a
+ * `Range: bytes=start-end` request with a `206` + `Content-Range`; a full request gets a `200` with
+ * `Accept-Ranges: bytes`. A missing object 404s (the queue is still normalizing) — the browser retries.
+ */
+async function serveVideo(request: Request, env: Env, key: string): Promise<Response> {
+	const rangeHeader = request.headers.get('Range');
+
+	// Probe size + etag without pulling the body, so a Range can be resolved to an R2 ranged GET.
+	const head = await env.MEDIA_BUCKET.head(key);
+	if (!head) return new Response('Not found', { status: 404 });
+
+	const total = head.size;
+	const baseHeaders = new Headers();
+	baseHeaders.set('Content-Type', 'video/mp4');
+	baseHeaders.set('Accept-Ranges', 'bytes');
+	baseHeaders.set('Cache-Control', 'public, max-age=31536000, immutable');
+	baseHeaders.set('X-Content-Type-Options', 'nosniff');
+	baseHeaders.set('ETag', head.httpEtag);
+
+	const parsed = rangeHeader ? parseRange(rangeHeader, total) : null;
+
+	// Unsatisfiable range → 416 with the valid extent.
+	if (rangeHeader && !parsed) {
+		return new Response('Range Not Satisfiable', { status: 416, headers: { 'Content-Range': `bytes */${total}` } });
+	}
+
+	if (parsed) {
+		const { start, end } = parsed;
+		const object = await env.MEDIA_BUCKET.get(key, { range: { offset: start, length: end - start + 1 } });
+		if (!object) return new Response('Not found', { status: 404 });
+		baseHeaders.set('Content-Range', `bytes ${start}-${end}/${total}`);
+		baseHeaders.set('Content-Length', String(end - start + 1));
+		return new Response(object.body, { status: 206, headers: baseHeaders });
+	}
+
+	const object = await env.MEDIA_BUCKET.get(key);
+	if (!object) return new Response('Not found', { status: 404 });
+	baseHeaders.set('Content-Length', String(total));
+	return new Response(object.body, { status: 200, headers: baseHeaders });
+}
+
+/**
+ * Parse a single-range `Range: bytes=start-end` header against the object size. Returns clamped inclusive
+ * `{ start, end }`, or null if unparseable/unsatisfiable. Supports open-ended (`bytes=500-`) and suffix
+ * (`bytes=-500`) forms; multi-range requests fall back to the first range only.
+ */
+function parseRange(header: string, total: number): { start: number; end: number } | null {
+	const match = /^bytes=(\d*)-(\d*)$/.exec(header.trim());
+	if (!match) return null;
+
+	const [, startStr, endStr] = match;
+	let start: number;
+	let end: number;
+
+	if (startStr === '') {
+		// Suffix range: last N bytes.
+		const suffix = parseInt(endStr, 10);
+		if (isNaN(suffix) || suffix === 0) return null;
+		start = Math.max(0, total - suffix);
+		end = total - 1;
+	} else {
+		start = parseInt(startStr, 10);
+		end = endStr === '' ? total - 1 : parseInt(endStr, 10);
+	}
+
+	if (isNaN(start) || isNaN(end) || start > end || start >= total) return null;
+	return { start, end: Math.min(end, total - 1) };
 }
 
 /** Serve a processed variant object from MEDIA_BUCKET with immutable cache headers. */

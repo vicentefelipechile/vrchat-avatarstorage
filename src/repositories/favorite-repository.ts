@@ -29,6 +29,7 @@ export interface FavoriteRow {
 	created_at: number;
 	updated_at: number;
 	thumbnail_key: string | null;
+	thumbnail_media_type: 'image' | 'video' | 'file';
 	placeholder_blur: string | null;
 	processed: number;
 	author_username: string | null;
@@ -93,6 +94,7 @@ export class FavoriteRepository {
 				r.created_at,
 				r.updated_at,
 				m.r2_key AS thumbnail_key,
+				m.media_type AS thumbnail_media_type,
 				m.placeholder_blur,
 				${processedExpr('m')},
 				u.username AS author_username,
@@ -126,6 +128,7 @@ export class FavoriteRepository {
 				r.created_at,
 				r.updated_at,
 				m.r2_key AS thumbnail_key,
+				m.media_type AS thumbnail_media_type,
 				m.placeholder_blur,
 				${processedExpr('m')},
 				u.username AS author_username,

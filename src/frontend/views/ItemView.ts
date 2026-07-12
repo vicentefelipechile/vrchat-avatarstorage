@@ -4,7 +4,7 @@
 
 import { t } from '../core/i18n';
 import { DataCache } from '../core/cache';
-import { TimeUnit, mediaUrl, progressiveImg, htmlDecode, initLazyImages, initMediaPolling } from '../lib/utils';
+import { TimeUnit, mediaUrl, videoUrl, progressiveImg, htmlDecode, initLazyImages, initMediaPolling } from '../lib/utils';
 import { downloadHost, type HostInfo } from '../lib/download-hosts';
 import { deleteComment, approveResource, rejectResource, deactivateResource } from '../features/admin';
 import { icons, getIcon } from '../lib/icons';
@@ -12,6 +12,8 @@ import { commentEditorHtml, initCommentEditor } from '../features/comment-editor
 import { navigateTo } from '../core/router';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
+import videojs from 'video.js';
+import type Player from 'video.js/dist/types/player';
 import type { RouteContext, Resource, Comment, ResourceLink, AvatarMeta, AssetMeta, ClothesMeta } from '../types';
 
 // =========================================================================
@@ -195,15 +197,33 @@ function downloadSection(res: Resource): string {
 	return `<div class="download-buttons">${buttons}</div>`;
 }
 
-/** A lightbox slide: `preview` is the low-res variant (already cached by the gallery thumbnail, shown
+/** An image slide: `preview` is the low-res variant (already cached by the gallery thumbnail, shown
  *  instantly) and `full` is the full-res original swapped in once it finishes loading. */
-interface LightboxImage {
+interface LightboxImageSlide {
+	kind: 'image';
 	preview: string;
 	full: string;
 }
 
-function buildGallery(res: Resource): { html: string; images: LightboxImage[] } {
-	const images: LightboxImage[] = [];
+/** A video slide: `src` is the CDN MP4 (Range-served), `poster` its animated GIF frame, and `filename`
+ *  the name the download button saves as. The Video.js player is mounted lazily when the slide opens. */
+interface LightboxVideoSlide {
+	kind: 'video';
+	src: string;
+	poster: string;
+	filename: string;
+}
+
+type LightboxSlide = LightboxImageSlide | LightboxVideoSlide;
+
+/** Turn a resource title into a safe download filename (`My Avatar` → `my-avatar.mp4`). */
+function videoFilename(title: string): string {
+	const base = title.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'video';
+	return `${base}.mp4`;
+}
+
+function buildGallery(res: Resource): { html: string; images: LightboxSlide[] } {
+	const images: LightboxSlide[] = [];
 	let html = '';
 
 	const hasMedia = (res.mediaFiles?.length ?? 0) > 0;
@@ -217,7 +237,7 @@ function buildGallery(res: Resource): { html: string; images: LightboxImage[] } 
 	if (hasThumbnail) {
 		const url = `/api/download/${res.thumbnail_key}`;
 		const idx = images.length;
-		images.push({ preview: url, full: url });
+		images.push({ kind: 'image', preview: url, full: url });
 		html += `
 			<div class="gallery-item">
 				<div class="gallery-item-link" data-lightbox-index="${idx}" data-full-src="${url}">
@@ -230,20 +250,29 @@ function buildGallery(res: Resource): { html: string; images: LightboxImage[] } 
 		res.mediaFiles!.forEach((media) => {
 			const fallbackUrl = `/api/download/${media.r2_key}`;
 			if (media.media_type === 'video') {
-				// Video is public media → served by the CDN (uuid). The CDN's fallback path
-				// streams the original from BUCKET when no image variant exists.
-				const videoUrl = media.uuid ? mediaUrl(media.uuid, 'original') : fallbackUrl;
+				// The gallery shows the video's poster (its animated GIF frame) with a play badge, not an
+				// inline player — clicking opens it full-size in the lightbox, where a Video.js player is
+				// mounted on demand. The lightbox streams the normalized MP4 from the CDN (`?format=video`,
+				// Range-served) and offers a download button for it.
+				const src = media.uuid ? videoUrl(media.uuid) : fallbackUrl;
+				const poster = media.uuid ? mediaUrl(media.uuid, 'med', 'gif') : '';
+				const idx = images.length;
+				images.push({ kind: 'video', src, poster, filename: videoFilename(res.title) });
+				const posterHtml = media.uuid
+					? progressiveImg({ uuid: media.uuid, placeholder: media.placeholder_blur ?? null, res: 'med', format: 'gif', alt: 'Video preview', processed: media.processed !== 0 })
+					: `<img src="${poster}" alt="Video preview" loading="lazy">`;
 				html += `
 					<div class="gallery-item">
-						<video controls style="width:100%;height:100%;object-fit:cover">
-							<source src="${videoUrl}" type="video/mp4">
-						</video>
+						<div class="gallery-item-link gallery-item-link--video" data-lightbox-index="${idx}">
+							${posterHtml}
+							<span class="gallery-video-badge" aria-hidden="true">${icons.play(28)}</span>
+						</div>
 					</div>`;
 			} else if (media.media_type === 'image') {
 				const fullUrl = media.uuid ? mediaUrl(media.uuid, 'original', 'png') : fallbackUrl;
 				const previewUrl = media.uuid ? mediaUrl(media.uuid, 'low') : fallbackUrl;
 				const idx = images.length;
-				images.push({ preview: previewUrl, full: fullUrl });
+				images.push({ kind: 'image', preview: previewUrl, full: fullUrl });
 				const imgHtml = media.uuid
 					? progressiveImg({ uuid: media.uuid, placeholder: media.placeholder_blur ?? null, res: 'low', alt: 'Gallery Image', processed: media.processed !== 0 })
 					: `<img src="${fallbackUrl}" alt="Gallery Image" loading="lazy">`;
@@ -329,23 +358,94 @@ function renderCommentsList(comments: Comment[], isAdmin: boolean): string {
 		.join('');
 }
 
-function setupLightbox(images: LightboxImage[]): void {
+/**
+ * Registers a Video.js control-bar button that downloads the current MP4 (real file save via an
+ * `<a download>`, not opening it in a tab). Registered once per page load, guarded so re-entering the
+ * view doesn't throw on a duplicate registration. The target URL + filename come from the player's
+ * `download` option, set when the player is created for a video slide.
+ */
+function ensureDownloadButton(): void {
+	if (videojs.getComponent('DownloadButton')) return;
+	const Button = videojs.getComponent('Button') as unknown as {
+		new (player: unknown, options?: unknown): {
+			addClass(c: string): void;
+			controlText(t: string): void;
+			player(): Player & { options_: { download?: { url: string; filename: string } } };
+		};
+	};
+	class DownloadButton extends Button {
+		constructor(player: unknown, options?: unknown) {
+			super(player, options);
+			this.addClass('vjs-download-button');
+			this.controlText('Download');
+		}
+		handleClick(): void {
+			const dl = this.player().options_.download;
+			if (!dl) return;
+			const a = document.createElement('a');
+			a.href = dl.url;
+			a.download = dl.filename;
+			a.rel = 'noopener';
+			document.body.appendChild(a);
+			a.click();
+			a.remove();
+		}
+	}
+	videojs.registerComponent('DownloadButton', DownloadButton as unknown as ReturnType<typeof videojs.getComponent>);
+}
+
+function setupLightbox(images: LightboxSlide[]): void {
 	if (!images.length) return;
 
 	const overlay = document.getElementById('lightbox-overlay')!;
 	const imgEl = document.getElementById('lightbox-img') as HTMLImageElement;
 	const imgWrap = document.getElementById('lightbox-img-wrap')!;
+	const videoWrap = document.getElementById('lightbox-video-wrap')!;
 	const counter = document.getElementById('lightbox-counter')!;
 	const btnClose = document.getElementById('lightbox-close')!;
 	const btnPrev = document.getElementById('lightbox-prev')!;
 	const btnNext = document.getElementById('lightbox-next')!;
 
+	ensureDownloadButton();
+
 	const ZOOM_SCALE = 2.5;
 	let current = 0;
 	let isZoomed = false;
+	let player: Player | null = null;
 
 	// Full-res URLs that have finished downloading — reopening one of these skips the low-res preview.
 	const loadedFull = new Set<string>();
+
+	// Tear down any mounted Video.js player and clear the video wrap. Called before every slide change
+	// and on close so a paged-past video never keeps playing (audio) in the background.
+	const disposePlayer = () => {
+		if (player) {
+			player.dispose();
+			player = null;
+		}
+		videoWrap.innerHTML = '';
+		videoWrap.hidden = true;
+	};
+
+	const openVideo = (slide: LightboxVideoSlide) => {
+		imgWrap.hidden = true;
+		videoWrap.hidden = false;
+		const videoEl = document.createElement('video');
+		videoEl.className = 'video-js vjs-default-skin vjs-big-play-centered';
+		videoEl.setAttribute('playsinline', '');
+		videoWrap.appendChild(videoEl);
+		player = videojs(videoEl, {
+			controls: true,
+			preload: 'auto',
+			autoplay: true,
+			fluid: true,
+			poster: slide.poster,
+			sources: [{ src: slide.src, type: 'video/mp4' }],
+			// Read back by the DownloadButton component's click handler.
+			download: { url: slide.src, filename: slide.filename },
+			controlBar: { children: ['playToggle', 'progressControl', 'volumePanel', 'DownloadButton', 'fullscreenToggle'] },
+		} as Parameters<typeof videojs>[1]);
+	};
 
 	const MARGIN = 0.09;
 	const remap = (v: number) => Math.min(Math.max(((v - MARGIN) / (1 - 2 * MARGIN)) * 100, 0), 100);
@@ -379,10 +479,8 @@ function setupLightbox(images: LightboxImage[]): void {
 		}
 	};
 
-	const open = (idx: number) => {
-		current = ((idx % images.length) + images.length) % images.length;
-		const slide = images[current];
-
+	const openImage = (slide: LightboxImageSlide) => {
+		imgWrap.hidden = false;
 		// Once a slide's full-res original has downloaded it stays cached, so reopening or paging back
 		// to it shows the sharp image directly — no low-res flash. Only the first view of a slide falls
 		// back to its preview (instant, already cached by the gallery thumbnail) and swaps to full on
@@ -400,8 +498,20 @@ function setupLightbox(images: LightboxImage[]): void {
 			};
 			full.src = slide.full;
 		}
-
 		setZoom(false);
+	};
+
+	const open = (idx: number) => {
+		current = ((idx % images.length) + images.length) % images.length;
+		const slide = images[current];
+
+		// Each slide change starts from a clean player: dispose any prior video, and hide the image wrap
+		// so an image slide can re-show it. Then mount whichever medium this slide is.
+		disposePlayer();
+		imgWrap.hidden = true;
+		if (slide.kind === 'video') openVideo(slide);
+		else openImage(slide);
+
 		counter.textContent = `${current + 1} / ${images.length}`;
 		overlay.classList.add('active');
 		document.body.style.overflow = 'hidden';
@@ -410,6 +520,7 @@ function setupLightbox(images: LightboxImage[]): void {
 	const close = () => {
 		overlay.classList.remove('active');
 		setZoom(false);
+		disposePlayer();
 		imgEl.src = '';
 		document.body.style.overflow = '';
 	};
@@ -537,6 +648,7 @@ export async function itemView(ctx: RouteContext): Promise<string> {
 			<button id="lightbox-close" aria-label="Close">&times;</button>
 			<button id="lightbox-prev" class="lightbox-btn" aria-label="Previous">&#8592;</button>
 			<div id="lightbox-img-wrap"><img id="lightbox-img" src="" alt=""></div>
+			<div id="lightbox-video-wrap" hidden></div>
 			<button id="lightbox-next" class="lightbox-btn" aria-label="Next">&#8594;</button>
 			<div id="lightbox-counter"></div>
 		</div>`;
@@ -553,7 +665,7 @@ export async function itemAfter(ctx: RouteContext): Promise<void> {
 	// Recover lightbox images from data attribute
 	const box = document.querySelector<HTMLElement>('.details-box');
 	const lightboxData = box?.dataset.lightbox;
-	const lightboxImages: LightboxImage[] = lightboxData ? JSON.parse(decodeURIComponent(lightboxData)) : [];
+	const lightboxImages: LightboxSlide[] = lightboxData ? JSON.parse(decodeURIComponent(lightboxData)) : [];
 
 	// Resolve the gallery thumbnails against the browser cache now, in the same tick the DOM lands, rather
 	// than waiting for the trailing `route-changed`. On a return visit the low-res variant is already

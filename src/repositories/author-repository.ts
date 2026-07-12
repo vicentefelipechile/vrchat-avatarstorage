@@ -116,6 +116,7 @@ export class AuthorRepository {
 		return queryAll<Record<string, unknown>>(
 			this.db,
 			`SELECT r.uuid, r.title, r.download_count, r.created_at, m.r2_key AS thumbnail_key, m.uuid AS thumbnail_media_uuid,
+				m.media_type AS thumbnail_media_type,
 				m.placeholder_blur,
 				${processedExpr('m')},
 				am.gender, am.avatar_type, am.platform, am.is_nsfw

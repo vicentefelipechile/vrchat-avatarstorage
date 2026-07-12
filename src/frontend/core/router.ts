@@ -2,7 +2,7 @@
 // router.ts — Minimal SPA router using the History API
 // =========================================================================
 
-import type { Route, RouteContext, ViewFn, AfterFn, RouteOptions } from './types';
+import type { Route, RouteContext, ViewFn, AfterFn, RouteOptions } from './../types';
 
 // -------------------------------------------------------------------------
 // Registry
