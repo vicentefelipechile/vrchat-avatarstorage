@@ -38,6 +38,7 @@ const KNOWN_HOSTS: KnownHost[] = [
 	{ match: /mediafire\./, label: 'MediaFire', icon: 'mediafire', kind: 'server' },
 	{ match: /dropbox\./, label: 'Dropbox', icon: 'dropbox', kind: 'server' },
 	{ match: /workupload\./, label: 'Workupload', icon: 'cloud', kind: 'server' },
+	{ match: /drive\.proton\.me/, label: 'Proton Drive', icon: 'protondrive', kind: 'server' },
 	{ match: /(?:cdn\.)?discord(?:app)?\.(?:com|gg)/, label: 'Discord', icon: 'discord', kind: 'server' },
 	{ match: /github\.(?:com|io)/, label: 'GitHub', icon: 'github', kind: 'server' },
 	{ match: /(?:1fichier|pixeldrain|gofile|anonfiles|krakenfiles)\./, label: 'File host', icon: 'cloud', kind: 'server' },

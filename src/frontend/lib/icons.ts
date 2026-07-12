@@ -41,7 +41,7 @@ import {
 	HardDrive,
 	Package,
 } from 'lucide';
-import { siGoogledrive, siMega, siMediafire, siDropbox, siDiscord, siGithub, siGumroad, siPayhip, siItchdotio } from 'simple-icons';
+import { siGoogledrive, siMega, siMediafire, siDropbox, siProtondrive, siDiscord, siGithub, siGumroad, siPayhip, siItchdotio } from 'simple-icons';
 
 // Lucide's internal node data: [tagName, attrs, children?]
 type LucideNode = [string, Record<string, string | number>, LucideNode[]?];
@@ -131,6 +131,7 @@ export const icons = {
 	mega: (size = 16) => brandIcon(siMega, size),
 	mediafire: (size = 16) => brandIcon(siMediafire, size),
 	dropbox: (size = 16) => brandIcon(siDropbox, size),
+	protondrive: (size = 16) => brandIcon(siProtondrive, size),
 	discord: (size = 16) => brandIcon(siDiscord, size),
 	github: (size = 16) => brandIcon(siGithub, size),
 	gumroad: (size = 16) => brandIcon(siGumroad, size),
