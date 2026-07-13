@@ -12,8 +12,6 @@ import { commentEditorHtml, initCommentEditor } from '../features/comment-editor
 import { navigateTo } from '../core/router';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
-import videojs from 'video.js';
-import type Player from 'video.js/dist/types/player';
 import type { RouteContext, Resource, Comment, ResourceLink, AvatarMeta, AssetMeta, ClothesMeta } from '../types';
 
 // =========================================================================
@@ -206,7 +204,7 @@ interface LightboxImageSlide {
 }
 
 /** A video slide: `src` is the CDN MP4 (Range-served), `poster` its animated GIF frame, and `filename`
- *  the name the download button saves as. The Video.js player is mounted lazily when the slide opens. */
+ *  the name the download button saves as. A native `<video>` element is mounted lazily when the slide opens. */
 interface LightboxVideoSlide {
 	kind: 'video';
 	src: string;
@@ -251,7 +249,7 @@ function buildGallery(res: Resource): { html: string; images: LightboxSlide[] } 
 			const fallbackUrl = `/api/download/${media.r2_key}`;
 			if (media.media_type === 'video') {
 				// The gallery shows the video's poster (its animated GIF frame) with a play badge, not an
-				// inline player — clicking opens it full-size in the lightbox, where a Video.js player is
+				// inline player — clicking opens it full-size in the lightbox, where a native <video> player is
 				// mounted on demand. The lightbox streams the normalized MP4 from the CDN (`?format=video`,
 				// Range-served) and offers a download button for it.
 				const src = media.uuid ? videoUrl(media.uuid) : fallbackUrl;
@@ -358,40 +356,16 @@ function renderCommentsList(comments: Comment[], isAdmin: boolean): string {
 		.join('');
 }
 
-/**
- * Registers a Video.js control-bar button that downloads the current MP4 (real file save via an
- * `<a download>`, not opening it in a tab). Registered once per page load, guarded so re-entering the
- * view doesn't throw on a duplicate registration. The target URL + filename come from the player's
- * `download` option, set when the player is created for a video slide.
- */
-function ensureDownloadButton(): void {
-	if (videojs.getComponent('DownloadButton')) return;
-	const Button = videojs.getComponent('Button') as unknown as {
-		new (player: unknown, options?: unknown): {
-			addClass(c: string): void;
-			controlText(t: string): void;
-			player(): Player & { options_: { download?: { url: string; filename: string } } };
-		};
-	};
-	class DownloadButton extends Button {
-		constructor(player: unknown, options?: unknown) {
-			super(player, options);
-			this.addClass('vjs-download-button');
-			this.controlText('Download');
-		}
-		handleClick(): void {
-			const dl = this.player().options_.download;
-			if (!dl) return;
-			const a = document.createElement('a');
-			a.href = dl.url;
-			a.download = dl.filename;
-			a.rel = 'noopener';
-			document.body.appendChild(a);
-			a.click();
-			a.remove();
-		}
-	}
-	videojs.registerComponent('DownloadButton', DownloadButton as unknown as ReturnType<typeof videojs.getComponent>);
+/** Triggers a real file download of `url` saved as `filename` (an `<a download>` click, not opening it
+ *  in a tab). Used by the lightbox's video download button. */
+function downloadFile(url: string, filename: string): void {
+	const a = document.createElement('a');
+	a.href = url;
+	a.download = filename;
+	a.rel = 'noopener';
+	document.body.appendChild(a);
+	a.click();
+	a.remove();
 }
 
 function setupLightbox(images: LightboxSlide[]): void {
@@ -406,45 +380,53 @@ function setupLightbox(images: LightboxSlide[]): void {
 	const btnPrev = document.getElementById('lightbox-prev')!;
 	const btnNext = document.getElementById('lightbox-next')!;
 
-	ensureDownloadButton();
-
 	const ZOOM_SCALE = 2.5;
 	let current = 0;
 	let isZoomed = false;
-	let player: Player | null = null;
 
 	// Full-res URLs that have finished downloading — reopening one of these skips the low-res preview.
 	const loadedFull = new Set<string>();
 
-	// Tear down any mounted Video.js player and clear the video wrap. Called before every slide change
-	// and on close so a paged-past video never keeps playing (audio) in the background.
+	// Tear down any mounted video player and clear the video wrap. Called before every slide change and
+	// on close so a paged-past video never keeps playing (audio) in the background.
 	const disposePlayer = () => {
-		if (player) {
-			player.dispose();
-			player = null;
+		const video = videoWrap.querySelector('video');
+		if (video) {
+			video.pause();
+			video.removeAttribute('src');
+			video.load();
 		}
 		videoWrap.innerHTML = '';
 		videoWrap.hidden = true;
 	};
 
+	// A native <video> element with the browser's built-in controls, plus a custom download button
+	// overlaid on top that saves the MP4 as a real file named from the resource title.
 	const openVideo = (slide: LightboxVideoSlide) => {
 		imgWrap.hidden = true;
 		videoWrap.hidden = false;
+
 		const videoEl = document.createElement('video');
-		videoEl.className = 'video-js vjs-default-skin vjs-big-play-centered';
+		videoEl.className = 'lightbox-video';
+		videoEl.controls = true;
+		videoEl.autoplay = true;
+		videoEl.preload = 'auto';
 		videoEl.setAttribute('playsinline', '');
+		videoEl.poster = slide.poster;
+		videoEl.src = slide.src;
 		videoWrap.appendChild(videoEl);
-		player = videojs(videoEl, {
-			controls: true,
-			preload: 'auto',
-			autoplay: true,
-			fluid: true,
-			poster: slide.poster,
-			sources: [{ src: slide.src, type: 'video/mp4' }],
-			// Read back by the DownloadButton component's click handler.
-			download: { url: slide.src, filename: slide.filename },
-			controlBar: { children: ['playToggle', 'progressControl', 'volumePanel', 'DownloadButton', 'fullscreenToggle'] },
-		} as Parameters<typeof videojs>[1]);
+
+		const dlBtn = document.createElement('button');
+		dlBtn.type = 'button';
+		dlBtn.className = 'lightbox-video-download';
+		dlBtn.setAttribute('aria-label', 'Download');
+		dlBtn.title = 'Download';
+		dlBtn.innerHTML = icons.download(20);
+		dlBtn.addEventListener('click', (e) => {
+			e.stopPropagation();
+			downloadFile(slide.src, slide.filename);
+		});
+		videoWrap.appendChild(dlBtn);
 	};
 
 	const MARGIN = 0.09;

@@ -404,9 +404,10 @@
 	display: none;
 }
 
-/* The Video.js player in the lightbox: capped to the same 90vw/90vh viewport box as images, centred,
-   with the branded border. `fluid` keeps the player at the video's aspect ratio inside this box. */
+/* The native <video> player in the lightbox: capped to the same 90vw/90vh viewport box as images,
+   centred, with the branded border. The download button is positioned relative to this wrap. */
 #lightbox-video-wrap {
+	position: relative;
 	width: min(90vw, 1280px);
 	max-width: 90vw;
 	max-height: 90vh;
@@ -415,32 +416,37 @@
 	justify-content: center;
 }
 
-#lightbox-video-wrap .video-js {
+#lightbox-video-wrap .lightbox-video {
 	width: 100%;
 	max-height: 90vh;
 	border: 2px solid var(--border-color);
 	background: #000;
 }
 
-/* Download button in the Video.js control bar. Video.js renders control buttons via an icon
-   placeholder; this draws a download glyph into it with a CSS mask so it inherits the bar's colour. */
-.video-js .vjs-download-button {
+/* Download button overlaid on the video, top-right, out of the way of the browser's native controls
+   which sit along the bottom. */
+.lightbox-video-download {
+	position: absolute;
+	top: 12px;
+	right: 12px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 40px;
+	height: 40px;
+	padding: 0;
+	color: #fff;
+	background: rgba(0, 0, 0, 0.6);
+	border: none;
+	border-radius: 6px;
 	cursor: pointer;
+	opacity: 0.75;
+	transition: opacity 0.15s ease, background 0.15s ease;
 }
 
-.video-js .vjs-download-button .vjs-icon-placeholder::before {
-	content: '';
-	display: inline-block;
-	width: 1.8em;
-	height: 100%;
-	vertical-align: middle;
-	background-color: currentColor;
-	-webkit-mask: var(--vjs-download-icon) center / 1.1em no-repeat;
-	mask: var(--vjs-download-icon) center / 1.1em no-repeat;
-}
-
-:root {
-	--vjs-download-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4'/%3E%3Cpolyline points='7 10 12 15 17 10'/%3E%3Cline x1='12' y1='15' x2='12' y2='3'/%3E%3C/svg%3E");
+.lightbox-video-download:hover {
+	opacity: 1;
+	background: rgba(0, 0, 0, 0.85);
 }
 
 .lightbox-btn {
