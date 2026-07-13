@@ -12,6 +12,7 @@
 import { t } from '../core/i18n';
 import { renderTurnstile, showToast, loadingBtn } from '../lib/utils';
 import { navigateTo } from '../core/router';
+import { DataCache } from '../core/cache';
 import type { RouteContext } from '../types';
 
 // =========================================================================
@@ -140,9 +141,8 @@ export function loginAfter(_ctx: RouteContext): void {
 
 			if (res.ok) {
 				sessionStorage.setItem('flash_toast', JSON.stringify({ message: t('login.success'), type: 'success' }));
-				// Pre-populate auth_state so the nav renders correctly on the redirected page
-				// without waiting for the async /api/auth/status fetch.
 				localStorage.setItem('auth_state', JSON.stringify({ isLoggedIn: true, isAdmin: false, user: null }));
+				DataCache.clearScope('/api/resources');
 				window.location.href = '/';
 				return;
 			}
@@ -180,10 +180,9 @@ export function loginAfter(_ctx: RouteContext): void {
 			const data = (await res.json()) as { success?: boolean; error?: string };
 
 			if (res.ok) {
-				sessionStorage.setItem('flash_toast', JSON.stringify({ message: t('login.success') || '¡Sesión iniciada!', type: 'success' }));
-				// Pre-populate auth_state so the nav renders correctly on the redirected page
-				// without waiting for the async /api/auth/status fetch.
+				sessionStorage.setItem('flash_toast', JSON.stringify({ message: t('login.success'), type: 'success' }));
 				localStorage.setItem('auth_state', JSON.stringify({ isLoggedIn: true, isAdmin: false, user: null }));
+				DataCache.clearScope('/api/resources');
 				window.location.href = '/';
 				return;
 			}

@@ -13,7 +13,8 @@
 		"noFavorites": "No tienes favoritos aún.",
 		"moveToTop": "Mover arriba",
 		"removeFavorite": "Quitar de favoritos",
-		"networkError": "Error de red. Inténtalo de nuevo."
+		"networkError": "Error de red. Inténtalo de nuevo.",
+		"notFound": "Página no encontrada"
 	},
 	"nav": {
 		"home": "Inicio",

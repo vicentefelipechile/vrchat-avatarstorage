@@ -13,7 +13,8 @@
 		"noFavorites": "Henüz favoriniz yok.",
 		"moveToTop": "En üste taşı",
 		"removeFavorite": "Favorilerden kaldır",
-		"networkError": "Ağ hatası. Lütfen tekrar deneyin."
+		"networkError": "Ağ hatası. Lütfen tekrar deneyin.",
+		"notFound": "Sayfa bulunamadı"
 	},
 	"nav": {
 		"home": "Ana Sayfa",

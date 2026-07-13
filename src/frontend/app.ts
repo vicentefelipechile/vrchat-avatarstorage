@@ -97,8 +97,8 @@ route('/authors/:slug', authorView, { after: authorAfter });
 notFound(
 	async () => `
 	<div style="padding:60px;text-align:center">
-		<h2>404 — ${t('common.notFound') || 'Page not found'}</h2>
-		<a href="/" data-link style="color:var(--accent)">${t('nav.home') || 'Go home'}</a>
+		<h2>404 — ${t('common.notFound')}</h2>
+		<a href="/" data-link style="color:var(--accent)">${t('nav.home')}</a>
 	</div>
 `,
 );
@@ -338,14 +338,17 @@ document.addEventListener('DOMContentLoaded', async () => {
 		try {
 			await fetch('/api/auth/logout', { method: 'POST' });
 			DataCache.clear('/api/auth/status');
+			// Resources cached during the session carry their download links; drop that scope so
+			// browsing back to an item after logout re-fetches the anonymous copy (login prompt).
+			DataCache.clearScope('/api/resources');
 			localStorage.removeItem('auth_state');
 			window.appState = { isLoggedIn: false, isAdmin: false, user: null };
 			await updateNav();
 			navigateTo('/login');
 			// SPA navigation keeps the DOM alive — toast is visible on the login page
-			showToast(t('login.logout_success') || 'Sesión cerrada correctamente', 'success');
+			showToast(t('login.logout_success'), 'success');
 		} catch {
-			showToast(t('common.networkError') || 'Error de red', 'error');
+			showToast(t('common.networkError'), 'error');
 		}
 	});
 
@@ -427,6 +430,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 		history.replaceState(null, '', '/');
 		// Pre-populate auth_state so the nav renders correctly without waiting for the async fetch
 		localStorage.setItem('auth_state', JSON.stringify({ isLoggedIn: true, isAdmin: false, user: null }));
+		// Resources fetched while anonymous omit download links; drop that scope so items browsed
+		// before the OAuth redirect re-fetch the authenticated copy (with links) on the next visit.
+		DataCache.clearScope('/api/resources');
 		setTimeout(() => showToast(t('login.success'), 'success', 4000), 300);
 	}
 

@@ -13,7 +13,8 @@
 		"noFavorites": "Vous n'avez pas encore de favoris.",
 		"moveToTop": "Monter en haut",
 		"removeFavorite": "Retirer des favoris",
-		"networkError": "Erreur réseau. Veuillez réessayer."
+		"networkError": "Erreur réseau. Veuillez réessayer.",
+		"notFound": "Page introuvable"
 	},
 	"nav": {
 		"home": "Accueil",

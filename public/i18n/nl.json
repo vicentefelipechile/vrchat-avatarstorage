@@ -13,7 +13,8 @@
 		"noFavorites": "Je hebt nog geen favorieten.",
 		"moveToTop": "Naar boven verplaatsen",
 		"removeFavorite": "Uit favorieten verwijderen",
-		"networkError": "Netwerkfout. Probeer het opnieuw."
+		"networkError": "Netwerkfout. Probeer het opnieuw.",
+		"notFound": "Pagina niet gevonden"
 	},
 	"nav": {
 		"home": "Home",

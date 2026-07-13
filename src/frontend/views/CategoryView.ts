@@ -112,7 +112,7 @@ export async function categoryView(ctx: RouteContext): Promise<string> {
 		<div class="category-header">
 			<h1>${categoryLabel}</h1>
 			${categoryDesc ? `<p class="category-description">${categoryDesc}</p>` : ''}
-			${searchQuery ? `<p class="category-description">${t('category.showing') || 'Resultados para'} "<strong>${searchQuery}</strong>"</p>` : ''}
+			${searchQuery ? `<p class="category-description">${t('category.showing')} "<strong>${searchQuery}</strong>"</p>` : ''}
 		</div>
 
 		${
