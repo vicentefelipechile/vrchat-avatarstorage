@@ -68,7 +68,15 @@
 		"2fa_cancel": "İptal",
 		"2fa_confirm_disable": "Devre Dışı Bırakmayı Onayla",
 		"2fa_backup_ok": "Kodlarımı kaydettim",
-		"2fa_continue": "Devam"
+		"2fa_continue": "Devam",
+		"section_profile": "Profil",
+		"section_profile_desc": "Herkese açık kullanıcı adınız ve profil fotoğrafınız.",
+		"section_security": "Güvenlik",
+		"section_security_desc": "Giriş yaparken kullanılan parolayı değiştirin.",
+		"section_2fa": "İki Adımlı",
+		"section_2fa_desc": "Kimlik doğrulama uygulamasıyla giriş yaparken ikinci bir adım ekleyin.",
+		"avatar_hint": "İsteğe bağlı. En fazla 5MB.",
+		"saving": "Kaydediliyor…"
 	},
 	"home": {
 		"welcome": "VRCStorage'a Hoş Geldiniz",

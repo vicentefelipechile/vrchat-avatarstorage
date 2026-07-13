@@ -68,7 +68,15 @@
 		"2fa_cancel": "Annulla",
 		"2fa_confirm_disable": "Conferma disattivazione",
 		"2fa_backup_ok": "Ho salvato i miei codici",
-		"2fa_continue": "Continua"
+		"2fa_continue": "Continua",
+		"section_profile": "Profilo",
+		"section_profile_desc": "Il tuo nome utente pubblico e la foto del profilo.",
+		"section_security": "Sicurezza",
+		"section_security_desc": "Cambia la password usata per accedere.",
+		"section_2fa": "Due Fattori",
+		"section_2fa_desc": "Aggiungi un secondo passaggio all'accesso con un'app di autenticazione.",
+		"avatar_hint": "Facoltativo. Max 5MB.",
+		"saving": "Salvataggio…"
 	},
 	"home": {
 		"welcome": "Benvenuto su VRCStorage",

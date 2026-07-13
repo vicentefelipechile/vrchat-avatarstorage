@@ -22,7 +22,7 @@ function getToastContainer(): HTMLElement {
  * @param duration Auto-dismiss delay in ms (default: 3000). Pass 0 to keep until manually dismissed.
  * @returns        A dismiss function you can call to remove the toast early.
  */
-export function showToast(message: string, type: ToastType = 'info', duration = 3000): () => void {
+export function showToast(message: string, type: ToastType = 'info', duration = 9000): () => void {
 	const container = getToastContainer();
 
 	const toast = document.createElement('div');

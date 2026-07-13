@@ -68,7 +68,15 @@
 		"2fa_cancel": "Cancel",
 		"2fa_confirm_disable": "Confirm Disable",
 		"2fa_backup_ok": "I have saved my codes",
-		"2fa_continue": "Continue"
+		"2fa_continue": "Continue",
+		"section_profile": "Profile",
+		"section_profile_desc": "Your public username and profile picture.",
+		"section_security": "Security",
+		"section_security_desc": "Change the password used to sign in.",
+		"section_2fa": "Two-Factor",
+		"section_2fa_desc": "Add a second step when signing in with an authenticator app.",
+		"avatar_hint": "Optional. Max 5MB.",
+		"saving": "Saving…"
 	},
 	"home": {
 		"welcome": "Welcome to VRCStorage",

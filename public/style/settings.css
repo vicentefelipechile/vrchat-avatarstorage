@@ -1,0 +1,203 @@
+/* =============================================================================
+   settings.css — User settings view: sidebar navigation + section panels
+   ============================================================================= */
+
+.settings-layout {
+	display: grid;
+	grid-template-columns: 220px 1fr;
+	gap: 20px;
+	align-items: start;
+	max-width: 900px;
+	margin: 0 auto;
+}
+
+/* ---- Sidebar navigation ---- */
+/* Natural height: the box wraps its three items tightly — the first item's top
+   edge meets the box border and the last item's bottom edge meets it too, so
+   there is no sidebar background showing above or below the buttons. */
+.settings-nav {
+	border: 2px solid var(--border-color);
+	display: flex;
+	flex-direction: column;
+	background: var(--bg-sidebar);
+	overflow: hidden;
+	margin-bottom: 0;
+    padding: 0;
+}
+
+.settings-nav-item {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin: 0;
+	padding: 12px 14px;
+	background: var(--bg-sidebar);
+	border: none;
+	border-bottom: 1px solid var(--border-color);
+	color: var(--text-main);
+	font-family: inherit;
+	font-size: 0.9rem;
+	line-height: 1.2;
+	text-align: left;
+	cursor: pointer;
+	width: 100%;
+	box-sizing: border-box;
+	transition:
+		background 0.2s ease,
+		color 0.2s ease;
+}
+
+.settings-nav-item:last-child {
+	border-bottom: none;
+}
+
+.settings-nav-item:hover {
+	background: var(--bg-hover);
+}
+
+.settings-nav-item.is-active {
+	background: var(--btn-bg);
+	color: var(--btn-text);
+	font-weight: bold;
+}
+
+.settings-nav-item svg {
+	flex: none;
+}
+
+/* ---- Panels ---- */
+.settings-panel {
+	background: var(--bg-card);
+	border: 2px solid var(--border-color);
+	padding: 24px 30px;
+}
+
+.settings-panel[hidden] {
+	display: none;
+}
+
+.settings-panel-title {
+	margin: 0 0 4px;
+	font-size: 1.1rem;
+}
+
+.settings-panel-desc {
+	margin: 0 0 20px;
+	color: var(--text-muted);
+	font-size: 0.85rem;
+}
+
+/* ---- Profile: avatar + fields side by side ---- */
+.settings-profile-head {
+	display: flex;
+	gap: 20px;
+	align-items: flex-start;
+	margin-bottom: 20px;
+}
+
+.settings-avatar-wrap {
+	flex: none;
+}
+
+.settings-avatar {
+	width: 140px;
+	height: 140px;
+	object-fit: cover;
+	border: 2px solid var(--border-color);
+	display: block;
+}
+
+.settings-profile-fields {
+	flex: 1;
+	min-width: 0;
+}
+
+.settings-hint {
+	display: block;
+	margin-top: 5px;
+	color: var(--text-muted);
+	font-size: 0.8rem;
+}
+
+/* ---- 2FA status badge ---- */
+.settings-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 12px;
+	border: 2px solid var(--border-color);
+	font-size: 0.9rem;
+	margin-bottom: 15px;
+}
+
+.settings-badge.is-on {
+	color: var(--success-color, green);
+	border-color: currentColor;
+}
+
+.settings-badge.is-off {
+	color: var(--text-muted);
+}
+
+.settings-badge svg {
+	flex: none;
+}
+
+/* ---- Secret / backup code blocks ---- */
+.settings-code {
+	display: block;
+	word-break: break-all;
+	white-space: pre-wrap;
+	background: var(--bg-code);
+	border: 2px solid var(--border-color);
+	padding: 10px;
+	margin: 5px 0;
+	font-family: inherit;
+	font-size: 0.85rem;
+}
+
+.settings-warning {
+	color: var(--danger-color, red);
+	font-weight: bold;
+	margin: 0 0 10px;
+}
+
+/* ---- Stacked action buttons inside a panel ---- */
+.settings-actions {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	margin-top: 4px;
+}
+
+/* ---- Responsive: collapse to single column ---- */
+@media (max-width: 720px) {
+	.settings-layout {
+		grid-template-columns: 1fr;
+	}
+
+	.settings-nav {
+		position: static;
+		flex-direction: row;
+		overflow-x: auto;
+	}
+
+	.settings-nav-item {
+		border-bottom: none;
+		border-right: 1px solid var(--border-color);
+		white-space: nowrap;
+	}
+
+	.settings-nav-item:last-child {
+		border-right: none;
+	}
+
+	.settings-panel {
+		padding: 18px 16px;
+	}
+
+	.settings-profile-head {
+		flex-direction: column;
+		align-items: center;
+	}
+}

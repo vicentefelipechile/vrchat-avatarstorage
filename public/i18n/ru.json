@@ -68,7 +68,15 @@
 		"2fa_cancel": "Отмена",
 		"2fa_confirm_disable": "Подтвердить отключение",
 		"2fa_backup_ok": "Я сохранил свои коды",
-		"2fa_continue": "Продолжить"
+		"2fa_continue": "Продолжить",
+		"section_profile": "Профиль",
+		"section_profile_desc": "Ваше публичное имя пользователя и фото профиля.",
+		"section_security": "Безопасность",
+		"section_security_desc": "Измените пароль для входа.",
+		"section_2fa": "Двухфакторная",
+		"section_2fa_desc": "Добавьте второй шаг при входе с помощью приложения-аутентификатора.",
+		"avatar_hint": "Необязательно. Макс. 5 МБ.",
+		"saving": "Сохранение…"
 	},
 	"home": {
 		"welcome": "Добро пожаловать в VRCStorage",

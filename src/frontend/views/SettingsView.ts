@@ -4,6 +4,7 @@
 
 import QRCode from 'qrcode';
 import { t } from '../core/i18n';
+import { icons } from '../lib/icons';
 import { renderTurnstile, resizeImage, showToast, loadingBtn, mediaUrl } from '../lib/utils';
 import type { RouteContext } from '../types';
 
@@ -15,136 +16,156 @@ export async function settingsView(_ctx: RouteContext): Promise<string> {
 	document.title = `VRCStorage — ${t('settings.title')}`;
 
 	const user = window.appState.user ?? {};
-	const avatarUrl =
-		(user as { avatar_url?: string }).avatar_url ?? '/avatar.png';
+	const avatarUrl = (user as { avatar_url?: string }).avatar_url ?? '/avatar.png';
 	const username = (user as { username?: string }).username ?? '';
 	const hasPassword = (user as { has_password?: boolean }).has_password !== false;
 
 	return `
-		<div class="login-box" style="max-width:500px">
+		<div>
 			<h1>${t('settings.title')}</h1>
 
-			<!-- Avatar preview -->
-			<div style="text-align:center;margin-bottom:30px">
-				<img id="current-avatar" src="${avatarUrl}" style="width:120px;height:120px;border-radius:50%;object-fit:cover;border:3px solid #ddd">
-			</div>
-
-			<!-- Profile form -->
-			<form id="settings-form">
-				<div class="form-group">
-					<label for="username">${t('login.username')}</label>
-					<input type="text" id="username" value="${username}" required minlength="3" maxlength="32">
-				</div>
-				<div class="form-group">
-					<label for="avatar">${t('settings.avatar')}</label>
-					<input type="file" id="avatar" accept="image/png,image/jpg,image/jpeg,image/gif,image/webp,image/avif">
-					<small style="color:#666;display:block;margin-top:5px">Optional. Max 5MB.</small>
-				</div>
-				<div id="turnstile-settings" class="mb-10"></div>
-				<button type="submit" class="btn" style="width:100%;margin-bottom:20px">${t('settings.save')}</button>
-			</form>
-
-			<hr style="margin:30px 0">
-
-			<!-- Password change -->
-			<details id="password-details">
-				<summary style="cursor:pointer;padding:10px;background:#f5f5f5;border-radius:5px">
-					<h2 style="margin:0;display:inline">${t('settings.change_password')}</h2>
-				</summary>
-				<div style="padding:20px 0">
-					<div class="form-group" id="current-password-group" style="${hasPassword ? '' : 'display:none'}">
-						<label for="current-password">${t('settings.current_password')}</label>
-						<input type="password" id="current-password" autocomplete="current-password" style="width:100%">
-					</div>
-					${!hasPassword ? `<p style="color:var(--text-muted);margin-bottom:15px">${t('settings.no_password_hint')}</p>` : ''}
-					<div class="form-group">
-						<label for="new-password">${t('settings.new_password')}</label>
-						<input type="password" id="new-password" autocomplete="new-password" minlength="8" maxlength="200" style="width:100%">
-					</div>
-					<div class="form-group">
-						<label for="confirm-password">${t('settings.confirm_password')}</label>
-						<input type="password" id="confirm-password" autocomplete="new-password" style="width:100%">
-					</div>
-					<!-- Shown only when user has 2FA enabled -->
-					<div id="pw-2fa-section" style="display:none">
-						<div class="form-group">
-							<label for="pw-2fa-code">${t('settings.2fa_code')}</label>
-							<input type="text" id="pw-2fa-code" maxlength="6" placeholder="000000"
-							       autocomplete="one-time-code" inputmode="numeric" style="width:100%;letter-spacing:0.3em;text-align:center">
-							<small style="color:#666;display:block;margin-top:4px">
-								${t('settings.2fa_code_hint')}
-							</small>
-						</div>
-					</div>
-					<button id="change-password-btn" class="btn" style="width:100%">
-						${t('settings.change_password')}
+			<div class="settings-layout">
+				<!-- Sidebar navigation -->
+				<nav class="settings-nav" role="tablist" aria-label="${t('settings.title')}">
+					<button type="button" class="settings-nav-item is-active" data-panel="profile" role="tab" aria-selected="true">
+						${icons.user(18)}<span>${t('settings.section_profile')}</span>
 					</button>
+					<button type="button" class="settings-nav-item" data-panel="security" role="tab" aria-selected="false">
+						${icons.lock(18)}<span>${t('settings.section_security')}</span>
+					</button>
+					<button type="button" class="settings-nav-item" data-panel="twofactor" role="tab" aria-selected="false">
+						${icons.shield(18)}<span>${t('settings.section_2fa')}</span>
+					</button>
+				</nav>
+
+				<!-- Panels -->
+				<div class="settings-content">
+					<!-- Profile -->
+					<section class="settings-panel" id="panel-profile" role="tabpanel">
+						<h2 class="settings-panel-title">${t('settings.section_profile')}</h2>
+						<p class="settings-panel-desc">${t('settings.section_profile_desc')}</p>
+
+						<form id="settings-form">
+							<div class="settings-profile-head">
+								<div class="settings-avatar-wrap">
+									<img id="current-avatar" class="settings-avatar" src="${avatarUrl}" alt="${t('settings.avatar')}">
+								</div>
+								<div class="settings-profile-fields">
+									<div class="form-group">
+										<label for="username">${t('login.username')}</label>
+										<input type="text" id="username" value="${username}" required minlength="3" maxlength="32">
+									</div>
+									<div class="form-group">
+										<label for="avatar">${t('settings.avatar')}</label>
+										<input type="file" id="avatar" accept="image/png,image/jpg,image/jpeg,image/gif,image/webp,image/avif">
+										<small class="settings-hint">${t('settings.avatar_hint')}</small>
+									</div>
+								</div>
+							</div>
+							<div id="turnstile-settings" class="mb-10"></div>
+							<button type="submit" class="btn">${icons.check(16)} ${t('settings.save')}</button>
+						</form>
+					</section>
+
+					<!-- Security / password -->
+					<section class="settings-panel" id="panel-security" role="tabpanel" hidden>
+						<h2 class="settings-panel-title">${t('settings.change_password')}</h2>
+						<p class="settings-panel-desc">${t('settings.section_security_desc')}</p>
+
+						<div class="form-group" id="current-password-group"${hasPassword ? '' : ' hidden'}>
+							<label for="current-password">${t('settings.current_password')}</label>
+							<input type="password" id="current-password" autocomplete="current-password">
+						</div>
+						${!hasPassword ? `<p class="settings-panel-desc">${t('settings.no_password_hint')}</p>` : ''}
+						<div class="form-group">
+							<label for="new-password">${t('settings.new_password')}</label>
+							<input type="password" id="new-password" autocomplete="new-password" minlength="8" maxlength="200">
+						</div>
+						<div class="form-group">
+							<label for="confirm-password">${t('settings.confirm_password')}</label>
+							<input type="password" id="confirm-password" autocomplete="new-password">
+						</div>
+						<!-- Shown only when user has 2FA enabled -->
+						<div id="pw-2fa-section" hidden>
+							<div class="form-group">
+								<label for="pw-2fa-code">${t('settings.2fa_code')}</label>
+								<input type="text" id="pw-2fa-code" maxlength="6" placeholder="000000"
+								       autocomplete="one-time-code" inputmode="numeric" style="letter-spacing:0.3em;text-align:center">
+								<small class="settings-hint">${t('settings.2fa_code_hint')}</small>
+							</div>
+						</div>
+						<button id="change-password-btn" class="btn">${icons.lock(16)} ${t('settings.change_password')}</button>
+					</section>
+
+					<!-- 2FA -->
+					<section class="settings-panel" id="panel-twofactor" role="tabpanel" hidden>
+						<h2 class="settings-panel-title">${t('settings.2fa_title')}</h2>
+						<p class="settings-panel-desc">${t('settings.section_2fa_desc')}</p>
+
+						<div id="two-factor-section">
+							<div id="2fa-status"></div>
+
+							<div id="2fa-enable-section" hidden>
+								<button id="2fa-enable-btn" class="btn">${icons.shield(16)} ${t('settings.2fa_activate')}</button>
+							</div>
+
+							<div id="2fa-password-section" hidden>
+								<div class="form-group" id="2fa-password-group">
+									<label for="2fa-setup-password">${t('settings.2fa_password')}</label>
+									<input type="password" id="2fa-setup-password">
+								</div>
+								<div class="settings-actions">
+									<button id="2fa-confirm-password-btn" class="btn">${t('settings.2fa_continue')}</button>
+									<button type="button" id="2fa-cancel-password-btn" class="btn-outline">${t('settings.2fa_cancel')}</button>
+								</div>
+							</div>
+
+							<div id="2fa-setup" hidden>
+								<p class="settings-panel-desc">${t('settings.2fa_setup_instructions')}</p>
+								<div id="2fa-qr-container" class="text-center" style="margin:20px 0"></div>
+								<div class="form-group">
+									<label>${t('settings.2fa_secret')}</label>
+									<code id="2fa-secret" class="settings-code"></code>
+								</div>
+								<div class="form-group">
+									<label for="2fa-code">${t('settings.2fa_verify')}</label>
+									<input type="text" id="2fa-code" maxlength="6" placeholder="000000">
+								</div>
+								<div class="settings-actions">
+									<button id="2fa-verify-btn" class="btn">${icons.check(16)} ${t('settings.2fa_enable')}</button>
+									<button type="button" id="2fa-cancel-setup-btn" class="btn-outline">${t('settings.2fa_cancel')}</button>
+								</div>
+							</div>
+
+							<div id="2fa-backup-codes" hidden>
+								<p class="settings-warning">${t('settings.2fa_backup_warning')}</p>
+								<code id="backup-codes-list" class="settings-code"></code>
+								<button id="2fa-backup-ok-btn" class="btn">${icons.check(16)} ${t('settings.2fa_backup_ok')}</button>
+							</div>
+
+							<div id="2fa-enabled-section" hidden>
+								<div class="settings-badge is-on">${icons.check(16)} ${t('settings.2fa_enabled')}</div>
+								<button id="2fa-disable-btn" class="btn-danger">${t('settings.2fa_disable')}</button>
+							</div>
+
+							<div id="2fa-disable-section" hidden>
+								<div class="form-group" id="2fa-disable-password-group">
+									<label for="2fa-disable-password">${t('settings.2fa_password')}</label>
+									<input type="password" id="2fa-disable-password">
+								</div>
+								<div class="form-group">
+									<label for="2fa-disable-code">${t('settings.2fa_code')}</label>
+									<input type="text" id="2fa-disable-code" maxlength="6" placeholder="000000">
+								</div>
+								<div class="settings-actions">
+									<button id="2fa-confirm-disable-btn" class="btn-danger">${t('settings.2fa_confirm_disable')}</button>
+									<button type="button" id="2fa-disable-cancel-btn" class="btn-outline">${t('settings.2fa_cancel')}</button>
+								</div>
+							</div>
+						</div>
+					</section>
 				</div>
-			</details>
-
-			<hr style="margin:30px 0">
-
-			<!-- 2FA -->
-			<details id="two-factor-details">
-				<summary style="cursor:pointer;padding:10px;background:#f5f5f5;border-radius:5px">
-					<h2 style="margin:0;display:inline">${t('settings.2fa_title')}</h2>
-				</summary>
-				<div id="two-factor-section" style="padding:20px 0">
-					<div id="2fa-status"></div>
-
-					<div id="2fa-enable-section" style="display:none;margin-top:15px">
-						<button id="2fa-enable-btn" class="btn" style="width:100%">${t('settings.2fa_activate')}</button>
-					</div>
-
-					<div id="2fa-password-section" style="display:none;margin-top:20px">
-						<div class="form-group" id="2fa-password-group">
-							<label>${t('settings.2fa_password')}</label>
-							<input type="password" id="2fa-setup-password" style="width:100%">
-						</div>
-						<button id="2fa-confirm-password-btn" class="btn" style="width:100%">${t('settings.2fa_continue')}</button>
-						<button type="button" id="2fa-cancel-password-btn" class="btn" style="width:100%;margin-top:10px;background:#666">${t('settings.2fa_cancel')}</button>
-					</div>
-
-					<div id="2fa-setup" style="display:none;margin-top:20px">
-						<p style="color:#666">${t('settings.2fa_setup_instructions')}</p>
-						<div id="2fa-qr-container" style="text-align:center;margin:20px 0"></div>
-						<div class="form-group">
-							<label>${t('settings.2fa_secret')}</label>
-							<code id="2fa-secret" style="display:block;word-break:break-all;background:#f5f5f5;padding:10px;margin:5px 0"></code>
-						</div>
-						<div class="form-group">
-							<label>${t('settings.2fa_verify')}</label>
-							<input type="text" id="2fa-code" maxlength="6" placeholder="000000" style="width:100%">
-						</div>
-						<button id="2fa-verify-btn" class="btn" style="width:100%">${t('settings.2fa_enable')}</button>
-						<button type="button" id="2fa-cancel-setup-btn" class="btn" style="width:100%;margin-top:10px;background:#666">${t('settings.2fa_cancel')}</button>
-					</div>
-
-					<div id="2fa-backup-codes" style="display:none;margin-top:20px">
-						<p style="color:red;font-weight:bold">${t('settings.2fa_backup_warning')}</p>
-						<code id="backup-codes-list" style="display:block;word-break:break-all;background:#f5f5f5;padding:10px;margin:10px 0;white-space:pre-wrap"></code>
-						<button id="2fa-backup-ok-btn" class="btn" style="width:100%">${t('settings.2fa_backup_ok')}</button>
-					</div>
-
-					<div id="2fa-enabled-section" style="display:none;margin-top:15px">
-						<p style="color:green">✓ ${t('settings.2fa_enabled')}</p>
-						<button id="2fa-disable-btn" class="btn" style="width:100%;background:#dc3545">${t('settings.2fa_disable')}</button>
-					</div>
-
-					<div id="2fa-disable-section" style="display:none;margin-top:20px">
-						<div class="form-group" id="2fa-disable-password-group">
-							<label>${t('settings.2fa_password')}</label>
-							<input type="password" id="2fa-disable-password" style="width:100%">
-						</div>
-						<div class="form-group">
-							<label>${t('settings.2fa_code')}</label>
-							<input type="text" id="2fa-disable-code" maxlength="6" placeholder="000000" style="width:100%">
-						</div>
-						<button id="2fa-confirm-disable-btn" class="btn" style="width:100%;background:#dc3545">${t('settings.2fa_confirm_disable')}</button>
-						<button type="button" id="2fa-disable-cancel-btn" class="btn" style="width:100%;margin-top:10px;background:#666">${t('settings.2fa_cancel')}</button>
-					</div>
-				</div>
-			</details>
+			</div>
 		</div>`;
 }
 
@@ -154,6 +175,7 @@ export async function settingsView(_ctx: RouteContext): Promise<string> {
 
 export async function settingsAfter(_ctx: RouteContext): Promise<void> {
 	renderTurnstile('#turnstile-settings');
+	setupSectionNav();
 
 	const form = document.getElementById('settings-form') as HTMLFormElement;
 	const avatarInput = document.getElementById('avatar') as HTMLInputElement;
@@ -169,7 +191,7 @@ export async function settingsAfter(_ctx: RouteContext): Promise<void> {
 	form.addEventListener('submit', async (e) => {
 		e.preventDefault();
 		const btn = form.querySelector<HTMLButtonElement>('button[type="submit"]')!;
-		const restore = loadingBtn(btn, 'Saving…');
+		const restore = loadingBtn(btn, t('settings.saving'));
 
 		const username = (document.getElementById('username') as HTMLInputElement).value;
 		const avatarFile = avatarInput.files?.[0];
@@ -218,6 +240,33 @@ export async function settingsAfter(_ctx: RouteContext): Promise<void> {
 
 	// 2FA
 	await loadTwoFactorStatus();
+}
+
+// =========================================================================
+// Section navigation (sidebar tabs)
+// =========================================================================
+
+function setupSectionNav(): void {
+	const items = Array.from(document.querySelectorAll<HTMLButtonElement>('.settings-nav-item'));
+	const panels: Record<string, HTMLElement | null> = {
+		profile: document.getElementById('panel-profile'),
+		security: document.getElementById('panel-security'),
+		twofactor: document.getElementById('panel-twofactor'),
+	};
+
+	items.forEach((item) => {
+		item.addEventListener('click', () => {
+			const target = item.dataset.panel!;
+			items.forEach((el) => {
+				const active = el === item;
+				el.classList.toggle('is-active', active);
+				el.setAttribute('aria-selected', String(active));
+			});
+			Object.entries(panels).forEach(([key, panel]) => {
+				if (panel) panel.hidden = key !== target;
+			});
+		});
+	});
 }
 
 // =========================================================================
@@ -282,7 +331,7 @@ async function loadPasswordSection(): Promise<void> {
 			const data = (await res.json()) as { success?: boolean; error?: string };
 
 			if (res.ok) {
-				showToast(t('settings.password_changed') || 'Password changed! Please log in again.', 'success', 4000);
+				showToast(t('settings.password_changed'), 'success', 4000);
 				// All sessions invalidated by the backend — reload to trigger re-auth
 				setTimeout(() => {
 					window.location.href = '/';
@@ -291,7 +340,7 @@ async function loadPasswordSection(): Promise<void> {
 				showToast(data.error ?? 'Failed to change password', 'error');
 			}
 		} catch {
-			showToast(t('common.networkError') || 'Network error', 'error');
+			showToast(t('common.networkError'), 'error');
 		} finally {
 			restore();
 		}
@@ -323,7 +372,7 @@ async function loadTwoFactorStatus(): Promise<void> {
 			els.status.innerHTML = '';
 			els.enabled.style.display = 'block';
 		} else {
-			els.status.innerHTML = `<p style="color:#666">${t('settings.2fa_disabled') || '2FA is not enabled'}</p>`;
+			els.status.innerHTML = `<div class="settings-badge is-off">${icons.shield(16)} ${t('settings.2fa_disabled')}</div>`;
 			els.enable.style.display = 'block';
 		}
 
@@ -373,7 +422,7 @@ function setup2FAHandlers(els: TwoFAEls): void {
 			qrContainer.appendChild(canvas);
 			secretText.textContent = data.secret ?? '';
 		} catch {
-			showToast(t('common.networkError') || 'Network error', 'error');
+			showToast(t('common.networkError'), 'error');
 		} finally {
 			if (restore) restore();
 		}
@@ -403,7 +452,7 @@ function setup2FAHandlers(els: TwoFAEls): void {
 		const restore = loadingBtn(btn, '…');
 		const password = (document.getElementById('2fa-setup-password') as HTMLInputElement).value;
 		if (!password) {
-			showToast(t('settings.2fa_password_required') || 'Password is required', 'warning');
+			showToast(t('settings.2fa_password_required'), 'warning');
 			restore();
 			return;
 		}
@@ -434,12 +483,12 @@ function setup2FAHandlers(els: TwoFAEls): void {
 				els.setup.style.display = 'none';
 				els.backup.style.display = 'block';
 				backupCodesList.textContent = data.backupCodes?.join('\n') ?? '';
-				showToast(t('settings.2fa_enabled_success') || '2FA enabled successfully!', 'success');
+				showToast(t('settings.2fa_enabled_success'), 'success');
 			} else {
 				showToast(data.error ?? 'Invalid code', 'error');
 			}
 		} catch {
-			showToast(t('common.networkError') || 'Network error', 'error');
+			showToast(t('common.networkError'), 'error');
 		} finally {
 			restore();
 		}

@@ -10,7 +10,7 @@ import { getIcon } from '../lib/icons';
 import { t } from '../core/i18n';
 import type { RouteContext } from '../types';
 import { DataCache } from '../core/cache';
-import { TimeUnit, progressiveImg, htmlDecode } from '../lib/utils';
+import { TimeUnit, progressiveImg, htmlDecode, metaLabel } from '../lib/utils';
 
 interface AvatarAuthor {
 	uuid: string;
@@ -69,9 +69,10 @@ function socialLink(url: string | null, label: string, iconName: string): string
 
 function avatarMiniCard(item: AuthorProfileResponse['avatars'][number]): string {
 	const title = item.title.substring(0, 50);
+	const badge = metaLabel('avatar_type', item.avatar_type);
 	const imgHtml = item.thumbnail_media_uuid
-		? `<div class="card-image">${progressiveImg({ uuid: item.thumbnail_media_uuid, placeholder: item.placeholder_blur, res: 'low', alt: title, processed: item.processed === 1, format: item.thumbnail_media_type === 'video' ? 'gif' : 'webp' })}<span class="card-badge">${item.avatar_type}</span></div>`
-		: `<div class="card-image card-image-placeholder"><span class="card-badge">${item.avatar_type}</span></div>`;
+		? `<div class="card-image">${progressiveImg({ uuid: item.thumbnail_media_uuid, placeholder: item.placeholder_blur, res: 'low', alt: title, processed: item.processed === 1, format: item.thumbnail_media_type === 'video' ? 'gif' : 'webp' })}<span class="card-badge">${badge}</span></div>`
+		: `<div class="card-image card-image-placeholder"><span class="card-badge">${badge}</span></div>`;
 
 	return `<div class="card">
 		<a href="/item/${item.uuid}" data-link class="card-link">${imgHtml}</a>

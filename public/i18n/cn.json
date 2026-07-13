@@ -68,7 +68,15 @@
 		"2fa_cancel": "取消",
 		"2fa_confirm_disable": "确认禁用",
 		"2fa_backup_ok": "我已保存我的代码",
-		"2fa_continue": "继续"
+		"2fa_continue": "继续",
+		"section_profile": "个人资料",
+		"section_profile_desc": "你的公开用户名和头像。",
+		"section_security": "安全",
+		"section_security_desc": "更改用于登录的密码。",
+		"section_2fa": "两步验证",
+		"section_2fa_desc": "使用身份验证器应用登录时增加第二步验证。",
+		"avatar_hint": "可选。最大 5MB。",
+		"saving": "保存中…"
 	},
 	"home": {
 		"welcome": "欢迎来到 VRCStorage",

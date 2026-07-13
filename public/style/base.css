@@ -92,6 +92,7 @@ hr {
 	max-width: 950px;
 	margin: 0 auto;
 	padding: 20px;
+	padding-top: 0;
 	width: 100%;
 }
 

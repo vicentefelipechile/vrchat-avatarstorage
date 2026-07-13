@@ -68,7 +68,15 @@
 		"2fa_cancel": "Annuleren",
 		"2fa_confirm_disable": "Uitschakeling bevestigen",
 		"2fa_backup_ok": "Ik heb mijn codes opgeslagen",
-		"2fa_continue": "Doorgaan"
+		"2fa_continue": "Doorgaan",
+		"section_profile": "Profiel",
+		"section_profile_desc": "Je openbare gebruikersnaam en profielfoto.",
+		"section_security": "Beveiliging",
+		"section_security_desc": "Wijzig het wachtwoord waarmee je inlogt.",
+		"section_2fa": "Twee-Factor",
+		"section_2fa_desc": "Voeg een tweede stap toe bij het inloggen met een authenticator-app.",
+		"avatar_hint": "Optioneel. Max. 5MB.",
+		"saving": "Opslaan…"
 	},
 	"home": {
 		"welcome": "Welkom bij VRCStorage",

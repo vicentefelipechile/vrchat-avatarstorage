@@ -68,7 +68,15 @@
 		"2fa_cancel": "Annuler",
 		"2fa_confirm_disable": "Confirmer la désactivation",
 		"2fa_backup_ok": "J'ai enregistré mes codes",
-		"2fa_continue": "Continuer"
+		"2fa_continue": "Continuer",
+		"section_profile": "Profil",
+		"section_profile_desc": "Votre nom d'utilisateur public et votre photo de profil.",
+		"section_security": "Sécurité",
+		"section_security_desc": "Modifiez le mot de passe utilisé pour vous connecter.",
+		"section_2fa": "Deux Facteurs",
+		"section_2fa_desc": "Ajoutez une deuxième étape lors de la connexion avec une application d'authentification.",
+		"avatar_hint": "Facultatif. Max 5 Mo.",
+		"saving": "Enregistrement…"
 	},
 	"home": {
 		"welcome": "Bienvenue sur VRCStorage",

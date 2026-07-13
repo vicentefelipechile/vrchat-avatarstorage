@@ -8,6 +8,7 @@
 // partial refresh) lives in the shared factory.
 
 import { createFilteredListView, FilterType, TimeUnit, type FilteredResource } from '../features/filtered-list';
+import { metaLabel } from '../lib/utils';
 
 // =========================================================================
 // Types
@@ -115,6 +116,6 @@ export const { view: avatarsView, after: avatarsAfter } = createFilteredListView
 	emptyKey: 'filterPanel.noAvatars',
 	cacheTtl: TimeUnit.Minute * 30,
 	filters: FILTERS,
-	badge: (meta) => meta.avatar_type,
+	badge: (meta) => metaLabel('avatar_type', meta.avatar_type),
 	extra: authorLine,
 });

@@ -68,7 +68,15 @@
 		"2fa_cancel": "キャンセル",
 		"2fa_confirm_disable": "無効化を確認",
 		"2fa_backup_ok": "コードを保存しました",
-		"2fa_continue": "続ける"
+		"2fa_continue": "続ける",
+		"section_profile": "プロフィール",
+		"section_profile_desc": "公開されるユーザー名とプロフィール画像。",
+		"section_security": "セキュリティ",
+		"section_security_desc": "ログインに使うパスワードを変更します。",
+		"section_2fa": "二段階認証",
+		"section_2fa_desc": "認証アプリでのログイン時に、もう一段階の確認を追加します。",
+		"avatar_hint": "任意。最大5MB。",
+		"saving": "保存中…"
 	},
 	"home": {
 		"welcome": "VRCStorageへようこそ",

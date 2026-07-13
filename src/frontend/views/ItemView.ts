@@ -4,7 +4,7 @@
 
 import { t } from '../core/i18n';
 import { DataCache } from '../core/cache';
-import { TimeUnit, mediaUrl, videoUrl, progressiveImg, htmlDecode, initLazyImages, initMediaPolling } from '../lib/utils';
+import { TimeUnit, mediaUrl, videoUrl, progressiveImg, htmlDecode, initLazyImages, initMediaPolling, metaLabel } from '../lib/utils';
 import { downloadHost, type HostInfo } from '../lib/download-hosts';
 import { deleteComment, approveResource, rejectResource, deactivateResource } from '../features/admin';
 import { icons, getIcon } from '../lib/icons';
@@ -64,7 +64,7 @@ function renderCategoryMeta(res: Resource): string {
 			textRows.push(metaRow(t('meta.avatar.size').replace(/\s*\*/g, ''), chip(t('meta.avatar_size.' + m.avatar_size) || m.avatar_size)));
 		if (m.avatar_type)
 			textRows.push(
-				metaRow(t('meta.avatar.type').replace(/\s*\*/g, ''), chip(t('meta.avatar_type.' + m.avatar_type.replace('-', '')) || m.avatar_type)),
+				metaRow(t('meta.avatar.type').replace(/\s*\*/g, ''), chip(metaLabel('avatar_type', m.avatar_type))),
 			);
 		if (m.platform)
 			textRows.push(metaRow(t('meta.platform.title').replace(/\s*\*/g, ''), chip(t('meta.platform.' + m.platform) || m.platform)));
@@ -81,7 +81,7 @@ function renderCategoryMeta(res: Resource): string {
 		const m = res.meta as AssetMeta;
 		if (m.asset_type)
 			textRows.push(
-				metaRow(t('meta.asset.type').replace(/\s*\*/g, ''), chip(t('meta.asset_type.' + m.asset_type.replace('-', '')) || m.asset_type)),
+				metaRow(t('meta.asset.type').replace(/\s*\*/g, ''), chip(metaLabel('asset_type', m.asset_type))),
 			);
 		if (m.platform)
 			textRows.push(metaRow(t('meta.platform.title').replace(/\s*\*/g, ''), chip(t('meta.platform.' + m.platform) || m.platform)));
@@ -95,7 +95,7 @@ function renderCategoryMeta(res: Resource): string {
 			textRows.push(
 				metaRow(
 					t('meta.clothes.type').replace(/\s*\*/g, ''),
-					chip(t('meta.clothing_type.' + m.clothing_type.replace('-', '')) || m.clothing_type),
+					chip(metaLabel('clothing_type', m.clothing_type)),
 				),
 			);
 		if (m.gender_fit)

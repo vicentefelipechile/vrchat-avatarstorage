@@ -5,6 +5,7 @@
 // Thin wrapper over createFilteredListView — see AvatarsView for the pattern.
 
 import { createFilteredListView, FilterType, TimeUnit } from '../features/filtered-list';
+import { metaLabel } from '../lib/utils';
 
 // =========================================================================
 // Types
@@ -77,5 +78,5 @@ export const { view: assetsView, after: assetsAfter } = createFilteredListView<A
 	emptyKey: 'filterPanel.noAssets',
 	cacheTtl: TimeUnit.Minute * 30,
 	filters: FILTERS,
-	badge: (meta) => meta.asset_type,
+	badge: (meta) => metaLabel('asset_type', meta.asset_type),
 });
