@@ -28,9 +28,16 @@ This guide is for agentic coding agents (like yourself) operating in the VRCStor
 - **Queues:** Cloudflare Queues — `UPLOAD_QUEUE` binding for async upload post-processing. After a file is stored, the `queue` handler (`src/http/queue.ts` → `MediaProcessingService`) generates 6 image variants (low/med/original × webp/png) and a blur placeholder stored in D1 for images. For **videos** it normalizes the upload to an H.264/AAC MP4 (`{uuid}/video.mp4`) via the Media Transformations binding and builds an animated GIF poster (`{uuid}/original.gif`) from frames sampled by duration.
 - **Media Transformations:** Cloudflare Media Transformations binding (`MEDIA`) — used by the queue handler to normalize videos to MP4 and extract poster frames from R2. Configured in `wrangler.jsonc` (main Worker only). Input limits: <100MB, ≤10min; `mode:'frame'` outputs jpg/png, `mode:'video'` outputs MP4 H.264/AAC (no WebM). The duration it needs for frame scheduling is parsed from the normalized MP4's `mvhd` box (`src/helpers/mp4-duration.ts`); the GIF poster is assembled in-Worker (`src/helpers/gif-encoder.ts`, `node:zlib` inflate) since there is no native animated output.
 - **Cron:** Scheduled worker runs daily at `0 3 * * *` UTC — the `scheduled` handler (`src/http/scheduled.ts`) reuses `AdminService.cleanupOrphanedMedia`.
+- **Durable Objects:** `FEED` binding → `FeedRoom` class (`src/durable-objects/feed-room.ts`), declared as a SQLite class in the `v1` migration. See [Live Feed](#live-feed-durable-object).
+- **Version metadata:** `CF_VERSION_METADATA` binding — exposes the deployment's version ID and tag, surfaced by `GET /api/version`.
+- **Static assets:** `ASSETS` binding serves `./public` (the SPA shell, CSS, bundle, wiki markdown, locale JSON).
+- **Observability:** enabled in `wrangler.jsonc` — Worker logs are retained and viewable via the Cloudflare dashboard or `wrangler tail`.
+- **Compatibility:** `compatibility_date` is `2026-02-12` with flags `nodejs_compat` (needed by `node:zlib` in the GIF encoder) and `global_fetch_strictly_public` (a `fetch()` to our own hostname leaves the Worker and re-enters through the edge instead of looping back internally).
 - **Validation:** [Zod](https://zod.dev/) for request body and parameter validation.
 - **Frontend Bundler:** [esbuild](https://esbuild.github.io/) — compiles `src/frontend/` → `public/js/bundle.js`.
-- **Icons:** [lucide](https://lucide.dev/) (UI line icons) + [simple-icons](https://simpleicons.org/) (download-host brand marks) — both wrapped by the centralized `src/frontend/icons.ts` module.
+- **Icons:** [lucide](https://lucide.dev/) (UI line icons) + [simple-icons](https://simpleicons.org/) (download-host brand marks) — both wrapped by the centralized `src/frontend/lib/icons.ts` module.
+- **Markdown:** [marked](https://marked.js.org/) + [DOMPurify](https://github.com/cure53/DOMPurify) — frontend-only, wrapped by `src/frontend/lib/markdown.ts`. DOMPurify is never used on the backend (no DOM); see [Sanitization](#sanitization).
+- **Auth crypto:** `bcryptjs` (password hashing), `@hapi/iron` (sealed session cookies), `otpauth` + `qrcode` (TOTP 2FA).
 
 ## Common Commands
 
@@ -46,10 +53,29 @@ This guide is for agentic coding agents (like yourself) operating in the VRCStor
 | **Watch Frontend**       | `npm run build-frontend:watch` (esbuild watch mode, dev bundle)                          |
 | **Generate Types**       | `npm run cf-typegen` (updates `worker-configuration.d.ts` from `wrangler.jsonc`)         |
 | **Manage i18n**          | `npm run i18n-manager [ADD\|FILL\|LIST\|CHECK] ...` (see [i18n section](#i18n-frontend)) |
-| **Seed DB**              | `npm run seed` (populates local D1 with test data via `src/test/setup/populate.ts`)      |
+| **Seed DB**              | `npm run seed` — **currently broken**, see [Testing](#testing)                            |
 | **Start (Dev)**          | `npm start` (shorthand for `wrangler dev`)                                               |
 | **Password Recovery**    | `npm run user-passrecover` (reset user password via wrangler d1)                         |
 | **Linting**              | `npx prettier --check src/` (Formatting check — only src/ directory)                     |
+| **Type-check (Backend)** | `npx tsc -p tsconfig.json --noEmit`                                                       |
+| **Type-check (Frontend)**| `npx tsc -p tsconfig.frontend.json --noEmit`                                              |
+
+### Verifying a change
+
+There is no test suite (see [Testing](#testing)), so the build **is** the check. Before considering a change done:
+
+- **Backend change:** `npx tsc -p tsconfig.json --noEmit`.
+- **Frontend change:** `npx tsc -p tsconfig.frontend.json --noEmit` **and** `npm run build-frontend` — they catch different failures (see [Type-checking the frontend](#type-checking-the-frontend)).
+- **Any change touching `src/`:** `npx prettier --check src/`.
+- **i18n change:** `npm run i18n-manager CHECK`.
+
+## Testing
+
+**The repository has no tests and no test runner configured.** `vitest` is present in `devDependencies` but there is no `vitest.config.*`, no `*.test.ts`/`*.spec.ts` file anywhere, and no `test` script in `package.json`.
+
+- Do **not** claim a change is "tested" or that tests pass. Verify with the type-check + build commands above and say what you actually ran.
+- `npm run seed` is **broken**: it invokes `tsx src/test/setup/populate.ts`, and neither `src/test/` nor that file exists. Do not suggest it to seed a local database. (The sample images in `public/test/` are the leftovers it consumed.)
+- If you add the first test, also add the runner config and a `test` script, then update this section — do not leave the repo in a state where `npm test` is still undefined.
 
 ## Code Style & Conventions
 
@@ -59,7 +85,7 @@ This guide is for agentic coding agents (like yourself) operating in the VRCStor
 - **Tabs:** Use tabs for indentation.
 - **Quotes:** Use single quotes (`'`) for strings.
 - **Semicolons:** Always include semicolons at the end of statements.
-- **Line Width:** 140 characters limit before wrapping.
+- **Line Width:** 240 characters limit before wrapping (`printWidth` in `.prettierrc`). This is deliberately wide — do not hand-wrap lines that Prettier would leave alone.
 
 ### Naming Conventions
 
@@ -80,7 +106,7 @@ The backend is a **layered architecture**: route → service → repository. Eac
 - **Response helpers** (`src/http/responses.ts`): `fail(c, message, status, details?)` and `ok(c, payload, status?)` guarantee a consistent JSON envelope (`{ error, details? }`).
 - **Middleware:** `securityMiddleware` (security headers) and the legacy KV `rateLimit` in `src/http/middleware/`; native rate-limit bindings are wired in `src/http/rate-limits.ts` (`registerRateLimits`, called from `src/index.ts`).
 - **Validation:** Always use Zod schemas in `src/validators.ts`. Use `.transform()` with `sanitizeHtml` for any string input that might be rendered.
-- **Types:** Centralized in `src/types.ts` (backend) and `frontend/types.ts` (frontend). Avoid inline types for complex structures.
+- **Types:** Centralized in `src/types.ts` (backend) and `src/frontend/types.ts` (frontend). Avoid inline types for complex structures.
 - **Error Handling:** Centralized in `src/index.ts` via `app.onError`, which maps `DomainError → its status`, `ZodError → 400`, and anything else → `500 { error: 'Internal Server Error' }`. Always return consistent JSON: `{ "error": "Human readable message", "details": ... }`.
 
 ### Route File Structure
@@ -155,11 +181,38 @@ export async function exampleAfter(ctx: RouteContext): Promise<void> {
 }
 ```
 
-Routes are registered in `frontend/app.ts`:
+Routes are registered in `src/frontend/app.ts`:
 
 ```typescript
 route('/example', exampleView, { after: exampleAfter });
 ```
+
+### Frontend Layering
+
+`src/frontend/` mirrors the backend's discipline: a file's directory declares what it is allowed to depend on. Dependencies point **downward only** — a lower layer never imports from a higher one.
+
+| Layer                | Contains                                                                 | May import from        |
+| -------------------- | ------------------------------------------------------------------------ | ---------------------- |
+| `core/`              | The SPA's own runtime: router, i18n, DataCache                            | nothing (leaf layer)   |
+| `lib/`               | Stateless helpers. No app state, no DOM ownership, no fetching own data   | `core/`                |
+| `features/`          | Stateful subsystems that own DOM and/or a lifecycle (feed, editor, lists) | `core/`, `lib/`        |
+| `views/`             | One module per route (`viewFn` + optional `afterFn`)                      | `core/`, `lib/`, `features/` |
+| `app.ts`             | Composition root: registers routes, nav, auth, boot                       | everything             |
+
+**Rules:**
+
+- **`lib/utils.ts` is a barrel, not a module.** It only re-exports the `lib/` leaves. Views and features import from `./lib/utils` (or `../lib/utils`), not from `./lib/toast` directly. New helpers go in a topical leaf file and get re-exported there — never appended to the barrel as an implementation.
+- **A view never imports another view.** Shared page shape belongs in `features/`; shared markup helpers in `lib/`.
+- **A feature never imports a view.** If a feature needs view-specific rendering, the view passes it in as a callback/config (see `createFilteredListView`).
+- `core/` is the only layer allowed to touch `history`, `localStorage` policy, or the locale map directly.
+
+#### Filtered listings go through the factory
+
+`AvatarsView`, `AssetsView` and `ClothesView` are the same page with a different endpoint. They are **not** written by hand — each calls `createFilteredListView(...)` from `src/frontend/features/filtered-list.ts`, supplying only what differs: the API endpoint, the `FilterPanelConfig`, the i18n key namespace, and how a card renders its meta badge. Adding a fourth resource listing means another factory call, never a copy of an existing view.
+
+#### Type-checking the frontend
+
+`tsc` and `esbuild` disagree about what breaks: `tsc -p tsconfig.frontend.json` catches type errors but resolves paths loosely, while esbuild catches unresolved imports and circular-layer mistakes but ignores types. **Verify a frontend change with both** — `npx tsc -p tsconfig.frontend.json --noEmit` and `npm run build-frontend`. Passing only one is not a green build.
 
 ### Internal Links & Routing
 
@@ -196,17 +249,18 @@ src/
       admin.ts            assets.ts     authors.ts    avatars.ts
       blog.ts             clothes.ts    collections.ts comments.ts
       downloads.ts        favorites.ts  feed.ts       llms.ts
-      oauth.ts            resources.ts  system.ts     two-factor.ts
-      updates.ts          uploads.ts    users.ts      wiki.ts
+      media.ts            oauth.ts      resources.ts  system.ts
+      two-factor.ts       updates.ts    uploads.ts    users.ts
+      wiki.ts
   durable-objects/        # Durable Object classes (transport layer — no domain logic, no SQL)
     feed-room.ts          # FeedRoom — global WebSocket-hibernation fan-out for live feed events
   services/               # Business logic (service layer), env-agnostic — one file per domain
     admin-service.ts      asset-service.ts    author-service.ts   avatar-service.ts
     blog-service.ts       change-feed-service.ts                  clothes-service.ts
     collection-service.ts comment-service.ts  download-service.ts favorite-service.ts
-    feed-publisher.ts     media-processing-service.ts             oauth-service.ts
-    resource-service.ts   two-factor-service.ts upload-service.ts user-service.ts
-    wiki-comment-service.ts
+    feed-publisher.ts     media-processing-service.ts             media-service.ts
+    oauth-service.ts      resource-service.ts two-factor-service.ts
+    upload-service.ts     user-service.ts     wiki-comment-service.ts
   repositories/           # ALL SQL (repository layer) — one file per table
     admin-repository.ts       asset-repository.ts       author-repository.ts
     avatar-repository.ts      blog-comment-repository.ts blog-post-repository.ts
@@ -220,22 +274,36 @@ src/
     build-frontend.mjs    # esbuild script: bundles src/frontend/ → public/js/bundle.js
                           # --dev flag enables source maps; --watch flag enables watch mode
     user-passrecover.mjs  # CLI script: reset user password via wrangler d1 (npm run user-passrecover)
-  frontend/               # TypeScript SPA source (compiled by esbuild)
+  frontend/               # TypeScript SPA source (compiled by esbuild) — layered: core → lib → features → views
     app.ts                # Entry point: route registration, nav, auth, boot
-    router.ts             # History API SPA router (route/navigateTo/initRouter)
-    i18n.ts               # i18n loader (wraps dynamic import of locale files)
-    cache.ts              # DataCache — two-layer cache: in-memory Map + localStorage (survives reloads)
-    feed.ts               # FeedClient — live WebSocket to /api/feed/live (suspends the poller while up)
-    updates.ts            # Polling fallback — GET /api/updates cursor poller
-    feed-scopes.ts        # Shared scope→cache-prefix map + reconciler used by feed.ts and updates.ts
-    comment-editor.ts     # Shared Markdown editor component (toolbar, image upload, Turnstile)
-    diff.ts               # Content diff utilities
-    filter-panel.ts       # Reusable faceted filter panel (used in AvatarsView, etc.)
-    icons.ts              # Centralized Lucide icon registry
-    utils.ts              # General frontend utilities (incl. showToast)
-    admin.ts              # Admin-specific frontend logic
     types.ts              # Frontend-only TypeScript types (RouteContext, ViewFn, etc.)
-    views/                # Functional view modules (viewFn + optional afterFn)
+    core/                 # Framework layer: the SPA's own runtime. Depends on nothing above it.
+      router.ts           # History API SPA router (route/notFound/navigateTo/initRouter)
+      i18n.ts             # i18n: static locale imports + t() / setLanguage() / getCurrentLang()
+      cache.ts            # DataCache — two-layer cache: in-memory Map + localStorage (survives reloads)
+    lib/                  # Stateless utilities. No DOM ownership, no app state — pure helpers.
+      utils.ts            # Barrel: re-exports every lib module. Views import from here, not the leaves.
+      dom.ts              # $ / $$ / htmlDecode / loadingBtn
+      toast.ts            # showToast — the ONLY ephemeral-feedback channel (see Frontend Utilities)
+      confirm.ts          # showConfirm — modal confirmation promise (replaces window.confirm)
+      markdown.ts         # stripMarkdown / renderMarkdown (marked + DOMPurify)
+      media.ts            # mediaUrl / videoUrl / progressiveImg / initLazyImages / initMediaPolling / resizeImage
+      upload.ts           # uploadChunked + CHUNK_SIZE (30MB multipart chunking)
+      download-hosts.ts   # downloadHost(url) → HostInfo + the KNOWN_HOSTS table
+      icons.ts            # Centralized Lucide + simple-icons registry (icon/brandIcon/getIcon)
+      turnstile.ts        # renderTurnstile — widget mount helper
+      meta-label.ts       # metaLabel(namespace, value) — localized resource metadata badges
+      time.ts             # TimeUnit enum (cache TTLs, intervals)
+      diff.ts             # Content diff utilities (HistoryView)
+    features/             # Stateful, self-contained subsystems. May use core + lib; never import a view.
+      feed.ts             # FeedClient — live WebSocket to /api/feed/live (suspends the poller while up)
+      updates.ts          # Polling fallback — GET /api/updates cursor poller
+      feed-scopes.ts      # Shared scope→cache-prefix map + reconciler used by feed.ts and updates.ts
+      filtered-list.ts    # createFilteredListView factory — the shared Avatars/Assets/Clothes page shape
+      filter-panel.ts     # Reusable faceted filter panel (consumed by filtered-list.ts)
+      comment-editor.ts   # Shared Markdown editor component (toolbar, image upload, Turnstile)
+      admin.ts            # Admin-specific frontend logic
+    views/                # Functional view modules (viewFn + optional afterFn). The only layer app.ts routes to.
       AdminView.ts         AssetsView.ts      AuthorView.ts
       AvatarsView.ts       BlogCreateView.ts  BlogListView.ts
       BlogPostView.ts      CategoryView.ts    ClothesView.ts
@@ -249,6 +317,8 @@ src/
     image-validator.ts    # Image-specific validation
     query-constructor.ts  # Dynamic D1 query builder
     turnstile.ts          # Cloudflare Turnstile token verification
+    gif-encoder.ts        # In-Worker animated GIF assembly (video posters; node:zlib inflate)
+    mp4-duration.ts       # Parses the `mvhd` box of an MP4 to read its duration (frame scheduling)
   cdn-worker.ts           # Dedicated CDN Worker entry point (deployed separately via wrangler-cdn.jsonc)
   index.ts                # Composition root: builds the app, wires middleware +
                           # registerRateLimits + app.onError, mounts the /api routers,
@@ -276,10 +346,13 @@ public/
     authors.css           # Avatar author profile page styles
     favorites.css         # Favorites view: collection tabs, compact cards, drag-and-drop
     search.css            # Search bar and filter panel styles
+    settings.css          # Settings view: sidebar navigation + section panels
   sw.js                   # Service worker
+  processing/             # Mirrored copies of the CDN "processing" placeholders ({lang}.webp)
+  test/                   # Sample images used by the DB seed script (npm run seed)
   js/
     bundle.js             # Compiled frontend bundle (output of esbuild, DO NOT EDIT)
-                          # Locale JSON is imported by src/frontend/i18n.ts and bundled in here
+                          # Locale JSON is imported by src/frontend/core/i18n.ts and bundled in here
   i18n/                   # Locale files — plain JSON (`{ "key": "value" }`, NOT ES modules)
     cn.json  de.json  en.json  es.json  fr.json  it.json
     jp.json  nl.json  pl.json  pt.json  ru.json  tr.json
@@ -304,6 +377,9 @@ migrations/               # D1 schema & migration files
   0014_change_feed.sql        # change_feed table for real-time update scopes
   0015_media_variants_gif_format.sql # GIF format support in media_variants
   0016_collections.sql        # user_collections table + collection_uuid FK on user_favorites
+  0017_favorite_global_order.sql     # global_order column on user_favorites ("All" tab order,
+                                     # independent of per-collection display_order)
+  0018_media_variants_video_format.sql # Widens the media_variants format CHECK to allow 'mp4'
                               # New migrations follow the pattern: NNNN_description.sql
 
 wrangler.jsonc            # Main Worker configuration & bindings
@@ -370,14 +446,14 @@ The frontend is **TypeScript-first** and compiled with esbuild:
 - **Source:** `src/frontend/` directory (TypeScript).
 - **Output:** `public/js/bundle.js` (single IIFE bundle, minified in production).
 - **Source Maps:** Only emitted in dev mode (`--dev` flag). Never included in production builds.
-- **i18n files** in `public/i18n/` are plain `.json` files (`{ "key": "value" }`). `src/frontend/i18n.ts` imports them statically, so esbuild bundles them into `public/js/bundle.js`. Do not convert them to ES modules — keep them as plain JSON objects.
+- **i18n files** in `public/i18n/` are plain `.json` files (`{ "key": "value" }`). `src/frontend/core/i18n.ts` imports them statically, so esbuild bundles them into `public/js/bundle.js`. Do not convert them to ES modules — keep them as plain JSON objects.
 - The build script is `src/tools/build-frontend.mjs`. Do not edit the output `bundle.js` directly.
 
 ### Icons
 
-Icons are managed via a centralized registry in `src/frontend/icons.ts`, built on the `lucide` package (line icons) and `simple-icons` (brand marks).
+Icons are managed via a centralized registry in `src/frontend/lib/icons.ts`, built on the `lucide` package (line icons) and `simple-icons` (brand marks).
 
-- Import icons from `./icons` — never inline raw SVG strings in views.
+- Import icons from `../lib/icons` — never inline raw SVG strings in views.
 - The module exports a typed `getIcon(name, size?)` function that returns an SVG string.
 - This ensures consistent sizing and stroke width across the entire UI.
 - **Lucide** icons (UI chrome) are registered via the `icon()` renderer. **simple-icons** brand marks (download-host logos: Google Drive, MEGA, Gumroad, itch.io, …) are registered via the `brandIcon()` renderer in the same file. Import only the specific `si*` marks you need — esbuild tree-shakes them, so the 3400-icon library never bundles whole.
@@ -385,7 +461,7 @@ Icons are managed via a centralized registry in `src/frontend/icons.ts`, built o
 
 ### Download-host recognition
 
-The resource detail page (`ItemView`) labels every download link by its origin site instead of a bare "Backup N". `downloadHost(url)` in `src/frontend/utils.ts` resolves a URL to a `HostInfo` — `{ label, icon, kind }`:
+The resource detail page (`ItemView`) labels every download link by its origin site instead of a bare "Backup N". `downloadHost(url)` in `src/frontend/lib/utils.ts` resolves a URL to a `HostInfo` — `{ label, icon, kind }`:
 
 - **`kind`** classifies the link's role and drives its caption and prominence:
   - `'local'` — our own R2 file (a `/api/download/…` link, relative or fully-qualified). Highlighted as a primary source; caption `item.localServer`.
@@ -401,7 +477,7 @@ The button label in `ItemView` prefers a link's own title, then the recognised h
 
 ### Shared Markdown & Comment Editor
 
-`src/frontend/comment-editor.ts` is a reusable module that encapsulates the full Markdown editor experience. It offers two modes:
+`src/frontend/features/comment-editor.ts` is a reusable module that encapsulates the full Markdown editor experience. It offers two modes:
 
 1. **Full Comment Form:** Uses `commentEditorHtml()` and `initCommentEditor()`. Includes Turnstile, submit handling, and the toolbar. Used in `ItemView`, `BlogPostView`.
 2. **Standalone Toolbar:** Uses `markdownToolbarHtml()` and `initMarkdownToolbar()`. Just the formatting toolbar and paste-to-upload logic, designed to be dropped into custom forms.
@@ -415,10 +491,11 @@ When adding a Markdown description field to a form (like in `AdCreateView` or `B
 
 ### Frontend Utilities & Feedback
 
-All visual feedback or ephemeral messages to the user (success, error, loading states) MUST use the integrated `showToast` utility from `src/frontend/utils.ts`.
+All visual feedback or ephemeral messages to the user (success, error, loading states) MUST use the integrated `showToast` utility from `src/frontend/lib/utils.ts`.
 
 - **Do not** use `alert()`, `confirm()`, or custom floating divs for ephemeral feedback.
-- **Import:** `import { showToast } from './utils';`
+- For a **yes/no confirmation** (deleting a resource, discarding an edit) use `showConfirm` from `src/frontend/lib/confirm.ts` — a promise-returning modal styled with the design system. Never `window.confirm()`, which renders an unstyled native dialog.
+- **Import:** `import { showToast } from '../lib/utils';` (always via the barrel, never `../lib/toast`).
 - **Usage:** `showToast('Message', 'success' | 'error' | 'warning' | 'info', durationMs)`
 - The function returns a `dismiss` callback which is useful for hiding indefinite toasts (duration `0`) after a background async task finishes.
 
@@ -427,7 +504,7 @@ All visual feedback or ephemeral messages to the user (success, error, loading s
 Locale files live in `public/i18n/` as **plain JSON files** (e.g. `en.json`, `es.json`). They are NOT ES modules — do not use `export default`.
 
 - **Supported locales:** `cn`, `de`, `en`, `es`, `fr`, `it`, `jp`, `nl`, `pl`, `pt`, `ru`, `tr`.
-- **Loader:** `src/frontend/i18n.ts` imports every locale JSON statically and holds them in the `translations` map; esbuild bundles them into `public/js/bundle.js` (no runtime `fetch()`). `t(path)` resolves the dot-path in the current locale, falling back to `en`, then to the raw `path` string.
+- **Loader:** `src/frontend/core/i18n.ts` imports every locale JSON statically and holds them in the `translations` map; esbuild bundles them into `public/js/bundle.js` (no runtime `fetch()`). `t(path)` resolves the dot-path in the current locale, falling back to `en`, then to the raw `path` string.
 - **No Fallbacks:** NEVER use fallback strings with the `t()` function (e.g., avoid `t('key') || 'Fallback'`). Just use `t('key')`. Fallbacks make it harder to detect missing translations.
 - **Consistency check:** Run `npm run i18n-manager CHECK` to detect missing keys across all locale files (compact one-line-per-key output). Exits with code `1` if issues are found (CI-safe).
 - **NO ENGLISH PLACEHOLDERS IN OTHER LANGUAGES:** It is **EXPLICITLY FORBIDDEN** to use English text as placeholder translations in non‑English locale files. The i18n system already falls back to English when a key is missing; writing English strings in other locale files defeats the purpose of translation and makes missing keys invisible. Agents MUST generate proper translations for all supported languages—use machine translation if necessary, but never copy English strings verbatim into `de.json`, `es.json`, etc.
@@ -535,7 +612,7 @@ GET https://cdn.vrcstorage.lat/{uuid}?res=[low|med|original]&format=[webp|png|gi
 - **Blur placeholder:** 8×8 WebP stored as a base64 data URI in `media.placeholder_blur`. Frontend reads it to display a blurred preview while the real image loads.
 - **Backfill:** `POST /api/admin/media/generate-variants` re-queues all images and videos that have no variants yet.
 
-Frontend utilities in `src/frontend/utils.ts`:
+Frontend utilities in `src/frontend/lib/utils.ts`:
 - `mediaUrl(uuid, res?, format?)` — constructs a CDN URL (`format` one of `webp|png|gif`; a video poster uses `gif`).
 - `videoUrl(uuid)` — constructs the `?format=video` CDN URL for a normalized MP4 (Range-served).
 
@@ -582,7 +659,7 @@ A media record is considered **in use** if its `uuid` or `r2_key` appears in any
 
 ### Change Feed (Real-Time Updates)
 
-The frontend poller (`src/frontend/updates.ts`) hits `GET /api/updates?since=<ms>` on an interval and learns which content **scopes** changed. Each scope maps to a set of `DataCache` URL prefixes it invalidates via `DataCache.clearScope(prefix)`, so the next read re-fetches fresh data from the API. The scopes are `avatars | assets | clothes | blog | comments`. The API is the single source of truth — an update carries only a scope + timestamp, never business data.
+The frontend poller (`src/frontend/features/updates.ts`) hits `GET /api/updates?since=<ms>` on an interval and learns which content **scopes** changed. Each scope maps to a set of `DataCache` URL prefixes it invalidates via `DataCache.clearScope(prefix)`, so the next read re-fetches fresh data from the API. The scopes are `avatars | assets | clothes | blog | comments`. The API is the single source of truth — an update carries only a scope + timestamp, never business data.
 
 The backend records changes in the `change_feed` table (migration `0014_change_feed.sql`) through `ChangeFeedRepository.bump(scope, entityId)`, exposed to the poller as a read via `ChangeFeedService.latest`.
 
@@ -597,11 +674,11 @@ A `bump` announces content to every connected user, so it must fire at the momen
 
 The mutation has already persisted before the bump runs, so a feed-write failure must never fail the request or roll back the change. Call it as `await this.changeFeed.bump(scope, id).catch(() => {})`. The only consequence of a dropped bump is that this one change goes unannounced until the next change refreshes the feed.
 
-**When adding a new gated content type** (created hidden, published later): put the bump — and the live broadcast (below) — at the publish/approve step, never at creation. **When adding a new instantly-public content type**: bump + broadcast at creation. In both cases add the scope to `FeedScope` in `src/types.ts` (the single source of vocabulary; `ChangeScope` aliases it) and to the `SCOPE_PREFIXES` / `SCOPE_LABELS` maps in `src/frontend/feed-scopes.ts` (with matching `updates.<scope>` i18n keys), or the frontend will neither invalidate nor announce it.
+**When adding a new gated content type** (created hidden, published later): put the bump — and the live broadcast (below) — at the publish/approve step, never at creation. **When adding a new instantly-public content type**: bump + broadcast at creation. In both cases add the scope to `FeedScope` in `src/types.ts` (the single source of vocabulary; `ChangeScope` aliases it) and to the `SCOPE_PREFIXES` / `SCOPE_LABELS` maps in `src/frontend/features/feed-scopes.ts` (with matching `updates.<scope>` i18n keys), or the frontend will neither invalidate nor announce it.
 
 ### Live Feed (Durable Object)
 
-Alongside the poller, a WebSocket path delivers the same updates in real time. A single global **`FeedRoom`** Durable Object holds every connected client's socket and fans events out to all of them; the frontend `FeedClient` (`src/frontend/feed.ts`) keeps one socket open per session. When the socket is up, `FeedClient` **suspends the poller** so a change is never delivered twice; when it drops, the poller resumes and covers the gap. Both paths funnel through the same reconciler in `src/frontend/feed-scopes.ts` (`reconcileScopes` → cache invalidation + one coalesced toast + `content-updated` event), so live and fallback behave identically.
+Alongside the poller, a WebSocket path delivers the same updates in real time. A single global **`FeedRoom`** Durable Object holds every connected client's socket and fans events out to all of them; the frontend `FeedClient` (`src/frontend/features/feed.ts`) keeps one socket open per session. When the socket is up, `FeedClient` **suspends the poller** so a change is never delivered twice; when it drops, the poller resumes and covers the gap. Both paths funnel through the same reconciler in `src/frontend/features/feed-scopes.ts` (`reconcileScopes` → cache invalidation + one coalesced toast + `content-updated` event), so live and fallback behave identically.
 
 #### The DO is a transport layer, not a domain layer
 
@@ -610,7 +687,7 @@ Same discipline as route vs. repository: the DO carries bytes, it does not hold 
 - **`FeedRoom`** (`src/durable-objects/feed-room.ts`): only `acceptWebSocket` + the hibernation handlers (`webSocketMessage` / `webSocketClose` / `webSocketError`) + `broadcast` (via `getWebSockets`). No SQL, no domain rules. It never reads or owns business data — D1 is the single source of truth, and the event carries only a scope + entity id.
 - **`FeedPublisher`** (`src/services/feed-publisher.ts`): the bridge a domain service uses to broadcast. Services depend on this narrow publisher, never on the raw `FEED` namespace, and receive the namespace as a method parameter (like any other env collaborator) so they stay env-agnostic.
 - **`FeedEvent` / `FeedScope`** (`src/types.ts`): the typed contract shared backend↔frontend. No `any`.
-- **`FeedClient`** (`src/frontend/feed.ts`): one socket, backoff reconnect, event → shared reconciler.
+- **`FeedClient`** (`src/frontend/features/feed.ts`): one socket, backoff reconnect, event → shared reconciler.
 
 #### DO rules
 
@@ -667,6 +744,7 @@ VRCStorage uses a **flat, monochromatic, brutalist-adjacent** design language:
 | `--btn-bg`       | `#333`    | `#eeeeee88` | Default button background   |
 | `--btn-text`     | `#fff`    | `#121212`   | Default button text         |
 | `--btn-hover`    | `#555`    | `#ccc`      | Button hover background     |
+| `--shadow-hover` | `rgba(0,0,0,0.25)` | `rgba(0,0,0,0.6)` | The only allowed shadow color (square shadows) |
 
 **Exceptions allowed** (these specific hard-coded values exist in the codebase and are acceptable):
 
@@ -982,7 +1060,7 @@ When adding a new language to the project, follow **ALL** of these steps in orde
 
 #### Step 2: Register the locale in the frontend loader
 
-1. Open `src/frontend/i18n.ts`.
+1. Open `src/frontend/core/i18n.ts`.
 2. Add a static `import <code> from '../../public/i18n/<code>.json';` and add the code to the `translations` map so esbuild bundles it.
 3. Rebuild the frontend (Step 6) so the new import lands in `public/js/bundle.js`.
 
