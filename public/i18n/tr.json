@@ -77,7 +77,9 @@
 		"section_2fa": "İki Adımlı",
 		"section_2fa_desc": "Kimlik doğrulama uygulamasıyla giriş yaparken ikinci bir adım ekleyin.",
 		"avatar_hint": "İsteğe bağlı. En fazla 5MB.",
-		"saving": "Kaydediliyor…"
+		"saving": "Kaydediliyor…",
+		"section_notifications": "Bildirimler",
+		"section_notifications_desc": "Yeni onaylanan kaynaklar için tarayıcı bildirimleri."
 	},
 	"home": {
 		"welcome": "VRCStorage'a Hoş Geldiniz",
@@ -774,5 +776,47 @@
 		"title": "Onayla",
 		"confirm": "Onayla",
 		"cancel": "İptal"
+	},
+	"chat": {
+		"title": "Genel sohbet",
+		"placeholder": "Bir mesaj yaz...",
+		"send": "Gönder",
+		"loginToChat": "Sohbete katılmak için giriş yap",
+		"empty": "Henüz mesaj yok. İlk konuşan sen ol.",
+		"rateLimited": "Tekrar göndermeden önce biraz bekle.",
+		"tooLong": "Mesajlar en fazla 50 karakter olabilir.",
+		"invalid": "Bu mesaj gönderilemedi.",
+		"disconnected": "Yeniden bağlanılıyor...",
+		"purge": "Sohbeti temizle",
+		"purgeConfirm": "Sohbetteki tüm mesajlar silinsin mi? Bu işlem geri alınamaz.",
+		"purged": "Bir yönetici sohbeti temizledi.",
+		"purgeFailed": "Sohbet temizlenemedi."
+	},
+	"notifications": {
+		"enable": "Tarayıcı bildirimlerini etkinleştir",
+		"enable_hint": "Filtrelerinize uyan yeni bir kaynak onaylandığında yerel bir tarayıcı bildirimi alın.",
+		"category_avatars": "Avatarlar",
+		"category_avatars_hint": "Yeni bir avatar onaylandığında bildir. Avatar türüne göre filtrele.",
+		"category_assets": "Assetler",
+		"category_assets_hint": "Yeni bir asset onaylandığında bildir. Asset türüne göre filtrele.",
+		"category_clothes": "Kıyafetler",
+		"category_clothes_hint": "Yeni kıyafetler onaylandığında bildir.",
+		"subtype_empty_means_all": "Tüm alt türleri almak için boş bırakın. Bir veya daha fazlasını seçmek bildirimleri o türlerle sınırlar.",
+		"permission_granted": "Tarayıcı izni verildi.",
+		"permission_denied": "Tarayıcı izni reddedildi.",
+		"permission_denied_hint": "Bildirimleri tarayıcınızın site ayarlarından yeniden etkinleştirin.",
+		"permission_default": "Tarayıcı izni henüz istenmedi.",
+		"request_permission": "Bildirimleri etkinleştir",
+		"unsupported": "Bu tarayıcı bildirimleri desteklemiyor.",
+		"login_required": "Bildirimleri yapılandırmak için giriş yapın.",
+		"saved": "Bildirim tercihleri kaydedildi.",
+		"test": "Test bildirimi gönder",
+		"test_title": "Test bildirimi",
+		"test_body": "Bunu görüyorsanız tarayıcı bildirimleri çalışıyor.",
+		"newResourceTitle": "VRCStorage üzerinde yeni kaynak",
+		"scope_avatars": "Avatar",
+		"scope_assets": "Asset",
+		"scope_clothes": "Kıyafet",
+		"untitled": "Başlıksız"
 	}
 }

@@ -16,7 +16,8 @@
 		"build-frontend:dev": "node src/tools/build-frontend.mjs --dev",
 		"build-frontend:watch": "node src/tools/build-frontend.mjs --watch --dev",
 		"i18n-manager": "node src/tools/i18n-manager.mjs",
-		"user-passrecover": "node src/tools/user-passrecover.mjs"
+		"user-passrecover": "node src/tools/user-passrecover.mjs",
+		"migrate-2fa": "node src/tools/migrate-2fa-secrets.mjs"
 	},
 	"devDependencies": {
 		"@types/dompurify": "^3.0.5",

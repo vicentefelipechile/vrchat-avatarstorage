@@ -28,7 +28,7 @@ This guide is for agentic coding agents (like yourself) operating in the VRCStor
 - **Queues:** Cloudflare Queues — `UPLOAD_QUEUE` binding for async upload post-processing. After a file is stored, the `queue` handler (`src/http/queue.ts` → `MediaProcessingService`) generates 6 image variants (low/med/original × webp/png) and a blur placeholder stored in D1 for images. For **videos** it normalizes the upload to an H.264/AAC MP4 (`{uuid}/video.mp4`) via the Media Transformations binding and builds an animated GIF poster (`{uuid}/original.gif`) from frames sampled by duration.
 - **Media Transformations:** Cloudflare Media Transformations binding (`MEDIA`) — used by the queue handler to normalize videos to MP4 and extract poster frames from R2. Configured in `wrangler.jsonc` (main Worker only). Input limits: <100MB, ≤10min; `mode:'frame'` outputs jpg/png, `mode:'video'` outputs MP4 H.264/AAC (no WebM). The duration it needs for frame scheduling is parsed from the normalized MP4's `mvhd` box (`src/helpers/mp4-duration.ts`); the GIF poster is assembled in-Worker (`src/helpers/gif-encoder.ts`, `node:zlib` inflate) since there is no native animated output.
 - **Cron:** Scheduled worker runs daily at `0 3 * * *` UTC — the `scheduled` handler (`src/http/scheduled.ts`) reuses `AdminService.cleanupOrphanedMedia`.
-- **Durable Objects:** `FEED` binding → `FeedRoom` class (`src/durable-objects/feed-room.ts`), declared as a SQLite class in the `v1` migration. See [Live Feed](#live-feed-durable-object).
+- **Durable Objects:** `FEED` binding → `FeedRoom` class (`src/durable-objects/feed-room.ts`), declared as a SQLite class in the `v1` migration. `CHAT` binding → `ChatRoom` class (`src/durable-objects/chat-room.ts`), `v2` migration. See [Live Feed](#live-feed-durable-object) and [Global Chat](#global-chat-durable-object).
 - **Version metadata:** `CF_VERSION_METADATA` binding — exposes the deployment's version ID and tag, surfaced by `GET /api/version`.
 - **Static assets:** `ASSETS` binding serves `./public` (the SPA shell, CSS, bundle, wiki markdown, locale JSON).
 - **Observability:** enabled in `wrangler.jsonc` — Worker logs are retained and viewable via the Cloudflare dashboard or `wrangler tail`.
@@ -248,12 +248,13 @@ src/
     routes/               # Thin HTTP handlers (route layer) — one file per API domain
       admin.ts            assets.ts     authors.ts    avatars.ts
       blog.ts             clothes.ts    collections.ts comments.ts
-      downloads.ts        favorites.ts  feed.ts       llms.ts
-      media.ts            oauth.ts      resources.ts  system.ts
-      two-factor.ts       updates.ts    uploads.ts    users.ts
-      wiki.ts
-  durable-objects/        # Durable Object classes (transport layer — no domain logic, no SQL)
+      chat.ts             downloads.ts  favorites.ts  feed.ts
+      llms.ts             media.ts      oauth.ts      resources.ts
+      system.ts           two-factor.ts updates.ts    uploads.ts
+      users.ts            wiki.ts
+  durable-objects/        # Durable Object classes (transport layer — no domain logic, no D1 access)
     feed-room.ts          # FeedRoom — global WebSocket-hibernation fan-out for live feed events
+    chat-room.ts          # ChatRoom — global chat: fan-out + its own SQLite backlog (not D1)
   services/               # Business logic (service layer), env-agnostic — one file per domain
     admin-service.ts      asset-service.ts    author-service.ts   avatar-service.ts
     blog-service.ts       change-feed-service.ts                  clothes-service.ts
@@ -299,6 +300,7 @@ src/
       feed.ts             # FeedClient — live WebSocket to /api/feed/live (suspends the poller while up)
       updates.ts          # Polling fallback — GET /api/updates cursor poller
       feed-scopes.ts      # Shared scope→cache-prefix map + reconciler used by feed.ts and updates.ts
+      chat.ts             # Global chat panel — socket to /api/chat/live, opened only while expanded
       filtered-list.ts    # createFilteredListView factory — the shared Avatars/Assets/Clothes page shape
       filter-panel.ts     # Reusable faceted filter panel (consumed by filtered-list.ts)
       comment-editor.ts   # Shared Markdown editor component (toolbar, image upload, Turnstile)
@@ -347,6 +349,7 @@ public/
     favorites.css         # Favorites view: collection tabs, compact cards, drag-and-drop
     search.css            # Search bar and filter panel styles
     settings.css          # Settings view: sidebar navigation + section panels
+    chat.css              # Global chat: bottom-right collapsible panel
   sw.js                   # Service worker
   processing/             # Mirrored copies of the CDN "processing" placeholders ({lang}.webp)
   test/                   # Sample images used by the DB seed script (npm run seed)
@@ -697,6 +700,34 @@ Same discipline as route vs. repository: the DO carries bytes, it does not hold 
 - **Compatibility date note:** `webSocketClose` is handled explicitly because the current `compatibility_date` (`2026-02-12`) predates `web_socket_auto_reply_to_close` (needs `>= 2026-04-07`). If that flag is ever enabled, the explicit close can be revisited.
 - **Retrieve current Cloudflare docs before changing DO code** (the Workers-specifics rule above applies): the Hibernation API and wrangler migration syntax are the kind of thing that drifts.
 - **Adding a new DO class:** add its binding to `durable_objects.bindings` and a new `migrations` entry (`new_sqlite_classes`) in `wrangler.jsonc`, re-export the class from `src/index.ts`, and run `npm run cf-typegen` so `env.<BINDING>` is typed.
+
+### Global Chat (Durable Object)
+
+A single global **`ChatRoom`** (`src/durable-objects/chat-room.ts`) backs the collapsible chat panel docked bottom-right. Reading is public — anonymous visitors connect and receive everything — but only authenticated users can send. Text only, `CHAT_MAX_LENGTH` (50) characters, `CHAT_HISTORY_SIZE` (50) messages of backlog. The panel (`src/frontend/features/chat.ts`) is mounted on `<body>` outside the router's container so navigation never tears down the conversation.
+
+#### How it differs from `FeedRoom`
+
+The feed is a stateless one-way fan-out. The chat is bidirectional and keeps state, which changes three rules:
+
+- **It owns storage.** The backlog lives in the DO's own SQLite, not D1: the chat is ephemeral, with no search, permalinks, or retroactive moderation to justify a table, a repository, a migration, and write load on D1's single writer. The trade-off is real — the history is not readable from the admin panel or the rest of the backend, and moving it to D1 later is a migration, not a flag.
+- **It validates.** `webSocketMessage` checks the *shape* of what arrives (`ChatSendSchema` in `src/validators.ts`) — never business rules. It still does not read D1 and never resolves who a user is.
+- **Purging is not best-effort.** `FeedPublisher` swallows failures because D1 already committed and the poller reconciles. Here the room *is* the only copy and nothing reconciles it, so `purge()` errors propagate to `app.onError` rather than reporting a success that did not happen.
+
+#### Identity is the route's job, never the client's
+
+`GET /api/chat/live` resolves the caller with `optionalAuth` at the handshake — a browser `WebSocket` cannot set headers, but it does send the sealed session cookie same-origin, so no query-string token is needed (it would leak into logs). The route then stamps `X-Chat-User-Uuid` / `X-Chat-Username` with `set()` (never `append()`), overwriting anything a client tried to forge, and the DO pins them to the socket via `serializeAttachment`.
+
+**The client sends only `{ type: 'send', text }`.** Identity and timestamp are assigned server-side; a socket with no `userUuid` in its attachment is read-only. Hiding the composer from logged-out users is UX, not the control.
+
+Identity is frozen for the life of the socket: a rename or ban does not reach an already-open connection until it reconnects.
+
+#### Rules specific to the chat
+
+- **Rate limiting lives in the DO.** The `RL_*` bindings are HTTP middleware — they see the handshake once and never see anything sent over the open socket afterwards. `SEND_COOLDOWN_MS` is enforced per connection via the socket's attachment. `RL_MEDIUM` on `/api/chat/live` only caps socket churn; `RL_STRICT` on `/api/chat/purge` bounds an irreversible action.
+- **Purge is HTTP, not a socket message.** `POST /api/chat/purge` with `requireAdmin`. It is the feature's only privileged operation; routing it through the same channel as anonymous chatter would force the room to reason about roles. `window.appState.isAdmin` only decides whether the button is drawn — the server answers 403 regardless.
+- **Moderation is all-or-nothing.** An admin can empty the room; there is no per-message delete, no muting, and no audit trail of who purged. A single troll means purging everyone's conversation. `ChatMessage.uuid` already exists, so per-message deletion is an addition rather than a redesign.
+- **No toasts for incoming messages.** The one-coalesced-toast-per-window policy exists to prevent flooding, and an active conversation would breach it on every line. Unread count on the bubble; toasts are reserved for errors.
+- **Render with `textContent`, never `innerHTML`.** Plain text only — no `marked`, no `renderMarkdown`, no images. The DO sanitizes as well; both layers hold.
 
 ### CSS Architecture
 

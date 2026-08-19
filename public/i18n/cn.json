@@ -77,7 +77,9 @@
 		"section_2fa": "两步验证",
 		"section_2fa_desc": "使用身份验证器应用登录时增加第二步验证。",
 		"avatar_hint": "可选。最大 5MB。",
-		"saving": "保存中…"
+		"saving": "保存中…",
+		"section_notifications": "通知",
+		"section_notifications_desc": "新资源获批时的浏览器通知。"
 	},
 	"home": {
 		"welcome": "欢迎来到 VRCStorage",
@@ -741,5 +743,47 @@
 		"title": "确认",
 		"confirm": "确认",
 		"cancel": "取消"
+	},
+	"chat": {
+		"title": "全球聊天",
+		"placeholder": "输入消息...",
+		"send": "发送",
+		"loginToChat": "登录后即可参与聊天",
+		"empty": "还没有消息，来说第一句吧。",
+		"rateLimited": "请稍等片刻再发送。",
+		"tooLong": "消息最多 50 个字符。",
+		"invalid": "该消息无法发送。",
+		"disconnected": "正在重新连接...",
+		"purge": "清空聊天",
+		"purgeConfirm": "确定删除聊天中的所有消息吗？此操作无法撤销。",
+		"purged": "管理员已清空聊天。",
+		"purgeFailed": "无法清空聊天。"
+	},
+	"notifications": {
+		"enable": "启用浏览器通知",
+		"enable_hint": "当符合您筛选条件的新资源获批时，接收原生浏览器通知。",
+		"category_avatars": "虚拟形象",
+		"category_avatars_hint": "新虚拟形象获批时通知。按虚拟形象类型筛选。",
+		"category_assets": "素材",
+		"category_assets_hint": "新素材获批时通知。按素材类型筛选。",
+		"category_clothes": "服装",
+		"category_clothes_hint": "新服装获批时通知。",
+		"subtype_empty_means_all": "留空以接收所有子类型。选择一项或多项仅将通知限制为这些类型。",
+		"permission_granted": "已授予浏览器权限。",
+		"permission_denied": "浏览器权限被拒绝。",
+		"permission_denied_hint": "请在浏览器的网站设置中重新启用通知。",
+		"permission_default": "尚未请求浏览器权限。",
+		"request_permission": "启用通知",
+		"unsupported": "此浏览器不支持通知。",
+		"login_required": "登录以配置通知。",
+		"saved": "通知偏好已保存。",
+		"test": "发送测试通知",
+		"test_title": "测试通知",
+		"test_body": "如果您看到此消息，则浏览器通知正常工作。",
+		"newResourceTitle": "VRCStorage 上的新资源",
+		"scope_avatars": "虚拟形象",
+		"scope_assets": "素材",
+		"scope_clothes": "服装",
+		"untitled": "未命名"
 	}
 }

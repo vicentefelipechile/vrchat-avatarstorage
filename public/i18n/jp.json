@@ -77,7 +77,9 @@
 		"section_2fa": "二段階認証",
 		"section_2fa_desc": "認証アプリでのログイン時に、もう一段階の確認を追加します。",
 		"avatar_hint": "任意。最大5MB。",
-		"saving": "保存中…"
+		"saving": "保存中…",
+		"section_notifications": "通知",
+		"section_notifications_desc": "新しく承認されたリソースのブラウザ通知。"
 	},
 	"home": {
 		"welcome": "VRCStorageへようこそ",
@@ -736,5 +738,47 @@
 		"title": "確認",
 		"confirm": "確認",
 		"cancel": "キャンセル"
+	},
+	"chat": {
+		"title": "グローバルチャット",
+		"placeholder": "メッセージを入力...",
+		"send": "送信",
+		"loginToChat": "会話に参加するにはログインしてください",
+		"empty": "まだメッセージはありません。最初に話しかけてみましょう。",
+		"rateLimited": "次の送信まで少し待ってください。",
+		"tooLong": "メッセージは50文字までです。",
+		"invalid": "このメッセージを送信できませんでした。",
+		"disconnected": "再接続中...",
+		"purge": "チャットを消去",
+		"purgeConfirm": "チャットのすべてのメッセージを削除しますか？この操作は取り消せません。",
+		"purged": "管理者がチャットを消去しました。",
+		"purgeFailed": "チャットを消去できませんでした。"
+	},
+	"notifications": {
+		"enable": "ブラウザ通知を有効にする",
+		"enable_hint": "フィルターに一致する新しいリソースが承認されたときにネイティブなブラウザ通知を受け取ります。",
+		"category_avatars": "アバター",
+		"category_avatars_hint": "新しいアバターが承認されたときに通知。アバタータイプでフィルター。",
+		"category_assets": "アセット",
+		"category_assets_hint": "新しいアセットが承認されたときに通知。アセットタイプでフィルター。",
+		"category_clothes": "衣装",
+		"category_clothes_hint": "新しい衣装が承認されたときに通知。",
+		"subtype_empty_means_all": "空のままですべてのサブタイプを受信。1つ以上選択すると通知がそのタイプに限定されます。",
+		"permission_granted": "ブラウザの権限が付与されました。",
+		"permission_denied": "ブラウザの権限が拒否されました。",
+		"permission_denied_hint": "ブラウザのサイト設定で通知を再度有効にしてください。",
+		"permission_default": "ブラウザの権限はまだリクエストされていません。",
+		"request_permission": "通知を有効にする",
+		"unsupported": "このブラウザは通知をサポートしていません。",
+		"login_required": "通知を設定するにはログインしてください。",
+		"saved": "通知設定を保存しました。",
+		"test": "テスト通知を送信",
+		"test_title": "テスト通知",
+		"test_body": "これが表示されていれば、ブラウザ通知は正常に動作しています。",
+		"newResourceTitle": "VRCStorageの新しいリソース",
+		"scope_avatars": "アバター",
+		"scope_assets": "アセット",
+		"scope_clothes": "衣装",
+		"untitled": "無題"
 	}
 }

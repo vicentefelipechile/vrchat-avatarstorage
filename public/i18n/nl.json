@@ -77,7 +77,9 @@
 		"section_2fa": "Twee-Factor",
 		"section_2fa_desc": "Voeg een tweede stap toe bij het inloggen met een authenticator-app.",
 		"avatar_hint": "Optioneel. Max. 5MB.",
-		"saving": "Opslaan…"
+		"saving": "Opslaan…",
+		"section_notifications": "Meldingen",
+		"section_notifications_desc": "Browsermeldingen voor nieuw goedgekeurde resources."
 	},
 	"home": {
 		"welcome": "Welkom bij VRCStorage",
@@ -774,5 +776,47 @@
 		"title": "Bevestigen",
 		"confirm": "Bevestigen",
 		"cancel": "Annuleren"
+	},
+	"chat": {
+		"title": "Globale chat",
+		"placeholder": "Schrijf een bericht...",
+		"send": "Versturen",
+		"loginToChat": "Log in om mee te praten",
+		"empty": "Nog geen berichten. Zeg als eerste iets.",
+		"rateLimited": "Wacht even voordat je opnieuw verstuurt.",
+		"tooLong": "Berichten mogen maximaal 50 tekens bevatten.",
+		"invalid": "Dit bericht kon niet worden verstuurd.",
+		"disconnected": "Opnieuw verbinden...",
+		"purge": "Chat legen",
+		"purgeConfirm": "Alle berichten in de chat verwijderen? Dit kan niet ongedaan worden gemaakt.",
+		"purged": "Een beheerder heeft de chat geleegd.",
+		"purgeFailed": "De chat kon niet worden geleegd."
+	},
+	"notifications": {
+		"enable": "Browsermeldingen inschakelen",
+		"enable_hint": "Ontvang een native browsermelding wanneer een nieuwe resource die overeenkomt met je filters wordt goedgekeurd.",
+		"category_avatars": "Avatars",
+		"category_avatars_hint": "Melden wanneer een nieuwe avatar wordt goedgekeurd. Filter op avatartype.",
+		"category_assets": "Assets",
+		"category_assets_hint": "Melden wanneer een nieuwe asset wordt goedgekeurd. Filter op assettype.",
+		"category_clothes": "Kleding",
+		"category_clothes_hint": "Melden wanneer nieuwe kleding wordt goedgekeurd.",
+		"subtype_empty_means_all": "Leeg laten om alle subtypes te ontvangen. Een of meer selecteren beperkt meldingen tot die types.",
+		"permission_granted": "Browsertoestemming verleend.",
+		"permission_denied": "Browsertoestemming geweigerd.",
+		"permission_denied_hint": "Schakel meldingen opnieuw in via de site-instellingen van je browser.",
+		"permission_default": "Browsertoestemming nog niet gevraagd.",
+		"request_permission": "Meldingen inschakelen",
+		"unsupported": "Deze browser ondersteunt geen meldingen.",
+		"login_required": "Log in om meldingen te configureren.",
+		"saved": "Meldingsvoorkeuren opgeslagen.",
+		"test": "Testmelding verzenden",
+		"test_title": "Testmelding",
+		"test_body": "Als je dit ziet, werken browsermeldingen.",
+		"newResourceTitle": "Nieuwe resource op VRCStorage",
+		"scope_avatars": "Avatar",
+		"scope_assets": "Asset",
+		"scope_clothes": "Kleding",
+		"untitled": "Naamloos"
 	}
 }

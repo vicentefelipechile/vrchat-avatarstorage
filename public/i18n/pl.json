@@ -77,7 +77,9 @@
 		"section_2fa": "Dwuskładnikowe",
 		"section_2fa_desc": "Dodaj drugi krok podczas logowania za pomocą aplikacji uwierzytelniającej.",
 		"avatar_hint": "Opcjonalnie. Maks. 5MB.",
-		"saving": "Zapisywanie…"
+		"saving": "Zapisywanie…",
+		"section_notifications": "Powiadomienia",
+		"section_notifications_desc": "Powiadomienia przeglądarki dla nowo zatwierdzonych zasobów."
 	},
 	"home": {
 		"welcome": "Witaj w VRCStorage",
@@ -775,5 +777,47 @@
 		"title": "Potwierdź",
 		"confirm": "Potwierdź",
 		"cancel": "Anuluj"
+	},
+	"chat": {
+		"title": "Czat globalny",
+		"placeholder": "Napisz wiadomość...",
+		"send": "Wyślij",
+		"loginToChat": "Zaloguj się, aby dołączyć do rozmowy",
+		"empty": "Nie ma jeszcze wiadomości. Napisz coś jako pierwszy.",
+		"rateLimited": "Poczekaj chwilę przed wysłaniem kolejnej wiadomości.",
+		"tooLong": "Wiadomość może mieć maksymalnie 50 znaków.",
+		"invalid": "Nie udało się wysłać tej wiadomości.",
+		"disconnected": "Ponowne łączenie...",
+		"purge": "Wyczyść czat",
+		"purgeConfirm": "Usunąć wszystkie wiadomości z czatu? Tej operacji nie można cofnąć.",
+		"purged": "Administrator wyczyścił czat.",
+		"purgeFailed": "Nie udało się wyczyścić czatu."
+	},
+	"notifications": {
+		"enable": "Włącz powiadomienia przeglądarki",
+		"enable_hint": "Otrzymuj natywne powiadomienie przeglądarki, gdy nowy zasób pasujący do twoich filtrów zostanie zatwierdzony.",
+		"category_avatars": "Avatary",
+		"category_avatars_hint": "Powiadamiaj, gdy nowy avatar zostanie zatwierdzony. Filtruj według typu avatara.",
+		"category_assets": "Zasoby",
+		"category_assets_hint": "Powiadamiaj, gdy nowy asset zostanie zatwierdzony. Filtruj według typu assetu.",
+		"category_clothes": "Ubrania",
+		"category_clothes_hint": "Powiadamiaj, gdy nowe ubrania zostaną zatwierdzone.",
+		"subtype_empty_means_all": "Pozostaw puste, aby otrzymywać wszystkie podtypy. Wybranie jednego lub więcej ogranicza powiadomienia do tych typów.",
+		"permission_granted": "Uprawnienie przeglądarki przyznane.",
+		"permission_denied": "Uprawnienie przeglądarki odrzucone.",
+		"permission_denied_hint": "Włącz ponownie powiadomienia w ustawieniach witryny przeglądarki.",
+		"permission_default": "Uprawnienie przeglądarki jeszcze nie żądane.",
+		"request_permission": "Włącz powiadomienia",
+		"unsupported": "Ta przeglądarka nie obsługuje powiadomień.",
+		"login_required": "Zaloguj się, aby skonfigurować powiadomienia.",
+		"saved": "Preferencje powiadomień zapisane.",
+		"test": "Wyślij powiadomienie testowe",
+		"test_title": "Powiadomienie testowe",
+		"test_body": "Jeśli to widzisz, powiadomienia przeglądarki działają.",
+		"newResourceTitle": "Nowy zasób na VRCStorage",
+		"scope_avatars": "Avatar",
+		"scope_assets": "Asset",
+		"scope_clothes": "Ubranie",
+		"untitled": "Bez tytułu"
 	}
 }

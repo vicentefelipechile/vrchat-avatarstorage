@@ -76,6 +76,8 @@
 		"section_security_desc": "Change the password used to sign in.",
 		"section_2fa": "Two-Factor",
 		"section_2fa_desc": "Add a second step when signing in with an authenticator app.",
+		"section_notifications": "Notifications",
+		"section_notifications_desc": "Browser notifications for newly approved resources.",
 		"avatar_hint": "Optional. Max 5MB.",
 		"saving": "Saving…"
 	},
@@ -732,9 +734,51 @@
 		"comments": "New comments posted",
 		"multiple": "New content available"
 	},
+	"notifications": {
+		"enable": "Enable browser notifications",
+		"enable_hint": "Receive a native browser notification when a new resource matching your filters is approved.",
+		"category_avatars": "Avatars",
+		"category_avatars_hint": "Notify when a new avatar is approved. Filter by avatar type.",
+		"category_assets": "Assets",
+		"category_assets_hint": "Notify when a new asset is approved. Filter by asset type.",
+		"category_clothes": "Clothes",
+		"category_clothes_hint": "Notify when new clothes are approved.",
+		"subtype_empty_means_all": "Leave empty to receive all subtypes. Selecting one or more limits notifications to those types only.",
+		"permission_granted": "Browser permission granted.",
+		"permission_denied": "Browser permission denied.",
+		"permission_denied_hint": "Re-enable notifications in your browser site settings.",
+		"permission_default": "Browser permission not yet requested.",
+		"request_permission": "Enable notifications",
+		"unsupported": "This browser does not support notifications.",
+		"login_required": "Log in to configure notifications.",
+		"saved": "Notification preferences saved.",
+		"test": "Send test notification",
+		"test_title": "Test notification",
+		"test_body": "If you see this, browser notifications are working.",
+		"newResourceTitle": "New resource on VRCStorage",
+		"scope_avatars": "Avatar",
+		"scope_assets": "Asset",
+		"scope_clothes": "Clothing",
+		"untitled": "Untitled"
+	},
 	"confirm": {
 		"title": "Confirm",
 		"confirm": "Confirm",
 		"cancel": "Cancel"
+	},
+	"chat": {
+		"title": "Global chat",
+		"placeholder": "Write a message...",
+		"send": "Send",
+		"loginToChat": "Log in to join the conversation",
+		"empty": "No messages yet. Be the first to say something.",
+		"rateLimited": "Slow down a little before sending again.",
+		"tooLong": "Messages can be up to 50 characters.",
+		"invalid": "That message could not be sent.",
+		"disconnected": "Reconnecting...",
+		"purge": "Clear chat",
+		"purgeConfirm": "Delete every message in the chat? This cannot be undone.",
+		"purged": "The chat was cleared by an admin.",
+		"purgeFailed": "The chat could not be cleared."
 	}
 }

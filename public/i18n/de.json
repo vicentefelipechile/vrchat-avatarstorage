@@ -77,7 +77,9 @@
 		"section_2fa": "Zwei-Faktor",
 		"section_2fa_desc": "Füge einen zweiten Schritt bei der Anmeldung mit einer Authenticator-App hinzu.",
 		"avatar_hint": "Optional. Max. 5 MB.",
-		"saving": "Wird gespeichert…"
+		"saving": "Wird gespeichert…",
+		"section_notifications": "Benachrichtigungen",
+		"section_notifications_desc": "Browser-Benachrichtigungen für neu freigegebene Ressourcen."
 	},
 	"home": {
 		"welcome": "Willkommen bei VRCStorage",
@@ -771,5 +773,47 @@
 		"title": "Bestätigen",
 		"confirm": "Bestätigen",
 		"cancel": "Abbrechen"
+	},
+	"chat": {
+		"title": "Globaler Chat",
+		"placeholder": "Nachricht schreiben...",
+		"send": "Senden",
+		"loginToChat": "Melde dich an, um mitzureden",
+		"empty": "Noch keine Nachrichten. Sag als Erster etwas.",
+		"rateLimited": "Warte kurz, bevor du erneut sendest.",
+		"tooLong": "Nachrichten dürfen höchstens 50 Zeichen lang sein.",
+		"invalid": "Diese Nachricht konnte nicht gesendet werden.",
+		"disconnected": "Verbindung wird wiederhergestellt...",
+		"purge": "Chat leeren",
+		"purgeConfirm": "Alle Nachrichten im Chat löschen? Das kann nicht rückgängig gemacht werden.",
+		"purged": "Ein Administrator hat den Chat geleert.",
+		"purgeFailed": "Der Chat konnte nicht geleert werden."
+	},
+	"notifications": {
+		"enable": "Browser-Benachrichtigungen aktivieren",
+		"enable_hint": "Erhalte eine native Browser-Benachrichtigung, wenn eine neue Ressource, die deinen Filtern entspricht, freigegeben wird.",
+		"category_avatars": "Avatare",
+		"category_avatars_hint": "Benachrichtigen, wenn ein neuer Avatar freigegeben wird. Nach Avatar-Typ filtern.",
+		"category_assets": "Assets",
+		"category_assets_hint": "Benachrichtigen, wenn ein neues Asset freigegeben wird. Nach Asset-Typ filtern.",
+		"category_clothes": "Kleidung",
+		"category_clothes_hint": "Benachrichtigen, wenn neue Kleidung freigegeben wird.",
+		"subtype_empty_means_all": "Leer lassen, um alle Untertypen zu erhalten. Eine Auswahl beschränkt Benachrichtigungen auf diese Typen.",
+		"permission_granted": "Browser-Berechtigung erteilt.",
+		"permission_denied": "Browser-Berechtigung verweigert.",
+		"permission_denied_hint": "Aktiviere Benachrichtigungen erneut in den Seiteneinstellungen deines Browsers.",
+		"permission_default": "Browser-Berechtigung noch nicht angefragt.",
+		"request_permission": "Benachrichtigungen aktivieren",
+		"unsupported": "Dieser Browser unterstützt keine Benachrichtigungen.",
+		"login_required": "Melde dich an, um Benachrichtigungen zu konfigurieren.",
+		"saved": "Benachrichtigungseinstellungen gespeichert.",
+		"test": "Test-Benachrichtigung senden",
+		"test_title": "Test-Benachrichtigung",
+		"test_body": "Wenn du dies siehst, funktionieren Browser-Benachrichtigungen.",
+		"newResourceTitle": "Neue Ressource auf VRCStorage",
+		"scope_avatars": "Avatar",
+		"scope_assets": "Asset",
+		"scope_clothes": "Kleidung",
+		"untitled": "Unbenannt"
 	}
 }

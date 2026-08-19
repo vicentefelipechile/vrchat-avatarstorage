@@ -77,7 +77,9 @@
 		"section_2fa": "Dos Factores",
 		"section_2fa_desc": "Añade un segundo paso al iniciar sesión con una app de autenticación.",
 		"avatar_hint": "Opcional. Máx. 5MB.",
-		"saving": "Guardando…"
+		"saving": "Guardando…",
+		"section_notifications": "Notificaciones",
+		"section_notifications_desc": "Notificaciones del navegador para recursos recién aprobados."
 	},
 	"home": {
 		"welcome": "Bienvenido a VRCStorage",
@@ -849,5 +851,47 @@
 		"title": "Confirmar",
 		"confirm": "Confirmar",
 		"cancel": "Cancelar"
+	},
+	"chat": {
+		"title": "Chat global",
+		"placeholder": "Escribe un mensaje...",
+		"send": "Enviar",
+		"loginToChat": "Inicia sesión para unirte a la conversación",
+		"empty": "Aún no hay mensajes. Sé el primero en decir algo.",
+		"rateLimited": "Espera un poco antes de volver a enviar.",
+		"tooLong": "Los mensajes pueden tener hasta 50 caracteres.",
+		"invalid": "No se pudo enviar ese mensaje.",
+		"disconnected": "Reconectando...",
+		"purge": "Vaciar chat",
+		"purgeConfirm": "¿Borrar todos los mensajes del chat? Esto no se puede deshacer.",
+		"purged": "Un administrador vació el chat.",
+		"purgeFailed": "No se pudo vaciar el chat."
+	},
+	"notifications": {
+		"enable": "Activar notificaciones del navegador",
+		"enable_hint": "Recibe una notificación nativa del navegador cuando se apruebe un nuevo recurso que coincida con tus filtros.",
+		"category_avatars": "Avatares",
+		"category_avatars_hint": "Notificar cuando se apruebe un nuevo avatar. Filtra por tipo de avatar.",
+		"category_assets": "Assets",
+		"category_assets_hint": "Notificar cuando se apruebe un nuevo asset. Filtra por tipo de asset.",
+		"category_clothes": "Ropa",
+		"category_clothes_hint": "Notificar cuando se apruebe ropa nueva.",
+		"subtype_empty_means_all": "Déjalo vacío para recibir todos los subtipos. Seleccionar uno o más limita las notificaciones a esos tipos.",
+		"permission_granted": "Permiso del navegador concedido.",
+		"permission_denied": "Permiso del navegador denegado.",
+		"permission_denied_hint": "Vuelve a activar las notificaciones en la configuración de tu navegador.",
+		"permission_default": "Permiso del navegador aún no solicitado.",
+		"request_permission": "Activar notificaciones",
+		"unsupported": "Este navegador no soporta notificaciones.",
+		"login_required": "Inicia sesión para configurar las notificaciones.",
+		"saved": "Preferencias de notificación guardadas.",
+		"test": "Enviar notificación de prueba",
+		"test_title": "Notificación de prueba",
+		"test_body": "Si ves esto, las notificaciones del navegador funcionan.",
+		"newResourceTitle": "Nuevo recurso en VRCStorage",
+		"scope_avatars": "Avatar",
+		"scope_assets": "Asset",
+		"scope_clothes": "Ropa",
+		"untitled": "Sin título"
 	}
 }
