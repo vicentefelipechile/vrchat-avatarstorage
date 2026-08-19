@@ -1042,6 +1042,29 @@ export async function uploadAfter(_ctx: RouteContext): Promise<void> {
 		}
 
 		try {
+			// 0. Pre-flight Validation
+			updateProgress(t('upload.validating') ?? 'Validating...', 0);
+			const dummyUuid = '00000000-0000-0000-0000-000000000000';
+			const endpointMap: Record<string, string> = { avatars: '/api/avatars', assets: '/api/assets', clothes: '/api/clothes' };
+			const endpoint = endpointMap[category] ?? '/api/resources';
+			
+			const preflightRes = await fetch(`${endpoint}?validate_only=true`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					title, description, category, meta, token: 'dummy',
+					thumbnail_uuid: dummyUuid, reference_image_uuid: null, media_files: [], links: []
+				})
+			});
+			if (!preflightRes.ok) {
+				const err = (await preflightRes.json()) as { error?: string; details?: { path?: (string | number)[]; message?: string }[] };
+				if (err.details && err.details.length > 0) {
+					const detailMsgs = err.details.map(d => `${d.path?.join('.') || 'field'}: ${d.message}`).join(', ');
+					throw new Error(`${err.error ?? t('upload.errorCreateResource')} - ${detailMsgs}`);
+				}
+				throw new Error(err.error ?? t('upload.errorCreateResource'));
+			}
+
 			// 1. Thumbnail
 			const thumbFd = new FormData();
 			thumbFd.append('file', thumbnail);
@@ -1098,13 +1121,6 @@ export async function uploadAfter(_ctx: RouteContext): Promise<void> {
 
 			const extra = collectBackupLinks(fileLinks.length);
 
-			const endpointMap: Record<string, string> = {
-				avatars: '/api/avatars',
-				assets: '/api/assets',
-				clothes: '/api/clothes',
-			};
-			const endpoint = endpointMap[category] ?? '/api/resources';
-
 			const body = {
 				title,
 				description,
@@ -1131,7 +1147,11 @@ export async function uploadAfter(_ctx: RouteContext): Promise<void> {
 				resetState();
 				navigateTo('/item/' + data.uuid);
 			} else {
-				const err = (await res.json()) as { error?: string };
+				const err = (await res.json()) as { error?: string; details?: { path?: (string | number)[]; message?: string }[] };
+				if (err.details && err.details.length > 0) {
+					const detailMsgs = err.details.map(d => `${d.path?.join('.') || 'field'}: ${d.message}`).join(', ');
+					throw new Error(`${err.error ?? t('upload.errorCreateResource')} - ${detailMsgs}`);
+				}
 				throw new Error(err.error ?? t('upload.errorCreateResource'));
 			}
 		} catch (err) {

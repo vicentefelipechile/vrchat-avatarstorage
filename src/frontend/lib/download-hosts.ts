@@ -47,6 +47,7 @@ const KNOWN_HOSTS: KnownHost[] = [
 	{ match: /booth\.pm/, label: 'BOOTH', icon: 'shopping-bag', kind: 'article' },
 	{ match: /jinxxy\./, label: 'Jinxxy', icon: 'shopping-bag', kind: 'article' },
 	{ match: /itch\.io/, label: 'itch.io', icon: 'itchdotio', kind: 'article' },
+	{ match: /ko-fi\.com/, label: 'Ko-fi', icon: 'kofi', kind: 'article' },
 ];
 
 /** What `downloadHost` resolves a URL to: a display label, an icon key, and how the link should be treated. */

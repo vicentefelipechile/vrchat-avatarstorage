@@ -10,6 +10,7 @@ export interface AuthUser {
 	username: string;
 	uuid?: string;
 	is_admin?: boolean;
+	is_anonymous?: boolean;
 	loggedIn?: boolean;
 	avatar_url?: string;
 	has_password?: boolean;

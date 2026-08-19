@@ -18,6 +18,7 @@
 import { TimeUnit } from '../lib/utils';
 import { reconcileScopes, type FeedScope } from './feed-scopes';
 import { suspendPolling, resumePolling } from './updates';
+import { ensurePrefsLoaded, tryShowBrowserNotification, type FeedEvent as RichFeedEvent } from './notifications';
 
 // =========================================================================================================
 // Types
@@ -27,6 +28,10 @@ interface FeedEvent {
 	scope: FeedScope;
 	action: 'created';
 	entityId: string;
+	title?: string;
+	category?: string;
+	subType?: string;
+	thumbnailUuid?: string;
 }
 
 // =========================================================================================================
@@ -113,6 +118,17 @@ function connect(): void {
 		} catch {
 			return;
 		}
+		// Browser notification is best-effort and respects the user's stored prefs (fetched lazily
+		// if the socket beats the initial prefs fetch). A missing title/subType still reaches the
+		// toast path; only the native Notification is gated by the filter.
+		const maybeNotify = (ev: FeedEvent) => {
+			try {
+				tryShowBrowserNotification(ev as unknown as RichFeedEvent);
+			} catch {
+				/* ignore */
+			}
+		};
+		void ensurePrefsLoaded().then(() => maybeNotify(event));
 		enqueue(event.scope);
 	});
 

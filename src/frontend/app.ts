@@ -8,6 +8,8 @@ import { DataCache } from './core/cache';
 import { showToast, TimeUnit, initLazyImages, initMediaPolling } from './lib/utils';
 import { initUpdatesPoller } from './features/updates';
 import { initFeedClient } from './features/feed';
+import { initChat } from './features/chat';
+import { initNotifications } from './features/notifications';
 import type { AuthUser } from './types';
 
 // Views
@@ -409,6 +411,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 	// The poller starts first so the feed client can suspend/resume it across the socket lifecycle.
 	initUpdatesPoller();
 	initFeedClient();
+	initNotifications();
+
+	// Global chat. Mounted on <body>, outside the router's container, so it survives navigation.
+	initChat();
 
 	// Flash toast — shown after a full-page redirect (e.g. after standard login)
 	const flashRaw = sessionStorage.getItem('flash_toast');

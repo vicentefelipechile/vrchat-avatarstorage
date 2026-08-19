@@ -44,8 +44,9 @@ import {
 	Shield,
 	Lock,
 	Camera,
+	Bell,
 } from 'lucide';
-import { siGoogledrive, siMega, siMediafire, siDropbox, siProtondrive, siDiscord, siGithub, siGumroad, siPayhip, siItchdotio } from 'simple-icons';
+import { siGoogledrive, siMega, siMediafire, siDropbox, siProtondrive, siDiscord, siGithub, siGumroad, siPayhip, siItchdotio, siKofi } from 'simple-icons';
 
 // Lucide's internal node data: [tagName, attrs, children?]
 type LucideNode = [string, Record<string, string | number>, LucideNode[]?];
@@ -145,6 +146,7 @@ export const icons = {
 	lock: (size = 16, extraAttrs = '') => icon(Lock as unknown as LucideIconData, size, extraAttrs),
 	camera: (size = 16, extraAttrs = '') => icon(Camera as unknown as LucideIconData, size, extraAttrs),
 	'message-circle': (size = 16, extraAttrs = '') => icon(MessageCircle as unknown as LucideIconData, size, extraAttrs),
+	bell: (size = 16, extraAttrs = '') => icon(Bell as unknown as LucideIconData, size, extraAttrs),
 
 	// Download-host brand marks (simple-icons). Keyed by simple-icons slug; hosts without a mark fall back
 	// to a Lucide icon in the download-host table. Brand marks ignore extraAttrs — they take size only.
@@ -158,6 +160,7 @@ export const icons = {
 	gumroad: (size = 16) => brandIcon(siGumroad, size),
 	payhip: (size = 16) => brandIcon(siPayhip, size),
 	itchdotio: (size = 16) => brandIcon(siItchdotio, size),
+	kofi: (size = 16) => brandIcon(siKofi, size),
 } as const;
 
 /**

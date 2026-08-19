@@ -5,8 +5,12 @@
 import QRCode from 'qrcode';
 import { t } from '../core/i18n';
 import { icons } from '../lib/icons';
-import { renderTurnstile, resizeImage, showToast, loadingBtn, mediaUrl } from '../lib/utils';
+import { renderTurnstile, resizeImage, showToast, loadingBtn, mediaUrl, metaLabel } from '../lib/utils';
+import { isNotificationSupported, getNotificationPermission, requestNotificationPermission, setCachedPrefs, type NotificationPrefsDTO } from '../features/notifications';
 import type { RouteContext } from '../types';
+
+const AVATAR_TYPE_OPTIONS = ['human', 'anime', 'furry', 'chibi', 'cartoon', 'semi-realistic', 'monster', 'fantasy', 'mecha', 'kemono', 'other'] as const;
+const ASSET_TYPE_OPTIONS = ['prop', 'shader', 'particle', 'vfx', 'prefab', 'script', 'animation', 'avatar-base', 'texture-pack', 'sound', 'tool', 'hud', 'other'] as const;
 
 // =========================================================================
 // View
@@ -19,6 +23,7 @@ export async function settingsView(_ctx: RouteContext): Promise<string> {
 	const avatarUrl = (user as { avatar_url?: string }).avatar_url ?? '/avatar.png';
 	const username = (user as { username?: string }).username ?? '';
 	const hasPassword = (user as { has_password?: boolean }).has_password !== false;
+	const isAnonymous = !!(user as { is_anonymous?: number | boolean }).is_anonymous;
 
 	return `
 		<div>
@@ -35,6 +40,9 @@ export async function settingsView(_ctx: RouteContext): Promise<string> {
 					</button>
 					<button type="button" class="settings-nav-item" data-panel="twofactor" role="tab" aria-selected="false">
 						${icons.shield(18)}<span>${t('settings.section_2fa')}</span>
+					</button>
+					<button type="button" class="settings-nav-item" data-panel="notifications" role="tab" aria-selected="false">
+						${icons.bell(18)}<span>${t('settings.section_notifications')}</span>
 					</button>
 				</nav>
 
@@ -59,6 +67,13 @@ export async function settingsView(_ctx: RouteContext): Promise<string> {
 										<label for="avatar">${t('settings.avatar')}</label>
 										<input type="file" id="avatar" accept="image/png,image/jpg,image/jpeg,image/gif,image/webp,image/avif">
 										<small class="settings-hint">${t('settings.avatar_hint')}</small>
+									</div>
+									<div class="form-group checkbox-group" style="margin-top:10px;">
+										<label class="checkbox-label" style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+											<input type="checkbox" id="is-anonymous" ${isAnonymous ? 'checked' : ''}>
+											<strong>Anonymous Mode</strong>
+										</label>
+										<small class="settings-hint">When active, your name and avatar are hidden on public posts and comments.</small>
 									</div>
 								</div>
 							</div>
@@ -164,6 +179,62 @@ export async function settingsView(_ctx: RouteContext): Promise<string> {
 							</div>
 						</div>
 					</section>
+
+					<!-- Notifications -->
+					<section class="settings-panel" id="panel-notifications" role="tabpanel" hidden>
+						<h2 class="settings-panel-title">${t('settings.section_notifications')}</h2>
+						<p class="settings-panel-desc">${t('settings.section_notifications_desc')}</p>
+
+						<div id="notifications-status" class="settings-panel-desc">${t('common.loading')}</div>
+
+						<div id="notifications-controls" hidden>
+							<div class="form-group checkbox-group">
+								<label class="checkbox-label" style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+									<input type="checkbox" id="notif-enabled">
+									<strong>${t('notifications.enable')}</strong>
+								</label>
+								<small class="settings-hint">${t('notifications.enable_hint')}</small>
+							</div>
+
+							<div id="notif-permission-row" class="settings-panel-desc" style="margin:10px 0;padding:10px;border:1px solid var(--border-color);background:var(--bg-code);"></div>
+
+							<div id="notif-categories" style="margin-top:16px;">
+								<!-- Avatars -->
+								<div class="form-group" style="border:1px solid var(--border-color);padding:12px;margin-bottom:12px;">
+									<label class="checkbox-label" style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+										<input type="checkbox" id="notif-avatars-enabled">
+										<strong>${t('notifications.category_avatars')}</strong>
+									</label>
+									<small class="settings-hint">${t('notifications.category_avatars_hint')}</small>
+									<div id="notif-avatar-types" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;"></div>
+									<small class="settings-hint">${t('notifications.subtype_empty_means_all')}</small>
+								</div>
+								<!-- Assets -->
+								<div class="form-group" style="border:1px solid var(--border-color);padding:12px;margin-bottom:12px;">
+									<label class="checkbox-label" style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+										<input type="checkbox" id="notif-assets-enabled">
+										<strong>${t('notifications.category_assets')}</strong>
+									</label>
+									<small class="settings-hint">${t('notifications.category_assets_hint')}</small>
+									<div id="notif-asset-types" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;"></div>
+									<small class="settings-hint">${t('notifications.subtype_empty_means_all')}</small>
+								</div>
+								<!-- Clothes -->
+								<div class="form-group" style="border:1px solid var(--border-color);padding:12px;margin-bottom:12px;">
+									<label class="checkbox-label" style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+										<input type="checkbox" id="notif-clothes-enabled">
+										<strong>${t('notifications.category_clothes')}</strong>
+									</label>
+									<small class="settings-hint">${t('notifications.category_clothes_hint')}</small>
+								</div>
+							</div>
+
+							<div style="margin-top:16px;display:flex;gap:10px;align-items:center;">
+								<button id="notif-save-btn" class="btn">${icons.check(16)} ${t('settings.save')}</button>
+								<button id="notif-test-btn" class="btn-outline">${icons.bell(16)} ${t('notifications.test')}</button>
+							</div>
+						</div>
+					</section>
 				</div>
 			</div>
 		</div>`;
@@ -180,11 +251,27 @@ export async function settingsAfter(_ctx: RouteContext): Promise<void> {
 	const form = document.getElementById('settings-form') as HTMLFormElement;
 	const avatarInput = document.getElementById('avatar') as HTMLInputElement;
 	const imgPreview = document.getElementById('current-avatar') as HTMLImageElement;
+	const anonCheckbox = document.getElementById('is-anonymous') as HTMLInputElement;
 
-	// Avatar preview
+	const originalAvatarUrl = imgPreview.src;
+
+	// Anonymous preview
+	anonCheckbox.addEventListener('change', () => {
+		if (anonCheckbox.checked) {
+			imgPreview.src = '/avatar.png';
+			imgPreview.style.opacity = '0.5';
+		} else {
+			imgPreview.src = avatarInput.files?.[0] ? URL.createObjectURL(avatarInput.files[0]) : originalAvatarUrl;
+			imgPreview.style.opacity = '1';
+		}
+	});
+
 	avatarInput.addEventListener('change', (e) => {
 		const file = (e.target as HTMLInputElement).files?.[0];
-		if (file) imgPreview.src = URL.createObjectURL(file);
+		if (file) {
+			const url = URL.createObjectURL(file);
+			if (!anonCheckbox.checked) imgPreview.src = url;
+		}
 	});
 
 	// Profile form
@@ -210,7 +297,8 @@ export async function settingsAfter(_ctx: RouteContext): Promise<void> {
 				avatarUrl = mediaUrl(uploadData.media_uuid, 'med');
 			}
 
-			const body: Record<string, string> = { username, token };
+			const is_anonymous = anonCheckbox.checked ? 1 : 0;
+			const body: Record<string, string | number> = { username, token, is_anonymous };
 			if (avatarUrl) body.avatar_url = avatarUrl;
 
 			const res = await fetch('/api/auth/me', {
@@ -240,6 +328,9 @@ export async function settingsAfter(_ctx: RouteContext): Promise<void> {
 
 	// 2FA
 	await loadTwoFactorStatus();
+
+	// Notifications
+	await loadNotificationsPanel();
 }
 
 // =========================================================================
@@ -252,6 +343,7 @@ function setupSectionNav(): void {
 		profile: document.getElementById('panel-profile'),
 		security: document.getElementById('panel-security'),
 		twofactor: document.getElementById('panel-twofactor'),
+		notifications: document.getElementById('panel-notifications'),
 	};
 
 	items.forEach((item) => {
@@ -543,6 +635,173 @@ function setup2FAHandlers(els: TwoFAEls): void {
 			showToast(t('common.networkError'), 'error');
 		} finally {
 			restore();
+		}
+	});
+}
+
+// =========================================================================
+// Notifications panel
+// =========================================================================
+
+async function loadNotificationsPanel(): Promise<void> {
+	const statusEl = document.getElementById('notifications-status') as HTMLElement;
+	const controlsEl = document.getElementById('notifications-controls') as HTMLElement;
+	const enabledEl = document.getElementById('notif-enabled') as HTMLInputElement;
+	const avatarsEnabledEl = document.getElementById('notif-avatars-enabled') as HTMLInputElement;
+	const assetsEnabledEl = document.getElementById('notif-assets-enabled') as HTMLInputElement;
+	const clothesEnabledEl = document.getElementById('notif-clothes-enabled') as HTMLInputElement;
+	const avatarTypesEl = document.getElementById('notif-avatar-types') as HTMLElement;
+	const assetTypesEl = document.getElementById('notif-asset-types') as HTMLElement;
+	const permissionRow = document.getElementById('notif-permission-row') as HTMLElement;
+	const saveBtn = document.getElementById('notif-save-btn') as HTMLButtonElement;
+	const testBtn = document.getElementById('notif-test-btn') as HTMLButtonElement;
+
+	if (!statusEl || !controlsEl) return;
+
+	if (!window.appState.isLoggedIn) {
+		statusEl.textContent = t('notifications.login_required');
+		return;
+	}
+
+	const renderPermission = () => {
+		if (!isNotificationSupported()) {
+			permissionRow.innerHTML = `<span style="color:var(--danger-color,red)">${t('notifications.unsupported')}</span>`;
+			return;
+		}
+		const perm = getNotificationPermission();
+		if (perm === 'granted') {
+			permissionRow.innerHTML = `✓ ${t('notifications.permission_granted')}`;
+			permissionRow.style.color = 'var(--success-color, green)';
+		} else if (perm === 'denied') {
+			permissionRow.innerHTML = `✗ ${t('notifications.permission_denied')}<br><small>${t('notifications.permission_denied_hint')}</small>`;
+			permissionRow.style.color = 'var(--danger-color, red)';
+		} else {
+			permissionRow.innerHTML = `${t('notifications.permission_default')} <button type="button" id="notif-permission-btn" class="btn btn-sm" style="margin-left:8px;">${t('notifications.request_permission')}</button>`;
+			permissionRow.style.color = '';
+			document.getElementById('notif-permission-btn')?.addEventListener('click', async () => {
+				const result = await requestNotificationPermission();
+				renderPermission();
+				if (result === 'granted') showToast(t('notifications.permission_granted'), 'success');
+				else if (result === 'denied') showToast(t('notifications.permission_denied'), 'error');
+			});
+		}
+	};
+
+	const buildSubtypeChecks = (container: HTMLElement, options: readonly string[], selected: string[] | null, prefix: string, namespace: string) => {
+		container.innerHTML = '';
+		for (const opt of options) {
+			const id = `${prefix}-${opt}`;
+			const checked = selected ? selected.includes(opt) : false;
+			const label = document.createElement('label');
+			label.style.cssText = 'display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border:1px solid var(--border-color);background:var(--bg-card);font-size:0.82rem;cursor:pointer;';
+			label.innerHTML = `<input type="checkbox" value="${opt}" id="${id}" ${checked ? 'checked' : ''}> ${metaLabel(namespace, opt)}`;
+			container.appendChild(label);
+		}
+	};
+
+	const getSelected = (container: HTMLElement): string[] | null => {
+		const checks = Array.from(container.querySelectorAll<HTMLInputElement>('input[type="checkbox"]:checked')).map((c) => c.value);
+		return checks.length === 0 ? null : checks;
+	};
+
+	const syncCategoriesVisible = () => {
+		const enabled = enabledEl.checked;
+		const catEl = document.getElementById('notif-categories') as HTMLElement;
+		if (catEl) catEl.style.opacity = enabled ? '1' : '0.45';
+		// Disable inner controls when globally off to prevent confusion.
+		for (const el of [avatarsEnabledEl, assetsEnabledEl, clothesEnabledEl]) el.disabled = !enabled;
+		for (const c of [avatarTypesEl, assetTypesEl]) {
+			for (const inp of Array.from(c.querySelectorAll<HTMLInputElement>('input'))) inp.disabled = !enabled;
+		}
+		saveBtn.disabled = false;
+		testBtn.disabled = false;
+	};
+
+	let currentPrefs: NotificationPrefsDTO | null = null;
+
+	try {
+		const res = await fetch('/api/notifications/preferences');
+		if (!res.ok) throw new Error();
+		currentPrefs = (await res.json()) as NotificationPrefsDTO;
+	} catch {
+		statusEl.textContent = t('common.networkError');
+		return;
+	}
+
+	statusEl.hidden = true;
+	controlsEl.hidden = false;
+
+	enabledEl.checked = !!currentPrefs.enabled;
+	avatarsEnabledEl.checked = !!currentPrefs.avatars_enabled;
+	assetsEnabledEl.checked = !!currentPrefs.assets_enabled;
+	clothesEnabledEl.checked = !!currentPrefs.clothes_enabled;
+
+	buildSubtypeChecks(avatarTypesEl, AVATAR_TYPE_OPTIONS, currentPrefs.avatar_types, 'avtypes', 'avatar_type');
+	buildSubtypeChecks(assetTypesEl, ASSET_TYPE_OPTIONS, currentPrefs.asset_types, 'astypes', 'asset_type');
+
+	renderPermission();
+	syncCategoriesVisible();
+
+	enabledEl.addEventListener('change', syncCategoriesVisible);
+
+	saveBtn.addEventListener('click', async () => {
+		const restore = loadingBtn(saveBtn, t('settings.saving'));
+		const payload: NotificationPrefsDTO = {
+			enabled: enabledEl.checked,
+			avatars_enabled: avatarsEnabledEl.checked,
+			avatar_types: getSelected(avatarTypesEl),
+			assets_enabled: assetsEnabledEl.checked,
+			asset_types: getSelected(assetTypesEl),
+			clothes_enabled: clothesEnabledEl.checked,
+			updated_at: null,
+		};
+		try {
+			const res = await fetch('/api/notifications/preferences', {
+				method: 'PUT',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(payload),
+			});
+			if (!res.ok) {
+				const data = (await res.json()) as { error?: string };
+				throw new Error(data.error ?? 'Failed');
+			}
+			const saved = (await res.json()) as NotificationPrefsDTO;
+			currentPrefs = saved;
+			setCachedPrefs(saved);
+			showToast(t('notifications.saved'), 'success');
+			if (saved.enabled && getNotificationPermission() === 'default') {
+				const perm = await requestNotificationPermission();
+				renderPermission();
+				if (perm === 'granted') showToast(t('notifications.permission_granted'), 'success');
+			}
+		} catch (e) {
+			showToast((e as Error).message || t('common.networkError'), 'error');
+		} finally {
+			restore();
+		}
+	});
+
+	testBtn.addEventListener('click', async () => {
+		if (!isNotificationSupported()) {
+			showToast(t('notifications.unsupported'), 'error');
+			return;
+		}
+		let perm = getNotificationPermission();
+		if (perm !== 'granted') perm = await requestNotificationPermission();
+		renderPermission();
+		if (perm !== 'granted') {
+			showToast(t('notifications.permission_denied'), 'warning');
+			return;
+		}
+		try {
+			const n = new Notification(t('notifications.test_title'), {
+				body: t('notifications.test_body'),
+				icon: '/favicon.ico',
+			});
+			n.onclick = () => n.close();
+			setTimeout(() => n.close(), 4000);
+		} catch {
+			showToast(t('common.networkError'), 'error');
 		}
 	});
 }
