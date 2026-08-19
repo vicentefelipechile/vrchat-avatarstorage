@@ -5,6 +5,12 @@ interface RateLimitConfig {
 	binding: RateLimit;
 	/** Prefix used to isolate counters per route (combined with the client IP) */
 	keyPrefix?: string;
+	/**
+	 * When true, a rate-limit binding error returns 503 instead of silently allowing
+	 * the request through. Set this on critical auth routes (login, register, 2fa)
+	 * where fail-open would be dangerous.
+	 */
+	failClosed?: boolean;
 }
 
 /**
@@ -24,7 +30,11 @@ export const rateLimit = (config: RateLimitConfig) => {
 			}
 		} catch (e) {
 			console.error('Rate limit error:', e);
-			// Fail open — let request through if the binding is unavailable
+			if (config.failClosed) {
+				// Fail closed on critical routes: reject the request rather than silently allow it.
+				return c.json({ error: 'Service temporarily unavailable. Please try again.' }, 503);
+			}
+			// Fail open on non-critical routes to preserve availability.
 		}
 
 		await next();

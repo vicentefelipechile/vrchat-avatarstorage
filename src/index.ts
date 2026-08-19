@@ -21,6 +21,7 @@ import { DomainError } from './domain/errors';
 import { handleQueue } from './http/queue';
 import { handleScheduled } from './http/scheduled';
 import { FeedRoom } from './durable-objects/feed-room';
+import { ChatRoom } from './durable-objects/chat-room';
 
 import resourceRoutes from './http/routes/resources';
 import userRoutes from './http/routes/users';
@@ -41,7 +42,9 @@ import clothesRoutes from './http/routes/clothes';
 import authorsRoutes from './http/routes/authors';
 import updatesRoutes from './http/routes/updates';
 import feedRoutes from './http/routes/feed';
+import chatRoutes from './http/routes/chat';
 import collectionsRoutes from './http/routes/collections';
+import notificationsRoutes from './http/routes/notifications';
 import llmsRoute from './http/routes/llms';
 
 // =========================================================================================================
@@ -94,6 +97,8 @@ app.route('/api/clothes', clothesRoutes);
 app.route('/api/authors', authorsRoutes);
 app.route('/api/updates', updatesRoutes);
 app.route('/api/feed', feedRoutes);
+app.route('/api/chat', chatRoutes);
+app.route('/api/notifications', notificationsRoutes);
 
 // LLMs.txt — AI scraper context file (llmstxt.org spec)
 app.route('/llms.txt', llmsRoute);
@@ -117,11 +122,12 @@ app.get('/*', async (c) => {
 // =========================================================================================================
 // Durable Objects
 // =========================================================================================================
-// Re-exported so the runtime can instantiate the class named in wrangler.jsonc's durable_objects
-// binding. FeedRoom is the transport for real-time feed events (see src/durable-objects/feed-room.ts).
+// Re-exported so the runtime can instantiate the classes named in wrangler.jsonc's durable_objects
+// bindings. FeedRoom is the transport for real-time feed events (see src/durable-objects/feed-room.ts);
+// ChatRoom is the global chat (see src/durable-objects/chat-room.ts).
 // =========================================================================================================
 
-export { FeedRoom };
+export { FeedRoom, ChatRoom };
 
 // =========================================================================================================
 // Worker Entrypoints

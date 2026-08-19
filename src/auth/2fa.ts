@@ -219,21 +219,21 @@ export function verifyTwoFactorCode(secret: string, code: string): boolean {
 
 /**
  * Generates `count` cryptographically random backup codes.
- * Each code is 8 hex characters (32 bits of entropy) derived from `crypto.getRandomValues()`.
+ * Each code is 16 hex characters (64 bits of entropy) derived from `crypto.getRandomValues()`.
  *
  * Backup codes are single-use. Once consumed via {@link useBackupCode},
  * they are removed from the stored hash list in the database.
  *
  * @param count - Number of backup codes to generate. Defaults to `8`.
- * @returns An array of plain-text uppercase hex backup codes (e.g. `['A1B2C3D4', ...]`).
+ * @returns An array of plain-text uppercase hex backup codes (e.g. `['A1B2C3D4E5F60708', ...]`).
  *
  * @see https://developer.mozilla.org/en-US/docs/Web/API/Crypto/getRandomValues
  */
 export function generateBackupCodes(count: number = 8): string[] {
 	const codes: string[] = [];
 	for (let i = 0; i < count; i++) {
-		// 4 bytes = 32 bits of entropy per code, encoded as 8 uppercase hex characters
-		const array = new Uint8Array(4);
+		// 8 bytes = 64 bits of entropy per code, encoded as 16 uppercase hex characters
+		const array = new Uint8Array(8);
 		crypto.getRandomValues(array);
 		const code = Array.from(array, (b) => b.toString(16).padStart(2, '0'))
 			.join('')

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { RESOURCE_CATEGORIES } from './types';
+import { RESOURCE_CATEGORIES, CHAT_MAX_LENGTH } from './types';
 // ============================================================================
 // Sanitization Helper
 // ============================================================================
@@ -49,7 +49,10 @@ export const UserUpdateSchema = z.object({
 	avatar_url: z
 		.string()
 		.optional()
+		// M-4: Reject javascript: and other non-web schemes to prevent stored XSS.
+		.refine((val) => !val || /^(https?:\/\/|\/)/.test(val), { message: 'avatar_url must start with https://, http://, or /' })
 		.transform((val) => (val ? sanitizeHtml(val) : val)),
+	is_anonymous: z.number().int().min(0).max(1).optional(),
 	token: z.string().optional(),
 });
 
@@ -58,7 +61,11 @@ export const UserUpdateSchema = z.object({
 // ============================================================================
 
 export const LinkSchema = z.object({
-	link_url: z.string().transform((val) => (val ? sanitizeHtml(val) : val)), // Allow relative URLs
+	// M-5: Reject javascript: and other non-web schemes to prevent stored XSS via resource links.
+	link_url: z
+		.string()
+		.refine((val) => /^(https?:\/\/|\/)/.test(val), { message: 'link_url must start with https://, http://, or /' })
+		.transform((val) => (val ? sanitizeHtml(val) : val)),
 	link_title: z
 		.string()
 		.optional()
@@ -69,9 +76,11 @@ export const LinkSchema = z.object({
 });
 
 export const LinkUpdateSchema = z.object({
+	// M-5: Same URL scheme restriction as LinkSchema.
 	link_url: z
 		.string()
 		.optional()
+		.refine((val) => !val || /^(https?:\/\/|\/)/.test(val), { message: 'link_url must start with https://, http://, or /' })
 		.transform((val) => (val ? sanitizeHtml(val) : val)),
 	link_title: z
 		.string()
@@ -90,7 +99,7 @@ export const ResourceSchema = z.object({
 		.transform((val) => (val ? sanitizeHtml(val) : val)),
 	description: z
 		.string()
-		.max(2000, 'Description too long')
+		.max(8000, 'Description too long')
 		.optional()
 		.transform((val) => (val ? sanitizeHtml(val) : val)),
 	category: z.enum(RESOURCE_CATEGORIES),
@@ -448,5 +457,30 @@ export const ClothesFilterSchema = z.object({
 });
 
 export type ClothesFilter = z.infer<typeof ClothesFilterSchema>;
+
+// ============================================================================
+// Chat Schemas
+// ============================================================================
+
+/**
+ * The only payload ChatRoom accepts over a socket. Identity is not part of it: the DO reads the
+ * author from the socket's attachment, so a client that adds `userUuid` or `username` here is
+ * ignored rather than believed.
+ *
+ * The length cap applies to the trimmed text, so whitespace padding cannot buy extra characters.
+ * `.strict()` rejects unknown keys outright instead of stripping them silently.
+ */
+export const ChatSendSchema = z
+	.object({
+		type: z.literal('send'),
+		text: z
+			.string()
+			.transform((v) => v.trim())
+			.pipe(z.string().min(1).max(CHAT_MAX_LENGTH))
+			.transform((v) => sanitizeHtml(v)),
+	})
+	.strict();
+
+export type ChatSend = z.infer<typeof ChatSendSchema>;
 
 

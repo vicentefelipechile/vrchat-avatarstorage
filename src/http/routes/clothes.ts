@@ -77,6 +77,10 @@ clothes.post('/', requireAuth, async (c) => {
 	const metaParsed = ClothesMetaSchema.safeParse((body as Record<string, unknown>).meta);
 	if (!metaParsed.success) return fail(c, 'Metadata validation error', 400, metaParsed.error.issues);
 
+	if (c.req.query('validate_only') === 'true') {
+		return c.json({ valid: true });
+	}
+
 	const d = resourceParsed.data;
 
 	try {

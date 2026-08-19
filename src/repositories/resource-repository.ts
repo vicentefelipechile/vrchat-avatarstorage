@@ -23,6 +23,7 @@ import { queryOne, queryAll } from '../db/client';
 import { QueryBuilder } from '../helpers/query-constructor';
 import type { ResourceRow, ResourceLinkRow, ResourceHistoryRow, ResourceCategory } from '../db/schema';
 import { RESOURCE_CATEGORIES, processedExpr } from '../db/schema';
+import { anonUsernameExpr, anonAvatarExpr } from '../helpers/anonymity';
 
 // =========================================================================================================
 // Types
@@ -146,7 +147,7 @@ export class ResourceRepository {
 	findHistory(uuid: string): Promise<(ResourceHistoryRow & { username: string; avatar_url: string | null })[]> {
 		return queryAll(
 			this.db,
-			`SELECT h.*, u.username, u.avatar_url
+			`SELECT h.*, ${anonUsernameExpr('u')} AS username, ${anonAvatarExpr('u')} AS avatar_url
 			 FROM resource_history h
 			 LEFT JOIN users u ON h.actor_uuid = u.uuid
 			 WHERE h.resource_uuid = ?
@@ -281,6 +282,8 @@ export class ResourceRepository {
 const DETAIL_SQL = `
 	SELECT
 		r.uuid, r.title, r.description, r.category, r.download_count, r.is_active, r.created_at, r.updated_at,
+		${anonUsernameExpr('u')} AS author_username,
+		${anonAvatarExpr('u')} AS author_avatar,
 		tm.r2_key            AS thumbnail_key,
 		tm.uuid              AS thumbnail_media_uuid,
 		EXISTS(SELECT 1 FROM media_variants mv WHERE mv.media_uuid = tm.uuid) AS thumbnail_processed,

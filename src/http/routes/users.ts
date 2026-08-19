@@ -54,11 +54,19 @@ import { UserService } from '../../services/user-service';
 
 const SESSION_TTL = 60 * 60 * 24 * 7; // 7 days
 
+// H-4: The KV cache must include `uuid` — getAuthUser skips the cache if uuid is absent.
 /** Cache the session user in KV under `user:<username>` (7d), mirroring the legacy shape. */
-function cacheSessionUser(c: { env: Env }, username: string, isAdmin: number): Promise<void> {
-	const sessionUser = { username, is_admin: isAdmin === 1 };
+function cacheSessionUser(c: { env: Env }, uuid: string, username: string, isAdmin: number, isAnonymous: number = 0): Promise<void> {
+	const sessionUser = { uuid, username, is_admin: isAdmin === 1, is_anonymous: isAnonymous === 1 };
 	return c.env.VRCSTORAGE_KV.put(`user:${username}`, JSON.stringify(sessionUser), { expirationTtl: SESSION_TTL });
 }
+
+// M-2: Pre-computed bcrypt hash of a throwaway string. Used during login when the username
+// does not exist so that both code paths (no user / wrong password) take ~the same time,
+// preventing timing-based username enumeration.
+// This is intentionally NOT a constant the attacker can control — it is only ever used as
+// the comparison target, never stored or returned.
+const DUMMY_HASH = '$2a$12$invalidhashpaddddddddddddddddddddddddddddddddddddddddddddd';
 
 /** SHA-256 hex digest of a TOTP/backup code, for the KV anti-replay marker key. */
 async function codeDigest(code: string): Promise<string> {
@@ -113,7 +121,13 @@ users.post('/login', async (c) => {
 
 	// Always query DB even for unknown users to prevent timing-based username enumeration.
 	const user = await service.findByUsername(username);
-	if (!user) return c.json({ error: 'Invalid credentials' }, 401);
+
+	// M-2: If no user is found, still run bcrypt against a dummy hash so the response time
+	// is indistinguishable from a wrong-password scenario (both take ~100ms).
+	if (!user) {
+		await verifyPassword(password, DUMMY_HASH);
+		return c.json({ error: 'Invalid credentials' }, 401);
+	}
 
 	const isMatch = await verifyPassword(password, user.password_hash);
 	if (!isMatch) return c.json({ error: 'Invalid credentials' }, 401);
@@ -126,7 +140,7 @@ users.post('/login', async (c) => {
 	}
 
 	await createSession(c, { username: user.username, is_admin: user.is_admin });
-	await cacheSessionUser(c, user.username, user.is_admin);
+	await cacheSessionUser(c, user.uuid, user.username, user.is_admin, user.is_anonymous);
 	return c.json({ success: true });
 });
 
@@ -140,13 +154,14 @@ users.put('/me', async (c) => {
 	if (!authUser) return c.json({ error: 'Unauthorized' }, 401);
 
 	const body = await c.req.json();
-	const { username, avatar_url, token } = UserUpdateSchema.parse(body);
+	const { username, avatar_url, is_anonymous, token } = UserUpdateSchema.parse(body);
 
 	try {
 		const result = await new UserService(c.env.DB).updateProfile(
 			authUser.username,
 			username,
 			avatar_url ?? undefined,
+			is_anonymous,
 			token || '',
 			c.env.TURNSTILE_SECRET_KEY,
 		);
@@ -156,9 +171,9 @@ users.put('/me', async (c) => {
 			await createSession(c, { username: result.username, is_admin: result.is_admin });
 			await c.env.VRCSTORAGE_KV.delete(`user:${result.previousUsername}`);
 		}
-		await cacheSessionUser(c, result.username, result.is_admin);
+		await cacheSessionUser(c, result.uuid, result.username, result.is_admin, result.is_anonymous);
 
-		return c.json({ success: true, username: result.username, avatar_url: result.avatar_url });
+		return c.json({ success: true, username: result.username, avatar_url: result.avatar_url, is_anonymous: result.is_anonymous });
 	} catch (e) {
 		if ((e as { status?: number }).status) throw e;
 		console.error('Update user error:', e);
@@ -185,6 +200,8 @@ users.get('/status', async (c) => {
 		is_admin: user ? !!user.is_admin : false,
 		avatar_url: user ? user.avatar_url : null,
 		has_password: user ? !!user.password_hash : false,
+		is_anonymous: user ? !!user.is_anonymous : false,
+		anonymous_alias: user ? `Anonymous ${user.uuid.slice(0, 5)}` : null,
 	});
 });
 
@@ -247,7 +264,7 @@ users.post('/login/2fa', async (c) => {
 	if (!isValid) return c.json({ error: 'Invalid code' }, 401);
 
 	await createSession(c, { username: user.username, is_admin: user.is_admin });
-	await cacheSessionUser(c, user.username, user.is_admin);
+	await cacheSessionUser(c, user.uuid, user.username, user.is_admin, user.is_anonymous);
 	return c.json({ success: true });
 });
 

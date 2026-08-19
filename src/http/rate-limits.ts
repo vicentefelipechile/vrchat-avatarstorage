@@ -23,10 +23,10 @@ import { rateLimit } from './middleware/rate-limit';
 
 /** Wires every rate-limit rule onto the app. Call once, before mounting the routers. */
 export function registerRateLimits(app: Hono<{ Bindings: Env }>): void {
-	// Auth — strict (1 req / 60s per IP)
-	app.use('/api/auth/register', async (c, next) => rateLimit({ binding: c.env.RL_STRICT, keyPrefix: 'register' })(c, next));
-	app.use('/api/auth/login', async (c, next) => rateLimit({ binding: c.env.RL_LOGIN, keyPrefix: 'login' })(c, next));
-	app.use('/api/auth/login/2fa', async (c, next) => rateLimit({ binding: c.env.RL_LOGIN, keyPrefix: 'login_2fa' })(c, next));
+	// Auth — strict (1 req / 60s per IP), fail-closed to prevent brute-force on binding outage
+	app.use('/api/auth/register', async (c, next) => rateLimit({ binding: c.env.RL_STRICT, keyPrefix: 'register', failClosed: true })(c, next));
+	app.use('/api/auth/login', async (c, next) => rateLimit({ binding: c.env.RL_LOGIN, keyPrefix: 'login', failClosed: true })(c, next));
+	app.use('/api/auth/login/2fa', async (c, next) => rateLimit({ binding: c.env.RL_LOGIN, keyPrefix: 'login_2fa', failClosed: true })(c, next));
 
 	// Comments — differentiate POST (strict) from GET (medium)
 	app.use('/api/comments/*', async (c, next) => {
@@ -57,6 +57,12 @@ export function registerRateLimits(app: Hono<{ Bindings: Env }>): void {
 	app.use('/api/admin/*', async (c, next) => rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'admin' })(c, next));
 	app.use('/api/favorites/*', async (c, next) => rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'favorites' })(c, next));
 	app.use('/api/2fa/*', async (c, next) => rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: '2fa' })(c, next));
+
+	// Chat — the handshake caps socket churn; purging is strict (1/60s) because it is irreversible and
+	// destroys everyone's conversation, which bounds the damage if an admin session is compromised.
+	// Neither limit reaches messages sent over an already-open socket: that throttling lives in the DO.
+	app.use('/api/chat/live', async (c, next) => rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'chat_live' })(c, next));
+	app.use('/api/chat/purge', async (c, next) => rateLimit({ binding: c.env.RL_STRICT, keyPrefix: 'chat_purge' })(c, next));
 
 	// OAuth — medium rate limit (100/min). Callbacks are one-shot, not brute-forceable.
 	app.use('/api/auth/*', async (c, next) => rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'oauth' })(c, next));

@@ -124,18 +124,26 @@ export class AdminService {
 
 	/** Approve a pending resource (activate + invalidate its category caches). Throws NotFoundError. */
 	async approveResource(uuid: string, kv: KVNamespace, feed: Env['FEED']): Promise<void> {
-		const category = await this.repo.findResourceCategory(uuid);
-		if (category === null) throw new NotFoundError('Resource not found');
+		const meta = await this.repo.findResourceNotificationMeta(uuid);
+		if (meta === null) throw new NotFoundError('Resource not found');
 
 		await this.repo.setResourceActive(uuid, 1);
-		await this.invalidateResourceCaches(kv, category);
+		await this.invalidateResourceCaches(kv, meta.category);
 
 		// Approval is the moment the resource becomes public, so this is where the feed learns of it —
 		// not creation, when it is still hidden pending review. The category is the feed scope. Both the
 		// durable bump and the live broadcast are best-effort: neither may undo the committed approval.
-		const scope = category as ChangeScope;
+		const scope = meta.category as ChangeScope;
 		await this.changeFeed.bump(scope, uuid).catch(() => {});
-		await new FeedPublisher(feed).publish({ scope, action: 'created', entityId: uuid });
+		await new FeedPublisher(feed).publish({
+			scope,
+			action: 'created',
+			entityId: uuid,
+			title: meta.title,
+			category: meta.category,
+			subType: meta.subType ?? undefined,
+			thumbnailUuid: meta.thumbnail_uuid ?? undefined,
+		});
 	}
 
 	/** Deactivate an approved resource (+ invalidate its category caches). Throws NotFoundError. */

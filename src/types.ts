@@ -19,6 +19,7 @@ export interface User {
 	two_factor_enabled: number;
 	two_factor_secret: string | null;
 	two_factor_backup_codes: string | null;
+	is_anonymous: number;
 }
 
 // Tipo para crear un nuevo usuario (sin campos generados automáticamente)
@@ -273,16 +274,87 @@ export interface UserFavoriteWithResource extends UserFavorite {
  */
 export type FeedScope = 'avatars' | 'assets' | 'clothes' | 'blog' | 'comments';
 
+// -------------------------------------------------------------------------
+// Notification preferences (browser Notifications for newly approved resources)
+// -------------------------------------------------------------------------
+
+export interface NotificationPrefs {
+	enabled: number;
+	avatars_enabled: number;
+	avatar_types: string | null;
+	assets_enabled: number;
+	asset_types: string | null;
+	clothes_enabled: number;
+	updated_at: number | null;
+}
+
+export interface NotificationPrefsInput {
+	enabled: boolean;
+	avatars_enabled: boolean;
+	avatar_types: string[] | null;
+	assets_enabled: boolean;
+	asset_types: string[] | null;
+	clothes_enabled: boolean;
+}
+
 /**
- * A live event broadcast by the FeedRoom Durable Object to every connected client. It carries only a
- * scope + the affected entity id, never business data — the client invalidates the matching cache
- * prefixes and re-fetches from the API, which stays the single source of truth.
+ * A live event broadcast by the FeedRoom Durable Object to every connected client. It carries a
+ * scope + the affected entity id and, for resource scopes, lightweight display metadata so the
+ * client can decide whether to show a browser Notification without an extra fetch. The API remains
+ * the single source of truth — the event is a hint, not business data.
  */
 export interface FeedEvent {
 	scope: FeedScope;
 	action: 'created';
 	entityId: string;
+	title?: string;
+	category?: string;
+	subType?: string;
+	thumbnailUuid?: string;
 }
+
+// =========================================================================
+// GLOBAL CHAT
+// =========================================================================
+
+/** Hard cap on a chat message. The DO enforces it; the input's `maxlength` only mirrors it for UX. */
+export const CHAT_MAX_LENGTH = 50;
+
+/** How many messages the room keeps. Older ones are pruned on insert — there is no full history. */
+export const CHAT_HISTORY_SIZE = 50;
+
+/**
+ * A message already emitted, as a client sees it. Every field but `text` is assigned by the server:
+ * the client sends only what it typed, so nobody can impersonate another user or forge a timestamp.
+ */
+export interface ChatMessage {
+	uuid: string;
+	/** Author's `AuthUser.uuid` — users are identified by uuid across the project, never by a numeric id. */
+	userUuid: string;
+	username: string;
+	/** At most CHAT_MAX_LENGTH characters, already sanitized. */
+	text: string;
+	createdAt: number;
+}
+
+/** The only shape a client may send. Anything else is rejected as invalid. */
+export interface ChatClientMessage {
+	type: 'send';
+	text: string;
+}
+
+/**
+ * Everything the ChatRoom emits. `history` opens a connection, `message` is the fan-out of a single
+ * send, `purged` tells clients an admin emptied the room, and `error` explains a rejected send.
+ */
+export type ChatServerMessage =
+	| { type: 'history'; messages: ChatMessage[] }
+	| { type: 'message'; message: ChatMessage }
+	| { type: 'purged' }
+	| { type: 'error'; code: ChatErrorCode };
+
+/** Why a send was refused. Clients map each code to a localized toast. */
+export type ChatErrorCode = 'unauthenticated' | 'too_long' | 'rate_limited' | 'invalid';
 
 // =========================================================================
 // CLOUDFLARE QUEUES

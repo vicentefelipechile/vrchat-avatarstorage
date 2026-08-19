@@ -13,6 +13,7 @@
 
 import { queryOne, queryAll, execute, type DB } from '../db/client';
 import { processedExpr } from '../db/schema';
+import { anonUsernameExpr, anonAvatarExpr } from '../helpers/anonymity';
 
 // =========================================================================================================
 // Types
@@ -97,8 +98,8 @@ export class FavoriteRepository {
 				m.media_type AS thumbnail_media_type,
 				m.placeholder_blur,
 				${processedExpr('m')},
-				u.username AS author_username,
-				u.avatar_url AS author_avatar,
+				${anonUsernameExpr('u')} AS author_username,
+				${anonAvatarExpr('u')} AS author_avatar,
 				uf.display_order,
 				uf.global_order,
 				uf.created_at AS favorite_created_at,
@@ -131,8 +132,8 @@ export class FavoriteRepository {
 				m.media_type AS thumbnail_media_type,
 				m.placeholder_blur,
 				${processedExpr('m')},
-				u.username AS author_username,
-				u.avatar_url AS author_avatar,
+				${anonUsernameExpr('u')} AS author_username,
+				${anonAvatarExpr('u')} AS author_avatar,
 				uf.display_order,
 				uf.global_order,
 				uf.created_at AS favorite_created_at,

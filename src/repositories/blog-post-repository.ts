@@ -12,6 +12,7 @@
 // =========================================================================================================
 
 import { queryOne, queryAll, execute, type DB } from '../db/client';
+import { anonUsernameExpr, anonAvatarExpr } from '../helpers/anonymity';
 import type { BlogPost, BlogPostWithAuthor } from '../types';
 
 // =========================================================================================================
@@ -48,8 +49,8 @@ export class BlogPostRepository {
 			`SELECT
 				bp.*,
 				bp.created_at,
-				u.username AS author_username,
-				u.avatar_url AS author_avatar,
+				${anonUsernameExpr('u')} AS author_username,
+				${anonAvatarExpr('u')} AS author_avatar,
 				m.r2_key AS cover_image_key
 			FROM blog_posts bp
 			JOIN users u ON bp.author_uuid = u.uuid
@@ -73,8 +74,8 @@ export class BlogPostRepository {
 			`SELECT
 				bp.*,
 				bp.created_at,
-				u.username AS author_username,
-				u.avatar_url AS author_avatar,
+				${anonUsernameExpr('u')} AS author_username,
+				${anonAvatarExpr('u')} AS author_avatar,
 				m.r2_key AS cover_image_key
 			FROM blog_posts bp
 			JOIN users u ON bp.author_uuid = u.uuid

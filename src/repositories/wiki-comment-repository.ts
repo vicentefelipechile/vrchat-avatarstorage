@@ -12,6 +12,7 @@
 // =========================================================================================================
 
 import { queryOne, queryAll, execute, type DB } from '../db/client';
+import { anonUsernameExpr, anonAvatarExpr } from '../helpers/anonymity';
 
 // =========================================================================================================
 // Types
@@ -45,8 +46,8 @@ export class WikiCommentRepository {
 				c.uuid,
 				c.text,
 				(c.created_at * 1000) AS timestamp,
-				u.username AS author,
-				u.avatar_url AS author_avatar
+				${anonUsernameExpr('u')} AS author,
+				${anonAvatarExpr('u')} AS author_avatar
 			FROM wiki_comments c
 			JOIN users u ON c.author_uuid = u.uuid
 			ORDER BY c.created_at DESC
@@ -54,11 +55,11 @@ export class WikiCommentRepository {
 		);
 	}
 
-	/** A user's uuid + avatar_url by username, or null if the user doesn't exist. */
-	findUserByUsername(username: string): Promise<{ uuid: string; avatar_url: string } | null> {
-		return queryOne<{ uuid: string; avatar_url: string }>(
+	/** A user's uuid, avatar_url, and is_anonymous by username, or null if the user doesn't exist. */
+	findUserByUsername(username: string): Promise<{ uuid: string; avatar_url: string; is_anonymous: number } | null> {
+		return queryOne<{ uuid: string; avatar_url: string; is_anonymous: number }>(
 			this.db,
-			'SELECT uuid, avatar_url FROM users WHERE username = ?',
+			'SELECT uuid, avatar_url, is_anonymous FROM users WHERE username = ?',
 			[username],
 		);
 	}

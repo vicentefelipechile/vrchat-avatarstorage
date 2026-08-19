@@ -29,6 +29,7 @@ import { BlogCommentRepository, type BlogComment } from '../repositories/blog-co
 import { ChangeFeedRepository } from '../repositories/change-feed-repository';
 import { FeedPublisher } from './feed-publisher';
 import { verifyTurnstile } from '../helpers/turnstile';
+import { resolveDisplayIdentity } from '../helpers/anonymity';
 import { NotFoundError, ForbiddenError } from '../domain/errors';
 
 // =========================================================================================================
@@ -232,7 +233,9 @@ export class BlogService {
 		const now = Math.floor(Date.now() / 1000);
 		await this.comments.insert(uuid, postUuid, author.uuid, text, now);
 
-		return { uuid, text, timestamp: now * 1000, author: user.username, author_avatar: author.avatar_url };
+		const identity = resolveDisplayIdentity(user.uuid, user.username, author.avatar_url, author.is_anonymous);
+
+		return { uuid, text, timestamp: now * 1000, author: identity.display_name, author_avatar: identity.display_avatar };
 	}
 
 	/** Delete a blog comment. Only the author or an admin may delete it. */

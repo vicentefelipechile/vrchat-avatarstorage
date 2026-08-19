@@ -64,9 +64,9 @@ export class UserRepository {
 		]);
 	}
 
-	/** Update a user's username and avatar_url by uuid. */
-	async updateProfile(uuid: string, username: string, avatarUrl: string | null): Promise<void> {
-		await execute(this.db, 'UPDATE users SET username = ?, avatar_url = ? WHERE uuid = ?', [username, avatarUrl, uuid]);
+	/** Update a user's username, avatar_url, and is_anonymous flag by uuid. */
+	async updateProfile(uuid: string, username: string, avatarUrl: string | null, isAnonymous: number): Promise<void> {
+		await execute(this.db, 'UPDATE users SET username = ?, avatar_url = ?, is_anonymous = ? WHERE uuid = ?', [username, avatarUrl, isAnonymous, uuid]);
 	}
 
 	/** Update a user's password hash by uuid. */

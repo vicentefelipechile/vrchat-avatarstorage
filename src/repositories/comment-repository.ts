@@ -12,6 +12,7 @@
 // =========================================================================================================
 
 import { queryOne, queryAll, execute, type DB } from '../db/client';
+import { anonUsernameExpr, anonAvatarExpr } from '../helpers/anonymity';
 
 // =========================================================================================================
 // Types
@@ -45,8 +46,8 @@ export class CommentRepository {
 				c.uuid,
 				c.text,
 				(c.created_at * 1000) AS timestamp,
-				u.username AS author,
-				u.avatar_url AS author_avatar
+				${anonUsernameExpr('u')} AS author,
+				${anonAvatarExpr('u')} AS author_avatar
 			FROM comments c
 			JOIN users u ON c.author_uuid = u.uuid
 			WHERE c.resource_uuid = ?
@@ -65,11 +66,11 @@ export class CommentRepository {
 		return row !== null;
 	}
 
-	/** The avatar_url of a user by username, or null if the user doesn't exist. */
-	findAvatarByUsername(username: string): Promise<{ avatar_url: string | null } | null> {
-		return queryOne<{ avatar_url: string | null }>(
+	/** The avatar_url and is_anonymous of a user by username, or null if the user doesn't exist. */
+	findAvatarByUsername(username: string): Promise<{ avatar_url: string | null; is_anonymous: number } | null> {
+		return queryOne<{ avatar_url: string | null; is_anonymous: number }>(
 			this.db,
-			'SELECT avatar_url FROM users WHERE username = ?',
+			'SELECT avatar_url, is_anonymous FROM users WHERE username = ?',
 			[username],
 		);
 	}

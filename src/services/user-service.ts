@@ -45,13 +45,14 @@ export interface RegisteredUser {
 	username: string;
 }
 
-/** Result of a profile update — the caller refreshes session/KV if the username changed. */
 export interface UpdatedProfile {
+	uuid: string;
 	username: string;
 	avatar_url: string | null;
 	usernameChanged: boolean;
 	previousUsername: string;
 	is_admin: number;
+	is_anonymous: number;
 }
 
 // =========================================================================================================
@@ -108,6 +109,7 @@ export class UserService {
 		currentUsername: string,
 		newUsername: string | undefined,
 		avatarUrl: string | undefined,
+		isAnonymous: number | undefined,
 		token: string,
 		turnstileSecret: string,
 	): Promise<UpdatedProfile> {
@@ -119,22 +121,26 @@ export class UserService {
 
 		let resolvedUsername = user.username;
 		let resolvedAvatar = user.avatar_url;
+		let resolvedIsAnonymous = user.is_anonymous;
 
 		if (newUsername && newUsername !== user.username) {
 			if (await this.repo.existsByUsername(newUsername)) throw new ConflictError('Username taken');
 			resolvedUsername = newUsername;
 		}
 
-		if (avatarUrl) resolvedAvatar = avatarUrl;
+		if (avatarUrl !== undefined) resolvedAvatar = avatarUrl;
+		if (isAnonymous !== undefined) resolvedIsAnonymous = isAnonymous;
 
-		await this.repo.updateProfile(user.uuid, resolvedUsername, resolvedAvatar);
+		await this.repo.updateProfile(user.uuid, resolvedUsername, resolvedAvatar, resolvedIsAnonymous);
 
 		return {
+			uuid: user.uuid,
 			username: resolvedUsername,
 			avatar_url: resolvedAvatar,
 			usernameChanged: resolvedUsername !== user.username,
 			previousUsername: user.username,
 			is_admin: user.is_admin,
+			is_anonymous: resolvedIsAnonymous,
 		};
 	}
 

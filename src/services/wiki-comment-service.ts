@@ -20,6 +20,7 @@ import type { AuthUser } from '../auth';
 import type { DB } from '../db/client';
 import { WikiCommentRepository, type WikiComment } from '../repositories/wiki-comment-repository';
 import { verifyTurnstile } from '../helpers/turnstile';
+import { resolveDisplayIdentity } from '../helpers/anonymity';
 import { NotFoundError, ForbiddenError } from '../domain/errors';
 
 // =========================================================================================================
@@ -74,12 +75,14 @@ export class WikiCommentService {
 		const uuid = crypto.randomUUID();
 		await this.repo.insert(uuid, author.uuid, text);
 
+		const identity = resolveDisplayIdentity(user.uuid, user.username, author.avatar_url, author.is_anonymous);
+
 		return {
 			uuid,
 			text,
 			timestamp: Date.now(),
-			author: user.username,
-			author_avatar: author.avatar_url,
+			author: identity.display_name,
+			author_avatar: identity.display_avatar || '',
 		};
 	}
 

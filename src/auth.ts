@@ -8,7 +8,7 @@
 // Imports
 // =========================================================================================================
 
-import { hashSync, compareSync } from 'bcryptjs';
+import { hash, compare } from 'bcryptjs';
 import { Context } from 'hono';
 import { sign, verify } from 'hono/jwt';
 import { getCookie, setCookie } from 'hono/cookie';
@@ -23,19 +23,22 @@ export type AuthUser = {
 	uuid: string;
 	username: string;
 	is_admin: boolean;
+	is_anonymous: boolean;
 };
 
 // =========================================================================================================
 // Password Hashing
 // =========================================================================================================
 
+// L-4: cost factor raised from 10 to 12 to better resist offline cracking.
+// L-5: async to avoid blocking the V8 isolate's single thread.
 export async function hashPassword(password: string): Promise<{ hash: string; salt?: string }> {
-	const hash = hashSync(password, 10);
-	return { hash };
+	const passwordHash = await hash(password, 12);
+	return { hash: passwordHash };
 }
 
 export async function verifyPassword(password: string, storedHash: string, _storedSalt?: string): Promise<boolean> {
-	return compareSync(password, storedHash);
+	return compare(password, storedHash);
 }
 
 // =========================================================================================================
@@ -104,14 +107,16 @@ export async function getAuthUser<E extends { Bindings: Env }>(c: Context<E>): P
 			return cachedUser;
 		}
 
-		// 3. Query DB
-		const user = await c.env.DB.prepare('SELECT * FROM users WHERE username = ?').bind(username).first<User>();
+		// 3. Query DB — only load the fields needed for the session. Sensitive columns
+		// (password_hash, two_factor_secret, two_factor_backup_codes) are never needed here.
+		const user = await c.env.DB.prepare('SELECT uuid, username, is_admin, is_anonymous FROM users WHERE username = ?').bind(username).first<Pick<User, 'uuid' | 'username' | 'is_admin' | 'is_anonymous'>>();
 		if (!user) return null;
 
-		const sessionUser = {
+		const sessionUser: AuthUser = {
 			uuid: user.uuid,
 			username: user.username,
 			is_admin: user.is_admin === 1,
+			is_anonymous: user.is_anonymous === 1,
 		};
 
 		// 4. Update KV
@@ -162,7 +167,9 @@ export async function deleteSession(c: Context<{ Bindings: Env }>) {
 // =========================================================================================================
 
 export async function getUserWith2FA(c: Context<{ Bindings: Env }>, username: string): Promise<User | null> {
-	const user = await c.env.DB.prepare('SELECT * FROM users WHERE username = ?').bind(username).first<User>();
+	// Selects the full user row — 2FA columns (two_factor_secret, two_factor_backup_codes) are
+	// required here for decryption and backup-code verification. Only called by 2FA-specific flows.
+	const user = await c.env.DB.prepare('SELECT uuid, username, is_admin, password_hash, two_factor_enabled, two_factor_secret, two_factor_backup_codes FROM users WHERE username = ?').bind(username).first<User>();
 	return user;
 }
 
