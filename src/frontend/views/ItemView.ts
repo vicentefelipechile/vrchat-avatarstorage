@@ -10,8 +10,7 @@ import { deleteComment, approveResource, rejectResource, deactivateResource } fr
 import { icons, getIcon } from '../lib/icons';
 import { commentEditorHtml, initCommentEditor } from '../features/comment-editor';
 import { navigateTo } from '../core/router';
-import { marked } from 'marked';
-import DOMPurify from 'dompurify';
+import { parseMarkdownToHtml } from '../lib/markdown';
 import type { RouteContext, Resource, Comment, ResourceLink, AvatarMeta, AssetMeta, ClothesMeta } from '../types';
 
 // =========================================================================
@@ -331,7 +330,7 @@ function renderCommentsList(comments: Comment[], isAdmin: boolean): string {
 
 	return comments
 		.map((c) => {
-			const content = DOMPurify.sanitize(marked.parse(c.text) as string);
+			const content = parseMarkdownToHtml(c.text);
 			const when = new Date(c.timestamp).toLocaleString();
 
 			const del = isAdmin
@@ -570,7 +569,7 @@ export async function itemView(ctx: RouteContext): Promise<string> {
 	// Render description
 	const descEl = document.createElement('div');
 	const rawDesc = res.description ?? '';
-	descEl.innerHTML = DOMPurify.sanitize(marked.parse(rawDesc) as string);
+	descEl.innerHTML = parseMarkdownToHtml(rawDesc);
 	const descriptionHtml = descEl.innerHTML;
 
 	// Header tools

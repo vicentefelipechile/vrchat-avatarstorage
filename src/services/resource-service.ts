@@ -251,6 +251,21 @@ export class ResourceService {
 		await this.assertCanEditLinks(user, resourceUuid);
 		await this.repo.updateLink(resourceUuid, linkUuid, fields);
 	}
+
+	async reorderLinks(user: AuthUser, resourceUuid: string, orderedUuids: string[]): Promise<void> {
+		if (orderedUuids.length === 0) return;
+		await this.assertCanEditLinks(user, resourceUuid);
+		const existing = await this.repo.findLinks(resourceUuid);
+		const existingIds = new Set(existing.map((l) => l.uuid));
+		if (orderedUuids.length !== existingIds.size || !orderedUuids.every((id) => existingIds.has(id))) {
+			throw new ValidationError('Ordered UUIDs must match existing links exactly');
+		}
+		const statements = orderedUuids.map((uuid, idx) => this.repo.buildUpdateLinkOrder(resourceUuid, uuid, idx));
+		const BATCH_CHUNK = 100;
+		for (let start = 0; start < statements.length; start += BATCH_CHUNK) {
+			await batch(this.db, statements.slice(start, start + BATCH_CHUNK));
+		}
+	}
 }
 
 // =========================================================================================================

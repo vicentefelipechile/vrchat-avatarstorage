@@ -3,10 +3,25 @@
 // =========================================================================
 
 import type { RouteContext, Resource, ResourceLink, MediaFile } from '../types';
-import { htmlDecode, renderMarkdown, showToast, mediaUrl, videoUrl } from '../lib/utils';
+import { htmlDecode, renderMarkdown, showToast, mediaUrl, videoUrl, uploadChunked, CHUNK_SIZE } from '../lib/utils';
 import { navigateTo } from '../core/router';
 import { DataCache } from '../core/cache';
 import { t } from '../core/i18n';
+
+const SIZE_LIMITS = {
+	image: 20 * 1024 * 1024,
+	video: 100 * 1024 * 1024,
+	file: 1500 * 1024 * 1024,
+};
+const MAX_GALLERY_FILES = 8;
+const MAX_MAIN_FILES = 3;
+const VALID_EXTENSIONS = ['.rar', '.zip', '.unitypackage', '.blend'];
+
+function syncInputFiles(input: HTMLInputElement, files: File[]): void {
+	const dt = new DataTransfer();
+	files.forEach((f) => dt.items.add(f));
+	input.files = dt.files;
+}
 
 // =========================================================================
 // Helpers — Upload
@@ -319,11 +334,15 @@ function buildLinkRow(link: ResourceLink, index: number): string {
 
 	return `<div class="link-row" data-link-uuid="${linkUuid}" data-r2-file="${isR2File ? '1' : '0'}" style="border:1px solid var(--border-color);padding:12px;margin-bottom:8px;background:var(--bg-card)">
 		<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-			<div style="flex:1;width:180px">
+			<div style="display:flex;flex-direction:column;gap:4px">
+				<button type="button" class="btn-link-up btn btn-sm" style="padding:2px 6px;font-family:inherit" title="${t('edit.moveUp') ?? 'Up'}">▲</button>
+				<button type="button" class="btn-link-down btn btn-sm" style="padding:2px 6px;font-family:inherit" title="${t('edit.moveDown') ?? 'Down'}">▼</button>
+			</div>
+			<div style="flex:1;min-width:140px">
 				<label style="font-size:0.8em;color:var(--text-muted)">${t('edit.linkTitle')}</label>
 				<input type="text" class="link-title-input form-control" value="${htmlDecode(title)}" style="width:100%;${isR2File ? 'background-color:var(--bg-dropdown);' : ''}" ${isR2File ? 'readonly' : ''}>
 			</div>
-			<div style="flex:2;width:180px">
+			<div style="flex:2;min-width:180px">
 				<label style="font-size:0.8em;color:var(--text-muted)">${t('edit.linkUrl')}</label>
 				<input type="text" class="link-url-input form-control" value="${htmlDecode(url)}" style="width:100%;${isR2File ? 'background-color:var(--bg-dropdown);' : ''}" ${isR2File ? 'readonly' : ''}>
 			</div>
@@ -346,13 +365,14 @@ function editFormHtml(id: string): string {
 			<div id="loading-edit" class="skeleton-text">Loading\u2026</div>
 
 			<form id="edit-form" style="display:none">
+				<fieldset id="edit-fieldset" style="border:0;margin:0;padding:0;min-width:0">
 				<div class="form-group">
-					<label><strong>${t('upload.name')}</strong></label>
-					<input type="text" id="title" required>
+					<label><strong>${t('upload.name')} ${t('upload.required')}</strong></label>
+					<input type="text" id="title" required placeholder="${t('upload.resourceName')}" style="width:100%">
 				</div>
 
 				<div class="form-group">
-					<label><strong>${t('upload.cat')}</strong></label>
+					<label><strong>${t('upload.cat')} ${t('upload.required')}</strong></label>
 					<select id="category" class="form-control" required>
 						<option value="avatars">${t('cats.avatars')}</option>
 						<option value="assets">${t('cats.assets')}</option>
@@ -366,52 +386,53 @@ function editFormHtml(id: string): string {
 
 				<div class="form-group">
 					<label><strong>${t('upload.desc')} (Markdown)</strong></label>
-					<div style="display:flex;gap:20px;align-items:stretch">
-						<div style="flex:1">
-							<textarea id="description" rows="20" style="width:100%;height:100%;font-family:monospace;resize:vertical;min-height:400px"></textarea>
-						</div>
-						<div style="flex:1;border:1px solid var(--border-color);padding:15px;background:var(--bg-card);overflow-y:auto;max-height:600px">
-							<div id="markdown-preview" class="markdown-body"></div>
-						</div>
+					<div class="upload-grid">
+						<div><textarea id="description" rows="12" placeholder="${t('upload.markdownPlaceholder')}" style="width:100%;font-family:monospace;resize:vertical"></textarea></div>
+						<div><div class="preview-container"><strong>${t('upload.preview')}:</strong><hr><div id="markdown-preview" class="markdown-body"></div></div></div>
 					</div>
 				</div>
 
-				<div class="form-group" style="background:var(--bg-card);padding:15px;border:2px solid var(--border-color);margin-top:20px">
-					<h3 style="margin-top:0">${t('edit.currentThumbnail')}</h3>
-					<div id="current-thumbnail"></div>
-					<label style="display:block;margin-top:12px"><strong>${t('edit.changeThumbnail')}</strong></label>
+				<div class="form-group" style="margin-bottom:20px">
+					<label><strong>${t('edit.currentThumbnail')}</strong></label>
+					<div id="current-thumbnail" style="margin-bottom:8px"></div>
+					<label><strong>${t('edit.changeThumbnail')}</strong></label>
 					<input type="file" id="new-thumbnail" accept="image/png,image/jpg,image/jpeg,image/webp,image/gif,image/avif,video/mp4,video/webm">
-					<div id="thumbnail-preview" style="margin-top:10px"></div>
 					<small style="color:var(--text-muted)">${t('upload.imageVideo')}</small>
+					<div id="thumbnail-preview" style="margin-top:10px"></div>
 				</div>
 
-				<div class="form-group" style="background:var(--bg-card);padding:15px;border:2px solid var(--border-color)">
-					<h3 style="margin-top:0">${t('edit.currentReference')}</h3>
-					<div id="current-reference"></div>
-					<label style="display:block;margin-top:12px"><strong>${t('edit.changeReference')}</strong></label>
+				<div class="form-group" style="margin-bottom:20px">
+					<label><strong>${t('edit.currentReference')}</strong></label>
+					<div id="current-reference" style="margin-bottom:8px"></div>
+					<label><strong>${t('edit.changeReference')}</strong></label>
 					<input type="file" id="new-reference" accept="image/png,image/jpg,image/jpeg,image/webp,image/gif,image/avif,video/mp4,video/webm">
-					<div id="reference-preview" style="margin-top:10px"></div>
 					<small style="color:var(--text-muted)">${t('upload.optional')}</small>
+					<div id="reference-preview" style="margin-top:10px"></div>
 				</div>
 
-				<div class="form-group" style="background:var(--bg-card);padding:15px;border:2px solid var(--border-color)">
-					<h3 style="margin-top:0">${t('edit.galleryTitle')}</h3>
-					<div id="current-gallery"></div>
-					<label style="display:block;margin-top:12px"><strong>${t('edit.galleryAdd')}</strong></label>
+				<div class="form-group" style="margin-bottom:20px">
+					<label><strong>${t('edit.galleryTitle')}</strong></label>
+					<div id="current-gallery" style="margin-bottom:8px"></div>
+					<label><strong>${t('edit.galleryAdd')}</strong></label>
 					<input type="file" id="new-gallery-images" accept="image/png,image/jpg,image/jpeg,image/webp,image/gif,image/avif,video/mp4,video/webm" multiple>
-					<div id="gallery-preview" style="margin-top:10px"></div>
 					<small style="color:var(--text-muted)">${t('edit.galleryMax')}</small>
+					<div id="gallery-preview" style="margin-top:10px"></div>
 				</div>
 
-				<div class="form-group" style="background:var(--bg-card);padding:15px;border:2px solid var(--border-color)">
-					<h3 style="margin-top:0">${t('edit.existingLinks')}</h3>
-					<div id="existing-links"></div>
+				<div class="form-group">
+					<label><strong>${t('upload.mainFile')} (.rar, .zip, .unitypackage, .blend) (${t('upload.optional')})</strong></label>
+					<input type="file" id="new-main-files" accept=".rar,.zip,.unitypackage,.blend" multiple>
+					<small style="color:var(--text-muted)">${t('upload.fileTypes')} (Max ${MAX_MAIN_FILES})</small>
+					<div id="new-main-file-info" style="margin-top:10px;color:var(--text-muted)"></div>
 				</div>
 
-				<div class="form-group" style="background:var(--bg-card);padding:15px;border:2px solid var(--border-color)">
-					<h3 style="margin-top:0">${t('edit.backupLinksLabel')}</h3>
-					<textarea id="backup-links" rows="3" placeholder="https://example.com/backup1&#10;https://example.com/backup2" style="width:100%;font-family:monospace;resize:vertical"></textarea>
-					<small style="color:var(--text-muted)">${t('edit.backupLinksHint')}</small>
+				<div class="form-group">
+					<label><strong>${t('edit.existingLinks')}</strong></label>
+					<div id="existing-links" style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px"></div>
+					<label><strong>${t('upload.backupLinks')}</strong></label>
+					<div id="new-links-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:8px"></div>
+					<button type="button" id="add-new-link" class="btn" style="padding:8px 14px">+ ${t('upload.addBackup')}</button>
+					<small style="display:block;margin-top:6px;color:var(--text-muted)">${t('upload.backupLinksHint')}</small>
 				</div>
 
 				<div id="edit-error" style="color:red;margin:10px 0"></div>
@@ -420,6 +441,7 @@ function editFormHtml(id: string): string {
 					<button type="submit" id="edit-submit-btn" class="btn" style="flex:1">${t('settings.save')}</button>
 					<a href="/item/${id}" data-link class="btn" style="background:#666">${t('common.cancel')}</a>
 				</div>
+				</fieldset>
 			</form>
 		</div>`;
 }
@@ -736,7 +758,19 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 	// -----------------------------------------------------------------------
 
 	const existingLinksEl = document.getElementById('existing-links')!;
-	const allLinks: ResourceLink[] = resource.links || [];
+	const allLinks: ResourceLink[] = [...(resource.links || [])].sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0));
+	const initialOrder = allLinks.map((l) => l.uuid!);
+	let reorderDirty = false;
+
+	function updateMoveButtons(): void {
+		const rows = Array.from(existingLinksEl.querySelectorAll<HTMLElement>('.link-row'));
+		rows.forEach((row, idx) => {
+			const up = row.querySelector<HTMLButtonElement>('.btn-link-up');
+			const down = row.querySelector<HTMLButtonElement>('.btn-link-down');
+			if (up) up.disabled = idx === 0;
+			if (down) down.disabled = idx === rows.length - 1;
+		});
+	}
 
 	function renderLinks(): void {
 		existingLinksEl.innerHTML = '';
@@ -753,8 +787,29 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 			const linkUuid = row.dataset.linkUuid || '';
 			const saveBtn = row.querySelector<HTMLButtonElement>('.btn-link-save');
 			const deleteBtn = row.querySelector<HTMLButtonElement>('.btn-link-delete')!;
+			const upBtn = row.querySelector<HTMLButtonElement>('.btn-link-up')!;
+			const downBtn = row.querySelector<HTMLButtonElement>('.btn-link-down')!;
 			const titleInput = row.querySelector<HTMLInputElement>('.link-title-input')!;
 			const urlInput = row.querySelector<HTMLInputElement>('.link-url-input')!;
+
+			upBtn.addEventListener('click', async () => {
+				const idx = allLinks.findIndex((l) => l.uuid === linkUuid);
+				if (idx > 0) {
+					const [m] = allLinks.splice(idx, 1);
+					allLinks.splice(idx - 1, 0, m);
+					reorderDirty = true;
+					renderLinks();
+				}
+			});
+			downBtn.addEventListener('click', async () => {
+				const idx = allLinks.findIndex((l) => l.uuid === linkUuid);
+				if (idx !== -1 && idx < allLinks.length - 1) {
+					const [m] = allLinks.splice(idx, 1);
+					allLinks.splice(idx + 1, 0, m);
+					reorderDirty = true;
+					renderLinks();
+				}
+			});
 
 			if (saveBtn) {
 				saveBtn.addEventListener('click', async () => {
@@ -770,6 +825,11 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 						});
 						if (res.ok) {
 							showToast(t('edit.linkSaved'), 'success');
+							const idx = allLinks.findIndex((l) => l.uuid === linkUuid);
+							if (idx !== -1) {
+								allLinks[idx].link_title = titleInput.value || null;
+								allLinks[idx].link_url = urlInput.value;
+							}
 							DataCache.clear(`/api/resources/${id}`);
 						} else {
 							const data = (await res.json()) as { error?: string };
@@ -791,6 +851,7 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 						showToast(t('edit.linkDeleted'), 'success');
 						const idx = allLinks.findIndex((l) => l.uuid === linkUuid);
 						if (idx !== -1) allLinks.splice(idx, 1);
+						reorderDirty = true;
 						DataCache.clear(`/api/resources/${id}`);
 						renderLinks();
 					} else {
@@ -804,8 +865,44 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 				}
 			});
 		});
+		updateMoveButtons();
 	}
 	renderLinks();
+
+	// -----------------------------------------------------------------------
+	// New backup links (dynamic, like UploadView)
+	// -----------------------------------------------------------------------
+
+	const newLinksList = document.getElementById('new-links-list')!;
+	const addNewLinkBtn = document.getElementById('add-new-link')!;
+
+	const addNewLinkRow = (value = '') => {
+		const row = document.createElement('div');
+		row.className = 'new-link-row';
+		row.style.cssText = 'display:flex;gap:8px;align-items:center';
+		const input = document.createElement('input');
+		input.type = 'url';
+		input.className = 'form-control new-link-input';
+		input.placeholder = t('upload.backupUrlPlaceholder');
+		input.value = value;
+		input.style.flex = '1';
+		const remove = document.createElement('button');
+		remove.type = 'button';
+		remove.className = 'btn';
+		remove.textContent = t('upload.removeBackup');
+		remove.style.cssText = 'padding:8px 12px;flex:none';
+		remove.onclick = () => row.remove();
+		row.append(input, remove);
+		newLinksList.appendChild(row);
+		input.focus();
+	};
+
+	addNewLinkBtn.addEventListener('click', () => addNewLinkRow());
+
+	const collectNewLinks = () =>
+		Array.from(newLinksList.querySelectorAll<HTMLInputElement>('.new-link-input'))
+			.map((el) => el.value.trim())
+			.filter(Boolean);
 
 	// -----------------------------------------------------------------------
 	// Thumbnail change preview
@@ -870,7 +967,7 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 	const newGalleryFiles: File[] = [];
 
 	function countGalleryTotal(): number {
-		return existingMediaFiles.filter((mf) => !removedMediaUuids.has(mf.uuid || '')).length + newGalleryFiles.length;
+		return existingMediaFiles.filter((mf) => !removedMediaUuids.has(mf.uuid || '') && (mf.media_type === 'image' || mf.media_type === 'video')).length + newGalleryFiles.length;
 	}
 
 	function renderNewGalleryPreview(): void {
@@ -891,7 +988,7 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 	newGalleryInput.addEventListener('change', () => {
 		const files = Array.from(newGalleryInput.files || []);
 		const currentCount = countGalleryTotal();
-		const limit = 8;
+		const limit = MAX_GALLERY_FILES;
 
 		if (currentCount + files.length > limit) {
 			showToast(t('edit.galleryMax'), 'warning');
@@ -905,6 +1002,59 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 		}
 		renderNewGalleryPreview();
 		newGalleryInput.value = '';
+	});
+
+	// -----------------------------------------------------------------------
+	// Main file upload (additional files, like UploadView)
+	// -----------------------------------------------------------------------
+
+	const newMainFilesInput = document.getElementById('new-main-files') as HTMLInputElement;
+	const newMainFileInfo = document.getElementById('new-main-file-info')!;
+	const selectedNewMainFiles: File[] = [];
+
+	const renderNewMainFileInfo = () => {
+		newMainFileInfo.innerHTML = '';
+		if (selectedNewMainFiles.length > MAX_MAIN_FILES) {
+			const warn = document.createElement('div');
+			warn.textContent = t('upload.tooManyFiles');
+			warn.style.cssText = 'color:#e05c5c;font-weight:bold;margin-bottom:8px';
+			newMainFileInfo.appendChild(warn);
+		}
+		const maxMb = (SIZE_LIMITS.file / 1024 / 1024).toFixed(0);
+		selectedNewMainFiles.forEach((file, idx) => {
+			const isValidExt = VALID_EXTENSIONS.some((ext) => file.name.toLowerCase().endsWith(ext));
+			const isValidSize = file.size <= SIZE_LIMITS.file;
+			const mb = (file.size / 1024 / 1024).toFixed(2);
+			let color = 'green', sym = '✓', msg = `${file.name} (${mb} MB)`;
+			if (!isValidExt) { color = 'red'; sym = '✗'; msg += ` - ${t('upload.errorInvalidFileType')}`; }
+			else if (!isValidSize) { color = 'red'; sym = '✗'; msg += ` - ${t('upload.errorFileTooLarge')} (max ${maxMb}MB)`; }
+			const row = document.createElement('div');
+			row.style.cssText = 'display:flex;align-items:center;gap:8px;margin:2px 0';
+			if (idx >= MAX_MAIN_FILES) row.style.opacity = '0.45';
+			const remove = document.createElement('button');
+			remove.type = 'button';
+			remove.textContent = '✕';
+			remove.style.cssText = 'background:#dc3545;color:white;border:none;border-radius:3px;width:20px;height:20px;cursor:pointer;font-weight:bold;flex:none';
+			remove.onclick = () => {
+				selectedNewMainFiles.splice(idx, 1);
+				syncInputFiles(newMainFilesInput, selectedNewMainFiles);
+				renderNewMainFileInfo();
+			};
+			const span = document.createElement('span');
+			span.style.color = color;
+			span.textContent = `${sym} ${msg}`;
+			row.append(remove, span);
+			newMainFileInfo.appendChild(row);
+		});
+	};
+
+	newMainFilesInput.addEventListener('change', (e) => {
+		const incoming = Array.from((e.target as HTMLInputElement).files ?? []);
+		selectedNewMainFiles.push(...incoming);
+		(e.target as HTMLInputElement).value = '';
+		syncInputFiles(newMainFilesInput, selectedNewMainFiles);
+		if (selectedNewMainFiles.length > MAX_MAIN_FILES) showToast(t('upload.tooManyFiles'), 'warning');
+		renderNewMainFileInfo();
 	});
 
 	// -----------------------------------------------------------------------
@@ -996,28 +1146,82 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 				}
 			}
 
-			hideProgress();
-
-			// Compute final gallery list
-			const keptMediaFiles = existingMediaFiles.filter((mf) => !removedMediaUuids.has(mf.uuid || ''));
-			const galleryMediaUuids: string[] | undefined =
-				newThumbnailFile || newReferenceFile !== undefined || newGalleryFiles.length > 0 || removedMediaUuids.size > 0
-					? [...keptMediaFiles.map((mf) => mf.uuid!).filter(Boolean), ...newGalleryUuids]
-					: undefined;
-
-			// Parse backup links from textarea
-			const backupText = (document.getElementById('backup-links') as HTMLTextAreaElement).value.trim();
-			const newLinks: object[] = [];
-			if (backupText) {
-				const lines = backupText.split('\n').map((l) => l.trim()).filter(Boolean);
-				for (const line of lines) {
-					newLinks.push({
-						link_url: line,
-						link_type: 'download',
-						display_order: 99,
-					});
+			// Upload new main files (additional downloadable archives, mirrors UploadView)
+			const newMainFileData: { r2_key: string; media_uuid: string; originalName: string; size: number }[] = [];
+			if (selectedNewMainFiles.length > 0) {
+				if (selectedNewMainFiles.length > MAX_MAIN_FILES) {
+					hideProgress();
+					throw new Error(t('upload.tooManyFiles'));
+				}
+				if (selectedNewMainFiles.some((f) => !VALID_EXTENSIONS.some((ext) => f.name.toLowerCase().endsWith(ext)))) {
+					hideProgress();
+					throw new Error(t('upload.errorInvalidFileType'));
+				}
+				for (let i = 0; i < selectedNewMainFiles.length; i++) {
+					const f = selectedNewMainFiles[i];
+					const label = `${t('upload.uploadingFile')} (${i + 1}/${selectedNewMainFiles.length})`;
+					showProgress(label);
+					updateProgressBar(0);
+					let fileData: { r2_key: string; media_uuid: string };
+					if (f.size > CHUNK_SIZE) {
+						fileData = await uploadChunked(f, 'file', (p) => updateProgressBar(p));
+					} else {
+						const fd = new FormData();
+						fd.append('file', f);
+						fd.append('media_type', 'file');
+						fileData = await uploadWithProgress('/api/upload', fd, updateProgressBar);
+					}
+					newMainFileData.push({ ...fileData, originalName: f.name, size: f.size });
 				}
 			}
+
+			hideProgress();
+
+			// Persist link order if changed (before adding new links so display_order stays sequential)
+			if (reorderDirty) {
+				const orderedUuids = allLinks.map((l) => l.uuid!).filter(Boolean) as string[];
+				const orderChanged = orderedUuids.length !== initialOrder.length || orderedUuids.some((u, i) => u !== initialOrder[i]);
+				if (orderChanged && orderedUuids.length > 0) {
+					const reorderRes = await fetch(`/api/resources/${id}/links/reorder`, {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({ ordered_uuids: orderedUuids }),
+					});
+					if (!reorderRes.ok) {
+						const data = (await reorderRes.json()) as { error?: string };
+						showToast(data.error ?? t('edit.reorderError') ?? 'Reorder failed', 'warning');
+					} else {
+						DataCache.clear(`/api/resources/${id}`);
+					}
+				}
+			}
+
+			// Compute final gallery list (keep all existing media including file media, plus new gallery + new main file media to avoid orphan cleanup)
+			const keptMediaFiles = existingMediaFiles.filter((mf) => !removedMediaUuids.has(mf.uuid || ''));
+			const newMainFileMediaUuids = newMainFileData.map((f) => f.media_uuid);
+			const hasMediaChanges =
+				newThumbnailFile ||
+				newReferenceFile !== undefined ||
+				newGalleryFiles.length > 0 ||
+				newMainFileData.length > 0 ||
+				removedMediaUuids.size > 0;
+			const galleryMediaUuids: string[] | undefined = hasMediaChanges
+				? [...keptMediaFiles.map((mf) => mf.uuid!).filter(Boolean), ...newGalleryUuids, ...newMainFileMediaUuids]
+				: undefined;
+
+			// Collect new links: uploaded main files (R2) + external backup URLs (mirrors UploadView)
+			const fileLinks = newMainFileData.map((f) => ({
+				link_url: `/api/download/${f.r2_key}`,
+				link_title: f.originalName,
+				link_type: 'download' as const,
+			}));
+			const newLinkUrls = collectNewLinks();
+			const backupLinks = newLinkUrls.map((url) => ({
+				link_url: url,
+				link_type: 'download' as const,
+				link_title: null,
+			}));
+			const newLinks: object[] = [...fileLinks, ...backupLinks];
 
 			const categoryVal = (document.getElementById('category') as HTMLSelectElement).value;
 			const description = descEl.value;

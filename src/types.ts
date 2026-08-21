@@ -311,6 +311,7 @@ export interface FeedEvent {
 	category?: string;
 	subType?: string;
 	thumbnailUuid?: string;
+	isNsfw?: boolean;
 }
 
 // =========================================================================

@@ -124,6 +124,8 @@ export interface Resource {
 	placeholder_blur?: string | null;
 	/** List rows: 1/0 from SQL (EXISTS variants). Detail uses `thumbnail_processed` instead. */
 	processed?: number;
+	/** List rows: 1 when the resource (assets/clothes) is marked NSFW. */
+	is_nsfw?: number;
 	/** Detail only: whether the thumbnail media has finished processing (its CDN variants exist). */
 	thumbnail_processed?: boolean;
 	reference_image_key?: string | null;

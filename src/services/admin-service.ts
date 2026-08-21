@@ -143,6 +143,7 @@ export class AdminService {
 			category: meta.category,
 			subType: meta.subType ?? undefined,
 			thumbnailUuid: meta.thumbnail_uuid ?? undefined,
+			isNsfw: meta.isNsfw,
 		});
 	}
 

@@ -92,9 +92,13 @@ function card<Meta>(cfg: FilteredListConfig<Meta>, res: FilteredResource<Meta>):
 	const date = new Date(res.created_at * 1000).toLocaleDateString();
 	const badge = cfg.badge(res.meta);
 
+	const isNsfw = (res.meta as Record<string, unknown>)?.is_nsfw === 1;
+	const shouldBlur = isNsfw && (cfg.slug === 'asset' || cfg.slug === 'clothes');
+	const nsfwClass = shouldBlur ? ' card-nsfw' : '';
+
 	const imgHtml = res.thumbnail_media_uuid
-		? `<div class="card-image">${progressiveImg({ uuid: res.thumbnail_media_uuid, placeholder: res.placeholder_blur, res: 'low', alt: title, processed: res.processed })}<span class="card-badge">${badge}</span></div>`
-		: `<div class="card-image card-image-placeholder"><span class="card-badge">${badge}</span></div>`;
+		? `<div class="card-image${nsfwClass}">${progressiveImg({ uuid: res.thumbnail_media_uuid, placeholder: res.placeholder_blur, res: 'low', alt: title, processed: res.processed })}<span class="card-badge">${badge}</span></div>`
+		: `<div class="card-image card-image-placeholder${nsfwClass}"><span class="card-badge">${badge}</span></div>`;
 
 	return `<div class="card">
 		<a href="/item/${res.uuid}" data-link class="card-link">${imgHtml}</a>

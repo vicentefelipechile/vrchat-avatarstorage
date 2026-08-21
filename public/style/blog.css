@@ -254,8 +254,11 @@
 .comment-text {
 	margin: 0;
 	font-size: 0.9rem;
-	white-space: pre-wrap;
 	word-break: break-word;
+}
+
+.comment-text.markdown-body {
+	white-space: normal;
 }
 
 /* ---- Comment form ---- */

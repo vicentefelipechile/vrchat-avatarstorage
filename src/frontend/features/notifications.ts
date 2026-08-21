@@ -43,6 +43,7 @@ export interface FeedEvent {
 	category?: string;
 	subType?: string;
 	thumbnailUuid?: string;
+	isNsfw?: boolean;
 }
 
 // =========================================================================================================
@@ -168,7 +169,8 @@ export function tryShowBrowserNotification(event: FeedEvent): boolean {
 	const icon = '/favicon.ico';
 	let thumbIcon: string | undefined;
 	try {
-		if (event.thumbnailUuid) thumbIcon = mediaUrl(event.thumbnailUuid, 'low', 'webp');
+		const isNsfwAssetOrClothes = event.isNsfw === true && (event.scope === 'assets' || event.scope === 'clothes');
+		if (event.thumbnailUuid && !isNsfwAssetOrClothes) thumbIcon = mediaUrl(event.thumbnailUuid, 'low', 'webp');
 	} catch {
 		/* ignore */
 	}

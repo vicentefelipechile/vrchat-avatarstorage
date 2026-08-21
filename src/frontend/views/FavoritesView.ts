@@ -20,6 +20,7 @@ interface Favorite {
 	thumbnail_media_type?: 'image' | 'video' | 'file';
 	placeholder_blur?: string | null;
 	processed?: number;
+	is_nsfw?: number;
 	title: string;
 	description?: string;
 	category: string;
@@ -66,13 +67,15 @@ function favoriteCard(fav: Favorite): string {
 	const title = stripMarkdown(fav.title).substring(0, 50);
 	const categoryLabel = t('cats.' + fav.category) || fav.category;
 	const colName = collectionName(fav.collection_uuid);
+	const isNsfw = fav.is_nsfw === 1 && (fav.category === 'assets' || fav.category === 'clothes');
+	const nsfwClass = isNsfw ? ' card-nsfw' : '';
 
 	return `
 		<div class="card favorite-card" data-resource-id="${fav.uuid}" data-collection="${fav.collection_uuid ?? ''}">
 			<div class="favorite-card-top">
 				<div class="drag-handle" title="${t('favorites.dragToReorder')}">${icons['grip-vertical'](16)}</div>
 				<a href="/item/${fav.uuid}" data-link class="card-link favorite-card-image-link">
-					<div class="card-image${fav.thumbnail_uuid ? '' : ' card-image-placeholder'}">
+					<div class="card-image${fav.thumbnail_uuid ? nsfwClass : ` card-image-placeholder${nsfwClass}`}">
 						${
 							fav.thumbnail_uuid
 								? progressiveImg({ uuid: fav.thumbnail_uuid, placeholder: fav.placeholder_blur ?? null, res: 'low', alt: title, processed: fav.processed !== 0, format: fav.thumbnail_media_type === 'video' ? 'gif' : 'webp' })

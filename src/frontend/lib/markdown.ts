@@ -5,10 +5,45 @@
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 
+// Ensure GFM (tables, fenced code, etc.) and proper blockquote/code handling.
+// `marked` v17 defaults to GFM, but we set it explicitly so a future upgrade never breaks `>` / `` ` ``.
+marked.setOptions({ gfm: true, breaks: false, pedantic: false });
+
+/** Decode HTML entities for legacy rows that were stored as `&gt;`/`&lt;` via old sanitizeHtml. Handles double-encoding. */
+function decodeLegacyEntities(input: string): string {
+	if (!input.includes('&')) return input;
+	const el = document.createElement('textarea');
+	let prev = input;
+	let decoded = input;
+	// Loop to handle double-encoded `&amp;gt;` → `&gt;` → `>`
+	for (let i = 0; i < 3; i++) {
+		el.innerHTML = decoded;
+		decoded = el.value;
+		if (decoded === prev) break;
+		prev = decoded;
+		if (!decoded.includes('&')) break;
+	}
+	return decoded;
+}
+
+/** Parse markdown to sanitized HTML. Centralizes marked + DOMPurify config so inline `code` / `>` / fences work everywhere. */
+export function parseMarkdownToHtml(raw: string): string {
+	const decoded = decodeLegacyEntities(raw);
+	const html = marked.parse(decoded) as string;
+	// Explicit allowlist keeps `<code>`, `<pre>`, `<blockquote>` etc. while still stripping XSS.
+	return DOMPurify.sanitize(html, {
+		USE_PROFILES: { html: true },
+		ADD_TAGS: ['iframe'],
+		ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class', 'id', 'target', 'rel'],
+	});
+}
+
 /** Strips common Markdown syntax to plain text (for card previews, meta descriptions, …). */
 export function stripMarkdown(md: string): string {
 	if (!md) return '';
-	return md
+	// Decode first so `&gt;` from legacy rows doesn't survive as literal text.
+	const decoded = decodeLegacyEntities(md);
+	return decoded
 		.replace(/^#+\s+/gm, '')
 		.replace(/(\*\*|__)(.*?)\1/g, '$2')
 		.replace(/(\*|_)(.*?)\1/g, '$2')
@@ -21,10 +56,10 @@ export function stripMarkdown(md: string): string {
 
 /** Renders Markdown into a container, sanitising the output and styling GitHub-style alert blockquotes. */
 export function renderMarkdown(container: HTMLElement, raw: string): void {
-	const html = DOMPurify.sanitize(marked.parse(raw) as string);
+	const html = parseMarkdownToHtml(raw);
 	container.innerHTML = html;
 
-	// Post-process > [!NOTE / TIP / WARNING / …] blockquotes
+	// Post-process > [!NOTE / TIP / WARNING / …] blockquotes (also handles bare `[!NOTE]` without `>` for UX)
 	container.querySelectorAll<HTMLElement>('blockquote').forEach((bq) => {
 		const firstP = bq.querySelector('p');
 		if (!firstP) return;
@@ -34,10 +69,29 @@ export function renderMarkdown(container: HTMLElement, raw: string): void {
 		const type = match[1].toLowerCase();
 		bq.classList.add('markdown-alert', `markdown-alert-${type}`);
 		firstP.innerHTML = firstP.innerHTML.replace(match[0], '').trim();
+		if (!firstP.textContent?.trim()) firstP.remove();
 
 		const title = document.createElement('p');
 		title.className = 'markdown-alert-title';
 		title.textContent = type.charAt(0).toUpperCase() + type.slice(1);
-		bq.insertBefore(title, firstP);
+		bq.insertBefore(title, firstP.parentElement?.contains(firstP) ? firstP : null);
+	});
+
+	// Handle bare `[!NOTE] text` paragraphs (user forgot `> `) — wrap them as alerts too
+	container.querySelectorAll<HTMLElement>('p').forEach((p) => {
+		if (p.closest('blockquote')) return; // already handled
+		const match = p.innerHTML.match(/^\s*\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]\s*(.*)/i);
+		if (!match) return;
+		const type = match[1].toLowerCase();
+		const rest = match[2] ?? '';
+		const alert = document.createElement('blockquote');
+		alert.className = `markdown-alert markdown-alert-${type}`;
+		const title = document.createElement('p');
+		title.className = 'markdown-alert-title';
+		title.textContent = type.charAt(0).toUpperCase() + type.slice(1);
+		const body = document.createElement('p');
+		body.innerHTML = rest || '';
+		alert.append(title, body);
+		p.replaceWith(alert);
 	});
 }

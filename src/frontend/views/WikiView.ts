@@ -4,8 +4,7 @@
 
 import { t, getCurrentLang } from '../core/i18n';
 import { DataCache } from '../core/cache';
-import { renderTurnstile, renderMarkdown, showToast, TimeUnit } from '../lib/utils';
-import { marked } from 'marked';
+import { renderTurnstile, renderMarkdown, showToast, TimeUnit, parseMarkdownToHtml } from '../lib/utils';
 import DOMPurify from 'dompurify';
 import type { RouteContext } from '../types';
 
@@ -118,7 +117,7 @@ function sidebarHtml(currentTopic: string): string {
 }
 
 function commentRow(c: WikiComment, canDelete: boolean): string {
-	const content = DOMPurify.sanitize(marked.parse(c.text) as string);
+	const content = parseMarkdownToHtml(c.text);
 
 	return `
 		<div id="comment-${c.uuid}" class="wiki-comment">

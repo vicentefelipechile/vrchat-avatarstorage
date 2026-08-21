@@ -33,6 +33,7 @@ export interface FavoriteRow {
 	thumbnail_media_type: 'image' | 'video' | 'file';
 	placeholder_blur: string | null;
 	processed: number;
+	is_nsfw: number;
 	author_username: string | null;
 	author_avatar: string | null;
 	display_order: number;
@@ -98,6 +99,7 @@ export class FavoriteRepository {
 				m.media_type AS thumbnail_media_type,
 				m.placeholder_blur,
 				${processedExpr('m')},
+				COALESCE(am.is_nsfw, cm.is_nsfw, 0) AS is_nsfw,
 				${anonUsernameExpr('u')} AS author_username,
 				${anonAvatarExpr('u')} AS author_avatar,
 				uf.display_order,
@@ -108,6 +110,8 @@ export class FavoriteRepository {
 			JOIN resources r ON uf.resource_uuid = r.uuid
 			JOIN media m ON r.thumbnail_uuid = m.uuid
 			JOIN users u ON r.author_uuid = u.uuid
+			LEFT JOIN asset_meta am ON r.uuid = am.resource_uuid
+			LEFT JOIN clothes_meta cm ON r.uuid = cm.resource_uuid
 			WHERE ${whereClause} AND r.is_active = 1
 			ORDER BY uf.display_order DESC, uf.created_at DESC
 			LIMIT 500`,
@@ -132,6 +136,7 @@ export class FavoriteRepository {
 				m.media_type AS thumbnail_media_type,
 				m.placeholder_blur,
 				${processedExpr('m')},
+				COALESCE(am.is_nsfw, cm.is_nsfw, 0) AS is_nsfw,
 				${anonUsernameExpr('u')} AS author_username,
 				${anonAvatarExpr('u')} AS author_avatar,
 				uf.display_order,
@@ -142,6 +147,8 @@ export class FavoriteRepository {
 			JOIN resources r ON uf.resource_uuid = r.uuid
 			JOIN media m ON r.thumbnail_uuid = m.uuid
 			JOIN users u ON r.author_uuid = u.uuid
+			LEFT JOIN asset_meta am ON r.uuid = am.resource_uuid
+			LEFT JOIN clothes_meta cm ON r.uuid = cm.resource_uuid
 			WHERE uf.user_uuid = ? AND r.is_active = 1
 			ORDER BY uf.global_order DESC, uf.created_at DESC
 			LIMIT 500`,

@@ -4,7 +4,7 @@
 
 import { t } from '../core/i18n';
 import { navigateTo } from '../core/router';
-import { renderMarkdown, showToast, mediaUrl, htmlDecode } from '../lib/utils';
+import { renderMarkdown, showToast, mediaUrl, htmlDecode, parseMarkdownToHtml } from '../lib/utils';
 import { commentEditorHtml, initCommentEditor } from '../features/comment-editor';
 import type { RouteContext } from '../types';
 
@@ -43,6 +43,7 @@ function esc(str: string): string {
 function commentCard(c: BlogComment): string {
 	const { isAdmin, user } = window.appState;
 	const canDelete = isAdmin || user?.username === c.author;
+	const rendered = parseMarkdownToHtml(c.text);
 	return `
 		<div class="comment-card" data-uuid="${c.uuid}">
 			<div class="comment-header">
@@ -51,7 +52,7 @@ function commentCard(c: BlogComment): string {
 				<span class="comment-date">${new Date(c.timestamp * 1000).toLocaleDateString()}</span>
 				${canDelete ? `<button class="btn-icon delete-comment-btn" data-uuid="${c.uuid}" title="${t('admin.delete')}">🗑️</button>` : ''}
 			</div>
-			<p class="comment-text">${esc(c.text)}</p>
+			<div class="comment-text markdown-body">${rendered}</div>
 		</div>`;
 }
 

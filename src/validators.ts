@@ -101,7 +101,7 @@ export const ResourceSchema = z.object({
 		.string()
 		.max(8000, 'Description too long')
 		.optional()
-		.transform((val) => (val ? sanitizeHtml(val) : val)),
+		.transform((val) => val ?? val),
 	category: z.enum(RESOURCE_CATEGORIES),
 	thumbnail_uuid: z.uuid('Invalid thumbnail UUID'),
 	reference_image_uuid: z.uuid('Invalid reference image UUID').optional().nullable(),
@@ -125,7 +125,7 @@ export const CommentSchema = z.object({
 		.string()
 		.min(3, 'Comment must be at least 3 characters')
 		.max(500, 'Comment too long')
-		.transform((val) => sanitizeHtml(val.trim().replace(/\n{3,}/g, '\n\n'))), // Limit max 2 newlines
+		.transform((val) => val.trim().replace(/\n{3,}/g, '\n\n')), // Limit max 2 newlines
 	token: z.string().optional(),
 });
 
@@ -199,17 +199,8 @@ export const BlogPostSchema = z.object({
 		.min(3, 'Title too short')
 		.max(200, 'Title too long')
 		.transform((val) => (val ? sanitizeHtml(val) : val)),
-	content: z
-		.string()
-		.min(1, 'Content is required')
-		.max(100000, 'Content too long')
-		.transform((val) => sanitizeHtml(val)),
-	excerpt: z
-		.string()
-		.max(500, 'Excerpt too long')
-		.optional()
-		.nullable()
-		.transform((val) => (val ? sanitizeHtml(val) : val)),
+	content: z.string().min(1, 'Content is required').max(100000, 'Content too long'),
+	excerpt: z.string().max(500, 'Excerpt too long').optional().nullable(),
 	cover_image_uuid: z.uuid('Invalid cover image UUID').optional().nullable(),
 	author_display: z.enum(['personal', 'team']).default('personal'),
 });
@@ -228,7 +219,7 @@ export const BlogCommentSchema = z.object({
 		.string()
 		.min(3, 'Comment must be at least 3 characters')
 		.max(1000, 'Comment too long')
-		.transform((val) => sanitizeHtml(val.trim().replace(/\n{3,}/g, '\n\n'))),
+		.transform((val) => val.trim().replace(/\n{3,}/g, '\n\n')),
 	token: z.string().optional(),
 });
 

@@ -93,7 +93,7 @@ export class AdminRepository {
 	/** Lightweight metadata for a freshly approved resource — drives the enriched FeedEvent. */
 	async findResourceNotificationMeta(
 		uuid: string,
-	): Promise<{ title: string; category: string; thumbnail_uuid: string | null; subType: string | null } | null> {
+	): Promise<{ title: string; category: string; thumbnail_uuid: string | null; subType: string | null; isNsfw: boolean } | null> {
 		const row = await queryOne<{ title: string; category: string; thumbnail_uuid: string | null }>(
 			this.db,
 			'SELECT title, category, thumbnail_uuid FROM resources WHERE uuid = ?',
@@ -101,17 +101,28 @@ export class AdminRepository {
 		);
 		if (!row) return null;
 		let subType: string | null = null;
+		let isNsfw = false;
 		if (row.category === 'avatars') {
 			const m = await queryOne<{ avatar_type: string }>(this.db, 'SELECT avatar_type FROM avatar_meta WHERE resource_uuid = ?', [uuid]);
 			subType = m?.avatar_type ?? null;
 		} else if (row.category === 'assets') {
-			const m = await queryOne<{ asset_type: string }>(this.db, 'SELECT asset_type FROM asset_meta WHERE resource_uuid = ?', [uuid]);
+			const m = await queryOne<{ asset_type: string; is_nsfw: number }>(
+				this.db,
+				'SELECT asset_type, is_nsfw FROM asset_meta WHERE resource_uuid = ?',
+				[uuid],
+			);
 			subType = m?.asset_type ?? null;
+			isNsfw = m?.is_nsfw === 1;
 		} else if (row.category === 'clothes') {
-			const m = await queryOne<{ clothing_type: string }>(this.db, 'SELECT clothing_type FROM clothes_meta WHERE resource_uuid = ?', [uuid]);
+			const m = await queryOne<{ clothing_type: string; is_nsfw: number }>(
+				this.db,
+				'SELECT clothing_type, is_nsfw FROM clothes_meta WHERE resource_uuid = ?',
+				[uuid],
+			);
 			subType = m?.clothing_type ?? null;
+			isNsfw = m?.is_nsfw === 1;
 		}
-		return { title: row.title, category: row.category, thumbnail_uuid: row.thumbnail_uuid, subType };
+		return { title: row.title, category: row.category, thumbnail_uuid: row.thumbnail_uuid, subType, isNsfw };
 	}
 
 	/** Set a resource's active flag. */

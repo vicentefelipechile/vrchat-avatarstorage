@@ -70,6 +70,21 @@
 	object-fit: cover;
 }
 
+/* ---- NSFW blur (cards only) ---- */
+/* Assets / clothes marked is_nsfw=1 render blurred on the card grid; hover reveals the image.
+   `!important` keeps the blur after progressiveImg clears its inline placeholder filter, and the
+   hover rule overrides it to show the raw image. Inside ItemView there is no .card-nsfw wrapper,
+   so gallery/lightbox images are never blurred. */
+.card-nsfw img {
+	filter: blur(16px) !important;
+	transition: filter 0.35s ease;
+}
+
+.card:hover .card-nsfw img,
+.card-nsfw:hover img {
+	filter: blur(0) !important;
+}
+
 .card-image-placeholder {
 	background: linear-gradient(135deg, var(--bg-hover) 25%, var(--bg-card) 50%, var(--bg-hover) 75%);
 	background-size: 200% 200%;

@@ -57,6 +57,7 @@ export interface ResourceListRow {
 	thumbnail_media_type: 'image' | 'video' | 'file';
 	placeholder_blur: string | null;
 	processed: number;
+	is_nsfw: number;
 }
 
 /** The joined detail row — flat, with prefixed metadata columns. Kept as-is from the
@@ -95,9 +96,12 @@ export class ResourceRepository {
 				'm.media_type as thumbnail_media_type',
 				'm.placeholder_blur',
 				processedExpr('m'),
+				'COALESCE(am.is_nsfw, cm.is_nsfw, 0) AS is_nsfw',
 			])
 			.join('INNER JOIN media m ON r.thumbnail_uuid = m.uuid')
 			.join('LEFT JOIN users u ON r.author_uuid = u.uuid')
+			.join('LEFT JOIN asset_meta am ON r.uuid = am.resource_uuid')
+			.join('LEFT JOIN clothes_meta cm ON r.uuid = cm.resource_uuid')
 			.where('r.is_active = 1')
 			.orderBy('r.created_at', 'DESC')
 			.paginate(1, limit)
@@ -127,8 +131,11 @@ export class ResourceRepository {
 				'm.media_type AS thumbnail_media_type',
 				'm.placeholder_blur',
 				processedExpr('m'),
+				'COALESCE(am.is_nsfw, cm.is_nsfw, 0) AS is_nsfw',
 			])
 			.join('INNER JOIN media m ON r.thumbnail_uuid = m.uuid')
+			.join('LEFT JOIN asset_meta am ON r.uuid = am.resource_uuid')
+			.join('LEFT JOIN clothes_meta cm ON r.uuid = cm.resource_uuid')
 			.where('r.is_active = 1')
 			.whereIf(!!p.category && RESOURCE_CATEGORIES.includes(p.category as ResourceCategory), 'r.category = ?', p.category)
 			.orderBy(orderColumn, p.sortOrder)
@@ -190,6 +197,13 @@ export class ResourceRepository {
 			.prepare(`UPDATE resource_links SET ${setClauses.join(', ')} WHERE uuid = ? AND resource_uuid = ?`)
 			.bind(...bindings)
 			.run();
+	}
+
+	/** Prepared statement for batch-updating a link's display_order. */
+	buildUpdateLinkOrder(resourceUuid: string, linkUuid: string, displayOrder: number): D1PreparedStatement {
+		return this.db
+			.prepare('UPDATE resource_links SET display_order = ? WHERE uuid = ? AND resource_uuid = ?')
+			.bind(displayOrder, linkUuid, resourceUuid);
 	}
 
 	// -------------------------------------------------------------------------

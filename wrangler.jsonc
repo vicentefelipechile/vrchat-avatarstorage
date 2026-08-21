@@ -121,12 +121,17 @@
 				"binding": "UPLOAD_QUEUE",
 			},
 		],
-		"consumers": [
-			{
-				"queue": "vrcstorage-upload-processing",
-				"max_batch_size": 10,
-				"max_batch_timeout": 5,
-			},
-		],
 	},
+	"routes": [
+		{
+			"pattern": "vrcstorage.lat",
+			"zone_name": "vrcstorage.lat",
+			"custom_domain": true
+		}
+	],
+	"placement": {
+		"mode": "smart"
+	},
+	"workers_dev": true,
+	"preview_urls": true,
 }

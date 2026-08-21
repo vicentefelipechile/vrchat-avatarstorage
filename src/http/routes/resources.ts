@@ -187,6 +187,31 @@ resources.delete('/:uuid', requireAdmin, async (c) => {
 });
 
 // =========================================================================================================
+// POST /api/resources/:uuid/links/reorder
+// Batch-reorders download links. Owner or admin. Must include every link uuid.
+// =========================================================================================================
+
+resources.post('/:uuid/links/reorder', requireAuth, async (c) => {
+	const user = c.get('user');
+	const resourceUuid = c.req.param('uuid')!;
+
+	let body: unknown;
+	try {
+		body = await c.req.json();
+	} catch {
+		return fail(c, 'Invalid JSON', 400);
+	}
+
+	const schema = z.object({ ordered_uuids: z.array(z.string().uuid()).min(1).max(100) });
+	const parsed = schema.safeParse(body);
+	if (!parsed.success) return fail(c, 'Validation error', 400, parsed.error.issues);
+
+	await new ResourceService(c.env.DB).reorderLinks(user, resourceUuid, parsed.data.ordered_uuids);
+	await invalidateResourceCache(c.env, resourceUuid);
+	return c.json({ ok: true });
+});
+
+// =========================================================================================================
 // DELETE /api/resources/:uuid/links/:linkUuid
 // Deletes a single link. Owner or admin.
 // =========================================================================================================

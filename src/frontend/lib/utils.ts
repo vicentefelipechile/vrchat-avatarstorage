@@ -9,7 +9,7 @@
 
 export { TimeUnit } from './time';
 export { $, $$, htmlDecode, loadingBtn } from './dom';
-export { stripMarkdown, renderMarkdown } from './markdown';
+export { stripMarkdown, renderMarkdown, parseMarkdownToHtml } from './markdown';
 export { showToast, type ToastType } from './toast';
 export { renderTurnstile } from './turnstile';
 export { CHUNK_SIZE, uploadChunked, type ChunkedUploadResult } from './upload';

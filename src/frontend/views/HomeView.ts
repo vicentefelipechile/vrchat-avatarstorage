@@ -18,16 +18,18 @@ function resourceCard(res: Resource): string {
 	const date = new Date(res.created_at * 1000).toLocaleDateString();
 	const downloads = res.download_count || 0;
 	const cleanDescription = description.split('--- Avatar Details')[0];
+	const isNsfw = res.is_nsfw === 1 && (res.category === 'assets' || res.category === 'clothes');
+	const nsfwClass = isNsfw ? ' card-nsfw' : '';
 
 	return `
 		<div class="card">
 			<a href="/item/${res.uuid}" data-link class="card-link">
 				${res.thumbnail_media_uuid
-		? `<div class="card-image">
+		? `<div class="card-image${nsfwClass}">
 					${progressiveImg({ uuid: res.thumbnail_media_uuid, placeholder: res.placeholder_blur ?? null, res: 'low', alt: title, processed: res.processed !== 0, format: res.thumbnail_media_type === 'video' ? 'gif' : 'webp' })}
 					<span class="card-badge">${categoryLabel}</span>
 				</div>`
-		: `<div class="card-image card-image-placeholder">
+		: `<div class="card-image card-image-placeholder${nsfwClass}">
 				<span class="card-badge">${categoryLabel}</span>
 			</div>`
 	}
