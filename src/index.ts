@@ -53,6 +53,43 @@ import { apiDocs } from './http/routes/docs';
 
 const app = new Hono<{ Bindings: Env }>();
 
+// Permissive CORS for public docs — must run BEFORE the restrictive CORS in
+// securityMiddleware so OPTIONS preflight is answered with * before the whitelist
+// short-circuits. For actual GETs it runs outermost → after next() it overwrites
+// the restrictive header with *.
+app.use('*', async (c, next) => {
+	const path = c.req.path;
+	const isPermissive =
+		path === '/llms.txt' ||
+		path === '/llms-full.txt' ||
+		path === '/api/docs' ||
+		path === '/api-docs.json' ||
+		path.startsWith('/api/docs/');
+	if (!isPermissive) {
+		await next();
+		return;
+	}
+	if (c.req.method === 'OPTIONS') {
+		return new Response(null, {
+			status: 204,
+			headers: {
+				'Access-Control-Allow-Origin': '*',
+				'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
+				'Access-Control-Allow-Headers': '*',
+				'Access-Control-Max-Age': '86400',
+				'Access-Control-Expose-Headers': '*',
+				Vary: 'Origin',
+			},
+		});
+	}
+	await next();
+	c.header('Access-Control-Allow-Origin', '*');
+	c.header('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+	c.header('Access-Control-Allow-Headers', '*');
+	c.header('Access-Control-Expose-Headers', '*');
+	c.header('Vary', 'Origin');
+});
+
 // Security Headers & CORS
 securityMiddleware(app);
 
