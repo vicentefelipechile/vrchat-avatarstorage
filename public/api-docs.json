@@ -1,0 +1,3281 @@
+{
+  "site": {
+    "name": "VRCStorage",
+    "baseUrl": "https://vrcstorage.lat",
+    "summary": "Community-driven platform for sharing and downloading VRChat resources: avatars, assets, and clothing.",
+    "description": "VRCStorage is hosted at https://vrcstorage.lat. Content is age-gated (18+). Resources are organised into three primary categories: Avatars (full VRChat-ready packages), Assets (Unity-compatible shaders, tools, scripts, props, and prefabs), and Clothes (wearable clothing and accessories for popular avatar bases). All content is user-submitted and free to download after registration. The platform serves a global audience in 12 languages.",
+    "version": "2026-02-12"
+  },
+  "siteSections": [
+    {
+      "title": "Home",
+      "url": "https://vrcstorage.lat/",
+      "description": "Landing page with featured content and search."
+    },
+    {
+      "title": "Avatars",
+      "url": "https://vrcstorage.lat/avatars",
+      "description": "Browse and filter VRChat avatars by type, gender, size, platform, SDK, and NSFW flag."
+    },
+    {
+      "title": "Assets",
+      "url": "https://vrcstorage.lat/assets",
+      "description": "Browse shaders, tools, prefabs, scripts, and other Unity assets for VRChat."
+    },
+    {
+      "title": "Clothes",
+      "url": "https://vrcstorage.lat/clothes",
+      "description": "Browse wearable clothing and accessories compatible with popular avatar bases."
+    },
+    {
+      "title": "Blog",
+      "url": "https://vrcstorage.lat/blog",
+      "description": "Community articles and announcements written by platform staff."
+    },
+    {
+      "title": "Wiki",
+      "url": "https://vrcstorage.lat/wiki?topic=home",
+      "description": "Documentation hub covering setup, tools, shaders, and VRChat guides (raw Markdown)."
+    },
+    {
+      "title": "Upload",
+      "url": "https://vrcstorage.lat/upload",
+      "description": "Submit a new resource (requires an authenticated account)."
+    },
+    {
+      "title": "Terms of Service",
+      "url": "https://vrcstorage.lat/tos",
+      "description": "Permitted content, age requirement (18+), DMCA policy, and account rules."
+    },
+    {
+      "title": "DMCA",
+      "url": "https://vrcstorage.lat/dmca",
+      "description": "Copyright takedown request process."
+    }
+  ],
+  "endpoints": [
+    {
+      "method": "GET",
+      "path": "/api/avatars",
+      "summary": "List avatars with faceted filtering",
+      "auth": "public",
+      "rateLimit": "global",
+      "visibility": "public",
+      "tag": "avatars",
+      "schema": "AvatarFilterSchema",
+      "description": "Paginated avatar listing filtered by gender, size, type, platform, SDK, NSFW, feature flags, and author. Uses INNER JOIN avatar_meta — only avatars with metadata appear.",
+      "params": [
+        {
+          "name": "page",
+          "location": "query",
+          "required": false,
+          "type": "integer",
+          "description": "Page number",
+          "defaultValue": "1"
+        },
+        {
+          "name": "limit",
+          "location": "query",
+          "required": false,
+          "type": "integer",
+          "description": "Items per page",
+          "enumValues": [
+            "1..60"
+          ],
+          "defaultValue": "24"
+        },
+        {
+          "name": "sort_by",
+          "location": "query",
+          "required": false,
+          "type": "enum",
+          "description": "Sort field",
+          "enumValues": [
+            "created_at",
+            "download_count",
+            "title"
+          ],
+          "defaultValue": "created_at"
+        },
+        {
+          "name": "sort_order",
+          "location": "query",
+          "required": false,
+          "type": "enum",
+          "description": "Sort direction",
+          "enumValues": [
+            "asc",
+            "desc"
+          ],
+          "defaultValue": "desc"
+        },
+        {
+          "name": "avatar_gender",
+          "location": "query",
+          "required": false,
+          "type": "enum",
+          "description": "Filter by gender",
+          "enumValues": [
+            "male",
+            "female",
+            "androgynous",
+            "undefined",
+            "both"
+          ]
+        },
+        {
+          "name": "avatar_size",
+          "location": "query",
+          "required": false,
+          "type": "enum",
+          "description": "Filter by size",
+          "enumValues": [
+            "tiny",
+            "small",
+            "medium",
+            "tall",
+            "giant"
+          ]
+        },
+        {
+          "name": "avatar_type",
+          "location": "query",
+          "required": false,
+          "type": "enum",
+          "description": "Filter by avatar type",
+          "enumValues": [
+            "human",
+            "furry",
+            "anime",
+            "chibi",
+            "cartoon",
+            "semi-realistic",
+            "monster",
+            "fantasy",
+            "mecha",
+            "kemono",
+            "sci-fi",
+            "vtuber",
+            "other"
+          ]
+        },
+        {
+          "name": "platform",
+          "location": "query",
+          "required": false,
+          "type": "enum",
+          "description": "Filter by platform",
+          "enumValues": [
+            "pc",
+            "quest",
+            "cross"
+          ]
+        },
+        {
+          "name": "sdk_version",
+          "location": "query",
+          "required": false,
+          "type": "enum",
+          "description": "Filter by SDK",
+          "enumValues": [
+            "sdk3",
+            "sdk2"
+          ]
+        },
+        {
+          "name": "is_nsfw",
+          "location": "query",
+          "required": false,
+          "type": "enum",
+          "description": "NSFW filter",
+          "enumValues": [
+            "0",
+            "1"
+          ]
+        },
+        {
+          "name": "has_physbones",
+          "location": "query",
+          "required": false,
+          "type": "enum",
+          "description": "Has PhysBones",
+          "enumValues": [
+            "0",
+            "1"
+          ]
+        },
+        {
+          "name": "has_face_tracking",
+          "location": "query",
+          "required": false,
+          "type": "enum",
+          "description": "Has face tracking",
+          "enumValues": [
+            "0",
+            "1"
+          ]
+        },
+        {
+          "name": "has_dps",
+          "location": "query",
+          "required": false,
+          "type": "enum",
+          "description": "Has DPS",
+          "enumValues": [
+            "0",
+            "1"
+          ]
+        },
+        {
+          "name": "has_gogoloco",
+          "location": "query",
+          "required": false,
+          "type": "enum",
+          "description": "Has GoGo Loco",
+          "enumValues": [
+            "0",
+            "1"
+          ]
+        },
+        {
+          "name": "has_toggles",
+          "location": "query",
+          "required": false,
+          "type": "enum",
+          "description": "Has toggles",
+          "enumValues": [
+            "0",
+            "1"
+          ]
+        },
+        {
+          "name": "is_quest_optimized",
+          "location": "query",
+          "required": false,
+          "type": "enum",
+          "description": "Quest optimized",
+          "enumValues": [
+            "0",
+            "1"
+          ]
+        },
+        {
+          "name": "author_uuid",
+          "location": "query",
+          "required": false,
+          "type": "string (uuid v4)",
+          "description": "Filter by author profile UUID"
+        }
+      ],
+      "response": {
+        "description": "JSON — { resources: AvatarWithMeta[], pagination: { page, limit, total, hasNextPage, hasPrevPage } }"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/avatars/search",
+      "summary": "Lightweight avatar name autocomplete",
+      "auth": "public",
+      "rateLimit": "global",
+      "visibility": "public",
+      "tag": "avatars",
+      "description": "Returns at most `limit` avatar titles matching a prefix — intended for the clothes base-avatar selector and similar autocomplete fields.",
+      "params": [
+        {
+          "name": "q",
+          "location": "query",
+          "required": true,
+          "type": "string (min 2 chars)",
+          "description": "Partial avatar name to match"
+        },
+        {
+          "name": "limit",
+          "location": "query",
+          "required": false,
+          "type": "integer",
+          "description": "Max results",
+          "enumValues": [
+            "1..20"
+          ],
+          "defaultValue": "10"
+        }
+      ],
+      "response": {
+        "description": "JSON — [{ uuid, title }]"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/avatars/:uuid",
+      "summary": "Get a single avatar with metadata",
+      "auth": "public",
+      "rateLimit": "global",
+      "visibility": "public",
+      "tag": "avatars",
+      "description": "Full avatar detail including avatar_meta row. Used by HistoryView to compute diffs.",
+      "params": [
+        {
+          "name": "uuid",
+          "location": "path",
+          "required": true,
+          "type": "string (uuid v4)",
+          "description": "Avatar resource UUID"
+        }
+      ],
+      "response": {
+        "description": "JSON — AvatarWithMeta (resource + meta + links + media)"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/avatars",
+      "summary": "Create an avatar resource",
+      "auth": "auth",
+      "rateLimit": "medium",
+      "visibility": "private",
+      "tag": "avatars",
+      "schema": "ResourceSchema + AvatarMetaSchema",
+      "description": "Creates a resource, its avatar_meta row, links, and media relations in one batch. Created as inactive (pending approval). No history entry on creation.",
+      "params": [
+        {
+          "name": "title",
+          "location": "body",
+          "required": true,
+          "type": "string",
+          "description": "Avatar title (3–100 chars)"
+        },
+        {
+          "name": "description",
+          "location": "body",
+          "required": false,
+          "type": "string",
+          "description": "Markdown description (≤8000 chars)"
+        },
+        {
+          "name": "category",
+          "location": "body",
+          "required": true,
+          "type": "enum",
+          "description": "Must be \"avatars\""
+        },
+        {
+          "name": "thumbnail_uuid",
+          "location": "body",
+          "required": true,
+          "type": "string (uuid v4)",
+          "description": "Media UUID for the thumbnail"
+        },
+        {
+          "name": "reference_image_uuid",
+          "location": "body",
+          "required": false,
+          "type": "string (uuid v4)",
+          "description": "Optional reference image media UUID"
+        },
+        {
+          "name": "links",
+          "location": "body",
+          "required": false,
+          "type": "array<LinkSchema>",
+          "description": "Download/demo links"
+        },
+        {
+          "name": "media_files",
+          "location": "body",
+          "required": false,
+          "type": "array<uuid>",
+          "description": "Gallery media UUIDs"
+        },
+        {
+          "name": "meta",
+          "location": "body",
+          "required": true,
+          "type": "object",
+          "description": "AvatarMetaSchema payload (gender, size, type, platform, etc.)"
+        },
+        {
+          "name": "validate_only",
+          "location": "query",
+          "required": false,
+          "type": "enum",
+          "description": "When \"true\", only validates without creating",
+          "enumValues": [
+            "true"
+          ]
+        }
+      ],
+      "response": {
+        "description": "201 — { uuid }"
+      }
+    },
+    {
+      "method": "PUT",
+      "path": "/api/avatars/:uuid",
+      "summary": "Edit avatar metadata (admin only)",
+      "auth": "admin",
+      "rateLimit": "medium",
+      "visibility": "private",
+      "tag": "avatars",
+      "schema": "AvatarMetaSchema (partial)",
+      "description": "Snapshots previous avatar_meta, records a meta_edit in resource history, then updates. Requires admin.",
+      "params": [
+        {
+          "name": "uuid",
+          "location": "path",
+          "required": true,
+          "type": "string (uuid v4)",
+          "description": "Avatar resource UUID"
+        },
+        {
+          "name": "meta fields",
+          "location": "body",
+          "required": false,
+          "type": "object",
+          "description": "Any AvatarMetaSchema field (partial)"
+        }
+      ],
+      "response": {
+        "description": "JSON — { success: true }"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/assets",
+      "summary": "List assets with faceted filtering",
+      "auth": "public",
+      "rateLimit": "global",
+      "visibility": "public",
+      "tag": "assets",
+      "schema": "AssetFilterSchema",
+      "description": "Paginated asset listing filtered by asset_type, platform, SDK, Unity version, and NSFW. INNER JOIN asset_meta.",
+      "params": [
+        {
+          "name": "page",
+          "location": "query",
+          "required": false,
+          "type": "integer",
+          "description": "Page number",
+          "defaultValue": "1"
+        },
+        {
+          "name": "limit",
+          "location": "query",
+          "required": false,
+          "type": "integer",
+          "description": "Items per page",
+          "enumValues": [
+            "1..60"
+          ],
+          "defaultValue": "24"
+        },
+        {
+          "name": "sort_by",
+          "location": "query",
+          "required": false,
+          "type": "enum",
+          "description": "Sort field",
+          "enumValues": [
+            "created_at",
+            "download_count",
+            "title"
+          ],
+          "defaultValue": "created_at"
+        },
+        {
+          "name": "sort_order",
+          "location": "query",
+          "required": false,
+          "type": "enum",
+          "description": "Sort direction",
+          "enumValues": [
+            "asc",
+            "desc"
+          ],
+          "defaultValue": "desc"
+        },
+        {
+          "name": "asset_type",
+          "location": "query",
+          "required": false,
+          "type": "enum",
+          "description": "Filter by asset type",
+          "enumValues": [
+            "prop",
+            "shader",
+            "particle",
+            "vfx",
+            "prefab",
+            "script",
+            "animation",
+            "avatar-base",
+            "texture-pack",
+            "sound",
+            "tool",
+            "hud",
+            "other"
+          ]
+        },
+        {
+          "name": "platform",
+          "location": "query",
+          "required": false,
+          "type": "enum",
+          "description": "Filter by platform",
+          "enumValues": [
+            "pc",
+            "quest",
+            "cross"
+          ]
+        },
+        {
+          "name": "sdk_version",
+          "location": "query",
+          "required": false,
+          "type": "enum",
+          "description": "Filter by SDK",
+          "enumValues": [
+            "sdk3",
+            "sdk2"
+          ]
+        },
+        {
+          "name": "unity_version",
+          "location": "query",
+          "required": false,
+          "type": "enum",
+          "description": "Filter by Unity version",
+          "enumValues": [
+            "2019",
+            "2022"
+          ]
+        },
+        {
+          "name": "is_nsfw",
+          "location": "query",
+          "required": false,
+          "type": "enum",
+          "description": "NSFW filter",
+          "enumValues": [
+            "0",
+            "1"
+          ]
+        }
+      ],
+      "response": {
+        "description": "JSON — { resources: AssetWithMeta[], pagination }"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/assets/:uuid",
+      "summary": "Get a single asset with metadata",
+      "auth": "public",
+      "rateLimit": "global",
+      "visibility": "public",
+      "tag": "assets",
+      "description": "Full asset detail including asset_meta row.",
+      "params": [
+        {
+          "name": "uuid",
+          "location": "path",
+          "required": true,
+          "type": "string (uuid v4)",
+          "description": "Asset resource UUID"
+        }
+      ],
+      "response": {
+        "description": "JSON — AssetWithMeta"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/assets",
+      "summary": "Create an asset resource",
+      "auth": "auth",
+      "rateLimit": "medium",
+      "visibility": "private",
+      "tag": "assets",
+      "schema": "ResourceSchema + AssetMetaSchema",
+      "description": "Creates a resource + asset_meta + links + media in one batch (inactive, pending approval).",
+      "params": [
+        {
+          "name": "title",
+          "location": "body",
+          "required": true,
+          "type": "string",
+          "description": "Asset title"
+        },
+        {
+          "name": "thumbnail_uuid",
+          "location": "body",
+          "required": true,
+          "type": "string",
+          "description": "Media UUID for thumbnail"
+        },
+        {
+          "name": "meta",
+          "location": "body",
+          "required": true,
+          "type": "object",
+          "description": "AssetMetaSchema payload"
+        }
+      ],
+      "response": {
+        "description": "201 — { uuid }"
+      }
+    },
+    {
+      "method": "PUT",
+      "path": "/api/assets/:uuid",
+      "summary": "Edit asset metadata (admin only)",
+      "auth": "admin",
+      "rateLimit": "medium",
+      "visibility": "private",
+      "tag": "assets",
+      "schema": "AssetMetaSchema (partial)",
+      "description": "Snapshots previous state, records meta_edit, then updates. Requires admin.",
+      "params": [
+        {
+          "name": "uuid",
+          "location": "path",
+          "required": true,
+          "type": "string (uuid v4)",
+          "description": "Asset resource UUID"
+        }
+      ],
+      "response": {
+        "description": "JSON — { success: true }"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/clothes",
+      "summary": "List clothing items with faceted filtering",
+      "auth": "public",
+      "rateLimit": "global",
+      "visibility": "public",
+      "tag": "clothes",
+      "schema": "ClothesFilterSchema",
+      "description": "Paginated clothes listing filtered by gender_fit, clothing_type, platform, is_base, is_nsfw, and has_physbones. INNER JOIN clothes_meta.",
+      "params": [
+        {
+          "name": "page",
+          "location": "query",
+          "required": false,
+          "type": "integer",
+          "description": "Page number",
+          "defaultValue": "1"
+        },
+        {
+          "name": "limit",
+          "location": "query",
+          "required": false,
+          "type": "integer",
+          "description": "Items per page",
+          "enumValues": [
+            "1..60"
+          ],
+          "defaultValue": "24"
+        },
+        {
+          "name": "sort_by",
+          "location": "query",
+          "required": false,
+          "type": "enum",
+          "description": "Sort field",
+          "enumValues": [
+            "created_at",
+            "download_count",
+            "title"
+          ],
+          "defaultValue": "created_at"
+        },
+        {
+          "name": "sort_order",
+          "location": "query",
+          "required": false,
+          "type": "enum",
+          "description": "Sort direction",
+          "enumValues": [
+            "asc",
+            "desc"
+          ],
+          "defaultValue": "desc"
+        },
+        {
+          "name": "gender_fit",
+          "location": "query",
+          "required": false,
+          "type": "enum",
+          "description": "Filter by gender fit",
+          "enumValues": [
+            "male",
+            "female",
+            "unisex",
+            "kemono"
+          ]
+        },
+        {
+          "name": "clothing_type",
+          "location": "query",
+          "required": false,
+          "type": "enum",
+          "description": "Filter by clothing type",
+          "enumValues": [
+            "top",
+            "jacket",
+            "bottom",
+            "dress",
+            "fullbody",
+            "swimwear",
+            "shoes",
+            "legwear",
+            "hat",
+            "hair",
+            "accessory",
+            "tail",
+            "ears",
+            "wings",
+            "body-part",
+            "underwear",
+            "other"
+          ]
+        },
+        {
+          "name": "platform",
+          "location": "query",
+          "required": false,
+          "type": "enum",
+          "description": "Filter by platform",
+          "enumValues": [
+            "pc",
+            "quest",
+            "cross"
+          ]
+        },
+        {
+          "name": "is_base",
+          "location": "query",
+          "required": false,
+          "type": "enum",
+          "description": "Base avatar flag",
+          "enumValues": [
+            "0",
+            "1"
+          ]
+        },
+        {
+          "name": "is_nsfw",
+          "location": "query",
+          "required": false,
+          "type": "enum",
+          "description": "NSFW filter",
+          "enumValues": [
+            "0",
+            "1"
+          ]
+        },
+        {
+          "name": "has_physbones",
+          "location": "query",
+          "required": false,
+          "type": "enum",
+          "description": "Has PhysBones",
+          "enumValues": [
+            "0",
+            "1"
+          ]
+        },
+        {
+          "name": "compatible_avatar",
+          "location": "query",
+          "required": false,
+          "type": "string (uuid v4)",
+          "description": "Filter by compatible avatar UUID"
+        }
+      ],
+      "response": {
+        "description": "JSON — { resources: ClothesWithMeta[], pagination }"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/clothes/:uuid",
+      "summary": "Get a single clothing item with metadata",
+      "auth": "public",
+      "rateLimit": "global",
+      "visibility": "public",
+      "tag": "clothes",
+      "description": "Full clothing detail including clothes_meta row.",
+      "params": [
+        {
+          "name": "uuid",
+          "location": "path",
+          "required": true,
+          "type": "string (uuid v4)",
+          "description": "Clothes resource UUID"
+        }
+      ],
+      "response": {
+        "description": "JSON — ClothesWithMeta"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/clothes",
+      "summary": "Create a clothing resource",
+      "auth": "auth",
+      "rateLimit": "medium",
+      "visibility": "private",
+      "tag": "clothes",
+      "schema": "ResourceSchema + ClothesMetaSchema",
+      "description": "Creates a resource + clothes_meta + links + media in one batch (inactive, pending approval).",
+      "params": [
+        {
+          "name": "title",
+          "location": "body",
+          "required": true,
+          "type": "string",
+          "description": "Clothing title"
+        },
+        {
+          "name": "thumbnail_uuid",
+          "location": "body",
+          "required": true,
+          "type": "string",
+          "description": "Media UUID for thumbnail"
+        },
+        {
+          "name": "meta",
+          "location": "body",
+          "required": true,
+          "type": "object",
+          "description": "ClothesMetaSchema payload"
+        }
+      ],
+      "response": {
+        "description": "201 — { uuid }"
+      }
+    },
+    {
+      "method": "PUT",
+      "path": "/api/clothes/:uuid",
+      "summary": "Edit clothing metadata (admin only)",
+      "auth": "admin",
+      "rateLimit": "medium",
+      "visibility": "private",
+      "tag": "clothes",
+      "schema": "ClothesMetaSchema (partial)",
+      "description": "Snapshots previous state, records meta_edit, then updates. Requires admin.",
+      "params": [
+        {
+          "name": "uuid",
+          "location": "path",
+          "required": true,
+          "type": "string (uuid v4)",
+          "description": "Clothes resource UUID"
+        }
+      ],
+      "response": {
+        "description": "JSON — { success: true }"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/resources/latest",
+      "summary": "Latest active resources (KV-cached, 60s)",
+      "auth": "public",
+      "rateLimit": "global",
+      "visibility": "public",
+      "tag": "resources",
+      "description": "Returns the 10 most recently created active resources, KV-cached for 60s with Cache-Control: public, max-age=60.",
+      "params": [],
+      "response": {
+        "description": "JSON — ResourceWithMedia[]"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/resources",
+      "summary": "Search resources by query and category",
+      "auth": "public",
+      "rateLimit": "global",
+      "visibility": "public",
+      "tag": "resources",
+      "description": "Paginated search across resources; optional category filter (avatars/assets/clothes/worlds) and sorting.",
+      "params": [
+        {
+          "name": "page",
+          "location": "query",
+          "required": false,
+          "type": "integer",
+          "description": "Page number",
+          "defaultValue": "1"
+        },
+        {
+          "name": "limit",
+          "location": "query",
+          "required": false,
+          "type": "integer",
+          "description": "Items per page",
+          "enumValues": [
+            "1..60"
+          ],
+          "defaultValue": "30"
+        },
+        {
+          "name": "category",
+          "location": "query",
+          "required": false,
+          "type": "enum",
+          "description": "Resource category filter",
+          "enumValues": [
+            "avatars",
+            "assets",
+            "clothes",
+            "worlds"
+          ]
+        },
+        {
+          "name": "sort_by",
+          "location": "query",
+          "required": false,
+          "type": "string",
+          "description": "Sort field (legacy)"
+        },
+        {
+          "name": "sort_order",
+          "location": "query",
+          "required": false,
+          "type": "enum",
+          "description": "Sort direction",
+          "enumValues": [
+            "ASC",
+            "DESC"
+          ],
+          "defaultValue": "DESC"
+        },
+        {
+          "name": "q",
+          "location": "query",
+          "required": false,
+          "type": "string",
+          "description": "Free-text search (title/description)"
+        }
+      ],
+      "response": {
+        "description": "JSON — { data: Resource[], pagination }"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/resources/:uuid",
+      "summary": "Full resource detail (download links gated)",
+      "auth": "optional",
+      "rateLimit": "global",
+      "visibility": "public",
+      "tag": "resources",
+      "description": "Returns title, description (Markdown), thumbnail, reference image, gallery media, download links, metadata, and download_count. Download link URLs are only included for authenticated users.",
+      "params": [
+        {
+          "name": "uuid",
+          "location": "path",
+          "required": true,
+          "type": "string (uuid v4)",
+          "description": "Resource UUID"
+        },
+        {
+          "name": "auth",
+          "location": "body",
+          "required": false,
+          "type": "cookie",
+          "description": "Sealed session cookie (optional — unauthenticated users get the same resource without download links)"
+        }
+      ],
+      "response": {
+        "description": "JSON — ResourceWithMedia & links & meta"
+      },
+      "notes": "Download links are filtered server-side when unauthenticated."
+    },
+    {
+      "method": "GET",
+      "path": "/api/resources/:uuid/history",
+      "summary": "Resource edit history",
+      "auth": "auth",
+      "rateLimit": "global",
+      "visibility": "private",
+      "tag": "resources",
+      "description": " Chronological edit history for a resource. Requires authentication.",
+      "params": [
+        {
+          "name": "uuid",
+          "location": "path",
+          "required": true,
+          "type": "string (uuid v4)",
+          "description": "Resource UUID"
+        }
+      ],
+      "response": {
+        "description": "JSON — ResourceHistoryWithActor[]"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/resources",
+      "summary": "Create a generic resource",
+      "auth": "auth",
+      "rateLimit": "strict",
+      "visibility": "private",
+      "tag": "resources",
+      "schema": "ResourceSchema",
+      "description": "Creates a new resource (pending approval). Turnstile CAPTCHA required.",
+      "params": [
+        {
+          "name": "title",
+          "location": "body",
+          "required": true,
+          "type": "string",
+          "description": "Title (3–100 chars)"
+        },
+        {
+          "name": "category",
+          "location": "body",
+          "required": true,
+          "type": "enum",
+          "description": "Category"
+        },
+        {
+          "name": "thumbnail_uuid",
+          "location": "body",
+          "required": true,
+          "type": "string",
+          "description": "Thumbnail media UUID"
+        },
+        {
+          "name": "token",
+          "location": "body",
+          "required": false,
+          "type": "string",
+          "description": "Turnstile token"
+        }
+      ],
+      "response": {
+        "description": "JSON — { success: true, uuid }"
+      }
+    },
+    {
+      "method": "PUT",
+      "path": "/api/resources/:uuid",
+      "summary": "Update a resource (owner or admin)",
+      "auth": "auth",
+      "rateLimit": "medium",
+      "visibility": "private",
+      "tag": "resources",
+      "schema": "ResourceSchema (partial)",
+      "description": "Owner or admin may update. Approved resources are admin-only for edits.",
+      "params": [
+        {
+          "name": "uuid",
+          "location": "path",
+          "required": true,
+          "type": "string (uuid v4)",
+          "description": "Resource UUID"
+        },
+        {
+          "name": "title",
+          "location": "body",
+          "required": false,
+          "type": "string",
+          "description": "New title"
+        },
+        {
+          "name": "description",
+          "location": "body",
+          "required": false,
+          "type": "string",
+          "description": "New markdown description"
+        },
+        {
+          "name": "is_active",
+          "location": "body",
+          "required": false,
+          "type": "integer",
+          "description": "Active flag (0/1)"
+        },
+        {
+          "name": "new_links",
+          "location": "body",
+          "required": false,
+          "type": "array<LinkSchema>",
+          "description": "Additional links to append"
+        },
+        {
+          "name": "gallery_media_uuids",
+          "location": "body",
+          "required": false,
+          "type": "array<uuid>",
+          "description": "Replacement gallery UUIDs"
+        }
+      ],
+      "response": {
+        "description": "JSON — { success: true }"
+      }
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/resources/:uuid",
+      "summary": "Delete a resource (admin only)",
+      "auth": "admin",
+      "rateLimit": "medium",
+      "visibility": "private",
+      "tag": "resources",
+      "description": "Deletes the resource, its media rows, and R2 objects. Requires admin.",
+      "params": [
+        {
+          "name": "uuid",
+          "location": "path",
+          "required": true,
+          "type": "string (uuid v4)",
+          "description": "Resource UUID"
+        }
+      ],
+      "response": {
+        "description": "JSON — { success: true }"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/resources/:uuid/links/reorder",
+      "summary": "Reorder download links",
+      "auth": "auth",
+      "rateLimit": "medium",
+      "visibility": "private",
+      "tag": "resources",
+      "description": "Batch-reorders links for a resource. Must include every link UUID in the desired order. Owner or admin.",
+      "params": [
+        {
+          "name": "uuid",
+          "location": "path",
+          "required": true,
+          "type": "string (uuid v4)",
+          "description": "Resource UUID"
+        },
+        {
+          "name": "ordered_uuids",
+          "location": "body",
+          "required": true,
+          "type": "array<uuid (1..100)>",
+          "description": "All link UUIDs in desired order"
+        }
+      ],
+      "response": {
+        "description": "JSON — { ok: true }"
+      }
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/resources/:uuid/links/:linkUuid",
+      "summary": "Delete a single download link",
+      "auth": "auth",
+      "rateLimit": "medium",
+      "visibility": "private",
+      "tag": "resources",
+      "description": "Deletes one link from a resource. Owner or admin.",
+      "params": [
+        {
+          "name": "uuid",
+          "location": "path",
+          "required": true,
+          "type": "string (uuid v4)",
+          "description": "Resource UUID"
+        },
+        {
+          "name": "linkUuid",
+          "location": "path",
+          "required": true,
+          "type": "string (uuid v4)",
+          "description": "Link UUID"
+        }
+      ],
+      "response": {
+        "description": "JSON — { ok: true }"
+      }
+    },
+    {
+      "method": "PUT",
+      "path": "/api/resources/:uuid/links/:linkUuid",
+      "summary": "Update a single download link",
+      "auth": "auth",
+      "rateLimit": "medium",
+      "visibility": "private",
+      "tag": "resources",
+      "schema": "LinkUpdateSchema",
+      "description": "Updates title, URL, type, or display order for one link. Owner or admin.",
+      "params": [
+        {
+          "name": "uuid",
+          "location": "path",
+          "required": true,
+          "type": "string (uuid v4)",
+          "description": "Resource UUID"
+        },
+        {
+          "name": "linkUuid",
+          "location": "path",
+          "required": true,
+          "type": "string (uuid v4)",
+          "description": "Link UUID"
+        },
+        {
+          "name": "link_url",
+          "location": "body",
+          "required": false,
+          "type": "string",
+          "description": "New URL (https:// or /)"
+        },
+        {
+          "name": "link_title",
+          "location": "body",
+          "required": false,
+          "type": "string",
+          "description": "New title"
+        },
+        {
+          "name": "link_type",
+          "location": "body",
+          "required": false,
+          "type": "enum",
+          "description": "Link type"
+        }
+      ],
+      "response": {
+        "description": "JSON — { ok: true }"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/authors",
+      "summary": "List avatar authors (paginated)",
+      "auth": "public",
+      "rateLimit": "global",
+      "visibility": "public",
+      "tag": "authors",
+      "description": "Paginated list of normalized avatar author profiles, each with resource_count.",
+      "params": [
+        {
+          "name": "page",
+          "location": "query",
+          "required": false,
+          "type": "integer",
+          "description": "Page number",
+          "defaultValue": "1"
+        },
+        {
+          "name": "limit",
+          "location": "query",
+          "required": false,
+          "type": "integer",
+          "description": "Items per page",
+          "defaultValue": "24"
+        }
+      ],
+      "response": {
+        "description": "JSON — { authors: AuthorWithCount[], pagination }"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/authors/search",
+      "summary": "Author name autocomplete",
+      "auth": "public",
+      "rateLimit": "global",
+      "visibility": "public",
+      "tag": "authors",
+      "description": "Prefix search over author names, max 10 results with uuid, name, slug.",
+      "params": [
+        {
+          "name": "q",
+          "location": "query",
+          "required": true,
+          "type": "string",
+          "description": "Partial author name"
+        },
+        {
+          "name": "limit",
+          "location": "query",
+          "required": false,
+          "type": "integer",
+          "description": "Max results",
+          "defaultValue": "10"
+        }
+      ],
+      "response": {
+        "description": "JSON — [{ uuid, name, slug }]"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/authors/:slug",
+      "summary": "Author profile with avatars",
+      "auth": "public",
+      "rateLimit": "global",
+      "visibility": "public",
+      "tag": "authors",
+      "description": "Public author profile plus paginated list of their published avatars.",
+      "params": [
+        {
+          "name": "slug",
+          "location": "path",
+          "required": true,
+          "type": "string (slug)",
+          "description": "Author slug"
+        },
+        {
+          "name": "page",
+          "location": "query",
+          "required": false,
+          "type": "integer",
+          "description": "Page number",
+          "defaultValue": "1"
+        },
+        {
+          "name": "limit",
+          "location": "query",
+          "required": false,
+          "type": "integer",
+          "description": "Items per page",
+          "defaultValue": "12"
+        }
+      ],
+      "response": {
+        "description": "JSON — { author, avatars: ResourceWithMedia[], pagination }"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/authors",
+      "summary": "Create an author record (admin)",
+      "auth": "auth",
+      "rateLimit": "medium",
+      "visibility": "private",
+      "tag": "authors",
+      "schema": "AvatarAuthorSchema",
+      "description": "Creates a normalized author profile. Service enforces admin role even though the route guard is requireAuth.",
+      "params": [
+        {
+          "name": "name",
+          "location": "body",
+          "required": true,
+          "type": "string",
+          "description": "Author display name (1–70 chars)"
+        },
+        {
+          "name": "description",
+          "location": "body",
+          "required": false,
+          "type": "string",
+          "description": "Author bio (≤2000 chars)"
+        },
+        {
+          "name": "avatar_url",
+          "location": "body",
+          "required": false,
+          "type": "string",
+          "description": "Avatar image URL"
+        }
+      ],
+      "response": {
+        "description": "201 — Author"
+      }
+    },
+    {
+      "method": "PUT",
+      "path": "/api/authors/:slug",
+      "summary": "Edit an author record (admin)",
+      "auth": "auth",
+      "rateLimit": "medium",
+      "visibility": "private",
+      "tag": "authors",
+      "schema": "AvatarAuthorSchema (partial)",
+      "description": "Updates a normalized author profile. Admin-only (enforced in service).",
+      "params": [
+        {
+          "name": "slug",
+          "location": "path",
+          "required": true,
+          "type": "string (slug)",
+          "description": "Author slug"
+        }
+      ],
+      "response": {
+        "description": "JSON — { success: true }"
+      }
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/authors/:slug",
+      "summary": "Delete an author (admin, no linked avatars)",
+      "auth": "auth",
+      "rateLimit": "medium",
+      "visibility": "private",
+      "tag": "authors",
+      "description": "Deletes an author only when no avatars are linked to it. Admin-only.",
+      "params": [
+        {
+          "name": "slug",
+          "location": "path",
+          "required": true,
+          "type": "string (slug)",
+          "description": "Author slug"
+        }
+      ],
+      "response": {
+        "description": "JSON — { success: true }"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/authors/:slug/link-resource",
+      "summary": "Link an avatar to an author (admin)",
+      "auth": "auth",
+      "rateLimit": "medium",
+      "visibility": "private",
+      "tag": "authors",
+      "description": "Links an avatar resource to an author. Records a meta_edit history snapshot. Admin-only.",
+      "params": [
+        {
+          "name": "slug",
+          "location": "path",
+          "required": true,
+          "type": "string (slug)",
+          "description": "Author slug"
+        },
+        {
+          "name": "resource_uuid",
+          "location": "body",
+          "required": true,
+          "type": "string (uuid v4)",
+          "description": "Avatar resource UUID to link"
+        }
+      ],
+      "response": {
+        "description": "JSON — { success: true }"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/blog",
+      "summary": "List blog posts (paginated, KV-cached)",
+      "auth": "public",
+      "rateLimit": "global",
+      "visibility": "public",
+      "tag": "blog",
+      "description": "Paginated blog post list with cover image key and author info. KV-cached for 1h (list) and per-post.",
+      "params": [
+        {
+          "name": "page",
+          "location": "query",
+          "required": false,
+          "type": "integer",
+          "description": "Page number",
+          "defaultValue": "1"
+        },
+        {
+          "name": "limit",
+          "location": "query",
+          "required": false,
+          "type": "integer",
+          "description": "Items per page",
+          "enumValues": [
+            "1..20"
+          ],
+          "defaultValue": "10"
+        }
+      ],
+      "response": {
+        "description": "JSON — { data: BlogPostWithAuthor[], pagination: { page, limit, total, total_pages } }"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/blog/:uuid",
+      "summary": "Get a single blog post",
+      "auth": "public",
+      "rateLimit": "global",
+      "visibility": "public",
+      "tag": "blog",
+      "description": "Single post by UUID, including full Markdown content.",
+      "params": [
+        {
+          "name": "uuid",
+          "location": "path",
+          "required": true,
+          "type": "string (uuid v4)",
+          "description": "Blog post UUID"
+        }
+      ],
+      "response": {
+        "description": "JSON — BlogPostWithAuthor"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/blog",
+      "summary": "Create a blog post (admin)",
+      "auth": "admin",
+      "rateLimit": "medium",
+      "visibility": "private",
+      "tag": "blog",
+      "schema": "BlogPostSchema",
+      "description": "Creates a new blog post. Bumps the change_feed (blog scope) and broadcasts via FeedRoom.",
+      "params": [
+        {
+          "name": "title",
+          "location": "body",
+          "required": true,
+          "type": "string",
+          "description": "Title (3–200 chars)"
+        },
+        {
+          "name": "content",
+          "location": "body",
+          "required": true,
+          "type": "string",
+          "description": "Markdown body (≤100k chars)"
+        },
+        {
+          "name": "excerpt",
+          "location": "body",
+          "required": false,
+          "type": "string",
+          "description": "Optional excerpt (≤500 chars)"
+        },
+        {
+          "name": "cover_image_uuid",
+          "location": "body",
+          "required": false,
+          "type": "string (uuid v4)",
+          "description": "Cover image media UUID"
+        },
+        {
+          "name": "author_display",
+          "location": "body",
+          "required": false,
+          "type": "enum",
+          "description": "Author display mode"
+        }
+      ],
+      "response": {
+        "description": "201 — { uuid, slug }"
+      }
+    },
+    {
+      "method": "PUT",
+      "path": "/api/blog/:uuid",
+      "summary": "Update a blog post (admin)",
+      "auth": "admin",
+      "rateLimit": "medium",
+      "visibility": "private",
+      "tag": "blog",
+      "schema": "BlogPostUpdateSchema",
+      "description": "Partial update for a blog post. Admin-only.",
+      "params": [
+        {
+          "name": "uuid",
+          "location": "path",
+          "required": true,
+          "type": "string (uuid v4)",
+          "description": "Blog post UUID"
+        }
+      ],
+      "response": {
+        "description": "JSON — { success: true, uuid, slug }"
+      }
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/blog/:uuid",
+      "summary": "Delete a blog post (admin)",
+      "auth": "admin",
+      "rateLimit": "medium",
+      "visibility": "private",
+      "tag": "blog",
+      "description": "Deletes a blog post and cleans up its cover image from R2.",
+      "params": [
+        {
+          "name": "uuid",
+          "location": "path",
+          "required": true,
+          "type": "string (uuid v4)",
+          "description": "Blog post UUID"
+        }
+      ],
+      "response": {
+        "description": "JSON — { success: true }"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/blog/:uuid/comments",
+      "summary": "List comments for a blog post",
+      "auth": "public",
+      "rateLimit": "medium",
+      "visibility": "public",
+      "tag": "blog",
+      "description": "Comments for a single blog post, paginated.",
+      "params": [
+        {
+          "name": "uuid",
+          "location": "path",
+          "required": true,
+          "type": "string (uuid v4)",
+          "description": "Blog post UUID"
+        },
+        {
+          "name": "limit",
+          "location": "query",
+          "required": false,
+          "type": "integer",
+          "description": "Max comments",
+          "enumValues": [
+            "1..50"
+          ],
+          "defaultValue": "50"
+        },
+        {
+          "name": "offset",
+          "location": "query",
+          "required": false,
+          "type": "integer",
+          "description": "Offset",
+          "defaultValue": "0"
+        }
+      ],
+      "response": {
+        "description": "JSON — BlogCommentWithAuthor[]"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/blog/:uuid/comments",
+      "summary": "Add a comment to a blog post",
+      "auth": "auth",
+      "rateLimit": "strict",
+      "visibility": "private",
+      "tag": "blog",
+      "schema": "BlogCommentSchema",
+      "description": "Creates a comment on a blog post. Turnstile-gated.",
+      "params": [
+        {
+          "name": "uuid",
+          "location": "path",
+          "required": true,
+          "type": "string (uuid v4)",
+          "description": "Blog post UUID"
+        },
+        {
+          "name": "text",
+          "location": "body",
+          "required": true,
+          "type": "string",
+          "description": "Comment text (3–1000 chars)"
+        },
+        {
+          "name": "token",
+          "location": "body",
+          "required": false,
+          "type": "string",
+          "description": "Turnstile token"
+        }
+      ],
+      "response": {
+        "description": "201 — BlogComment"
+      }
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/blog/comments/:commentId",
+      "summary": "Delete a blog comment",
+      "auth": "auth",
+      "rateLimit": "medium",
+      "visibility": "private",
+      "tag": "blog",
+      "description": "Deletes a blog comment. Author or admin only.",
+      "params": [
+        {
+          "name": "commentId",
+          "location": "path",
+          "required": true,
+          "type": "string (uuid v4)",
+          "description": "Comment UUID"
+        }
+      ],
+      "response": {
+        "description": "JSON — { success: true }"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/comments/:resourceId",
+      "summary": "List comments for a resource",
+      "auth": "public",
+      "rateLimit": "medium",
+      "visibility": "public",
+      "tag": "comments",
+      "description": "All comments for a given resource, with author info.",
+      "params": [
+        {
+          "name": "resourceId",
+          "location": "path",
+          "required": true,
+          "type": "string (uuid v4)",
+          "description": "Resource UUID"
+        }
+      ],
+      "response": {
+        "description": "JSON — CommentWithAuthor[]"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/comments/:resourceId",
+      "summary": "Create a comment on a resource",
+      "auth": "auth",
+      "rateLimit": "strict",
+      "visibility": "private",
+      "tag": "comments",
+      "schema": "CommentSchema",
+      "description": "Creates a comment on a resource. Turnstile-gated. Bumps the comments scope.",
+      "params": [
+        {
+          "name": "resourceId",
+          "location": "path",
+          "required": true,
+          "type": "string (uuid v4)",
+          "description": "Resource UUID"
+        },
+        {
+          "name": "text",
+          "location": "body",
+          "required": true,
+          "type": "string",
+          "description": "Comment text (3–500 chars)"
+        },
+        {
+          "name": "token",
+          "location": "body",
+          "required": false,
+          "type": "string",
+          "description": "Turnstile token"
+        }
+      ],
+      "response": {
+        "description": "201 — Comment"
+      }
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/comments/:commentId",
+      "summary": "Delete a resource comment",
+      "auth": "auth",
+      "rateLimit": "medium",
+      "visibility": "private",
+      "tag": "comments",
+      "description": "Deletes a resource comment. Author or admin only.",
+      "params": [
+        {
+          "name": "commentId",
+          "location": "path",
+          "required": true,
+          "type": "string (uuid v4)",
+          "description": "Comment UUID"
+        }
+      ],
+      "response": {
+        "description": "JSON — { success: true }"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/wiki/comments",
+      "summary": "List global wiki comments",
+      "auth": "public",
+      "rateLimit": "medium",
+      "visibility": "public",
+      "tag": "wiki",
+      "description": "Global wiki (site-wide) comments, not tied to a specific resource.",
+      "params": [
+        {
+          "name": "limit",
+          "location": "query",
+          "required": false,
+          "type": "integer",
+          "description": "Max comments",
+          "defaultValue": "50"
+        },
+        {
+          "name": "offset",
+          "location": "query",
+          "required": false,
+          "type": "integer",
+          "description": "Offset",
+          "defaultValue": "0"
+        }
+      ],
+      "response": {
+        "description": "JSON — WikiCommentWithAuthor[]"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/wiki/comments",
+      "summary": "Create a global wiki comment",
+      "auth": "auth",
+      "rateLimit": "strict",
+      "visibility": "private",
+      "tag": "wiki",
+      "schema": "CommentSchema",
+      "description": "Creates a global wiki comment. Turnstile-gated.",
+      "params": [
+        {
+          "name": "text",
+          "location": "body",
+          "required": true,
+          "type": "string",
+          "description": "Comment text (3–500 chars)"
+        },
+        {
+          "name": "token",
+          "location": "body",
+          "required": false,
+          "type": "string",
+          "description": "Turnstile token"
+        }
+      ],
+      "response": {
+        "description": "201 — WikiComment"
+      }
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/wiki/comments/:uuid",
+      "summary": "Delete a wiki comment",
+      "auth": "auth",
+      "rateLimit": "medium",
+      "visibility": "private",
+      "tag": "wiki",
+      "description": "Deletes a wiki comment. Author or admin only.",
+      "params": [
+        {
+          "name": "uuid",
+          "location": "path",
+          "required": true,
+          "type": "string (uuid v4)",
+          "description": "Comment UUID"
+        }
+      ],
+      "response": {
+        "description": "JSON — { success: true }"
+      }
+    },
+    {
+      "method": "PUT",
+      "path": "/api/upload",
+      "summary": "Single-shot file upload",
+      "auth": "auth",
+      "rateLimit": "medium",
+      "visibility": "private",
+      "tag": "uploads",
+      "description": "Uploads a file (multipart/form-data, field \"file\"). Validates magic bytes, stores to R2 under the media UUID, inserts a media row, and enqueues post-processing via UPLOAD_QUEUE.",
+      "params": [
+        {
+          "name": "file",
+          "location": "body",
+          "required": true,
+          "type": "File (image ≤20MB, video ≤100MB, archive ≤1500MB)",
+          "description": "File to upload (multipart/form-data)"
+        }
+      ],
+      "response": {
+        "description": "JSON — { media_uuid, r2_key, media_type, file_name }"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/upload/init",
+      "summary": "Initialize a multipart upload",
+      "auth": "auth",
+      "rateLimit": "medium",
+      "visibility": "private",
+      "tag": "uploads",
+      "description": "Begins a large-file multipart upload. Stores expected media_type in KV for signature validation on part 1.",
+      "params": [
+        {
+          "name": "filename",
+          "location": "body",
+          "required": true,
+          "type": "string",
+          "description": "Original filename"
+        },
+        {
+          "name": "media_type",
+          "location": "body",
+          "required": true,
+          "type": "enum",
+          "description": "Expected type for signature check"
+        }
+      ],
+      "response": {
+        "description": "JSON — { uploadId, key } where key is the future media UUID"
+      }
+    },
+    {
+      "method": "PUT",
+      "path": "/api/upload/part",
+      "summary": "Upload one part of a multipart upload",
+      "auth": "auth",
+      "rateLimit": "medium",
+      "visibility": "private",
+      "tag": "uploads",
+      "description": "Uploads a single chunk. Part 1 is magic-byte checked against the media_type declared at init. Uses R2 multipart upload under the hood.",
+      "params": [
+        {
+          "name": "X-Upload-ID",
+          "location": "header",
+          "required": true,
+          "type": "string",
+          "description": "Multipart upload ID from /init"
+        },
+        {
+          "name": "X-Key",
+          "location": "header",
+          "required": true,
+          "type": "string",
+          "description": "Object key (media UUID) from /init"
+        },
+        {
+          "name": "X-Part-Number",
+          "location": "header",
+          "required": true,
+          "type": "integer",
+          "description": "1-indexed part number"
+        },
+        {
+          "name": "body",
+          "location": "body",
+          "required": true,
+          "type": "ReadableStream | ArrayBuffer",
+          "description": "Raw chunk bytes"
+        }
+      ],
+      "response": {
+        "description": "JSON — R2 UploadedPart { partNumber, etag }"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/upload/complete",
+      "summary": "Complete a multipart upload",
+      "auth": "auth",
+      "rateLimit": "medium",
+      "visibility": "private",
+      "tag": "uploads",
+      "description": "Finalizes a multipart upload. media_type is read from KV (server-authoritative), not the client body. Inserts the media row.",
+      "params": [
+        {
+          "name": "key",
+          "location": "body",
+          "required": true,
+          "type": "string",
+          "description": "Object key (media UUID)"
+        },
+        {
+          "name": "uploadId",
+          "location": "body",
+          "required": true,
+          "type": "string",
+          "description": "Multipart upload ID"
+        },
+        {
+          "name": "parts",
+          "location": "body",
+          "required": true,
+          "type": "array",
+          "description": "Array of { partNumber, etag } from /part"
+        },
+        {
+          "name": "filename",
+          "location": "body",
+          "required": true,
+          "type": "string",
+          "description": "Original filename"
+        }
+      ],
+      "response": {
+        "description": "JSON — { media_uuid, r2_key, media_type, file_name }"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/media/:uuid/status",
+      "summary": "Media processing status",
+      "auth": "public",
+      "rateLimit": "global",
+      "visibility": "public",
+      "tag": "media",
+      "description": "Whether a media item has finished processing (its CDN variants exist). Derived from media_variants existence.",
+      "params": [
+        {
+          "name": "uuid",
+          "location": "path",
+          "required": true,
+          "type": "string (uuid v4)",
+          "description": "Media UUID"
+        }
+      ],
+      "response": {
+        "description": "JSON — { processed: boolean }"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/download/:key",
+      "summary": "Download a private R2 file",
+      "auth": "auth",
+      "rateLimit": "global",
+      "visibility": "private",
+      "tag": "downloads",
+      "description": "Proxies a private file (usually an archive like .zip/.rar/.blend) from the vrcstorage R2 bucket. Requires authentication — anonymous users receive 401. Sets Content-Type from the stored object.",
+      "params": [
+        {
+          "name": "key",
+          "location": "path",
+          "required": true,
+          "type": "string (r2 key)",
+          "description": "R2 object key (== media UUID)"
+        }
+      ],
+      "response": {
+        "description": "Binary — raw file with Content-Type / Content-Disposition headers"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "https://cdn.vrcstorage.lat/:uuid",
+      "summary": "CDN — public media variants",
+      "auth": "public",
+      "rateLimit": "none",
+      "visibility": "public",
+      "tag": "downloads",
+      "description": "Standalone CDN Worker (src/cdn-worker.ts, wrangler-cdn.jsonc). Serves pre-processed public media from MEDIA_BUCKET. While the queue is still processing, serves a localized cover-safe placeholder (processing.{lang}.webp) with Cache-Control: no-store.",
+      "params": [
+        {
+          "name": "uuid",
+          "location": "path",
+          "required": true,
+          "type": "string (uuid v4)",
+          "description": "Media UUID"
+        },
+        {
+          "name": "res",
+          "location": "query",
+          "required": false,
+          "type": "enum",
+          "description": "Resolution variant",
+          "enumValues": [
+            "low",
+            "med",
+            "original"
+          ],
+          "defaultValue": "med"
+        },
+        {
+          "name": "format",
+          "location": "query",
+          "required": false,
+          "type": "enum",
+          "description": "Output format",
+          "enumValues": [
+            "webp",
+            "png",
+            "gif",
+            "video"
+          ],
+          "defaultValue": "webp"
+        }
+      ],
+      "response": {
+        "description": "Binary — image (webp/png/gif) or video (mp4, Range-supported) with long immutable cache"
+      },
+      "notes": "Images: 6 variants per media (low/med/original × webp/png); videos: {uuid}/video.mp4 + {uuid}/original.gif poster. Range requests are forwarded for video so <video> can seek."
+    },
+    {
+      "method": "GET",
+      "path": "/api/favorites",
+      "summary": "List favorites for the authenticated user",
+      "auth": "auth",
+      "rateLimit": "medium",
+      "visibility": "private",
+      "tag": "favorites",
+      "description": "Returns the caller’s favorites, optionally scoped to a collection, with resource and author info. Sorted by display_order.",
+      "params": [
+        {
+          "name": "collection_uuid",
+          "location": "query",
+          "required": false,
+          "type": "string (uuid v4 | null)",
+          "description": "Collection UUID or null for uncategorized"
+        },
+        {
+          "name": "page",
+          "location": "query",
+          "required": false,
+          "type": "integer",
+          "description": "Page number",
+          "defaultValue": "1"
+        },
+        {
+          "name": "limit",
+          "location": "query",
+          "required": false,
+          "type": "integer",
+          "description": "Items per page",
+          "defaultValue": "24"
+        }
+      ],
+      "response": {
+        "description": "JSON — UserFavoriteWithResource[] with pagination"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/favorites/ids",
+      "summary": "List only favorite resource UUIDs",
+      "auth": "optional",
+      "rateLimit": "medium",
+      "visibility": "private",
+      "tag": "favorites",
+      "description": "Returns just the UUIDs of the caller’s favorites. Anonymous users receive an empty list (not 401), so the frontend can hydrate favorite state before login.",
+      "params": [],
+      "response": {
+        "description": "JSON — string[] (resource UUIDs)"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/favorites/check/:resourceUuid",
+      "summary": "Check if a resource is favorited",
+      "auth": "optional",
+      "rateLimit": "medium",
+      "visibility": "private",
+      "tag": "favorites",
+      "description": "Whether the caller has favorited a given resource. Anonymous → { is_favorite: false } (not 401).",
+      "params": [
+        {
+          "name": "resourceUuid",
+          "location": "path",
+          "required": true,
+          "type": "string (uuid v4)",
+          "description": "Resource UUID to check"
+        }
+      ],
+      "response": {
+        "description": "JSON — { is_favorite: boolean }"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/favorites",
+      "summary": "Add a resource to favorites",
+      "auth": "auth",
+      "rateLimit": "medium",
+      "visibility": "private",
+      "tag": "favorites",
+      "schema": "AddFavoriteSchema",
+      "description": "Adds a resource to the caller’s favorites, optionally into a specific collection.",
+      "params": [
+        {
+          "name": "resource_uuid",
+          "location": "body",
+          "required": true,
+          "type": "string (uuid v4)",
+          "description": "Resource UUID to favorite"
+        },
+        {
+          "name": "collection_uuid",
+          "location": "body",
+          "required": false,
+          "type": "string (uuid v4)",
+          "description": "Target collection UUID"
+        }
+      ],
+      "response": {
+        "description": "JSON — { success: true }"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/favorites/reorder",
+      "summary": "Reorder favorites within a collection",
+      "auth": "auth",
+      "rateLimit": "medium",
+      "visibility": "private",
+      "tag": "favorites",
+      "schema": "FavoriteReorderSchema",
+      "description": "Batch-reorders favorites. The ordered_uuids array must contain every favorite in the target scope in the desired order.",
+      "params": [
+        {
+          "name": "ordered_uuids",
+          "location": "body",
+          "required": true,
+          "type": "array<uuid (≤500)>",
+          "description": "All favorite resource UUIDs in desired order"
+        },
+        {
+          "name": "collection_uuid",
+          "location": "body",
+          "required": true,
+          "type": "string (uuid | \"all\" | null)",
+          "description": "Target scope: collection UUID, null (uncategorized), or \"all\" (global order)"
+        }
+      ],
+      "response": {
+        "description": "JSON — { success: true }"
+      }
+    },
+    {
+      "method": "PUT",
+      "path": "/api/favorites/:resourceUuid/collection",
+      "summary": "Move a favorite to a different collection",
+      "auth": "auth",
+      "rateLimit": "medium",
+      "visibility": "private",
+      "tag": "favorites",
+      "schema": "FavoriteMoveSchema",
+      "description": "Moves a single favorite to a different collection, or to uncategorized when collection_uuid is null.",
+      "params": [
+        {
+          "name": "resourceUuid",
+          "location": "path",
+          "required": true,
+          "type": "string (uuid v4)",
+          "description": "Favorited resource UUID"
+        },
+        {
+          "name": "collection_uuid",
+          "location": "body",
+          "required": true,
+          "type": "string (uuid v4 | null)",
+          "description": "Destination collection UUID (null → uncategorized)"
+        }
+      ],
+      "response": {
+        "description": "JSON — { success: true }"
+      }
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/favorites/:resourceUuid",
+      "summary": "Remove a resource from favorites",
+      "auth": "auth",
+      "rateLimit": "medium",
+      "visibility": "private",
+      "tag": "favorites",
+      "description": "Removes a single resource from the caller’s favorites.",
+      "params": [
+        {
+          "name": "resourceUuid",
+          "location": "path",
+          "required": true,
+          "type": "string (uuid v4)",
+          "description": "Favorited resource UUID"
+        }
+      ],
+      "response": {
+        "description": "JSON — { success: true }"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/collections",
+      "summary": "List user collections",
+      "auth": "auth",
+      "rateLimit": "medium",
+      "visibility": "private",
+      "tag": "collections",
+      "description": "Returns all collections for the caller, each with its favorite count, ordered by display_order.",
+      "params": [],
+      "response": {
+        "description": "JSON — CollectionWithCount[]"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/collections",
+      "summary": "Create a collection",
+      "auth": "auth",
+      "rateLimit": "medium",
+      "visibility": "private",
+      "tag": "collections",
+      "schema": "CreateCollectionSchema",
+      "description": "Creates a new favorites collection for the caller.",
+      "params": [
+        {
+          "name": "name",
+          "location": "body",
+          "required": true,
+          "type": "string",
+          "description": "Collection name (1–50 chars)"
+        }
+      ],
+      "response": {
+        "description": "201 — Collection { uuid, name, display_order, created_at }"
+      }
+    },
+    {
+      "method": "PUT",
+      "path": "/api/collections/:uuid",
+      "summary": "Rename a collection",
+      "auth": "auth",
+      "rateLimit": "medium",
+      "visibility": "private",
+      "tag": "collections",
+      "schema": "CreateCollectionSchema",
+      "description": "Renames an existing collection owned by the caller.",
+      "params": [
+        {
+          "name": "uuid",
+          "location": "path",
+          "required": true,
+          "type": "string (uuid v4)",
+          "description": "Collection UUID"
+        },
+        {
+          "name": "name",
+          "location": "body",
+          "required": true,
+          "type": "string",
+          "description": "New name (1–50 chars)"
+        }
+      ],
+      "response": {
+        "description": "JSON — { success: true }"
+      }
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/collections/:uuid",
+      "summary": "Delete a collection",
+      "auth": "auth",
+      "rateLimit": "medium",
+      "visibility": "private",
+      "tag": "collections",
+      "description": "Deletes a collection. Favorites inside it become uncategorized (their collection_uuid is nulled).",
+      "params": [
+        {
+          "name": "uuid",
+          "location": "path",
+          "required": true,
+          "type": "string (uuid v4)",
+          "description": "Collection UUID"
+        }
+      ],
+      "response": {
+        "description": "JSON — { success: true }"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/collections/reorder",
+      "summary": "Reorder collections",
+      "auth": "auth",
+      "rateLimit": "medium",
+      "visibility": "private",
+      "tag": "collections",
+      "schema": "CollectionReorderSchema",
+      "description": "Batch-reorders all collections for the caller. The array must contain every collection UUID in the desired order.",
+      "params": [
+        {
+          "name": "ordered_uuids",
+          "location": "body",
+          "required": true,
+          "type": "array<uuid (≤20)>",
+          "description": "All collection UUIDs in desired order"
+        }
+      ],
+      "response": {
+        "description": "JSON — { success: true }"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/register",
+      "summary": "Register a new user",
+      "auth": "public",
+      "rateLimit": "strict",
+      "visibility": "private",
+      "tag": "auth",
+      "schema": "RegisterSchema",
+      "description": "Creates a new user account. Turnstile CAPTCHA required.",
+      "params": [
+        {
+          "name": "username",
+          "location": "body",
+          "required": true,
+          "type": "string",
+          "description": "Username (3–32 chars, alphanumeric+_)"
+        },
+        {
+          "name": "password",
+          "location": "body",
+          "required": true,
+          "type": "string",
+          "description": "Password (8–100 chars)"
+        },
+        {
+          "name": "token",
+          "location": "body",
+          "required": false,
+          "type": "string",
+          "description": "Turnstile token"
+        }
+      ],
+      "response": {
+        "description": "201 — AuthResponse { token, user } + sets sealed session cookie"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/login",
+      "summary": "Login",
+      "auth": "public",
+      "rateLimit": "login",
+      "visibility": "private",
+      "tag": "auth",
+      "schema": "LoginSchema",
+      "description": "Authenticates a user. When 2FA is enabled, returns a pre_auth_token instead of a session — the client must call POST /api/auth/login/2fa to complete login.",
+      "params": [
+        {
+          "name": "username",
+          "location": "body",
+          "required": true,
+          "type": "string",
+          "description": "Username"
+        },
+        {
+          "name": "password",
+          "location": "body",
+          "required": true,
+          "type": "string",
+          "description": "Password"
+        },
+        {
+          "name": "token",
+          "location": "body",
+          "required": false,
+          "type": "string",
+          "description": "Turnstile token"
+        }
+      ],
+      "response": {
+        "description": "JSON — { token, user } or { pre_auth_token, requires_2fa: true }"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/login/2fa",
+      "summary": "Complete 2FA login",
+      "auth": "public",
+      "rateLimit": "login",
+      "visibility": "private",
+      "tag": "auth",
+      "schema": "TwoFactorLoginSchema",
+      "description": "Verifies a TOTP/backup code using the pre_auth_token from /login and creates the sealed session.",
+      "params": [
+        {
+          "name": "username",
+          "location": "body",
+          "required": true,
+          "type": "string",
+          "description": "Username"
+        },
+        {
+          "name": "code",
+          "location": "body",
+          "required": true,
+          "type": "string",
+          "description": "6-digit TOTP or backup code"
+        },
+        {
+          "name": "pre_auth_token",
+          "location": "body",
+          "required": true,
+          "type": "string (uuid v4)",
+          "description": "Pre-auth UUID from /login"
+        }
+      ],
+      "response": {
+        "description": "JSON — { token, user } + sets session cookie"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/status",
+      "summary": "Check auth status",
+      "auth": "public",
+      "rateLimit": "global",
+      "visibility": "private",
+      "tag": "auth",
+      "description": "Returns whether the caller is authenticated and, when logged in, their user object.",
+      "params": [],
+      "response": {
+        "description": "JSON — { authenticated: boolean, user?: User }"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/logout",
+      "summary": "Logout",
+      "auth": "public",
+      "rateLimit": "global",
+      "visibility": "private",
+      "tag": "auth",
+      "description": "Clears the sealed session cookie and invalidates the KV session entry.",
+      "params": [],
+      "response": {
+        "description": "JSON — { success: true }"
+      }
+    },
+    {
+      "method": "PUT",
+      "path": "/api/auth/me",
+      "summary": "Update own profile",
+      "auth": "optional",
+      "rateLimit": "medium",
+      "visibility": "private",
+      "tag": "auth",
+      "schema": "UserUpdateSchema",
+      "description": "Updates the caller’s username, avatar_url, or anonymity flag. Turnstile may be required.",
+      "params": [
+        {
+          "name": "username",
+          "location": "body",
+          "required": false,
+          "type": "string",
+          "description": "New username (3–32 chars, alphanumeric+_)"
+        },
+        {
+          "name": "avatar_url",
+          "location": "body",
+          "required": false,
+          "type": "string",
+          "description": "New avatar URL (https:// or /)"
+        },
+        {
+          "name": "is_anonymous",
+          "location": "body",
+          "required": false,
+          "type": "integer (0|1)",
+          "description": "Anonymity flag"
+        }
+      ],
+      "response": {
+        "description": "JSON — { success: true, user }"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/me/password",
+      "summary": "Change own password",
+      "auth": "optional",
+      "rateLimit": "medium",
+      "visibility": "private",
+      "tag": "auth",
+      "schema": "ChangePasswordSchema",
+      "description": "Changes the caller’s password. Requires current_password (unless OAuth-only account) and a valid 2FA code when 2FA is enabled.",
+      "params": [
+        {
+          "name": "current_password",
+          "location": "body",
+          "required": false,
+          "type": "string",
+          "description": "Current password"
+        },
+        {
+          "name": "new_password",
+          "location": "body",
+          "required": true,
+          "type": "string",
+          "description": "New password (8–200 chars)"
+        },
+        {
+          "name": "two_factor_code",
+          "location": "body",
+          "required": false,
+          "type": "string",
+          "description": "TOTP/backup code when 2FA is enabled"
+        }
+      ],
+      "response": {
+        "description": "JSON — { success: true }"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/google",
+      "summary": "Start Google OAuth",
+      "auth": "public",
+      "rateLimit": "medium",
+      "visibility": "private",
+      "tag": "oauth",
+      "description": "Redirects the user to Google’s OAuth consent screen. Used to link or sign in via Google.",
+      "params": [],
+      "response": {
+        "description": "302 — Redirect to Google consent URL"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/google/callback",
+      "summary": "Google OAuth callback",
+      "auth": "public",
+      "rateLimit": "medium",
+      "visibility": "private",
+      "tag": "oauth",
+      "description": "Google redirects here after consent. Exchanges the code, verifies the id_token, and either creates a session or stores a pending registration in KV and redirects to the OAuthRegisterView.",
+      "params": [
+        {
+          "name": "code",
+          "location": "query",
+          "required": true,
+          "type": "string",
+          "description": "Authorization code from Google"
+        },
+        {
+          "name": "state",
+          "location": "query",
+          "required": false,
+          "type": "string",
+          "description": "Opaque state param"
+        }
+      ],
+      "response": {
+        "description": "302 — Redirect to /oauth-register (pending) or / (existing user) + sets session cookie"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/complete",
+      "summary": "Complete OAuth registration",
+      "auth": "public",
+      "rateLimit": "strict",
+      "visibility": "private",
+      "tag": "oauth",
+      "description": "Called by OAuthRegisterView after the user picks a username for a pending Google registration.",
+      "params": [
+        {
+          "name": "username",
+          "location": "body",
+          "required": true,
+          "type": "string",
+          "description": "Chosen username (3–32 chars)"
+        },
+        {
+          "name": "pending_token",
+          "location": "body",
+          "required": false,
+          "type": "string",
+          "description": "Pending registration token from callback step"
+        }
+      ],
+      "response": {
+        "description": "201 — { token, user } + sets session cookie"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/2fa/setup",
+      "summary": "Begin 2FA setup",
+      "auth": "auth",
+      "rateLimit": "medium",
+      "visibility": "private",
+      "tag": "2fa",
+      "schema": "TwoFactorSetupSchema",
+      "description": "Generates a TOTP secret and an otpauth:// URL + QR code for the caller. The secret is not yet active until /2fa/verify.",
+      "params": [
+        {
+          "name": "password",
+          "location": "body",
+          "required": false,
+          "type": "string",
+          "description": "Current password (re-auth)"
+        }
+      ],
+      "response": {
+        "description": "JSON — { secret, otpauth_url, qr_data_url }"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/2fa/verify",
+      "summary": "Verify TOTP and enable 2FA",
+      "auth": "auth",
+      "rateLimit": "medium",
+      "visibility": "private",
+      "tag": "2fa",
+      "schema": "TwoFactorVerifySchema",
+      "description": "Verifies the 6-digit TOTP code against the pending secret, enables 2FA, and returns one-time backup codes.",
+      "params": [
+        {
+          "name": "code",
+          "location": "body",
+          "required": true,
+          "type": "string",
+          "description": "6-digit TOTP code"
+        }
+      ],
+      "response": {
+        "description": "JSON — { backup_codes: string[] }"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/2fa/disable",
+      "summary": "Disable 2FA",
+      "auth": "auth",
+      "rateLimit": "medium",
+      "visibility": "private",
+      "tag": "2fa",
+      "schema": "TwoFactorDisableSchema",
+      "description": "Disables 2FA for the caller. Requires password or valid TOTP/backup code.",
+      "params": [
+        {
+          "name": "password",
+          "location": "body",
+          "required": false,
+          "type": "string",
+          "description": "Current password"
+        },
+        {
+          "name": "code",
+          "location": "body",
+          "required": false,
+          "type": "string",
+          "description": "TOTP or backup code"
+        }
+      ],
+      "response": {
+        "description": "JSON — { success: true }"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/2fa/status",
+      "summary": "Get 2FA status",
+      "auth": "auth",
+      "rateLimit": "medium",
+      "visibility": "private",
+      "tag": "2fa",
+      "description": "Whether 2FA is enabled for the caller.",
+      "params": [],
+      "response": {
+        "description": "JSON — { enabled: boolean }"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/pending",
+      "summary": "List pending (inactive) resources",
+      "auth": "admin",
+      "rateLimit": "medium",
+      "visibility": "internal",
+      "tag": "admin",
+      "description": "All inactive resources awaiting moderation, with author and media info.",
+      "params": [],
+      "response": {
+        "description": "JSON — ResourceWithMedia[]"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/resource/:uuid/approve",
+      "summary": "Approve a pending resource",
+      "auth": "admin",
+      "rateLimit": "medium",
+      "visibility": "internal",
+      "tag": "admin",
+      "description": "Flips is_active to 1, invalidates caches, bumps the change_feed for the resource’s category scope, and broadcasts via FeedRoom.",
+      "params": [
+        {
+          "name": "uuid",
+          "location": "path",
+          "required": true,
+          "type": "string (uuid v4)",
+          "description": "Resource UUID to approve"
+        }
+      ],
+      "response": {
+        "description": "JSON — { success: true }"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/resource/:uuid/reject",
+      "summary": "Reject and delete a pending resource",
+      "auth": "admin",
+      "rateLimit": "medium",
+      "visibility": "internal",
+      "tag": "admin",
+      "description": "Deletes the resource and its R2 objects/media rows. Only pending (inactive) resources can be rejected.",
+      "params": [
+        {
+          "name": "uuid",
+          "location": "path",
+          "required": true,
+          "type": "string (uuid v4)",
+          "description": "Resource UUID to reject"
+        }
+      ],
+      "response": {
+        "description": "JSON — { success: true }"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/resource/:uuid/deactivate",
+      "summary": "Deactivate an approved resource",
+      "auth": "admin",
+      "rateLimit": "medium",
+      "visibility": "internal",
+      "tag": "admin",
+      "description": "Flips an approved resource back to inactive and invalidates caches.",
+      "params": [
+        {
+          "name": "uuid",
+          "location": "path",
+          "required": true,
+          "type": "string (uuid v4)",
+          "description": "Resource UUID to deactivate"
+        }
+      ],
+      "response": {
+        "description": "JSON — { success: true }"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/stats/orphaned-media",
+      "summary": "Orphaned-media stats (no deletion)",
+      "auth": "admin",
+      "rateLimit": "medium",
+      "visibility": "internal",
+      "tag": "admin",
+      "description": "Counts orphaned media inside the 24h–48h age window (same predicate the cron uses). No files are deleted.",
+      "params": [],
+      "response": {
+        "description": "JSON — { count, totalSize, oldestTimestamp }"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/cleanup/orphaned-media",
+      "summary": "Delete orphaned media (R2 + DB)",
+      "auth": "admin",
+      "rateLimit": "medium",
+      "visibility": "internal",
+      "tag": "admin",
+      "description": "Deletes orphaned media inside the 24h–48h window: variant objects from MEDIA_BUCKET, original from BUCKET, then media row (cascades to media_variants). Reuses the same logic as the daily cron.",
+      "params": [],
+      "response": {
+        "description": "JSON — { success: true, deleted, message }"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/cache/clear/:username",
+      "summary": "Clear KV session cache for a user",
+      "auth": "admin",
+      "rateLimit": "medium",
+      "visibility": "internal",
+      "tag": "admin",
+      "description": "Deletes user:<username> from KV — useful after role changes to force re-resolution.",
+      "params": [
+        {
+          "name": "username",
+          "location": "path",
+          "required": true,
+          "type": "string",
+          "description": "Target username"
+        }
+      ],
+      "response": {
+        "description": "JSON — { success: true, message }"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/users/:username/role",
+      "summary": "Set a user’s admin flag",
+      "auth": "admin",
+      "rateLimit": "medium",
+      "visibility": "internal",
+      "tag": "admin",
+      "description": "Updates is_admin for a target user and immediately invalidates their KV cache so a demoted admin cannot retain elevated access for up to 7 days.",
+      "params": [
+        {
+          "name": "username",
+          "location": "path",
+          "required": true,
+          "type": "string",
+          "description": "Target username"
+        },
+        {
+          "name": "is_admin",
+          "location": "body",
+          "required": true,
+          "type": "integer (0|1)",
+          "description": "New admin flag (0 or 1)"
+        }
+      ],
+      "response": {
+        "description": "JSON — { success: true, username, is_admin }"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/stats",
+      "summary": "Dashboard aggregate stats",
+      "auth": "admin",
+      "rateLimit": "medium",
+      "visibility": "internal",
+      "tag": "admin",
+      "description": "Consolidated metrics for the admin dashboard overview section (resource counts, user counts, pending count, etc.).",
+      "params": [],
+      "response": {
+        "description": "JSON — AdminStats { totalResources, pendingResources, totalUsers, ... }"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/users",
+      "summary": "List users (paginated, searchable)",
+      "auth": "admin",
+      "rateLimit": "medium",
+      "visibility": "internal",
+      "tag": "admin",
+      "description": "Paginated user listing with optional username prefix search.",
+      "params": [
+        {
+          "name": "q",
+          "location": "query",
+          "required": false,
+          "type": "string",
+          "description": "Username search prefix"
+        },
+        {
+          "name": "page",
+          "location": "query",
+          "required": false,
+          "type": "integer",
+          "description": "Page number",
+          "defaultValue": "1"
+        }
+      ],
+      "response": {
+        "description": "JSON — { users, pagination }"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/resources",
+      "summary": "List all resources (filterable)",
+      "auth": "admin",
+      "rateLimit": "medium",
+      "visibility": "internal",
+      "tag": "admin",
+      "description": "All resources (active + pending) with optional category/status/text filters.",
+      "params": [
+        {
+          "name": "q",
+          "location": "query",
+          "required": false,
+          "type": "string",
+          "description": "Title search"
+        },
+        {
+          "name": "category",
+          "location": "query",
+          "required": false,
+          "type": "enum",
+          "description": "Category filter",
+          "enumValues": [
+            "avatars",
+            "assets",
+            "clothes",
+            "worlds"
+          ]
+        },
+        {
+          "name": "status",
+          "location": "query",
+          "required": false,
+          "type": "enum",
+          "description": "Active filter",
+          "enumValues": [
+            "active",
+            "pending"
+          ]
+        },
+        {
+          "name": "page",
+          "location": "query",
+          "required": false,
+          "type": "integer",
+          "description": "Page number",
+          "defaultValue": "1"
+        }
+      ],
+      "response": {
+        "description": "JSON — { resources, pagination }"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/media/generate-variants",
+      "summary": "Backfill image variants (enqueue)",
+      "auth": "admin",
+      "rateLimit": "medium",
+      "visibility": "internal",
+      "tag": "admin",
+      "description": "Enqueues UPLOAD_QUEUE messages for every image/video that has no variants yet, so the queue handler regenerates them.",
+      "params": [],
+      "response": {
+        "description": "JSON — { enqueued: number }"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/media/unify-keys",
+      "summary": "One-off: unify media R2 keys to UUIDs",
+      "auth": "admin",
+      "rateLimit": "medium",
+      "visibility": "internal",
+      "tag": "admin",
+      "description": "Maintenance migration — copies each original in BUCKET to the key equal to its UUID, rewrites free-text references, repoints the media.r2_key column, then deletes the old object. Defaults to a dry-run; pass ?confirm=true to execute. Idempotent and re-runnable with ?limit=N per pass.",
+      "params": [
+        {
+          "name": "confirm",
+          "location": "query",
+          "required": false,
+          "type": "enum",
+          "description": "When \"true\", performs writes; otherwise dry-run",
+          "enumValues": [
+            "true"
+          ]
+        },
+        {
+          "name": "limit",
+          "location": "query",
+          "required": false,
+          "type": "integer",
+          "description": "Max rows per pass (Worker CPU budget)"
+        }
+      ],
+      "response": {
+        "description": "JSON — { dryRun, processed, remaining, textReferences }"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/config",
+      "summary": "Public site configuration",
+      "auth": "public",
+      "rateLimit": "global",
+      "visibility": "public",
+      "tag": "system",
+      "description": "Returns public configuration needed by the frontend (Turnstile site key, etc.). No auth required.",
+      "params": [],
+      "response": {
+        "description": "JSON — { turnstileSiteKey }"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/version",
+      "summary": "Worker version and request metadata",
+      "auth": "public",
+      "rateLimit": "global",
+      "visibility": "public",
+      "tag": "system",
+      "description": "Unauthenticated deployment metadata: version ID/tag, commit hash, compatibility date, Cloudflare Ray/colo/country. Intentionally public for debugging.",
+      "params": [],
+      "response": {
+        "description": "JSON — { worker: { versionId, versionTag, commitHash, deployedAt, compatibilityDate }, runtime, request: { rayId, colo, country } }"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/updates",
+      "summary": "Polling change feed (fallback for live feed)",
+      "auth": "public",
+      "rateLimit": "global",
+      "visibility": "public",
+      "tag": "realtime",
+      "description": "Returns the server clock and the newest change timestamp per scope (avatars/assets/clothes/blog/comments) since ?since. The frontend polls this when the live WebSocket is down. Scopes map to DataCache prefixes the client invalidates.",
+      "params": [
+        {
+          "name": "since",
+          "location": "query",
+          "required": true,
+          "type": "integer (unix ms)",
+          "description": "Cursor in Unix ms (0 for full)"
+        }
+      ],
+      "response": {
+        "description": "JSON — { now, changes: { avatars, assets, clothes, blog, comments } }"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/feed/live",
+      "summary": "Live feed WebSocket",
+      "auth": "public",
+      "rateLimit": "medium",
+      "visibility": "public",
+      "tag": "realtime",
+      "description": "Upgrades to a WebSocket backed by the global FeedRoom Durable Object. Broadcasts FeedEvent { scope, action, entityId, title?, category?, thumbnailUuid?, isNsfw? } in real time. When open, the frontend suspends the /api/updates poller; when it drops, the poller resumes and covers the gap. Same reconciler drives both paths.",
+      "params": [],
+      "response": {
+        "description": "101 Switching Protocols — WebSocket frames are JSON FeedEvent objects"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/chat/live",
+      "summary": "Global chat WebSocket",
+      "auth": "optional",
+      "rateLimit": "medium",
+      "visibility": "public",
+      "tag": "realtime",
+      "description": "Upgrades to a WebSocket backed by the global ChatRoom Durable Object. Reading is public; only authenticated sockets may send. Text-only, ≤50 chars, backlog of 50 messages. The route stamps X-Chat-User-Uuid/Username headers before forwarding to the DO — the client never supplies identity.",
+      "params": [],
+      "response": {
+        "description": "101 — WebSocket. Client sends { type: \"send\", text }; server emits { type: \"history\" | \"message\" | \"purged\" | \"error\", ... }"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/chat/purge",
+      "summary": "Purge global chat (admin)",
+      "auth": "admin",
+      "rateLimit": "strict",
+      "visibility": "internal",
+      "tag": "realtime",
+      "description": "Empties the ChatRoom history for everyone. Admin-only, rate-limited to 1/min (strict). HTTP (not a socket message) so the DO never reasons about roles.",
+      "params": [],
+      "response": {
+        "description": "JSON — { success: true }"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/notifications/preferences",
+      "summary": "Get notification preferences",
+      "auth": "auth",
+      "rateLimit": "medium",
+      "visibility": "private",
+      "tag": "realtime",
+      "description": "Returns the caller’s browser Notification preferences (defaults when never saved).",
+      "params": [],
+      "response": {
+        "description": "JSON — NotificationPrefs { enabled, avatars_enabled, avatar_types, assets_enabled, asset_types, clothes_enabled, updated_at }"
+      }
+    },
+    {
+      "method": "PUT",
+      "path": "/api/notifications/preferences",
+      "summary": "Save notification preferences",
+      "auth": "auth",
+      "rateLimit": "medium",
+      "visibility": "private",
+      "tag": "realtime",
+      "description": "Persists the caller’s Notification preferences (which approved-resource scopes and avatar/asset sub-types should trigger a browser notification).",
+      "params": [
+        {
+          "name": "enabled",
+          "location": "body",
+          "required": true,
+          "type": "boolean",
+          "description": "Master toggle"
+        },
+        {
+          "name": "avatars_enabled",
+          "location": "body",
+          "required": true,
+          "type": "boolean",
+          "description": "Notify for avatars"
+        },
+        {
+          "name": "avatar_types",
+          "location": "body",
+          "required": false,
+          "type": "array<string> | null",
+          "description": "Which avatar types to notify"
+        },
+        {
+          "name": "assets_enabled",
+          "location": "body",
+          "required": true,
+          "type": "boolean",
+          "description": "Notify for assets"
+        },
+        {
+          "name": "asset_types",
+          "location": "body",
+          "required": false,
+          "type": "array<string> | null",
+          "description": "Which asset types to notify"
+        },
+        {
+          "name": "clothes_enabled",
+          "location": "body",
+          "required": true,
+          "type": "boolean",
+          "description": "Notify for clothes"
+        }
+      ],
+      "response": {
+        "description": "JSON — { success: true }"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/wiki/:lang/:topic.md",
+      "summary": "Raw wiki markdown (static asset)",
+      "auth": "public",
+      "rateLimit": "global",
+      "visibility": "public",
+      "tag": "site",
+      "description": "Raw Markdown source for a wiki article, served from ASSETS (public/wiki/{lang}/{topic}.md). The frontend falls back to English when the localized file is missing.",
+      "params": [
+        {
+          "name": "lang",
+          "location": "path",
+          "required": true,
+          "type": "enum (cn/de/en/es/fr/it/jp/nl/pl/pt/ru/tr)",
+          "description": "Locale code"
+        },
+        {
+          "name": "topic",
+          "location": "path",
+          "required": true,
+          "type": "string",
+          "description": "Article slug (e.g. \"home\", \"poiyomi\")"
+        }
+      ],
+      "response": {
+        "description": "text/markdown — raw Markdown, or the SPA shell HTML when missing (fallback signal)"
+      }
+    }
+  ]
+}

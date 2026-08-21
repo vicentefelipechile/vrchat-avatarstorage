@@ -45,7 +45,7 @@ import feedRoutes from './http/routes/feed';
 import chatRoutes from './http/routes/chat';
 import collectionsRoutes from './http/routes/collections';
 import notificationsRoutes from './http/routes/notifications';
-import llmsRoute from './http/routes/llms';
+import { apiDocs } from './http/routes/docs';
 
 // =========================================================================================================
 // App
@@ -100,8 +100,11 @@ app.route('/api/feed', feedRoutes);
 app.route('/api/chat', chatRoutes);
 app.route('/api/notifications', notificationsRoutes);
 
-// LLMs.txt — AI scraper context file (llmstxt.org spec)
-app.route('/llms.txt', llmsRoute);
+// API docs — machine-readable JSON manifest at /api/docs (?tag=avatars to filter).
+// The markdown artefacts /llms.txt and /llms-full.txt are static files in public/
+// (see src/tools/generate-llms.mjs, `npm run docs:build`). They are served directly
+// from ASSETS via the catch-all below — no Worker route, no per-request CPU.
+app.route('/api/docs', apiDocs);
 
 // SEO / SSR — crawler-facing routes with injected OG meta tags (see src/http/seo.ts).
 // Registered after the /api routers and before the static SPA fallback so they take precedence.

@@ -1,0 +1,1617 @@
+# VRCStorage — Full API Reference
+
+> Exhaustive endpoint reference for AI agents and tooling. Every route in VRCStorage, including authenticated, admin, and write endpoints. For a concise, LLM-friendly overview of public reads only, see [llms.txt](https://vrcstorage.lat/llms.txt). Machine-readable JSON: [https://vrcstorage.lat/api/docs](https://vrcstorage.lat/api/docs).
+
+Base API URL: `https://vrcstorage.lat/api`. CDN: `https://cdn.vrcstorage.lat/{uuid}?res=[low|med|original]&format=[webp|png|gif|video]`. Rate-limit tiers: `strict` (1/60s), `login` (10/60s), `medium` (100/60s), `global` (500/60s) — configured in wrangler.jsonc and wired in src/http/rate-limits.ts. Auth: `public` (no session), `optional` (gated field), `auth` (sealed session cookie via requireAuth), `admin` (requireAdmin). Pagination and UUID/timestamp conventions are as in llms.txt.
+
+## Site — Frontend pages and wiki
+
+### `GET /wiki/:lang/:topic.md`
+
+**Raw wiki markdown (static asset)** — Raw Markdown source for a wiki article, served from ASSETS (public/wiki/{lang}/{topic}.md). The frontend falls back to English when the localized file is missing.
+
+- Auth: No auth · Rate limit: global · Visibility: public
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| path | `lang` | enum (cn/de/en/es/fr/it/jp/nl/pl/pt/ru/tr) | Yes | Locale code |
+| path | `topic` | string | Yes | Article slug (e.g. "home", "poiyomi") |
+
+**Response** — text/markdown — raw Markdown, or the SPA shell HTML when missing (fallback signal)
+
+
+## Avatars — Avatar listing, search, detail, and mutation
+
+### `GET /api/avatars`
+
+**List avatars with faceted filtering** — Paginated avatar listing filtered by gender, size, type, platform, SDK, NSFW, feature flags, and author. Uses INNER JOIN avatar_meta — only avatars with metadata appear.
+
+- Auth: No auth · Rate limit: global · Visibility: public
+
+_Schema: `AvatarFilterSchema`_
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| query | `page` | integer | No | Page number Default: `1`. |
+| query | `limit` | integer (1..60) | No | Items per page Default: `24`. |
+| query | `sort_by` | enum (created_at \| download_count \| title) | No | Sort field Default: `created_at`. |
+| query | `sort_order` | enum (asc \| desc) | No | Sort direction Default: `desc`. |
+| query | `avatar_gender` | enum (male \| female \| androgynous \| undefined \| both) | No | Filter by gender |
+| query | `avatar_size` | enum (tiny \| small \| medium \| tall \| giant) | No | Filter by size |
+| query | `avatar_type` | enum (human \| furry \| anime \| chibi \| cartoon \| semi-realistic \| monster \| fantasy \| mecha \| kemono \| sci-fi \| vtuber \| other) | No | Filter by avatar type |
+| query | `platform` | enum (pc \| quest \| cross) | No | Filter by platform |
+| query | `sdk_version` | enum (sdk3 \| sdk2) | No | Filter by SDK |
+| query | `is_nsfw` | enum (0 \| 1) | No | NSFW filter |
+| query | `has_physbones` | enum (0 \| 1) | No | Has PhysBones |
+| query | `has_face_tracking` | enum (0 \| 1) | No | Has face tracking |
+| query | `has_dps` | enum (0 \| 1) | No | Has DPS |
+| query | `has_gogoloco` | enum (0 \| 1) | No | Has GoGo Loco |
+| query | `has_toggles` | enum (0 \| 1) | No | Has toggles |
+| query | `is_quest_optimized` | enum (0 \| 1) | No | Quest optimized |
+| query | `author_uuid` | string (uuid v4) | No | Filter by author profile UUID |
+
+**Response** — JSON — { resources: AvatarWithMeta[], pagination: { page, limit, total, hasNextPage, hasPrevPage } }
+
+### `GET /api/avatars/search`
+
+**Lightweight avatar name autocomplete** — Returns at most `limit` avatar titles matching a prefix — intended for the clothes base-avatar selector and similar autocomplete fields.
+
+- Auth: No auth · Rate limit: global · Visibility: public
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| query | `q` | string (min 2 chars) | Yes | Partial avatar name to match |
+| query | `limit` | integer (1..20) | No | Max results Default: `10`. |
+
+**Response** — JSON — [{ uuid, title }]
+
+### `GET /api/avatars/:uuid`
+
+**Get a single avatar with metadata** — Full avatar detail including avatar_meta row. Used by HistoryView to compute diffs.
+
+- Auth: No auth · Rate limit: global · Visibility: public
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| path | `uuid` | string (uuid v4) | Yes | Avatar resource UUID |
+
+**Response** — JSON — AvatarWithMeta (resource + meta + links + media)
+
+### `POST /api/avatars`
+
+**Create an avatar resource** — Creates a resource, its avatar_meta row, links, and media relations in one batch. Created as inactive (pending approval). No history entry on creation.
+
+- Auth: Auth required · Rate limit: medium · Visibility: private
+
+_Schema: `ResourceSchema + AvatarMetaSchema`_
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| body | `title` | string | Yes | Avatar title (3–100 chars) |
+| body | `description` | string | No | Markdown description (≤8000 chars) |
+| body | `category` | enum | Yes | Must be "avatars" |
+| body | `thumbnail_uuid` | string (uuid v4) | Yes | Media UUID for the thumbnail |
+| body | `reference_image_uuid` | string (uuid v4) | No | Optional reference image media UUID |
+| body | `links` | array<LinkSchema> | No | Download/demo links |
+| body | `media_files` | array<uuid> | No | Gallery media UUIDs |
+| body | `meta` | object | Yes | AvatarMetaSchema payload (gender, size, type, platform, etc.) |
+| query | `validate_only` | enum (true) | No | When "true", only validates without creating |
+
+**Response** — 201 — { uuid }
+
+### `PUT /api/avatars/:uuid`
+
+**Edit avatar metadata (admin only)** — Snapshots previous avatar_meta, records a meta_edit in resource history, then updates. Requires admin.
+
+- Auth: Admin only · Rate limit: medium · Visibility: private
+
+_Schema: `AvatarMetaSchema (partial)`_
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| path | `uuid` | string (uuid v4) | Yes | Avatar resource UUID |
+| body | `meta fields` | object | No | Any AvatarMetaSchema field (partial) |
+
+**Response** — JSON — { success: true }
+
+
+## Assets — Asset listing and mutation
+
+### `GET /api/assets`
+
+**List assets with faceted filtering** — Paginated asset listing filtered by asset_type, platform, SDK, Unity version, and NSFW. INNER JOIN asset_meta.
+
+- Auth: No auth · Rate limit: global · Visibility: public
+
+_Schema: `AssetFilterSchema`_
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| query | `page` | integer | No | Page number Default: `1`. |
+| query | `limit` | integer (1..60) | No | Items per page Default: `24`. |
+| query | `sort_by` | enum (created_at \| download_count \| title) | No | Sort field Default: `created_at`. |
+| query | `sort_order` | enum (asc \| desc) | No | Sort direction Default: `desc`. |
+| query | `asset_type` | enum (prop \| shader \| particle \| vfx \| prefab \| script \| animation \| avatar-base \| texture-pack \| sound \| tool \| hud \| other) | No | Filter by asset type |
+| query | `platform` | enum (pc \| quest \| cross) | No | Filter by platform |
+| query | `sdk_version` | enum (sdk3 \| sdk2) | No | Filter by SDK |
+| query | `unity_version` | enum (2019 \| 2022) | No | Filter by Unity version |
+| query | `is_nsfw` | enum (0 \| 1) | No | NSFW filter |
+
+**Response** — JSON — { resources: AssetWithMeta[], pagination }
+
+### `GET /api/assets/:uuid`
+
+**Get a single asset with metadata** — Full asset detail including asset_meta row.
+
+- Auth: No auth · Rate limit: global · Visibility: public
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| path | `uuid` | string (uuid v4) | Yes | Asset resource UUID |
+
+**Response** — JSON — AssetWithMeta
+
+### `POST /api/assets`
+
+**Create an asset resource** — Creates a resource + asset_meta + links + media in one batch (inactive, pending approval).
+
+- Auth: Auth required · Rate limit: medium · Visibility: private
+
+_Schema: `ResourceSchema + AssetMetaSchema`_
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| body | `title` | string | Yes | Asset title |
+| body | `thumbnail_uuid` | string | Yes | Media UUID for thumbnail |
+| body | `meta` | object | Yes | AssetMetaSchema payload |
+
+**Response** — 201 — { uuid }
+
+### `PUT /api/assets/:uuid`
+
+**Edit asset metadata (admin only)** — Snapshots previous state, records meta_edit, then updates. Requires admin.
+
+- Auth: Admin only · Rate limit: medium · Visibility: private
+
+_Schema: `AssetMetaSchema (partial)`_
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| path | `uuid` | string (uuid v4) | Yes | Asset resource UUID |
+
+**Response** — JSON — { success: true }
+
+
+## Clothes — Clothing listing and mutation
+
+### `GET /api/clothes`
+
+**List clothing items with faceted filtering** — Paginated clothes listing filtered by gender_fit, clothing_type, platform, is_base, is_nsfw, and has_physbones. INNER JOIN clothes_meta.
+
+- Auth: No auth · Rate limit: global · Visibility: public
+
+_Schema: `ClothesFilterSchema`_
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| query | `page` | integer | No | Page number Default: `1`. |
+| query | `limit` | integer (1..60) | No | Items per page Default: `24`. |
+| query | `sort_by` | enum (created_at \| download_count \| title) | No | Sort field Default: `created_at`. |
+| query | `sort_order` | enum (asc \| desc) | No | Sort direction Default: `desc`. |
+| query | `gender_fit` | enum (male \| female \| unisex \| kemono) | No | Filter by gender fit |
+| query | `clothing_type` | enum (top \| jacket \| bottom \| dress \| fullbody \| swimwear \| shoes \| legwear \| hat \| hair \| accessory \| tail \| ears \| wings \| body-part \| underwear \| other) | No | Filter by clothing type |
+| query | `platform` | enum (pc \| quest \| cross) | No | Filter by platform |
+| query | `is_base` | enum (0 \| 1) | No | Base avatar flag |
+| query | `is_nsfw` | enum (0 \| 1) | No | NSFW filter |
+| query | `has_physbones` | enum (0 \| 1) | No | Has PhysBones |
+| query | `compatible_avatar` | string (uuid v4) | No | Filter by compatible avatar UUID |
+
+**Response** — JSON — { resources: ClothesWithMeta[], pagination }
+
+### `GET /api/clothes/:uuid`
+
+**Get a single clothing item with metadata** — Full clothing detail including clothes_meta row.
+
+- Auth: No auth · Rate limit: global · Visibility: public
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| path | `uuid` | string (uuid v4) | Yes | Clothes resource UUID |
+
+**Response** — JSON — ClothesWithMeta
+
+### `POST /api/clothes`
+
+**Create a clothing resource** — Creates a resource + clothes_meta + links + media in one batch (inactive, pending approval).
+
+- Auth: Auth required · Rate limit: medium · Visibility: private
+
+_Schema: `ResourceSchema + ClothesMetaSchema`_
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| body | `title` | string | Yes | Clothing title |
+| body | `thumbnail_uuid` | string | Yes | Media UUID for thumbnail |
+| body | `meta` | object | Yes | ClothesMetaSchema payload |
+
+**Response** — 201 — { uuid }
+
+### `PUT /api/clothes/:uuid`
+
+**Edit clothing metadata (admin only)** — Snapshots previous state, records meta_edit, then updates. Requires admin.
+
+- Auth: Admin only · Rate limit: medium · Visibility: private
+
+_Schema: `ClothesMetaSchema (partial)`_
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| path | `uuid` | string (uuid v4) | Yes | Clothes resource UUID |
+
+**Response** — JSON — { success: true }
+
+
+## Resources — Generic resource CRUD and links
+
+### `GET /api/resources/latest`
+
+**Latest active resources (KV-cached, 60s)** — Returns the 10 most recently created active resources, KV-cached for 60s with Cache-Control: public, max-age=60.
+
+- Auth: No auth · Rate limit: global · Visibility: public
+
+**Parameters**
+
+_No parameters._
+
+**Response** — JSON — ResourceWithMedia[]
+
+### `GET /api/resources`
+
+**Search resources by query and category** — Paginated search across resources; optional category filter (avatars/assets/clothes/worlds) and sorting.
+
+- Auth: No auth · Rate limit: global · Visibility: public
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| query | `page` | integer | No | Page number Default: `1`. |
+| query | `limit` | integer (1..60) | No | Items per page Default: `30`. |
+| query | `category` | enum (avatars \| assets \| clothes \| worlds) | No | Resource category filter |
+| query | `sort_by` | string | No | Sort field (legacy) |
+| query | `sort_order` | enum (ASC \| DESC) | No | Sort direction Default: `DESC`. |
+| query | `q` | string | No | Free-text search (title/description) |
+
+**Response** — JSON — { data: Resource[], pagination }
+
+### `GET /api/resources/:uuid`
+
+**Full resource detail (download links gated)** — Returns title, description (Markdown), thumbnail, reference image, gallery media, download links, metadata, and download_count. Download link URLs are only included for authenticated users.
+
+- Auth: Optional auth (gated field) · Rate limit: global · Visibility: public
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| path | `uuid` | string (uuid v4) | Yes | Resource UUID |
+| body | `auth` | cookie | No | Sealed session cookie (optional — unauthenticated users get the same resource without download links) |
+
+**Response** — JSON — ResourceWithMedia & links & meta
+
+> Note: Download links are filtered server-side when unauthenticated.
+
+### `GET /api/resources/:uuid/history`
+
+**Resource edit history** —  Chronological edit history for a resource. Requires authentication.
+
+- Auth: Auth required · Rate limit: global · Visibility: private
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| path | `uuid` | string (uuid v4) | Yes | Resource UUID |
+
+**Response** — JSON — ResourceHistoryWithActor[]
+
+### `POST /api/resources`
+
+**Create a generic resource** — Creates a new resource (pending approval). Turnstile CAPTCHA required.
+
+- Auth: Auth required · Rate limit: strict · Visibility: private
+
+_Schema: `ResourceSchema`_
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| body | `title` | string | Yes | Title (3–100 chars) |
+| body | `category` | enum | Yes | Category |
+| body | `thumbnail_uuid` | string | Yes | Thumbnail media UUID |
+| body | `token` | string | No | Turnstile token |
+
+**Response** — JSON — { success: true, uuid }
+
+### `PUT /api/resources/:uuid`
+
+**Update a resource (owner or admin)** — Owner or admin may update. Approved resources are admin-only for edits.
+
+- Auth: Auth required · Rate limit: medium · Visibility: private
+
+_Schema: `ResourceSchema (partial)`_
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| path | `uuid` | string (uuid v4) | Yes | Resource UUID |
+| body | `title` | string | No | New title |
+| body | `description` | string | No | New markdown description |
+| body | `is_active` | integer | No | Active flag (0/1) |
+| body | `new_links` | array<LinkSchema> | No | Additional links to append |
+| body | `gallery_media_uuids` | array<uuid> | No | Replacement gallery UUIDs |
+
+**Response** — JSON — { success: true }
+
+### `DELETE /api/resources/:uuid`
+
+**Delete a resource (admin only)** — Deletes the resource, its media rows, and R2 objects. Requires admin.
+
+- Auth: Admin only · Rate limit: medium · Visibility: private
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| path | `uuid` | string (uuid v4) | Yes | Resource UUID |
+
+**Response** — JSON — { success: true }
+
+### `POST /api/resources/:uuid/links/reorder`
+
+**Reorder download links** — Batch-reorders links for a resource. Must include every link UUID in the desired order. Owner or admin.
+
+- Auth: Auth required · Rate limit: medium · Visibility: private
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| path | `uuid` | string (uuid v4) | Yes | Resource UUID |
+| body | `ordered_uuids` | array<uuid (1..100)> | Yes | All link UUIDs in desired order |
+
+**Response** — JSON — { ok: true }
+
+### `DELETE /api/resources/:uuid/links/:linkUuid`
+
+**Delete a single download link** — Deletes one link from a resource. Owner or admin.
+
+- Auth: Auth required · Rate limit: medium · Visibility: private
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| path | `uuid` | string (uuid v4) | Yes | Resource UUID |
+| path | `linkUuid` | string (uuid v4) | Yes | Link UUID |
+
+**Response** — JSON — { ok: true }
+
+### `PUT /api/resources/:uuid/links/:linkUuid`
+
+**Update a single download link** — Updates title, URL, type, or display order for one link. Owner or admin.
+
+- Auth: Auth required · Rate limit: medium · Visibility: private
+
+_Schema: `LinkUpdateSchema`_
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| path | `uuid` | string (uuid v4) | Yes | Resource UUID |
+| path | `linkUuid` | string (uuid v4) | Yes | Link UUID |
+| body | `link_url` | string | No | New URL (https:// or /) |
+| body | `link_title` | string | No | New title |
+| body | `link_type` | enum | No | Link type |
+
+**Response** — JSON — { ok: true }
+
+
+## Authors — Normalized avatar author profiles
+
+### `GET /api/authors`
+
+**List avatar authors (paginated)** — Paginated list of normalized avatar author profiles, each with resource_count.
+
+- Auth: No auth · Rate limit: global · Visibility: public
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| query | `page` | integer | No | Page number Default: `1`. |
+| query | `limit` | integer | No | Items per page Default: `24`. |
+
+**Response** — JSON — { authors: AuthorWithCount[], pagination }
+
+### `GET /api/authors/search`
+
+**Author name autocomplete** — Prefix search over author names, max 10 results with uuid, name, slug.
+
+- Auth: No auth · Rate limit: global · Visibility: public
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| query | `q` | string | Yes | Partial author name |
+| query | `limit` | integer | No | Max results Default: `10`. |
+
+**Response** — JSON — [{ uuid, name, slug }]
+
+### `GET /api/authors/:slug`
+
+**Author profile with avatars** — Public author profile plus paginated list of their published avatars.
+
+- Auth: No auth · Rate limit: global · Visibility: public
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| path | `slug` | string (slug) | Yes | Author slug |
+| query | `page` | integer | No | Page number Default: `1`. |
+| query | `limit` | integer | No | Items per page Default: `12`. |
+
+**Response** — JSON — { author, avatars: ResourceWithMedia[], pagination }
+
+### `POST /api/authors`
+
+**Create an author record (admin)** — Creates a normalized author profile. Service enforces admin role even though the route guard is requireAuth.
+
+- Auth: Auth required · Rate limit: medium · Visibility: private
+
+_Schema: `AvatarAuthorSchema`_
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| body | `name` | string | Yes | Author display name (1–70 chars) |
+| body | `description` | string | No | Author bio (≤2000 chars) |
+| body | `avatar_url` | string | No | Avatar image URL |
+
+**Response** — 201 — Author
+
+### `PUT /api/authors/:slug`
+
+**Edit an author record (admin)** — Updates a normalized author profile. Admin-only (enforced in service).
+
+- Auth: Auth required · Rate limit: medium · Visibility: private
+
+_Schema: `AvatarAuthorSchema (partial)`_
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| path | `slug` | string (slug) | Yes | Author slug |
+
+**Response** — JSON — { success: true }
+
+### `DELETE /api/authors/:slug`
+
+**Delete an author (admin, no linked avatars)** — Deletes an author only when no avatars are linked to it. Admin-only.
+
+- Auth: Auth required · Rate limit: medium · Visibility: private
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| path | `slug` | string (slug) | Yes | Author slug |
+
+**Response** — JSON — { success: true }
+
+### `POST /api/authors/:slug/link-resource`
+
+**Link an avatar to an author (admin)** — Links an avatar resource to an author. Records a meta_edit history snapshot. Admin-only.
+
+- Auth: Auth required · Rate limit: medium · Visibility: private
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| path | `slug` | string (slug) | Yes | Author slug |
+| body | `resource_uuid` | string (uuid v4) | Yes | Avatar resource UUID to link |
+
+**Response** — JSON — { success: true }
+
+
+## Blog — Blog posts and blog comments
+
+### `GET /api/blog`
+
+**List blog posts (paginated, KV-cached)** — Paginated blog post list with cover image key and author info. KV-cached for 1h (list) and per-post.
+
+- Auth: No auth · Rate limit: global · Visibility: public
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| query | `page` | integer | No | Page number Default: `1`. |
+| query | `limit` | integer (1..20) | No | Items per page Default: `10`. |
+
+**Response** — JSON — { data: BlogPostWithAuthor[], pagination: { page, limit, total, total_pages } }
+
+### `GET /api/blog/:uuid`
+
+**Get a single blog post** — Single post by UUID, including full Markdown content.
+
+- Auth: No auth · Rate limit: global · Visibility: public
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| path | `uuid` | string (uuid v4) | Yes | Blog post UUID |
+
+**Response** — JSON — BlogPostWithAuthor
+
+### `POST /api/blog`
+
+**Create a blog post (admin)** — Creates a new blog post. Bumps the change_feed (blog scope) and broadcasts via FeedRoom.
+
+- Auth: Admin only · Rate limit: medium · Visibility: private
+
+_Schema: `BlogPostSchema`_
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| body | `title` | string | Yes | Title (3–200 chars) |
+| body | `content` | string | Yes | Markdown body (≤100k chars) |
+| body | `excerpt` | string | No | Optional excerpt (≤500 chars) |
+| body | `cover_image_uuid` | string (uuid v4) | No | Cover image media UUID |
+| body | `author_display` | enum | No | Author display mode |
+
+**Response** — 201 — { uuid, slug }
+
+### `PUT /api/blog/:uuid`
+
+**Update a blog post (admin)** — Partial update for a blog post. Admin-only.
+
+- Auth: Admin only · Rate limit: medium · Visibility: private
+
+_Schema: `BlogPostUpdateSchema`_
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| path | `uuid` | string (uuid v4) | Yes | Blog post UUID |
+
+**Response** — JSON — { success: true, uuid, slug }
+
+### `DELETE /api/blog/:uuid`
+
+**Delete a blog post (admin)** — Deletes a blog post and cleans up its cover image from R2.
+
+- Auth: Admin only · Rate limit: medium · Visibility: private
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| path | `uuid` | string (uuid v4) | Yes | Blog post UUID |
+
+**Response** — JSON — { success: true }
+
+### `GET /api/blog/:uuid/comments`
+
+**List comments for a blog post** — Comments for a single blog post, paginated.
+
+- Auth: No auth · Rate limit: medium · Visibility: public
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| path | `uuid` | string (uuid v4) | Yes | Blog post UUID |
+| query | `limit` | integer (1..50) | No | Max comments Default: `50`. |
+| query | `offset` | integer | No | Offset Default: `0`. |
+
+**Response** — JSON — BlogCommentWithAuthor[]
+
+### `POST /api/blog/:uuid/comments`
+
+**Add a comment to a blog post** — Creates a comment on a blog post. Turnstile-gated.
+
+- Auth: Auth required · Rate limit: strict · Visibility: private
+
+_Schema: `BlogCommentSchema`_
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| path | `uuid` | string (uuid v4) | Yes | Blog post UUID |
+| body | `text` | string | Yes | Comment text (3–1000 chars) |
+| body | `token` | string | No | Turnstile token |
+
+**Response** — 201 — BlogComment
+
+### `DELETE /api/blog/comments/:commentId`
+
+**Delete a blog comment** — Deletes a blog comment. Author or admin only.
+
+- Auth: Auth required · Rate limit: medium · Visibility: private
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| path | `commentId` | string (uuid v4) | Yes | Comment UUID |
+
+**Response** — JSON — { success: true }
+
+
+## Comments — Resource and wiki comments
+
+### `GET /api/comments/:resourceId`
+
+**List comments for a resource** — All comments for a given resource, with author info.
+
+- Auth: No auth · Rate limit: medium · Visibility: public
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| path | `resourceId` | string (uuid v4) | Yes | Resource UUID |
+
+**Response** — JSON — CommentWithAuthor[]
+
+### `POST /api/comments/:resourceId`
+
+**Create a comment on a resource** — Creates a comment on a resource. Turnstile-gated. Bumps the comments scope.
+
+- Auth: Auth required · Rate limit: strict · Visibility: private
+
+_Schema: `CommentSchema`_
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| path | `resourceId` | string (uuid v4) | Yes | Resource UUID |
+| body | `text` | string | Yes | Comment text (3–500 chars) |
+| body | `token` | string | No | Turnstile token |
+
+**Response** — 201 — Comment
+
+### `DELETE /api/comments/:commentId`
+
+**Delete a resource comment** — Deletes a resource comment. Author or admin only.
+
+- Auth: Auth required · Rate limit: medium · Visibility: private
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| path | `commentId` | string (uuid v4) | Yes | Comment UUID |
+
+**Response** — JSON — { success: true }
+
+
+## Wiki — Wiki comments
+
+### `GET /api/wiki/comments`
+
+**List global wiki comments** — Global wiki (site-wide) comments, not tied to a specific resource.
+
+- Auth: No auth · Rate limit: medium · Visibility: public
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| query | `limit` | integer | No | Max comments Default: `50`. |
+| query | `offset` | integer | No | Offset Default: `0`. |
+
+**Response** — JSON — WikiCommentWithAuthor[]
+
+### `POST /api/wiki/comments`
+
+**Create a global wiki comment** — Creates a global wiki comment. Turnstile-gated.
+
+- Auth: Auth required · Rate limit: strict · Visibility: private
+
+_Schema: `CommentSchema`_
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| body | `text` | string | Yes | Comment text (3–500 chars) |
+| body | `token` | string | No | Turnstile token |
+
+**Response** — 201 — WikiComment
+
+### `DELETE /api/wiki/comments/:uuid`
+
+**Delete a wiki comment** — Deletes a wiki comment. Author or admin only.
+
+- Auth: Auth required · Rate limit: medium · Visibility: private
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| path | `uuid` | string (uuid v4) | Yes | Comment UUID |
+
+**Response** — JSON — { success: true }
+
+
+## Uploads — Single-shot and multipart file uploads
+
+### `PUT /api/upload`
+
+**Single-shot file upload** — Uploads a file (multipart/form-data, field "file"). Validates magic bytes, stores to R2 under the media UUID, inserts a media row, and enqueues post-processing via UPLOAD_QUEUE.
+
+- Auth: Auth required · Rate limit: medium · Visibility: private
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| body | `file` | File (image ≤20MB, video ≤100MB, archive ≤1500MB) | Yes | File to upload (multipart/form-data) |
+
+**Response** — JSON — { media_uuid, r2_key, media_type, file_name }
+
+### `POST /api/upload/init`
+
+**Initialize a multipart upload** — Begins a large-file multipart upload. Stores expected media_type in KV for signature validation on part 1.
+
+- Auth: Auth required · Rate limit: medium · Visibility: private
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| body | `filename` | string | Yes | Original filename |
+| body | `media_type` | enum | Yes | Expected type for signature check |
+
+**Response** — JSON — { uploadId, key } where key is the future media UUID
+
+### `PUT /api/upload/part`
+
+**Upload one part of a multipart upload** — Uploads a single chunk. Part 1 is magic-byte checked against the media_type declared at init. Uses R2 multipart upload under the hood.
+
+- Auth: Auth required · Rate limit: medium · Visibility: private
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| header | `X-Upload-ID` | string | Yes | Multipart upload ID from /init |
+| header | `X-Key` | string | Yes | Object key (media UUID) from /init |
+| header | `X-Part-Number` | integer | Yes | 1-indexed part number |
+| body | `body` | ReadableStream \| ArrayBuffer | Yes | Raw chunk bytes |
+
+**Response** — JSON — R2 UploadedPart { partNumber, etag }
+
+### `POST /api/upload/complete`
+
+**Complete a multipart upload** — Finalizes a multipart upload. media_type is read from KV (server-authoritative), not the client body. Inserts the media row.
+
+- Auth: Auth required · Rate limit: medium · Visibility: private
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| body | `key` | string | Yes | Object key (media UUID) |
+| body | `uploadId` | string | Yes | Multipart upload ID |
+| body | `parts` | array | Yes | Array of { partNumber, etag } from /part |
+| body | `filename` | string | Yes | Original filename |
+
+**Response** — JSON — { media_uuid, r2_key, media_type, file_name }
+
+
+## Media — Media processing status and CDN variants
+
+### `GET /api/media/:uuid/status`
+
+**Media processing status** — Whether a media item has finished processing (its CDN variants exist). Derived from media_variants existence.
+
+- Auth: No auth · Rate limit: global · Visibility: public
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| path | `uuid` | string (uuid v4) | Yes | Media UUID |
+
+**Response** — JSON — { processed: boolean }
+
+
+## Downloads — R2 file serving and CDN media variants
+
+### `GET /api/download/:key`
+
+**Download a private R2 file** — Proxies a private file (usually an archive like .zip/.rar/.blend) from the vrcstorage R2 bucket. Requires authentication — anonymous users receive 401. Sets Content-Type from the stored object.
+
+- Auth: Auth required · Rate limit: global · Visibility: private
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| path | `key` | string (r2 key) | Yes | R2 object key (== media UUID) |
+
+**Response** — Binary — raw file with Content-Type / Content-Disposition headers
+
+### `GET https://cdn.vrcstorage.lat/:uuid`
+
+**CDN — public media variants** — Standalone CDN Worker (src/cdn-worker.ts, wrangler-cdn.jsonc). Serves pre-processed public media from MEDIA_BUCKET. While the queue is still processing, serves a localized cover-safe placeholder (processing.{lang}.webp) with Cache-Control: no-store.
+
+- Auth: No auth · Rate limit: global catch-all · Visibility: public
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| path | `uuid` | string (uuid v4) | Yes | Media UUID |
+| query | `res` | enum (low \| med \| original) | No | Resolution variant Default: `med`. |
+| query | `format` | enum (webp \| png \| gif \| video) | No | Output format Default: `webp`. |
+
+**Response** — Binary — image (webp/png/gif) or video (mp4, Range-supported) with long immutable cache
+
+> Note: Images: 6 variants per media (low/med/original × webp/png); videos: {uuid}/video.mp4 + {uuid}/original.gif poster. Range requests are forwarded for video so <video> can seek.
+
+
+## Favorites — User favorites and favorite ordering
+
+### `GET /api/favorites`
+
+**List favorites for the authenticated user** — Returns the caller’s favorites, optionally scoped to a collection, with resource and author info. Sorted by display_order.
+
+- Auth: Auth required · Rate limit: medium · Visibility: private
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| query | `collection_uuid` | string (uuid v4 \| null) | No | Collection UUID or null for uncategorized |
+| query | `page` | integer | No | Page number Default: `1`. |
+| query | `limit` | integer | No | Items per page Default: `24`. |
+
+**Response** — JSON — UserFavoriteWithResource[] with pagination
+
+### `GET /api/favorites/ids`
+
+**List only favorite resource UUIDs** — Returns just the UUIDs of the caller’s favorites. Anonymous users receive an empty list (not 401), so the frontend can hydrate favorite state before login.
+
+- Auth: Optional auth (gated field) · Rate limit: medium · Visibility: private
+
+**Parameters**
+
+_No parameters._
+
+**Response** — JSON — string[] (resource UUIDs)
+
+### `GET /api/favorites/check/:resourceUuid`
+
+**Check if a resource is favorited** — Whether the caller has favorited a given resource. Anonymous → { is_favorite: false } (not 401).
+
+- Auth: Optional auth (gated field) · Rate limit: medium · Visibility: private
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| path | `resourceUuid` | string (uuid v4) | Yes | Resource UUID to check |
+
+**Response** — JSON — { is_favorite: boolean }
+
+### `POST /api/favorites`
+
+**Add a resource to favorites** — Adds a resource to the caller’s favorites, optionally into a specific collection.
+
+- Auth: Auth required · Rate limit: medium · Visibility: private
+
+_Schema: `AddFavoriteSchema`_
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| body | `resource_uuid` | string (uuid v4) | Yes | Resource UUID to favorite |
+| body | `collection_uuid` | string (uuid v4) | No | Target collection UUID |
+
+**Response** — JSON — { success: true }
+
+### `POST /api/favorites/reorder`
+
+**Reorder favorites within a collection** — Batch-reorders favorites. The ordered_uuids array must contain every favorite in the target scope in the desired order.
+
+- Auth: Auth required · Rate limit: medium · Visibility: private
+
+_Schema: `FavoriteReorderSchema`_
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| body | `ordered_uuids` | array<uuid (≤500)> | Yes | All favorite resource UUIDs in desired order |
+| body | `collection_uuid` | string (uuid \| "all" \| null) | Yes | Target scope: collection UUID, null (uncategorized), or "all" (global order) |
+
+**Response** — JSON — { success: true }
+
+### `PUT /api/favorites/:resourceUuid/collection`
+
+**Move a favorite to a different collection** — Moves a single favorite to a different collection, or to uncategorized when collection_uuid is null.
+
+- Auth: Auth required · Rate limit: medium · Visibility: private
+
+_Schema: `FavoriteMoveSchema`_
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| path | `resourceUuid` | string (uuid v4) | Yes | Favorited resource UUID |
+| body | `collection_uuid` | string (uuid v4 \| null) | Yes | Destination collection UUID (null → uncategorized) |
+
+**Response** — JSON — { success: true }
+
+### `DELETE /api/favorites/:resourceUuid`
+
+**Remove a resource from favorites** — Removes a single resource from the caller’s favorites.
+
+- Auth: Auth required · Rate limit: medium · Visibility: private
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| path | `resourceUuid` | string (uuid v4) | Yes | Favorited resource UUID |
+
+**Response** — JSON — { success: true }
+
+
+## Collections — User-created favorite collections
+
+### `GET /api/collections`
+
+**List user collections** — Returns all collections for the caller, each with its favorite count, ordered by display_order.
+
+- Auth: Auth required · Rate limit: medium · Visibility: private
+
+**Parameters**
+
+_No parameters._
+
+**Response** — JSON — CollectionWithCount[]
+
+### `POST /api/collections`
+
+**Create a collection** — Creates a new favorites collection for the caller.
+
+- Auth: Auth required · Rate limit: medium · Visibility: private
+
+_Schema: `CreateCollectionSchema`_
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| body | `name` | string | Yes | Collection name (1–50 chars) |
+
+**Response** — 201 — Collection { uuid, name, display_order, created_at }
+
+### `PUT /api/collections/:uuid`
+
+**Rename a collection** — Renames an existing collection owned by the caller.
+
+- Auth: Auth required · Rate limit: medium · Visibility: private
+
+_Schema: `CreateCollectionSchema`_
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| path | `uuid` | string (uuid v4) | Yes | Collection UUID |
+| body | `name` | string | Yes | New name (1–50 chars) |
+
+**Response** — JSON — { success: true }
+
+### `DELETE /api/collections/:uuid`
+
+**Delete a collection** — Deletes a collection. Favorites inside it become uncategorized (their collection_uuid is nulled).
+
+- Auth: Auth required · Rate limit: medium · Visibility: private
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| path | `uuid` | string (uuid v4) | Yes | Collection UUID |
+
+**Response** — JSON — { success: true }
+
+### `POST /api/collections/reorder`
+
+**Reorder collections** — Batch-reorders all collections for the caller. The array must contain every collection UUID in the desired order.
+
+- Auth: Auth required · Rate limit: medium · Visibility: private
+
+_Schema: `CollectionReorderSchema`_
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| body | `ordered_uuids` | array<uuid (≤20)> | Yes | All collection UUIDs in desired order |
+
+**Response** — JSON — { success: true }
+
+
+## Auth — Registration, login, profile, and sessions
+
+### `POST /api/auth/register`
+
+**Register a new user** — Creates a new user account. Turnstile CAPTCHA required.
+
+- Auth: No auth · Rate limit: strict · Visibility: private
+
+_Schema: `RegisterSchema`_
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| body | `username` | string | Yes | Username (3–32 chars, alphanumeric+_) |
+| body | `password` | string | Yes | Password (8–100 chars) |
+| body | `token` | string | No | Turnstile token |
+
+**Response** — 201 — AuthResponse { token, user } + sets sealed session cookie
+
+### `POST /api/auth/login`
+
+**Login** — Authenticates a user. When 2FA is enabled, returns a pre_auth_token instead of a session — the client must call POST /api/auth/login/2fa to complete login.
+
+- Auth: No auth · Rate limit: login · Visibility: private
+
+_Schema: `LoginSchema`_
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| body | `username` | string | Yes | Username |
+| body | `password` | string | Yes | Password |
+| body | `token` | string | No | Turnstile token |
+
+**Response** — JSON — { token, user } or { pre_auth_token, requires_2fa: true }
+
+### `POST /api/auth/login/2fa`
+
+**Complete 2FA login** — Verifies a TOTP/backup code using the pre_auth_token from /login and creates the sealed session.
+
+- Auth: No auth · Rate limit: login · Visibility: private
+
+_Schema: `TwoFactorLoginSchema`_
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| body | `username` | string | Yes | Username |
+| body | `code` | string | Yes | 6-digit TOTP or backup code |
+| body | `pre_auth_token` | string (uuid v4) | Yes | Pre-auth UUID from /login |
+
+**Response** — JSON — { token, user } + sets session cookie
+
+### `GET /api/auth/status`
+
+**Check auth status** — Returns whether the caller is authenticated and, when logged in, their user object.
+
+- Auth: No auth · Rate limit: global · Visibility: private
+
+**Parameters**
+
+_No parameters._
+
+**Response** — JSON — { authenticated: boolean, user?: User }
+
+### `POST /api/auth/logout`
+
+**Logout** — Clears the sealed session cookie and invalidates the KV session entry.
+
+- Auth: No auth · Rate limit: global · Visibility: private
+
+**Parameters**
+
+_No parameters._
+
+**Response** — JSON — { success: true }
+
+### `PUT /api/auth/me`
+
+**Update own profile** — Updates the caller’s username, avatar_url, or anonymity flag. Turnstile may be required.
+
+- Auth: Optional auth (gated field) · Rate limit: medium · Visibility: private
+
+_Schema: `UserUpdateSchema`_
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| body | `username` | string | No | New username (3–32 chars, alphanumeric+_) |
+| body | `avatar_url` | string | No | New avatar URL (https:// or /) |
+| body | `is_anonymous` | integer (0\|1) | No | Anonymity flag |
+
+**Response** — JSON — { success: true, user }
+
+### `POST /api/auth/me/password`
+
+**Change own password** — Changes the caller’s password. Requires current_password (unless OAuth-only account) and a valid 2FA code when 2FA is enabled.
+
+- Auth: Optional auth (gated field) · Rate limit: medium · Visibility: private
+
+_Schema: `ChangePasswordSchema`_
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| body | `current_password` | string | No | Current password |
+| body | `new_password` | string | Yes | New password (8–200 chars) |
+| body | `two_factor_code` | string | No | TOTP/backup code when 2FA is enabled |
+
+**Response** — JSON — { success: true }
+
+
+## OAuth — Google OAuth flow
+
+### `GET /api/auth/google`
+
+**Start Google OAuth** — Redirects the user to Google’s OAuth consent screen. Used to link or sign in via Google.
+
+- Auth: No auth · Rate limit: medium · Visibility: private
+
+**Parameters**
+
+_No parameters._
+
+**Response** — 302 — Redirect to Google consent URL
+
+### `GET /api/auth/google/callback`
+
+**Google OAuth callback** — Google redirects here after consent. Exchanges the code, verifies the id_token, and either creates a session or stores a pending registration in KV and redirects to the OAuthRegisterView.
+
+- Auth: No auth · Rate limit: medium · Visibility: private
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| query | `code` | string | Yes | Authorization code from Google |
+| query | `state` | string | No | Opaque state param |
+
+**Response** — 302 — Redirect to /oauth-register (pending) or / (existing user) + sets session cookie
+
+### `POST /api/auth/complete`
+
+**Complete OAuth registration** — Called by OAuthRegisterView after the user picks a username for a pending Google registration.
+
+- Auth: No auth · Rate limit: strict · Visibility: private
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| body | `username` | string | Yes | Chosen username (3–32 chars) |
+| body | `pending_token` | string | No | Pending registration token from callback step |
+
+**Response** — 201 — { token, user } + sets session cookie
+
+
+## Two-Factor — TOTP two-factor authentication
+
+### `POST /api/2fa/setup`
+
+**Begin 2FA setup** — Generates a TOTP secret and an otpauth:// URL + QR code for the caller. The secret is not yet active until /2fa/verify.
+
+- Auth: Auth required · Rate limit: medium · Visibility: private
+
+_Schema: `TwoFactorSetupSchema`_
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| body | `password` | string | No | Current password (re-auth) |
+
+**Response** — JSON — { secret, otpauth_url, qr_data_url }
+
+### `POST /api/2fa/verify`
+
+**Verify TOTP and enable 2FA** — Verifies the 6-digit TOTP code against the pending secret, enables 2FA, and returns one-time backup codes.
+
+- Auth: Auth required · Rate limit: medium · Visibility: private
+
+_Schema: `TwoFactorVerifySchema`_
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| body | `code` | string | Yes | 6-digit TOTP code |
+
+**Response** — JSON — { backup_codes: string[] }
+
+### `POST /api/2fa/disable`
+
+**Disable 2FA** — Disables 2FA for the caller. Requires password or valid TOTP/backup code.
+
+- Auth: Auth required · Rate limit: medium · Visibility: private
+
+_Schema: `TwoFactorDisableSchema`_
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| body | `password` | string | No | Current password |
+| body | `code` | string | No | TOTP or backup code |
+
+**Response** — JSON — { success: true }
+
+### `GET /api/2fa/status`
+
+**Get 2FA status** — Whether 2FA is enabled for the caller.
+
+- Auth: Auth required · Rate limit: medium · Visibility: private
+
+**Parameters**
+
+_No parameters._
+
+**Response** — JSON — { enabled: boolean }
+
+
+## Admin — Moderation, stats, and maintenance (admin-only)
+
+### `GET /api/admin/pending`
+
+**List pending (inactive) resources** — All inactive resources awaiting moderation, with author and media info.
+
+- Auth: Admin only · Rate limit: medium · Visibility: internal
+
+**Parameters**
+
+_No parameters._
+
+**Response** — JSON — ResourceWithMedia[]
+
+### `POST /api/admin/resource/:uuid/approve`
+
+**Approve a pending resource** — Flips is_active to 1, invalidates caches, bumps the change_feed for the resource’s category scope, and broadcasts via FeedRoom.
+
+- Auth: Admin only · Rate limit: medium · Visibility: internal
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| path | `uuid` | string (uuid v4) | Yes | Resource UUID to approve |
+
+**Response** — JSON — { success: true }
+
+### `POST /api/admin/resource/:uuid/reject`
+
+**Reject and delete a pending resource** — Deletes the resource and its R2 objects/media rows. Only pending (inactive) resources can be rejected.
+
+- Auth: Admin only · Rate limit: medium · Visibility: internal
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| path | `uuid` | string (uuid v4) | Yes | Resource UUID to reject |
+
+**Response** — JSON — { success: true }
+
+### `POST /api/admin/resource/:uuid/deactivate`
+
+**Deactivate an approved resource** — Flips an approved resource back to inactive and invalidates caches.
+
+- Auth: Admin only · Rate limit: medium · Visibility: internal
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| path | `uuid` | string (uuid v4) | Yes | Resource UUID to deactivate |
+
+**Response** — JSON — { success: true }
+
+### `GET /api/admin/stats/orphaned-media`
+
+**Orphaned-media stats (no deletion)** — Counts orphaned media inside the 24h–48h age window (same predicate the cron uses). No files are deleted.
+
+- Auth: Admin only · Rate limit: medium · Visibility: internal
+
+**Parameters**
+
+_No parameters._
+
+**Response** — JSON — { count, totalSize, oldestTimestamp }
+
+### `POST /api/admin/cleanup/orphaned-media`
+
+**Delete orphaned media (R2 + DB)** — Deletes orphaned media inside the 24h–48h window: variant objects from MEDIA_BUCKET, original from BUCKET, then media row (cascades to media_variants). Reuses the same logic as the daily cron.
+
+- Auth: Admin only · Rate limit: medium · Visibility: internal
+
+**Parameters**
+
+_No parameters._
+
+**Response** — JSON — { success: true, deleted, message }
+
+### `POST /api/admin/cache/clear/:username`
+
+**Clear KV session cache for a user** — Deletes user:<username> from KV — useful after role changes to force re-resolution.
+
+- Auth: Admin only · Rate limit: medium · Visibility: internal
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| path | `username` | string | Yes | Target username |
+
+**Response** — JSON — { success: true, message }
+
+### `POST /api/admin/users/:username/role`
+
+**Set a user’s admin flag** — Updates is_admin for a target user and immediately invalidates their KV cache so a demoted admin cannot retain elevated access for up to 7 days.
+
+- Auth: Admin only · Rate limit: medium · Visibility: internal
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| path | `username` | string | Yes | Target username |
+| body | `is_admin` | integer (0\|1) | Yes | New admin flag (0 or 1) |
+
+**Response** — JSON — { success: true, username, is_admin }
+
+### `GET /api/admin/stats`
+
+**Dashboard aggregate stats** — Consolidated metrics for the admin dashboard overview section (resource counts, user counts, pending count, etc.).
+
+- Auth: Admin only · Rate limit: medium · Visibility: internal
+
+**Parameters**
+
+_No parameters._
+
+**Response** — JSON — AdminStats { totalResources, pendingResources, totalUsers, ... }
+
+### `GET /api/admin/users`
+
+**List users (paginated, searchable)** — Paginated user listing with optional username prefix search.
+
+- Auth: Admin only · Rate limit: medium · Visibility: internal
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| query | `q` | string | No | Username search prefix |
+| query | `page` | integer | No | Page number Default: `1`. |
+
+**Response** — JSON — { users, pagination }
+
+### `GET /api/admin/resources`
+
+**List all resources (filterable)** — All resources (active + pending) with optional category/status/text filters.
+
+- Auth: Admin only · Rate limit: medium · Visibility: internal
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| query | `q` | string | No | Title search |
+| query | `category` | enum (avatars \| assets \| clothes \| worlds) | No | Category filter |
+| query | `status` | enum (active \| pending) | No | Active filter |
+| query | `page` | integer | No | Page number Default: `1`. |
+
+**Response** — JSON — { resources, pagination }
+
+### `POST /api/admin/media/generate-variants`
+
+**Backfill image variants (enqueue)** — Enqueues UPLOAD_QUEUE messages for every image/video that has no variants yet, so the queue handler regenerates them.
+
+- Auth: Admin only · Rate limit: medium · Visibility: internal
+
+**Parameters**
+
+_No parameters._
+
+**Response** — JSON — { enqueued: number }
+
+### `POST /api/admin/media/unify-keys`
+
+**One-off: unify media R2 keys to UUIDs** — Maintenance migration — copies each original in BUCKET to the key equal to its UUID, rewrites free-text references, repoints the media.r2_key column, then deletes the old object. Defaults to a dry-run; pass ?confirm=true to execute. Idempotent and re-runnable with ?limit=N per pass.
+
+- Auth: Admin only · Rate limit: medium · Visibility: internal
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| query | `confirm` | enum (true) | No | When "true", performs writes; otherwise dry-run |
+| query | `limit` | integer | No | Max rows per pass (Worker CPU budget) |
+
+**Response** — JSON — { dryRun, processed, remaining, textReferences }
+
+
+## System — Configuration and version metadata
+
+### `GET /api/config`
+
+**Public site configuration** — Returns public configuration needed by the frontend (Turnstile site key, etc.). No auth required.
+
+- Auth: No auth · Rate limit: global · Visibility: public
+
+**Parameters**
+
+_No parameters._
+
+**Response** — JSON — { turnstileSiteKey }
+
+### `GET /api/version`
+
+**Worker version and request metadata** — Unauthenticated deployment metadata: version ID/tag, commit hash, compatibility date, Cloudflare Ray/colo/country. Intentionally public for debugging.
+
+- Auth: No auth · Rate limit: global · Visibility: public
+
+**Parameters**
+
+_No parameters._
+
+**Response** — JSON — { worker: { versionId, versionTag, commitHash, deployedAt, compatibilityDate }, runtime, request: { rayId, colo, country } }
+
+
+## Realtime — Live feed, polling updates, global chat, and notifications
+
+### `GET /api/updates`
+
+**Polling change feed (fallback for live feed)** — Returns the server clock and the newest change timestamp per scope (avatars/assets/clothes/blog/comments) since ?since. The frontend polls this when the live WebSocket is down. Scopes map to DataCache prefixes the client invalidates.
+
+- Auth: No auth · Rate limit: global · Visibility: public
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| query | `since` | integer (unix ms) | Yes | Cursor in Unix ms (0 for full) |
+
+**Response** — JSON — { now, changes: { avatars, assets, clothes, blog, comments } }
+
+### `GET /api/feed/live`
+
+**Live feed WebSocket** — Upgrades to a WebSocket backed by the global FeedRoom Durable Object. Broadcasts FeedEvent { scope, action, entityId, title?, category?, thumbnailUuid?, isNsfw? } in real time. When open, the frontend suspends the /api/updates poller; when it drops, the poller resumes and covers the gap. Same reconciler drives both paths.
+
+- Auth: No auth · Rate limit: medium · Visibility: public
+
+**Parameters**
+
+_No parameters._
+
+**Response** — 101 Switching Protocols — WebSocket frames are JSON FeedEvent objects
+
+### `GET /api/chat/live`
+
+**Global chat WebSocket** — Upgrades to a WebSocket backed by the global ChatRoom Durable Object. Reading is public; only authenticated sockets may send. Text-only, ≤50 chars, backlog of 50 messages. The route stamps X-Chat-User-Uuid/Username headers before forwarding to the DO — the client never supplies identity.
+
+- Auth: Optional auth (gated field) · Rate limit: medium · Visibility: public
+
+**Parameters**
+
+_No parameters._
+
+**Response** — 101 — WebSocket. Client sends { type: "send", text }; server emits { type: "history" | "message" | "purged" | "error", ... }
+
+### `POST /api/chat/purge`
+
+**Purge global chat (admin)** — Empties the ChatRoom history for everyone. Admin-only, rate-limited to 1/min (strict). HTTP (not a socket message) so the DO never reasons about roles.
+
+- Auth: Admin only · Rate limit: strict · Visibility: internal
+
+**Parameters**
+
+_No parameters._
+
+**Response** — JSON — { success: true }
+
+### `GET /api/notifications/preferences`
+
+**Get notification preferences** — Returns the caller’s browser Notification preferences (defaults when never saved).
+
+- Auth: Auth required · Rate limit: medium · Visibility: private
+
+**Parameters**
+
+_No parameters._
+
+**Response** — JSON — NotificationPrefs { enabled, avatars_enabled, avatar_types, assets_enabled, asset_types, clothes_enabled, updated_at }
+
+### `PUT /api/notifications/preferences`
+
+**Save notification preferences** — Persists the caller’s Notification preferences (which approved-resource scopes and avatar/asset sub-types should trigger a browser notification).
+
+- Auth: Auth required · Rate limit: medium · Visibility: private
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| body | `enabled` | boolean | Yes | Master toggle |
+| body | `avatars_enabled` | boolean | Yes | Notify for avatars |
+| body | `avatar_types` | array<string> \| null | No | Which avatar types to notify |
+| body | `assets_enabled` | boolean | Yes | Notify for assets |
+| body | `asset_types` | array<string> \| null | No | Which asset types to notify |
+| body | `clothes_enabled` | boolean | Yes | Notify for clothes |
+
+**Response** — JSON — { success: true }
+
+
+---
+
+Generated from the single source of truth at `src/docs/registry.ts` (20 tags). To update the docs: edit that file and run `npm run docs:build` — /llms.txt and /llms-full.txt are static ASSETS (public/) rebuilt at deploy time, while /api/docs is served live from the same registry with optional ?tag= filtering. Run `npm run docs:check` locally to catch a route that exists without a doc entry.
