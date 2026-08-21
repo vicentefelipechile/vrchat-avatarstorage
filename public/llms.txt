@@ -22,100 +22,100 @@ Full exhaustive reference (every endpoint, every param, auth and rate-limit note
 - [Terms of Service](https://vrcstorage.lat/tos): Permitted content, age requirement (18+), DMCA policy, and account rules.
 - [DMCA](https://vrcstorage.lat/dmca): Copyright takedown request process.
 
-## Public API — Site — Frontend pages and wiki
+## Public API - Site - Frontend pages and wiki
 
 Base: Static assets / SSR pages
 
-- [`GET` /wiki/:lang/:topic.md](https://vrcstorage.lat/wiki/:lang/:topic.md): Raw wiki markdown (static asset) — Raw Markdown source for a wiki article, served from ASSETS (public/wiki/{lang}/{topic}.md). The frontend falls back to English when the localized file is missing. (No auth. Response: text/markdown — raw Markdown, or the SPA shell HTML when missing (fallback signal))
+- [`GET` /wiki/:lang/:topic.md](https://vrcstorage.lat/wiki/:lang/:topic.md): Raw wiki markdown (static asset) - Raw Markdown source for a wiki article, served from ASSETS (public/wiki/{lang}/{topic}.md). The frontend falls back to English when the localized file is missing. (No auth. Response: text/markdown - raw Markdown, or the SPA shell HTML when missing (fallback signal))
 
-## Public API — Avatars — Avatar listing, search, detail, and mutation
+## Public API - Avatars - Avatar listing, search, detail, and mutation
 
 Base: `https://vrcstorage.lat/api/avatars`
 
-- [`GET` /api/avatars](https://vrcstorage.lat/api/avatars): List avatars with faceted filtering — Paginated avatar listing filtered by gender, size, type, platform, SDK, NSFW, feature flags, and author. Uses INNER JOIN avatar_meta — only avatars with metadata appear. (No auth. Query: `page`, `limit`, `sort_by`, `sort_order`, `avatar_gender`, `avatar_size`, `avatar_type`, `platform`, `sdk_version`, `is_nsfw`, `has_physbones`, `has_face_tracking`, `has_dps`, `has_gogoloco`, `has_toggles`, `is_quest_optimized`, `author_uuid`. Response: JSON — { resources: AvatarWithMeta[], pagination: { page, limit, total, hasNextPage, hasPrevPage } })
-- [`GET` /api/avatars/search](https://vrcstorage.lat/api/avatars/search): Lightweight avatar name autocomplete — Returns at most `limit` avatar titles matching a prefix — intended for the clothes base-avatar selector and similar autocomplete fields. (No auth. Query: `q`, `limit`. Response: JSON — [{ uuid, title }])
-- [`GET` /api/avatars/:uuid](https://vrcstorage.lat/api/avatars/:uuid): Get a single avatar with metadata — Full avatar detail including avatar_meta row. Used by HistoryView to compute diffs. (No auth. Response: JSON — AvatarWithMeta (resource + meta + links + media))
+- [`GET` /api/avatars](https://vrcstorage.lat/api/avatars): List avatars with faceted filtering - Paginated avatar listing filtered by gender, size, type, platform, SDK, NSFW, feature flags, and author. Uses INNER JOIN avatar_meta - only avatars with metadata appear. (No auth. Query: `page`, `limit`, `sort_by`, `sort_order`, `avatar_gender`, `avatar_size`, `avatar_type`, `platform`, `sdk_version`, `is_nsfw`, `has_physbones`, `has_face_tracking`, `has_dps`, `has_gogoloco`, `has_toggles`, `is_quest_optimized`, `author_uuid`. Response: JSON - { resources: AvatarWithMeta[], pagination: { page, limit, total, hasNextPage, hasPrevPage } })
+- [`GET` /api/avatars/search](https://vrcstorage.lat/api/avatars/search): Lightweight avatar name autocomplete - Returns at most `limit` avatar titles matching a prefix - intended for the clothes base-avatar selector and similar autocomplete fields. (No auth. Query: `q`, `limit`. Response: JSON - [{ uuid, title }])
+- [`GET` /api/avatars/:uuid](https://vrcstorage.lat/api/avatars/:uuid): Get a single avatar with metadata - Full avatar detail including avatar_meta row. Used by HistoryView to compute diffs. (No auth. Response: JSON - AvatarWithMeta (resource + meta + links + media))
 
-## Public API — Assets — Asset listing and mutation
+## Public API - Assets - Asset listing and mutation
 
 Base: `https://vrcstorage.lat/api/assets`
 
-- [`GET` /api/assets](https://vrcstorage.lat/api/assets): List assets with faceted filtering — Paginated asset listing filtered by asset_type, platform, SDK, Unity version, and NSFW. INNER JOIN asset_meta. (No auth. Query: `page`, `limit`, `sort_by`, `sort_order`, `asset_type`, `platform`, `sdk_version`, `unity_version`, `is_nsfw`. Response: JSON — { resources: AssetWithMeta[], pagination })
-- [`GET` /api/assets/:uuid](https://vrcstorage.lat/api/assets/:uuid): Get a single asset with metadata — Full asset detail including asset_meta row. (No auth. Response: JSON — AssetWithMeta)
+- [`GET` /api/assets](https://vrcstorage.lat/api/assets): List assets with faceted filtering - Paginated asset listing filtered by asset_type, platform, SDK, Unity version, and NSFW. INNER JOIN asset_meta. (No auth. Query: `page`, `limit`, `sort_by`, `sort_order`, `asset_type`, `platform`, `sdk_version`, `unity_version`, `is_nsfw`. Response: JSON - { resources: AssetWithMeta[], pagination })
+- [`GET` /api/assets/:uuid](https://vrcstorage.lat/api/assets/:uuid): Get a single asset with metadata - Full asset detail including asset_meta row. (No auth. Response: JSON - AssetWithMeta)
 
-## Public API — Clothes — Clothing listing and mutation
+## Public API - Clothes - Clothing listing and mutation
 
 Base: `https://vrcstorage.lat/api/clothes`
 
-- [`GET` /api/clothes](https://vrcstorage.lat/api/clothes): List clothing items with faceted filtering — Paginated clothes listing filtered by gender_fit, clothing_type, platform, is_base, is_nsfw, and has_physbones. INNER JOIN clothes_meta. (No auth. Query: `page`, `limit`, `sort_by`, `sort_order`, `gender_fit`, `clothing_type`, `platform`, `is_base`, `is_nsfw`, `has_physbones`, `compatible_avatar`. Response: JSON — { resources: ClothesWithMeta[], pagination })
-- [`GET` /api/clothes/:uuid](https://vrcstorage.lat/api/clothes/:uuid): Get a single clothing item with metadata — Full clothing detail including clothes_meta row. (No auth. Response: JSON — ClothesWithMeta)
+- [`GET` /api/clothes](https://vrcstorage.lat/api/clothes): List clothing items with faceted filtering - Paginated clothes listing filtered by gender_fit, clothing_type, platform, is_base, is_nsfw, and has_physbones. INNER JOIN clothes_meta. (No auth. Query: `page`, `limit`, `sort_by`, `sort_order`, `gender_fit`, `clothing_type`, `platform`, `is_base`, `is_nsfw`, `has_physbones`, `compatible_avatar`. Response: JSON - { resources: ClothesWithMeta[], pagination })
+- [`GET` /api/clothes/:uuid](https://vrcstorage.lat/api/clothes/:uuid): Get a single clothing item with metadata - Full clothing detail including clothes_meta row. (No auth. Response: JSON - ClothesWithMeta)
 
-## Public API — Resources — Generic resource CRUD and links
+## Public API - Resources - Generic resource CRUD and links
 
 Base: `https://vrcstorage.lat/api/resources`
 
-- [`GET` /api/resources/latest](https://vrcstorage.lat/api/resources/latest): Latest active resources (KV-cached, 60s) — Returns the 10 most recently created active resources, KV-cached for 60s with Cache-Control: public, max-age=60. (No auth. Response: JSON — ResourceWithMedia[])
-- [`GET` /api/resources](https://vrcstorage.lat/api/resources): Search resources by query and category — Paginated search across resources; optional category filter (avatars/assets/clothes/worlds) and sorting. (No auth. Query: `page`, `limit`, `category`, `sort_by`, `sort_order`, `q`. Response: JSON — { data: Resource[], pagination })
-- [`GET` /api/resources/:uuid](https://vrcstorage.lat/api/resources/:uuid): Full resource detail (download links gated) — Returns title, description (Markdown), thumbnail, reference image, gallery media, download links, metadata, and download_count. Download link URLs are only included for authenticated users. (Optional auth (gated field). Response: JSON — ResourceWithMedia & links & meta)
+- [`GET` /api/resources/latest](https://vrcstorage.lat/api/resources/latest): Latest active resources (KV-cached, 60s) - Returns the 10 most recently created active resources, KV-cached for 60s with Cache-Control: public, max-age=60. (No auth. Response: JSON - ResourceWithMedia[])
+- [`GET` /api/resources](https://vrcstorage.lat/api/resources): Search resources by query and category - Paginated search across resources; optional category filter (avatars/assets/clothes/worlds) and sorting. (No auth. Query: `page`, `limit`, `category`, `sort_by`, `sort_order`, `q`. Response: JSON - { data: Resource[], pagination })
+- [`GET` /api/resources/:uuid](https://vrcstorage.lat/api/resources/:uuid): Full resource detail (download links gated) - Returns title, description (Markdown), thumbnail, reference image, gallery media, download links, metadata, and download_count. Download link URLs are only included for authenticated users. (Optional auth (gated field). Response: JSON - ResourceWithMedia & links & meta)
 
-## Public API — Authors — Normalized avatar author profiles
+## Public API - Authors - Normalized avatar author profiles
 
 Base: `https://vrcstorage.lat/api/authors`
 
-- [`GET` /api/authors](https://vrcstorage.lat/api/authors): List avatar authors (paginated) — Paginated list of normalized avatar author profiles, each with resource_count. (No auth. Query: `page`, `limit`. Response: JSON — { authors: AuthorWithCount[], pagination })
-- [`GET` /api/authors/search](https://vrcstorage.lat/api/authors/search): Author name autocomplete — Prefix search over author names, max 10 results with uuid, name, slug. (No auth. Query: `q`, `limit`. Response: JSON — [{ uuid, name, slug }])
-- [`GET` /api/authors/:slug](https://vrcstorage.lat/api/authors/:slug): Author profile with avatars — Public author profile plus paginated list of their published avatars. (No auth. Query: `page`, `limit`. Response: JSON — { author, avatars: ResourceWithMedia[], pagination })
+- [`GET` /api/authors](https://vrcstorage.lat/api/authors): List avatar authors (paginated) - Paginated list of normalized avatar author profiles, each with resource_count. (No auth. Query: `page`, `limit`. Response: JSON - { authors: AuthorWithCount[], pagination })
+- [`GET` /api/authors/search](https://vrcstorage.lat/api/authors/search): Author name autocomplete - Prefix search over author names, max 10 results with uuid, name, slug. (No auth. Query: `q`, `limit`. Response: JSON - [{ uuid, name, slug }])
+- [`GET` /api/authors/:slug](https://vrcstorage.lat/api/authors/:slug): Author profile with avatars - Public author profile plus paginated list of their published avatars. (No auth. Query: `page`, `limit`. Response: JSON - { author, avatars: ResourceWithMedia[], pagination })
 
-## Public API — Blog — Blog posts and blog comments
+## Public API - Blog - Blog posts and blog comments
 
 Base: `https://vrcstorage.lat/api/blog`
 
-- [`GET` /api/blog](https://vrcstorage.lat/api/blog): List blog posts (paginated, KV-cached) — Paginated blog post list with cover image key and author info. KV-cached for 1h (list) and per-post. (No auth. Query: `page`, `limit`. Response: JSON — { data: BlogPostWithAuthor[], pagination: { page, limit, total, total_pages } })
-- [`GET` /api/blog/:uuid](https://vrcstorage.lat/api/blog/:uuid): Get a single blog post — Single post by UUID, including full Markdown content. (No auth. Response: JSON — BlogPostWithAuthor)
-- [`GET` /api/blog/:uuid/comments](https://vrcstorage.lat/api/blog/:uuid/comments): List comments for a blog post — Comments for a single blog post, paginated. (No auth. Query: `limit`, `offset`. Response: JSON — BlogCommentWithAuthor[])
+- [`GET` /api/blog](https://vrcstorage.lat/api/blog): List blog posts (paginated, KV-cached) - Paginated blog post list with cover image key and author info. KV-cached for 1h (list) and per-post. (No auth. Query: `page`, `limit`. Response: JSON - { data: BlogPostWithAuthor[], pagination: { page, limit, total, total_pages } })
+- [`GET` /api/blog/:uuid](https://vrcstorage.lat/api/blog/:uuid): Get a single blog post - Single post by UUID, including full Markdown content. (No auth. Response: JSON - BlogPostWithAuthor)
+- [`GET` /api/blog/:uuid/comments](https://vrcstorage.lat/api/blog/:uuid/comments): List comments for a blog post - Comments for a single blog post, paginated. (No auth. Query: `limit`, `offset`. Response: JSON - BlogCommentWithAuthor[])
 
-## Public API — Comments — Resource and wiki comments
+## Public API - Comments - Resource and wiki comments
 
 Base: `https://vrcstorage.lat/api/comments`
 
-- [`GET` /api/comments/:resourceId](https://vrcstorage.lat/api/comments/:resourceId): List comments for a resource — All comments for a given resource, with author info. (No auth. Response: JSON — CommentWithAuthor[])
+- [`GET` /api/comments/:resourceId](https://vrcstorage.lat/api/comments/:resourceId): List comments for a resource - All comments for a given resource, with author info. (No auth. Response: JSON - CommentWithAuthor[])
 
-## Public API — Wiki — Wiki comments
+## Public API - Wiki - Wiki comments
 
 Base: `https://vrcstorage.lat/api/wiki`
 
-- [`GET` /api/wiki/comments](https://vrcstorage.lat/api/wiki/comments): List global wiki comments — Global wiki (site-wide) comments, not tied to a specific resource. (No auth. Query: `limit`, `offset`. Response: JSON — WikiCommentWithAuthor[])
+- [`GET` /api/wiki/comments](https://vrcstorage.lat/api/wiki/comments): List global wiki comments - Global wiki (site-wide) comments, not tied to a specific resource. (No auth. Query: `limit`, `offset`. Response: JSON - WikiCommentWithAuthor[])
 
-## Public API — Media — Media processing status and CDN variants
+## Public API - Media - Media processing status and CDN variants
 
 Base: `https://vrcstorage.lat/api/media`
 
-- [`GET` /api/media/:uuid/status](https://vrcstorage.lat/api/media/:uuid/status): Media processing status — Whether a media item has finished processing (its CDN variants exist). Derived from media_variants existence. (No auth. Response: JSON — { processed: boolean })
+- [`GET` /api/media/:uuid/status](https://vrcstorage.lat/api/media/:uuid/status): Media processing status - Whether a media item has finished processing (its CDN variants exist). Derived from media_variants existence. (No auth. Response: JSON - { processed: boolean })
 
-## Public API — Downloads — R2 file serving and CDN media variants
+## Public API - Downloads - R2 file serving and CDN media variants
 
 Base: `https://vrcstorage.lat/api/download`
 
-- [`GET` https://cdn.vrcstorage.lat/:uuid](https://cdn.vrcstorage.lat/:uuid): CDN — public media variants — Standalone CDN Worker (src/cdn-worker.ts, wrangler-cdn.jsonc). Serves pre-processed public media from MEDIA_BUCKET. While the queue is still processing, serves a localized cover-safe placeholder (processing.{lang}.webp) with Cache-Control: no-store. (No auth. Query: `res`, `format`. Response: Binary — image (webp/png/gif) or video (mp4, Range-supported) with long immutable cache)
+- [`GET` https://cdn.vrcstorage.lat/:uuid](https://cdn.vrcstorage.lat/:uuid): CDN - public media variants - Standalone CDN Worker (src/cdn-worker.ts, wrangler-cdn.jsonc). Serves pre-processed public media from MEDIA_BUCKET. While the queue is still processing, serves a localized cover-safe placeholder (processing.{lang}.webp) with Cache-Control: no-store. (No auth. Query: `res`, `format`. Response: Binary - image (webp/png/gif) or video (mp4, Range-supported) with long immutable cache)
 
-## Public API — System — Configuration and version metadata
-
-Base: `https://vrcstorage.lat/api`
-
-- [`GET` /api/config](https://vrcstorage.lat/api/config): Public site configuration — Returns public configuration needed by the frontend (Turnstile site key, etc.). No auth required. (No auth. Response: JSON — { turnstileSiteKey })
-- [`GET` /api/version](https://vrcstorage.lat/api/version): Worker version and request metadata — Unauthenticated deployment metadata: version ID/tag, commit hash, compatibility date, Cloudflare Ray/colo/country. Intentionally public for debugging. (No auth. Response: JSON — { worker: { versionId, versionTag, commitHash, deployedAt, compatibilityDate }, runtime, request: { rayId, colo, country } })
-
-## Public API — Realtime — Live feed, polling updates, global chat, and notifications
+## Public API - System - Configuration and version metadata
 
 Base: `https://vrcstorage.lat/api`
 
-- [`GET` /api/updates](https://vrcstorage.lat/api/updates): Polling change feed (fallback for live feed) — Returns the server clock and the newest change timestamp per scope (avatars/assets/clothes/blog/comments) since ?since. The frontend polls this when the live WebSocket is down. Scopes map to DataCache prefixes the client invalidates. (No auth. Query: `since`. Response: JSON — { now, changes: { avatars, assets, clothes, blog, comments } })
-- [`GET` /api/feed/live](https://vrcstorage.lat/api/feed/live): Live feed WebSocket — Upgrades to a WebSocket backed by the global FeedRoom Durable Object. Broadcasts FeedEvent { scope, action, entityId, title?, category?, thumbnailUuid?, isNsfw? } in real time. When open, the frontend suspends the /api/updates poller; when it drops, the poller resumes and covers the gap. Same reconciler drives both paths. (No auth. Response: 101 Switching Protocols — WebSocket frames are JSON FeedEvent objects)
-- [`GET` /api/chat/live](https://vrcstorage.lat/api/chat/live): Global chat WebSocket — Upgrades to a WebSocket backed by the global ChatRoom Durable Object. Reading is public; only authenticated sockets may send. Text-only, ≤50 chars, backlog of 50 messages. The route stamps X-Chat-User-Uuid/Username headers before forwarding to the DO — the client never supplies identity. (Optional auth (gated field). Response: 101 — WebSocket. Client sends { type: "send", text }; server emits { type: "history" | "message" | "purged" | "error", ... })
+- [`GET` /api/config](https://vrcstorage.lat/api/config): Public site configuration - Returns public configuration needed by the frontend (Turnstile site key, etc.). No auth required. (No auth. Response: JSON - { turnstileSiteKey })
+- [`GET` /api/version](https://vrcstorage.lat/api/version): Worker version and request metadata - Unauthenticated deployment metadata: version ID/tag, commit hash, compatibility date, Cloudflare Ray/colo/country. Intentionally public for debugging. (No auth. Response: JSON - { worker: { versionId, versionTag, commitHash, deployedAt, compatibilityDate }, runtime, request: { rayId, colo, country } })
+
+## Public API - Realtime - Live feed, polling updates, global chat, and notifications
+
+Base: `https://vrcstorage.lat/api`
+
+- [`GET` /api/updates](https://vrcstorage.lat/api/updates): Polling change feed (fallback for live feed) - Returns the server clock and the newest change timestamp per scope (avatars/assets/clothes/blog/comments) since ?since. The frontend polls this when the live WebSocket is down. Scopes map to DataCache prefixes the client invalidates. (No auth. Query: `since`. Response: JSON - { now, changes: { avatars, assets, clothes, blog, comments } })
+- [`GET` /api/feed/live](https://vrcstorage.lat/api/feed/live): Live feed WebSocket - Upgrades to a WebSocket backed by the global FeedRoom Durable Object. Broadcasts FeedEvent { scope, action, entityId, title?, category?, thumbnailUuid?, isNsfw? } in real time. When open, the frontend suspends the /api/updates poller; when it drops, the poller resumes and covers the gap. Same reconciler drives both paths. (No auth. Response: 101 Switching Protocols - WebSocket frames are JSON FeedEvent objects)
+- [`GET` /api/chat/live](https://vrcstorage.lat/api/chat/live): Global chat WebSocket - Upgrades to a WebSocket backed by the global ChatRoom Durable Object. Reading is public; only authenticated sockets may send. Text-only, <=50 chars, backlog of 50 messages. The route stamps X-Chat-User-Uuid/Username headers before forwarding to the DO - the client never supplies identity. (Optional auth (gated field). Response: 101 - WebSocket. Client sends { type: "send", text }; server emits { type: "history" | "message" | "purged" | "error", ... })
 
 ## Optional
 
-Raw wiki articles (Markdown) — replace `en` with any supported locale (`es`, `pt`, `fr`, `de`, `it`, `nl`, `pl`, `tr`, `ru`, `cn`, `jp`):
+Raw wiki articles (Markdown) - replace `en` with any supported locale (`es`, `pt`, `fr`, `de`, `it`, `nl`, `pl`, `tr`, `ru`, `cn`, `jp`):
 
 - [Wiki - home](https://vrcstorage.lat/wiki/en/home.md): Raw Markdown source for the "home" guide.
 - [Wiki - faq](https://vrcstorage.lat/wiki/en/faq.md): Raw Markdown source for the "faq" guide.
@@ -143,4 +143,4 @@ Raw wiki articles (Markdown) — replace `en` with any supported locale (`es`, `
 - [Wiki - justkisssfx](https://vrcstorage.lat/wiki/en/justkisssfx.md): Raw Markdown source for the "justkisssfx" guide.
 - [Wiki - avatar-categories](https://vrcstorage.lat/wiki/en/avatar-categories.md): Raw Markdown source for the "avatar-categories" guide.
 
-CDN placeholders (cover-safe, localized) — served while the queue is still generating variants: `https://cdn.vrcstorage.lat/_placeholder/processing.{lang}.webp` (image placeholder, 200 with no-store) and the same files mirrored under `/processing/{lang}.webp` for local preview.
+CDN placeholders (cover-safe, localized) - served while the queue is still generating variants: `https://cdn.vrcstorage.lat/_placeholder/processing.{lang}.webp` (image placeholder, 200 with no-store) and the same files mirrored under `/processing/{lang}.webp` for local preview.

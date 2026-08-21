@@ -41,18 +41,35 @@ function rateLabel(tier: EndpointDoc['rateLimit']): string {
 	return tier;
 }
 
+function toAscii(s: string): string {
+	return s
+		.replace(/—/g, '-')
+		.replace(/–/g, '-')
+		.replace(/·/g, '|')
+		.replace(/×/g, 'x')
+		.replace(/≤/g, '<=')
+		.replace(/≥/g, '>=')
+		.replace(/→/g, '->')
+		.replace(/←/g, '<-')
+		.replace(/[’‘]/g, "'")
+		.replace(/[“”]/g, '"')
+		.replace(/…/g, '...')
+		.replace(/\u00A0/g, ' ');
+}
+
 function escapeMd(s: string): string {
-	return s.replace(/\|/g, '\\|');
+	return toAscii(s).replace(/\|/g, '\\|');
 }
 
 function paramTable(params: EndpointDoc['params']): string {
-	if (!params.length) return '_No parameters._\n';
+	if (!params.length) return 'No parameters.\n';
 	const header = '| Location | Name | Type | Required | Description |\n| :------- | :--- | :--- | :------- | :---------- |\n';
 	const rows = params.map((p) => {
 		const req = p.required ? 'Yes' : 'No';
-		const type = p.enumValues ? `${escapeMd(p.type)} (${p.enumValues.join(' \\| ')})` : escapeMd(p.type);
-		const def = p.defaultValue ? ` Default: \`${p.defaultValue}\`.` : '';
-		return `| ${p.location} | \`${p.name}\` | ${type} | ${req} | ${escapeMd(p.description)}${def} |`;
+		// Use comma separator for enum values to avoid escaped pipes breaking LLM parsers
+		const type = p.enumValues ? `${escapeMd(p.type)} (${p.enumValues.join(', ')})` : escapeMd(p.type);
+		const def = p.defaultValue ? ` Default: \`${escapeMd(p.defaultValue)}\`.` : '';
+		return `| ${p.location} | \`${escapeMd(p.name)}\` | ${type} | ${req} | ${escapeMd(p.description)}${def} |`;
 	});
 	return header + rows.join('\n') + '\n';
 }
@@ -60,22 +77,20 @@ function paramTable(params: EndpointDoc['params']): string {
 function sectionForTag(tag: string, endpoints: EndpointDoc[]): string {
 	const meta = TAG_GROUPS.find((g) => g.tag === tag);
 	const label = meta?.label ?? tag;
-	const desc = meta?.description ?? '';
-	return `## ${label}${desc ? ` — ${desc}` : ''}\n\n` + endpoints.map(endpointBlock).join('\n');
+	const desc = meta?.description ? toAscii(meta.description) : '';
+	return `## ${label}${desc ? ` - ${desc}` : ''}\n\n` + endpoints.map(endpointBlock).join('\n');
 }
 
 function endpointBlock(e: EndpointDoc): string {
-	const deprecated = e.deprecated ? `> **Deprecated:** ${e.deprecated}\n\n` : '';
+	const deprecated = e.deprecated ? `> **Deprecated:** ${toAscii(e.deprecated)}\n\n` : '';
 	const params = paramTable(e.params);
-	const notes = e.notes ? `\n> Note: ${e.notes}\n` : '';
-	const schema = e.schema ? `\n_Schema: \`${e.schema}\`_\n` : '';
+	const notes = e.notes ? `\n> Note: ${toAscii(e.notes)}\n` : '';
 	return [
 		`### \`${e.method} ${e.path}\``,
-		`${deprecated}**${e.summary}** — ${e.description}`,
-		`- Auth: ${authLabel(e.auth)} · Rate limit: ${rateLabel(e.rateLimit)} · Visibility: ${e.visibility}`,
-		schema.trim() ? schema.trim() : null,
+		`${deprecated}**${toAscii(e.summary)}** - ${toAscii(e.description)}`,
+		`- Auth: ${authLabel(e.auth)} | Rate limit: ${rateLabel(e.rateLimit)} | Visibility: ${e.visibility}`,
 		`**Parameters**\n\n${params.trim()}`,
-		`**Response** — ${e.response.description}${e.response.example ? `\n\n\`\`\`json\n${e.response.example}\n\`\`\`` : ''}`,
+		`**Response** - ${toAscii(e.response.description)}${e.response.example ? `\n\n\`\`\`json\n${e.response.example}\n\`\`\`` : ''}`,
 		notes.trim() ? notes.trim() : null,
 	].filter(Boolean).join('\n\n') + '\n';
 }
@@ -86,9 +101,9 @@ function curatedLine(e: EndpointDoc): string {
 	const url = e.path.startsWith('http') ? e.path : `${SITE_URL}${e.path}`;
 	const method = `\`${e.method}\``;
 	const auth = authLabel(e.auth);
-	const params = e.params.filter((p) => p.location === 'query').map((p) => `\`${p.name}\``).join(', ');
+	const params = e.params.filter((p) => p.location === 'query').map((p) => `\`${escapeMd(p.name)}\``).join(', ');
 	const paramHint = params ? ` Query: ${params}.` : '';
-	return `- [${method} ${e.path}](${url}): ${e.summary} — ${e.description} (${auth}.${paramHint} Response: ${e.response.description})`;
+	return `- [${method} ${escapeMd(e.path)}](${url}): ${toAscii(e.summary)} - ${toAscii(e.description)} (${auth}.${paramHint} Response: ${toAscii(e.response.description)})`;
 }
 
 // =========================================================================================================
@@ -143,8 +158,8 @@ export function buildLlmsTxt(manifest: ApiDocsManifest = buildManifest()): strin
 		const endpoints = byTag.get(tag)!;
 		const meta = TAG_GROUPS.find((g) => g.tag === tag);
 		const label = meta?.label ?? tag;
-		const desc = meta?.description ? ` — ${meta.description}` : '';
-		lines.push(`## Public API — ${label}${desc}`);
+		const desc = meta?.description ? ` - ${toAscii(meta.description)}` : '';
+		lines.push(`## Public API - ${toAscii(label)}${desc}`);
 		lines.push('');
 		// Surface a base URL hint when the tag maps to a mount point
 		const baseHint: Record<string, string> = {
@@ -173,13 +188,13 @@ export function buildLlmsTxt(manifest: ApiDocsManifest = buildManifest()): strin
 	// --- Optional tail (spec §5) ---
 	lines.push(`## Optional`);
 	lines.push('');
-	lines.push('Raw wiki articles (Markdown) — replace `en` with any supported locale (`es`, `pt`, `fr`, `de`, `it`, `nl`, `pl`, `tr`, `ru`, `cn`, `jp`):');
+	lines.push('Raw wiki articles (Markdown) - replace `en` with any supported locale (`es`, `pt`, `fr`, `de`, `it`, `nl`, `pl`, `tr`, `ru`, `cn`, `jp`):');
 	lines.push('');
 	for (const topic of WIKI_TOPICS) {
 		lines.push(`- [Wiki - ${topic}](https://vrcstorage.lat/wiki/en/${topic}.md): Raw Markdown source for the "${topic}" guide.`);
 	}
 	lines.push('');
-	lines.push(`CDN placeholders (cover-safe, localized) — served while the queue is still generating variants: \`${CDN_URL}/_placeholder/processing.{lang}.webp\` (image placeholder, 200 with no-store) and the same files mirrored under \`/processing/{lang}.webp\` for local preview.`);
+	lines.push(`CDN placeholders (cover-safe, localized) - served while the queue is still generating variants: \`${CDN_URL}/_placeholder/processing.{lang}.webp\` (image placeholder, 200 with no-store) and the same files mirrored under \`/processing/{lang}.webp\` for local preview.`);
 	lines.push('');
 
 	return lines.join('\n');
@@ -202,11 +217,11 @@ export function buildLlmsFullTxt(manifest: ApiDocsManifest = buildManifest()): s
 	for (const t of byTag.keys()) if (!orderedTags.includes(t)) orderedTags.push(t);
 
 	const lines: string[] = [];
-	lines.push(`# VRCStorage — Full API Reference`);
+	lines.push(`# VRCStorage - Full API Reference`);
 	lines.push('');
 	lines.push(`> Exhaustive endpoint reference for AI agents and tooling. Every route in VRCStorage, including authenticated, admin, and write endpoints. For a concise, LLM-friendly overview of public reads only, see [llms.txt](${SITE_URL}/llms.txt). Machine-readable JSON: [${SITE_URL}/api/docs](${SITE_URL}/api/docs).`);
 	lines.push('');
-	lines.push(`Base API URL: \`${SITE_URL}/api\`. CDN: \`${CDN_URL}/{uuid}?res=[low|med|original]&format=[webp|png|gif|video]\`. Rate-limit tiers: \`strict\` (1/60s), \`login\` (10/60s), \`medium\` (100/60s), \`global\` (500/60s) — configured in wrangler.jsonc and wired in src/http/rate-limits.ts. Auth: \`public\` (no session), \`optional\` (gated field), \`auth\` (sealed session cookie via requireAuth), \`admin\` (requireAdmin). Pagination and UUID/timestamp conventions are as in llms.txt.`);
+	lines.push(`Base API URL: \`${SITE_URL}/api\`. CDN: \`${CDN_URL}/{uuid}?res=[low|med|original]&format=[webp|png|gif|video]\`. Rate-limit tiers: \`strict\` (1/60s), \`login\` (10/60s), \`medium\` (100/60s), \`global\` (500/60s) - configured in wrangler.jsonc and wired in src/http/rate-limits.ts. Auth: \`public\` (no session), \`optional\` (gated field), \`auth\` (sealed session cookie via requireAuth), \`admin\` (requireAdmin). Pagination and UUID/timestamp conventions are as in llms.txt.`);
 	lines.push('');
 
 	for (const tag of orderedTags) {
@@ -216,7 +231,7 @@ export function buildLlmsFullTxt(manifest: ApiDocsManifest = buildManifest()): s
 
 	lines.push(`---`);
 	lines.push('');
-	lines.push(`Generated from the single source of truth at \`src/docs/registry.ts\` (${TAG_GROUPS.length} tags). To update the docs: edit that file and run \`npm run docs:build\` — /llms.txt and /llms-full.txt are static ASSETS (public/) rebuilt at deploy time, while /api/docs is served live from the same registry with optional ?tag= filtering. Run \`npm run docs:check\` locally to catch a route that exists without a doc entry.`);
+	lines.push(`Generated from the single source of truth at \`src/docs/registry.ts\` (${TAG_GROUPS.length} tags). To update the docs: edit that file and run \`npm run docs:build\` - /llms.txt and /llms-full.txt are static ASSETS (public/) rebuilt at deploy time, while /api/docs is served live from the same registry with optional ?tag= filtering. Run \`npm run docs:check\` locally to catch a route that exists without a doc entry.`);
 	lines.push('');
 
 	return lines.join('\n');
