@@ -787,6 +787,7 @@ export const ENDPOINTS: EndpointDoc[] = [
 
 export function buildManifest(): ApiDocsManifest {
 	return {
+		$schema: `${SITE_URL}/api/docs/schema.json`,
 		site: {
 			name: 'VRCStorage',
 			baseUrl: SITE_URL,

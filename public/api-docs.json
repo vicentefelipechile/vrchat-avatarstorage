@@ -1,4 +1,5 @@
 {
+  "$schema": "https://vrcstorage.lat/api/docs/schema.json",
   "site": {
     "name": "VRCStorage",
     "baseUrl": "https://vrcstorage.lat",

@@ -88,6 +88,7 @@ export interface SiteSection {
 }
 
 export interface ApiDocsManifest {
+	$schema: string;
 	site: {
 		name: string;
 		baseUrl: string;

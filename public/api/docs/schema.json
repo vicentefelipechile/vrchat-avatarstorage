@@ -1,0 +1,94 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"$id": "https://vrcstorage.lat/api/docs/schema.json",
+	"title": "VRCStorage API Docs Manifest",
+	"description": "Machine-readable manifest served at https://vrcstorage.lat/api/docs - single source of truth for llms.txt, llms-full.txt and tooling. Generated from src/docs/registry.ts.",
+	"type": "object",
+	"required": ["$schema", "site", "siteSections", "endpoints"],
+	"properties": {
+		"$schema": {
+			"type": "string",
+			"format": "uri",
+			"description": "JSON Schema URL for this manifest. Fetch https://vrcstorage.lat/api/docs/schema.json to validate.",
+			"const": "https://vrcstorage.lat/api/docs/schema.json"
+		},
+		"site": {
+			"type": "object",
+			"required": ["name", "baseUrl", "summary", "description", "version"],
+			"properties": {
+				"name": { "type": "string", "description": "Project name" },
+				"baseUrl": { "type": "string", "format": "uri" },
+				"summary": { "type": "string" },
+				"description": { "type": "string" },
+				"version": { "type": "string", "description": "Compatibility date / version tag" }
+			},
+			"additionalProperties": false
+		},
+		"siteSections": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"required": ["title", "url", "description"],
+				"properties": {
+					"title": { "type": "string" },
+					"url": { "type": "string", "format": "uri" },
+					"description": { "type": "string" }
+				},
+				"additionalProperties": false
+			}
+		},
+		"endpoints": {
+			"type": "array",
+			"items": { "$ref": "#/$defs/endpointDoc" }
+		}
+	},
+	"additionalProperties": false,
+	"$defs": {
+		"endpointDoc": {
+			"type": "object",
+			"required": ["method", "path", "summary", "description", "auth", "rateLimit", "visibility", "tag", "params", "response"],
+			"properties": {
+				"method": { "type": "string", "enum": ["GET", "POST", "PUT", "PATCH", "DELETE"] },
+				"path": { "type": "string", "description": "Full path as mounted in src/index.ts, e.g. /api/avatars/:uuid" },
+				"summary": { "type": "string" },
+				"description": { "type": "string" },
+				"auth": { "type": "string", "enum": ["public", "auth", "admin", "optional"] },
+				"rateLimit": { "type": "string", "enum": ["strict", "medium", "global", "login", "none"] },
+				"visibility": { "type": "string", "enum": ["public", "private", "internal"] },
+				"tag": { "type": "string", "description": "Group key from TAG_GROUPS" },
+				"deprecated": { "type": "string" },
+				"schema": { "type": "string", "description": "Zod schema name for reference" },
+				"notes": { "type": "string" },
+				"params": {
+					"type": "array",
+					"items": { "$ref": "#/$defs/paramDoc" }
+				},
+				"response": { "$ref": "#/$defs/responseDoc" }
+			},
+			"additionalProperties": false
+		},
+		"paramDoc": {
+			"type": "object",
+			"required": ["name", "location", "required", "type", "description"],
+			"properties": {
+				"name": { "type": "string" },
+				"location": { "type": "string", "enum": ["path", "query", "header", "body", "cookie"] },
+				"required": { "type": "boolean" },
+				"type": { "type": "string" },
+				"description": { "type": "string" },
+				"enumValues": { "type": "array", "items": { "type": "string" } },
+				"defaultValue": { "type": "string" }
+			},
+			"additionalProperties": false
+		},
+		"responseDoc": {
+			"type": "object",
+			"required": ["description"],
+			"properties": {
+				"description": { "type": "string" },
+				"example": { "type": "string" }
+			},
+			"additionalProperties": false
+		}
+	}
+}
