@@ -19,6 +19,7 @@
 
 import { t } from '../core/i18n';
 import { navigateTo } from '../core/router';
+import { htmlDecode } from '../lib/dom';
 import { mediaUrl } from '../lib/utils';
 
 // =========================================================================================================
@@ -150,7 +151,19 @@ function buildNotificationBody(event: FeedEvent): string {
 		event.scope === 'avatars' ? t('notifications.scope_avatars') :
 		event.scope === 'assets' ? t('notifications.scope_assets') :
 		event.scope === 'clothes' ? t('notifications.scope_clothes') : event.scope;
-	const title = event.title?.trim() || t('notifications.untitled');
+	const rawTitle = event.title?.trim() || t('notifications.untitled');
+	// Titles are stored via sanitizeHtml (e.g. " → &quot;), so decode before showing
+	// as plain-text Notification body. Loop to handle legacy double-encoded rows.
+	let title = rawTitle;
+	if (title.includes('&')) {
+		let prev = title;
+		for (let i = 0; i < 3; i++) {
+			title = htmlDecode(title);
+			if (title === prev) break;
+			prev = title;
+			if (!title.includes('&')) break;
+		}
+	}
 	const sub = event.subType ? ` · ${event.subType}` : '';
 	return `${scopeLabel}${sub}: ${title}`;
 }
