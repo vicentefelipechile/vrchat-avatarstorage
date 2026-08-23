@@ -52,10 +52,17 @@ export function resizeImage(file: File, maxWidth: number, maxHeight: number): Pr
 // Media CDN
 // =========================================================================
 
-const CDN_BASE = 'https://cdn.vrcstorage.lat';
+function getCdnBase(): string {
+	// Local dev: CDN worker runs via `npm run dev:cdn` on :8788, main on :8787.
+	// Remote/prod: dedicated worker at cdn.vrcstorage.lat (MEDIA_BUCKET remote).
+	if (typeof location !== 'undefined' && (location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
+		return 'http://localhost:8788';
+	}
+	return 'https://cdn.vrcstorage.lat';
+}
 
 export function mediaUrl(uuid: string, res: 'low' | 'med' | 'original' = 'med', format: 'webp' | 'png' | 'gif' = 'webp'): string {
-	return `${CDN_BASE}/${uuid}?res=${res}&format=${format}`;
+	return `${getCdnBase()}/${uuid}?res=${res}&format=${format}`;
 }
 
 /**
@@ -63,7 +70,7 @@ export function mediaUrl(uuid: string, res: 'low' | 'med' | 'original' = 'med', 
  * poster is a separate image variant — use `mediaUrl(uuid, res, 'gif')` for that.
  */
 export function videoUrl(uuid: string): string {
-	return `${CDN_BASE}/${uuid}?format=video`;
+	return `${getCdnBase()}/${uuid}?format=video`;
 }
 
 // =========================================================================
