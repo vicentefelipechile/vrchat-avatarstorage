@@ -69,4 +69,8 @@ export function registerRateLimits(app: Hono<{ Bindings: Env }>): void {
 
 	// OAuth registration completion — strict rate limit to prevent username enumeration
 	app.use('/api/auth/complete', async (c, next) => rateLimit({ binding: c.env.RL_STRICT, keyPrefix: 'oauth_complete' })(c, next));
+
+	// Drive — medium for status/jobs, strict for transfer enqueue and auth
+	app.use('/api/drive/transfer', async (c, next) => rateLimit({ binding: c.env.RL_STRICT, keyPrefix: 'drive_transfer' })(c, next));
+	app.use('/api/drive/*', async (c, next) => rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'drive' })(c, next));
 }

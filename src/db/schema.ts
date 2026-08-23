@@ -178,3 +178,37 @@ export interface ClothesMetaRow {
 	has_physbones: number;
 	platform: string;
 }
+
+// =========================================================================================================
+// drive_transfer_jobs
+// =========================================================================================================
+
+export interface DriveTransferJobRow {
+	uuid: string;
+	user_uuid: string;
+	r2_key: string;
+	file_name: string;
+	folder_id: string | null;
+	status: 'queued' | 'processing' | 'completed' | 'failed';
+	google_file_id: string | null;
+	error: string | null;
+	created_at: number;
+	updated_at: number;
+}
+
+// =========================================================================================================
+// user_oauth_providers (extended for Drive)
+// =========================================================================================================
+
+export interface UserOAuthProviderRow {
+	id: number;
+	user_uuid: string;
+	provider: string;
+	provider_id: string;
+	email: string | null;
+	created_at: number;
+	refresh_token_encrypted: string | null;
+	drive_scopes: string | null;
+	drive_default_folder_id: string | null;
+	drive_default_folder_name: string | null;
+}

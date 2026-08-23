@@ -198,6 +198,8 @@ async function verifyWithKey(
  *
  * @see https://developers.google.com/identity/protocols/oauth2/web-server#creatingclient
  */
+export const DRIVE_FILE_SCOPE = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly';
+
 export function buildGoogleAuthUrl(clientId: string, redirectUri: string, state: string): string {
 	const params = new URLSearchParams({
 		client_id: clientId,
@@ -207,6 +209,26 @@ export function buildGoogleAuthUrl(clientId: string, redirectUri: string, state:
 		state,
 		access_type: 'online',
 		prompt: 'select_account',
+	});
+	return `${GOOGLE_AUTH_URL}?${params.toString()}`;
+}
+
+/**
+ * Builds the incremental Google Drive authorization URL.
+ * This is a SEPARATE consent from login — `drive.file` is never requested at login.
+ * The user must explicitly click "Save to Drive" / "Connect Drive" to see this scope.
+ * Uses `offline` + `consent` so Google returns a refresh_token.
+ */
+export function buildGoogleDriveAuthUrl(clientId: string, redirectUri: string, state: string): string {
+	const params = new URLSearchParams({
+		client_id: clientId,
+		redirect_uri: redirectUri,
+		response_type: 'code',
+		scope: DRIVE_FILE_SCOPE,
+		state,
+		access_type: 'offline',
+		prompt: 'consent',
+		include_granted_scopes: 'true',
 	});
 	return `${GOOGLE_AUTH_URL}?${params.toString()}`;
 }
@@ -225,12 +247,21 @@ export function buildGoogleAuthUrl(clientId: string, redirectUri: string, state:
  *
  * @see https://developers.google.com/identity/protocols/oauth2/web-server#exchange-authorization-code
  */
+export interface GoogleTokenResponse {
+	id_token?: string;
+	access_token?: string;
+	refresh_token?: string;
+	expires_in?: number;
+	scope?: string;
+	token_type?: string;
+}
+
 export async function exchangeGoogleCode(
 	code: string,
 	clientId: string,
 	clientSecret: string,
 	redirectUri: string,
-): Promise<{ id_token: string }> {
+): Promise<GoogleTokenResponse> {
 	const res = await fetch(GOOGLE_TOKEN_URL, {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -248,9 +279,34 @@ export async function exchangeGoogleCode(
 		throw new Error(`Google token exchange failed: ${err}`);
 	}
 
-	const data = (await res.json()) as { id_token?: string };
-	if (!data.id_token) throw new Error('Google did not return an id_token');
-	return { id_token: data.id_token };
+	const data = (await res.json()) as GoogleTokenResponse;
+	// Login flow requires id_token; Drive incremental flow may only need access/refresh.
+	// Keep validation permissive: caller decides what is required.
+	return data;
+}
+
+export async function refreshGoogleAccessToken(refreshToken: string, clientId: string, clientSecret: string): Promise<{ access_token: string; expires_in: number; scope?: string }> {
+	const res = await fetch(GOOGLE_TOKEN_URL, {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+		body: new URLSearchParams({
+			refresh_token: refreshToken,
+			client_id: clientId,
+			client_secret: clientSecret,
+			grant_type: 'refresh_token',
+		}),
+	});
+	if (!res.ok) {
+		const err = await res.text();
+		throw new Error(`Google refresh failed: ${err}`);
+	}
+	const data = (await res.json()) as { access_token?: string; expires_in?: number; scope?: string };
+	if (!data.access_token) throw new Error('Google did not return an access_token on refresh');
+	return { access_token: data.access_token, expires_in: data.expires_in ?? 3600, scope: data.scope };
+}
+
+export async function revokeGoogleToken(token: string): Promise<void> {
+	await fetch(`https://oauth2.googleapis.com/revoke?token=${encodeURIComponent(token)}`, { method: 'POST' });
 }
 
 /**
@@ -273,6 +329,7 @@ export async function exchangeGoogleCode(
  * @see https://developers.google.com/identity/openid-connect/openid-connect#validatinganidtoken
  */
 export async function verifyGoogleIdToken(idToken: string, clientId: string, kv: KVNamespace): Promise<GoogleClaims> {
+	if (!idToken) throw new Error('Missing id_token');
 	// 1. Split token parts
 	const parts = idToken.split('.');
 	if (parts.length !== 3) throw new Error('Invalid JWT structure');

@@ -88,8 +88,9 @@ oauth.get('/google/callback', async (c) => {
 		const redirectUri = new URL('/api/auth/google/callback', c.req.url).toString();
 
 		// Exchange code → id_token → verified claims.
-		const { id_token } = await exchangeGoogleCode(code, c.env.GOOGLE_CLIENT_ID, c.env.GOOGLE_SECRET, redirectUri);
-		const claims = await verifyGoogleIdToken(id_token, c.env.GOOGLE_CLIENT_ID, c.env.VRCSTORAGE_KV);
+		const tokens = await exchangeGoogleCode(code, c.env.GOOGLE_CLIENT_ID, c.env.GOOGLE_SECRET, redirectUri);
+		if (!tokens.id_token) throw new Error('Google did not return an id_token');
+		const claims = await verifyGoogleIdToken(tokens.id_token, c.env.GOOGLE_CLIENT_ID, c.env.VRCSTORAGE_KV);
 
 		const result = await new OAuthService(c.env.DB, c.env.VRCSTORAGE_KV).resolveIdentity({
 			provider: 'google',

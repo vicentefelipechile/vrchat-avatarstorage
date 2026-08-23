@@ -211,6 +211,71 @@
 	background: var(--bg-hover);
 }
 
+/* Row wrapper: local download + Drive icon share the same visual row */
+.download-row {
+	display: flex;
+	align-items: stretch;
+	gap: 0;
+}
+
+.download-row .download-btn {
+	flex: 1;
+	min-width: 0;
+}
+
+/* Drive icon — square, same border/height as .download-btn, no radius, attached on the right */
+.download-drive-btn {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 52px;
+	flex-shrink: 0;
+	background: var(--bg-card);
+	color: var(--text-main);
+	border: 2px solid var(--border-color);
+	border-left: none;
+	cursor: pointer;
+	font-family: inherit;
+	transition: background 0.2s ease;
+}
+
+.download-drive-btn:hover {
+	background: var(--bg-hover);
+}
+
+.download-drive-btn:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+/* Tooltip — tells the user this icon saves to Drive, appears on hover/focus */
+.download-drive-btn::after {
+	content: attr(title);
+	position: absolute;
+	bottom: calc(100% + 8px);
+	right: 0;
+	background: var(--bg-card);
+	color: var(--text-main);
+	border: 2px solid var(--border-color);
+	padding: 6px 10px;
+	font-size: 0.78rem;
+	font-family: monospace;
+	font-weight: normal;
+	white-space: nowrap;
+	opacity: 0;
+	pointer-events: none;
+	transform: translateY(4px);
+	transition: opacity 0.15s ease, transform 0.15s ease;
+	z-index: 10;
+}
+
+.download-drive-btn:hover::after,
+.download-drive-btn:focus-visible::after {
+	opacity: 1;
+	transform: translateY(0);
+}
+
 .download-empty {
 	color: var(--text-muted);
 }

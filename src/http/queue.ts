@@ -11,8 +11,9 @@
 // Imports
 // =========================================================================================================
 
-import type { UploadQueueMessage } from '../types';
+import type { UploadQueueMessage, DriveTransferMessage } from '../types';
 import { MediaProcessingService } from '../services/media-processing-service';
+import { DriveTransferService } from '../services/drive-transfer-service';
 
 // =========================================================================================================
 // Handler
@@ -36,6 +37,21 @@ export async function handleQueue(batch: MessageBatch<UploadQueueMessage>, env: 
 			msg.ack();
 		} catch (e) {
 			console.error(`[QUEUE] Failed to process ${r2_key}:`, e);
+			msg.retry();
+		}
+	}
+}
+
+export async function handleDriveQueue(batch: MessageBatch<DriveTransferMessage>, env: Env): Promise<void> {
+	const service = new DriveTransferService(env.DB, env.BUCKET, env.VRCSTORAGE_KV, env.GOOGLE_CLIENT_ID, env.GOOGLE_SECRET, env.JWT_SECRET);
+
+	for (const msg of batch.messages) {
+		try {
+			await service.process(msg.body);
+			console.log(`[DRIVE_QUEUE] Completed ${msg.body.job_uuid}`);
+			msg.ack();
+		} catch (e) {
+			console.error(`[DRIVE_QUEUE] Failed ${msg.body.job_uuid}:`, e);
 			msg.retry();
 		}
 	}

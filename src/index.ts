@@ -10,7 +10,7 @@
 // Imports
 // =========================================================================================================
 
-import type { UploadQueueMessage } from './types';
+import type { UploadQueueMessage, DriveTransferMessage } from './types';
 import { Hono } from 'hono';
 import { z } from 'zod';
 
@@ -18,7 +18,7 @@ import { securityMiddleware } from './http/middleware/security';
 import { registerRateLimits } from './http/rate-limits';
 import { registerSeoRoutes } from './http/seo';
 import { DomainError } from './domain/errors';
-import { handleQueue } from './http/queue';
+import { handleQueue, handleDriveQueue } from './http/queue';
 import { handleScheduled } from './http/scheduled';
 import { FeedRoom } from './durable-objects/feed-room';
 import { ChatRoom } from './durable-objects/chat-room';
@@ -45,6 +45,7 @@ import feedRoutes from './http/routes/feed';
 import chatRoutes from './http/routes/chat';
 import collectionsRoutes from './http/routes/collections';
 import notificationsRoutes from './http/routes/notifications';
+import driveRoutes from './http/routes/drive';
 import { apiDocs } from './http/routes/docs';
 
 // =========================================================================================================
@@ -136,6 +137,7 @@ app.route('/api/updates', updatesRoutes);
 app.route('/api/feed', feedRoutes);
 app.route('/api/chat', chatRoutes);
 app.route('/api/notifications', notificationsRoutes);
+app.route('/api/drive', driveRoutes);
 
 // API docs — machine-readable JSON manifest at /api/docs (?tag=avatars to filter).
 // The markdown artefacts /llms.txt and /llms-full.txt are static files in public/
@@ -182,7 +184,13 @@ export default {
 	scheduled: async (event: ScheduledEvent, env: Env, ctx: ExecutionContext) => {
 		ctx.waitUntil(handleScheduled(event, env));
 	},
-	queue: async (batch: MessageBatch<UploadQueueMessage>, env: Env, _ctx: ExecutionContext) => {
-		await handleQueue(batch, env);
+	queue: async (batch: MessageBatch<UploadQueueMessage | DriveTransferMessage>, env: Env, _ctx: ExecutionContext) => {
+		// Dispatch by queue name — upload and Drive share the same Worker entrypoint.
+		const queueName = (batch as unknown as { queue: string }).queue;
+		if (queueName === 'vrcstorage-drive-transfer') {
+			await handleDriveQueue(batch as unknown as MessageBatch<DriveTransferMessage>, env);
+		} else {
+			await handleQueue(batch as unknown as MessageBatch<UploadQueueMessage>, env);
+		}
 	},
 };

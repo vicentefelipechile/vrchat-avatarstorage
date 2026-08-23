@@ -44,6 +44,9 @@ export async function settingsView(_ctx: RouteContext): Promise<string> {
 					<button type="button" class="settings-nav-item" data-panel="notifications" role="tab" aria-selected="false">
 						${icons.bell(18)}<span>${t('settings.section_notifications')}</span>
 					</button>
+					<button type="button" class="settings-nav-item" data-panel="drive" role="tab" aria-selected="false">
+						${icons['hard-drive'](18)}<span>${t('settings.section_drive')}</span>
+					</button>
 				</nav>
 
 				<!-- Panels -->
@@ -176,6 +179,28 @@ export async function settingsView(_ctx: RouteContext): Promise<string> {
 									<button id="2fa-confirm-disable-btn" class="btn-danger">${t('settings.2fa_confirm_disable')}</button>
 									<button type="button" id="2fa-disable-cancel-btn" class="btn-outline">${t('settings.2fa_cancel')}</button>
 								</div>
+							</div>
+						</div>
+					</section>
+
+					<!-- Drive -->
+					<section class="settings-panel" id="panel-drive" role="tabpanel" hidden>
+						<h2 class="settings-panel-title">${t('settings.section_drive')}</h2>
+						<p class="settings-panel-desc">${t('settings.section_drive_desc')}</p>
+						<div id="drive-status" class="settings-panel-desc">${t('common.loading')}</div>
+						<div id="drive-controls" hidden style="margin-top:16px;">
+							<div id="drive-linked-row" style="border:1px solid var(--border-color);padding:12px;margin-bottom:12px;background:var(--bg-card);">
+								<p id="drive-linked-text" style="margin:0 0 8px 0;"></p>
+								<p id="drive-folder-text" style="margin:0 0 12px 0;font-size:0.9em;color:var(--text-muted);"></p>
+								<div style="display:flex;gap:10px;flex-wrap:wrap;">
+									<button id="drive-change-folder-btn" class="btn-outline">${t('settings.driveChangeFolder')}</button>
+									<button id="drive-clear-folder-btn" class="btn-outline">${t('settings.driveClearFolder')}</button>
+									<button id="drive-disconnect-btn" class="btn-danger">${t('settings.driveDisconnect')}</button>
+								</div>
+							</div>
+							<div id="drive-unlinked-row" hidden>
+								<button id="drive-connect-btn" class="btn">${icons['hard-drive'](16)} ${t('settings.driveConnect')}</button>
+								<p class="settings-hint" style="margin-top:8px;">${t('settings.driveConnectHint')}</p>
 							</div>
 						</div>
 					</section>
@@ -329,8 +354,25 @@ export async function settingsAfter(_ctx: RouteContext): Promise<void> {
 	// 2FA
 	await loadTwoFactorStatus();
 
+	// Drive
+	await loadDrivePanel();
+
 	// Notifications
 	await loadNotificationsPanel();
+
+	// Handle drive redirect feedback ?drive=linked|denied|error
+	const params = new URLSearchParams(location.search);
+	const driveParam = params.get('drive');
+	if (driveParam) {
+		if (driveParam === 'linked') showToast(t('settings.driveLinked'), 'success');
+		else if (driveParam === 'denied') showToast(t('settings.driveDenied'), 'warning');
+		else if (driveParam === 'error') showToast(t('settings.driveError'), 'error');
+		// Clean params without reload
+		params.delete('drive');
+		params.delete('pickFolder');
+		const clean = params.toString() ? `?${params.toString()}` : location.pathname;
+		history.replaceState(null, '', clean);
+	}
 }
 
 // =========================================================================
@@ -344,6 +386,7 @@ function setupSectionNav(): void {
 		security: document.getElementById('panel-security'),
 		twofactor: document.getElementById('panel-twofactor'),
 		notifications: document.getElementById('panel-notifications'),
+		drive: document.getElementById('panel-drive'),
 	};
 
 	items.forEach((item) => {
@@ -635,6 +678,101 @@ function setup2FAHandlers(els: TwoFAEls): void {
 			showToast(t('common.networkError'), 'error');
 		} finally {
 			restore();
+		}
+	});
+}
+
+// =========================================================================
+// Drive panel
+// =========================================================================
+
+async function loadDrivePanel(): Promise<void> {
+	const statusEl = document.getElementById('drive-status') as HTMLElement;
+	const controlsEl = document.getElementById('drive-controls') as HTMLElement;
+	const linkedRow = document.getElementById('drive-linked-row') as HTMLElement;
+	const unlinkedRow = document.getElementById('drive-unlinked-row') as HTMLElement;
+	const linkedText = document.getElementById('drive-linked-text') as HTMLElement;
+	const folderText = document.getElementById('drive-folder-text') as HTMLElement;
+
+	if (!statusEl || !controlsEl) return;
+	if (!window.appState.isLoggedIn) {
+		statusEl.textContent = t('settings.driveLoginRequired');
+		return;
+	}
+
+	const refresh = async () => {
+		try {
+			const res = await fetch('/api/drive/status');
+			if (!res.ok) throw new Error();
+			const data = (await res.json()) as { linked: boolean; folder_id: string | null; folder_name: string | null };
+			statusEl.hidden = true;
+			controlsEl.hidden = false;
+			if (data.linked) {
+				linkedRow.hidden = false;
+				unlinkedRow.hidden = true;
+				linkedText.textContent = `✓ ${t('settings.driveLinked')}`;
+				folderText.textContent = data.folder_name ? `${t('settings.driveFolder')}: ${data.folder_name}` : t('settings.driveNoFolder');
+			} else {
+				linkedRow.hidden = true;
+				unlinkedRow.hidden = false;
+			}
+		} catch {
+			statusEl.textContent = t('common.networkError');
+		}
+	};
+
+	await refresh();
+
+	document.getElementById('drive-connect-btn')?.addEventListener('click', () => {
+		location.href = '/api/drive/auth';
+	});
+
+	document.getElementById('drive-disconnect-btn')?.addEventListener('click', async () => {
+		const { showConfirm } = await import('../lib/confirm');
+		const ok = await showConfirm({ title: t('confirm.title'), message: t('settings.driveDisconnectConfirm'), confirmText: t('confirm.confirm'), cancelText: t('confirm.cancel'), danger: true });
+		if (!ok) return;
+		try {
+			const res = await fetch('/api/drive/link', { method: 'DELETE' });
+			if (!res.ok) throw new Error();
+			showToast(t('settings.driveDisconnected'), 'success');
+			await refresh();
+		} catch {
+			showToast(t('common.networkError'), 'error');
+		}
+	});
+
+	document.getElementById('drive-change-folder-btn')?.addEventListener('click', async () => {
+		const { showDrivePicker } = await import('../features/drive-picker');
+		// Fetch current folder to pre-select
+		let currentId: string | null = null;
+		try {
+			const s = await fetch('/api/drive/status').then((r) => r.json() as Promise<{ folder_id: string | null }>);
+			currentId = s.folder_id;
+		} catch {
+			/* ignore */
+		}
+		const picked = await showDrivePicker(currentId);
+		if (picked === null) return; // cancelled
+		try {
+			const res = await fetch('/api/drive/folder', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ folder_id: picked.id, folder_name: picked.name }) });
+			if (!res.ok) {
+				const data = (await res.json()) as { error?: string };
+				throw new Error(data.error ?? 'Failed');
+			}
+			showToast(picked.id ? t('settings.driveFolderSaved') : t('settings.driveFolderCleared'), 'success');
+			await refresh();
+		} catch (e) {
+			showToast((e as Error).message, 'error');
+		}
+	});
+
+	document.getElementById('drive-clear-folder-btn')?.addEventListener('click', async () => {
+		try {
+			await fetch('/api/drive/folder', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ folder_id: null, folder_name: null }) });
+			showToast(t('settings.driveFolderCleared'), 'success');
+			await refresh();
+		} catch {
+			showToast(t('common.networkError'), 'error');
 		}
 	});
 }

@@ -4,10 +4,11 @@
 
 import { t } from '../core/i18n';
 import { DataCache } from '../core/cache';
-import { TimeUnit, mediaUrl, videoUrl, progressiveImg, htmlDecode, initLazyImages, initMediaPolling, metaLabel } from '../lib/utils';
+import { TimeUnit, mediaUrl, videoUrl, progressiveImg, htmlDecode, initLazyImages, initMediaPolling, metaLabel, showToast } from '../lib/utils';
 import { downloadHost, type HostInfo } from '../lib/download-hosts';
 import { deleteComment, approveResource, rejectResource, deactivateResource } from '../features/admin';
 import { icons, getIcon } from '../lib/icons';
+import { showConfirm } from '../lib/confirm';
 import { commentEditorHtml, initCommentEditor } from '../features/comment-editor';
 import { navigateTo } from '../core/router';
 import { parseMarkdownToHtml } from '../lib/markdown';
@@ -167,6 +168,25 @@ function downloadButton(url: string, title: string | null | undefined, fallbackI
 		</a>`;
 }
 
+function extractR2Key(url: string): string | null {
+	try {
+		const u = new URL(url, location.origin);
+		const m = u.pathname.match(/^\/api\/download\/([^/?#]+)/);
+		return m ? m[1] : null;
+	} catch {
+		return null;
+	}
+}
+
+function downloadRow(url: string, title: string | null | undefined, fallbackIndex: number): string {
+	const host = downloadHost(url);
+	const btn = downloadButton(url, title, fallbackIndex);
+	if (host.kind !== 'local') return btn;
+	const r2Key = extractR2Key(url);
+	if (!r2Key) return btn;
+	return `<div class="download-row">${btn}<button type="button" class="download-drive-btn" data-r2="${r2Key}" title="${t('item.saveToDrive')}" aria-label="${t('item.saveToDrive')}">${getIcon('googledrive', 18)}</button></div>`;
+}
+
 function downloadSection(res: Resource): string {
 	const { user } = window.appState;
 	if (!user) {
@@ -182,11 +202,11 @@ function downloadSection(res: Resource): string {
 	let buttons: string;
 
 	if (downloadLinks.length > 0) {
-		buttons = downloadLinks.map((link, i) => downloadButton(link.link_url, link.link_title, i + 1)).join('');
+		buttons = downloadLinks.map((link, i) => downloadRow(link.link_url, link.link_title, i + 1)).join('');
 	} else {
 		// Legacy fallback: a single main URL plus loose backup URLs.
-		const main = res.downloadUrl ? downloadButton(res.downloadUrl, null, 1) : '';
-		const backups = (res.backupUrls ?? []).map((url, i) => downloadButton(url, null, i + 1)).join('');
+		const main = res.downloadUrl ? downloadRow(res.downloadUrl, null, 1) : '';
+		const backups = (res.backupUrls ?? []).map((url, i) => downloadRow(url, null, i + 1)).join('');
 		buttons = main + backups;
 	}
 
@@ -724,6 +744,71 @@ export async function itemAfter(ctx: RouteContext): Promise<void> {
 		commentsContainer.innerHTML = renderCommentsList(comments, window.appState.isAdmin);
 	} catch {
 		commentsContainer.innerHTML = `<p>${t('item.errorLoadingComments')}</p>`;
+	}
+
+	// Drive Save-to-Drive icon buttons (right side of local download)
+	for (const btn of Array.from(document.querySelectorAll<HTMLButtonElement>('.download-drive-btn'))) {
+		btn.addEventListener('click', async () => {
+			const r2Key = btn.dataset.r2!;
+			const original = btn.innerHTML;
+			btn.disabled = true;
+			btn.innerHTML = getIcon('googledrive', 16);
+			btn.style.opacity = '0.6';
+			try {
+				// Check if Drive is linked
+				const statusRes = await fetch('/api/drive/status');
+				if (!statusRes.ok) throw new Error(t('common.networkError'));
+				const status = (await statusRes.json()) as { linked: boolean };
+				if (!status.linked) {
+					const ok = await showConfirm({
+						title: t('item.driveConsentTitle'),
+						message: t('item.driveConsentExplain'),
+						confirmText: t('item.driveConnect'),
+						cancelText: t('confirm.cancel'),
+					});
+					if (ok) location.href = '/api/drive/auth';
+					btn.disabled = false;
+					btn.innerHTML = original;
+					return;
+				}
+				// Enqueue transfer
+				const tr = await fetch('/api/drive/transfer', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ r2_key: r2Key }),
+				});
+				if (!tr.ok) {
+					const data = (await tr.json().catch(() => ({}))) as { error?: string };
+					throw new Error(data.error ?? t('common.error'));
+				}
+				const { job_uuid } = (await tr.json()) as { job_uuid: string };
+				showToast(t('item.driveQueued'), 'info');
+				// Poll job status
+				let attempts = 0;
+				const poll = async (): Promise<void> => {
+					attempts++;
+					const j = await fetch(`/api/drive/jobs/${job_uuid}`).then((r) => r.json() as Promise<{ status: string; google_file_id: string | null; error: string | null }>);
+					if (j.status === 'completed') {
+						showToast(t('item.driveDone'), 'success');
+						btn.innerHTML = getIcon('googledrive', 18);
+						btn.style.opacity = '';
+						btn.disabled = false;
+						if (j.google_file_id) window.open(`https://drive.google.com/file/d/${j.google_file_id}/view`, '_blank', 'noopener');
+						return;
+					}
+					if (j.status === 'failed') throw new Error(j.error ?? t('item.driveFailed'));
+					if (attempts > 60) throw new Error(t('item.driveFailed'));
+					await new Promise((r) => setTimeout(r, 2000));
+					return poll();
+				};
+				await poll();
+			} catch (e) {
+				showToast((e as Error).message || t('item.driveFailed'), 'error');
+				btn.disabled = false;
+				btn.innerHTML = original;
+				(btn as HTMLElement).style.opacity = '';
+			}
+		});
 	}
 
 	// Comment form

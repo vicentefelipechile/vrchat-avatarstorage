@@ -22,7 +22,6 @@
 			"binding": "DB",
 			"database_name": "vrcstorage",
 			"database_id": "ba294f40-ddf9-4c5c-9c7f-32740a4f55df",
-			"remote": true
 		},
 	],
 	"durable_objects": {
@@ -55,12 +54,10 @@
 		{
 			"bucket_name": "vrcstorage",
 			"binding": "BUCKET",
-			"remote": true
 		},
 		{
 			"bucket_name": "vrcstorage-media",
 			"binding": "MEDIA_BUCKET",
-			"remote": true
 		},
 	],
 	"images": {
@@ -120,6 +117,26 @@
 				"queue": "vrcstorage-upload-processing",
 				"binding": "UPLOAD_QUEUE",
 			},
+			{
+				"queue": "vrcstorage-drive-transfer",
+				"binding": "DRIVE_QUEUE",
+			},
+		],
+		"consumers": [
+			{
+				"queue": "vrcstorage-upload-processing",
+				"max_batch_size": 5,
+				"max_batch_timeout": 30,
+				"max_retries": 3,
+				"dead_letter_queue": "vrcstorage-upload-dlq"
+			},
+			{
+				"queue": "vrcstorage-drive-transfer",
+				"max_batch_size": 2,
+				"max_batch_timeout": 30,
+				"max_retries": 3,
+				"dead_letter_queue": "vrcstorage-drive-dlq"
+			}
 		],
 	},
 	"routes": [

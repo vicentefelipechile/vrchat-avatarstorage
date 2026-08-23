@@ -14,7 +14,9 @@ import {
 	ChevronUp,
 	Code,
 	Code2,
+	Folder,
 	FolderOpen,
+	FolderPlus,
 	GripVertical,
 	Heart,
 	History,
@@ -134,6 +136,8 @@ export const icons = {
 	'chevron-down': (size = 16, extraAttrs = '') => icon(ChevronDown as unknown as LucideIconData, size, extraAttrs),
 	'grip-vertical': (size = 16, extraAttrs = '') => icon(GripVertical as unknown as LucideIconData, size, extraAttrs),
 	'folder-open': (size = 16, extraAttrs = '') => icon(FolderOpen as unknown as LucideIconData, size, extraAttrs),
+	folder: (size = 16, extraAttrs = '') => icon(Folder as unknown as LucideIconData, size, extraAttrs),
+	'folder-plus': (size = 16, extraAttrs = '') => icon(FolderPlus as unknown as LucideIconData, size, extraAttrs),
 	'more-horizontal': (size = 16, extraAttrs = '') => icon(MoreHorizontal as unknown as LucideIconData, size, extraAttrs),
 
 	// Author profiles

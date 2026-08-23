@@ -370,6 +370,15 @@ export interface UploadQueueMessage {
 	uploaded_at: number; // Unix ms timestamp
 }
 
+/** Message sent to the Drive transfer queue (R2 -> user's Google Drive via resumable upload). */
+export interface DriveTransferMessage {
+	job_uuid: string;
+	r2_key: string;
+	user_uuid: string;
+	file_name: string;
+	folder_id: string | null;
+}
+
 // =========================================================================
 // OAUTH PROVIDERS
 // =========================================================================
@@ -385,6 +394,29 @@ export interface UserOAuthProvider {
 	provider_id: string; // Provider-side user ID (e.g. Google 'sub')
 	email: string | null;
 	created_at: number;
+	refresh_token_encrypted?: string | null;
+	drive_scopes?: string | null;
+	drive_default_folder_id?: string | null;
+	drive_default_folder_name?: string | null;
+}
+
+// =========================================================================
+// DRIVE TRANSFER JOBS
+// =========================================================================
+
+export type DriveJobStatus = 'queued' | 'processing' | 'completed' | 'failed';
+
+export interface DriveTransferJob {
+	uuid: string;
+	user_uuid: string;
+	r2_key: string;
+	file_name: string;
+	folder_id: string | null;
+	status: DriveJobStatus;
+	google_file_id: string | null;
+	error: string | null;
+	created_at: number;
+	updated_at: number;
 }
 
 /** Pending OAuth registration stored in KV while user selects a username */
