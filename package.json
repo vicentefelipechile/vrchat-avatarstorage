@@ -35,7 +35,7 @@
 	"dependencies": {
 		"@hapi/iron": "7.0.1",
 		"bcryptjs": "3.0.3",
-		"dompurify": "3.4.0",
+		"dompurify": "3.4.14",
 		"hono": "4.13.3",
 		"lucide": "1.7.0",
 		"marked": "17.0.5",
