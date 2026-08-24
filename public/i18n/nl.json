@@ -134,7 +134,11 @@
 		"prev": "Vorige",
 		"next": "Volgende",
 		"page": "Pagina",
-		"of": "van"
+		"of": "van",
+		"first": "Eerste",
+		"last": "Laatste",
+		"go": "Ga",
+		"jumpLabel": "Ga naar pagina:"
 	},
 	"admin": {
 		"title": "Admin-paneel",

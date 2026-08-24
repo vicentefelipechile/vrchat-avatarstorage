@@ -16,3 +16,4 @@ export { CHUNK_SIZE, uploadChunked, type ChunkedUploadResult } from './upload';
 export { downloadHost, type DownloadKind, type HostInfo } from './download-hosts';
 export { resizeImage, mediaUrl, videoUrl, progressiveImg, initLazyImages, initMediaPolling } from './media';
 export { metaLabel } from './meta-label';
+export { getPaginationItems, paginationHtml, type PageItem, type PaginationRenderOpts } from './pagination';

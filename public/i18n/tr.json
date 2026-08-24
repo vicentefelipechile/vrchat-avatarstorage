@@ -134,7 +134,11 @@
 		"prev": "Önceki",
 		"next": "Sonraki",
 		"page": "Sayfa",
-		"of": "/"
+		"of": "/",
+		"first": "İlk",
+		"last": "Son",
+		"go": "Git",
+		"jumpLabel": "Sayfaya git:"
 	},
 	"admin": {
 		"title": "Yönetici Paneli",

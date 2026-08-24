@@ -134,7 +134,11 @@
 		"prev": "Precedente",
 		"next": "Successivo",
 		"page": "Pagina",
-		"of": "di"
+		"of": "di",
+		"first": "Prima",
+		"last": "Ultima",
+		"go": "Vai",
+		"jumpLabel": "Vai alla pagina:"
 	},
 	"admin": {
 		"title": "Pannello Admin",

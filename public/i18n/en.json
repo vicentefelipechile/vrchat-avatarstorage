@@ -134,7 +134,11 @@
 		"prev": "Previous",
 		"next": "Next",
 		"page": "Page",
-		"of": "of"
+		"of": "of",
+		"first": "First",
+		"last": "Last",
+		"go": "Go",
+		"jumpLabel": "Go to page:"
 	},
 	"admin": {
 		"title": "Admin Panel",

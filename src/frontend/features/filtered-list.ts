@@ -13,6 +13,7 @@ import { buildFilterPanel, initFilterPanel, FilterType, type FilterPanelConfig }
 import type { RouteContext } from '../types';
 import { DataCache } from '../core/cache';
 import { TimeUnit, progressiveImg, initLazyImages, initMediaPolling } from '../lib/utils';
+import { paginationHtml } from '../lib/pagination';
 
 // =========================================================================
 // Types
@@ -33,6 +34,7 @@ export interface FilteredResource<Meta> {
 interface Pagination {
 	page: number;
 	total: number;
+	limit: number;
 	hasNextPage: boolean;
 	hasPrevPage: boolean;
 }
@@ -69,12 +71,6 @@ export interface FilteredListConfig<Meta> {
 // =========================================================================
 // Shared building blocks
 // =========================================================================
-
-function pageParams(current: URLSearchParams, newPage: number): string {
-	const p = new URLSearchParams(current.toString());
-	p.set('page', String(newPage));
-	return p.toString();
-}
 
 function sortSelect(slug: string, current: string): string {
 	const opts = [
@@ -118,7 +114,6 @@ function card<Meta>(cfg: FilteredListConfig<Meta>, res: FilteredResource<Meta>):
 
 /** Builds only the results section (no filter panel). Runs on load and on every filter/sort change. */
 async function buildResults<Meta>(cfg: FilteredListConfig<Meta>, params: URLSearchParams): Promise<string> {
-	const page = parseInt(params.get('page') || '1', 10);
 	const sortBy = params.get('sort_by') || 'created_at';
 
 	let data: ListResponse<Meta> | null = null;
@@ -133,24 +128,42 @@ async function buildResults<Meta>(cfg: FilteredListConfig<Meta>, params: URLSear
 	}
 
 	const resources = data?.resources ?? [];
-	const pagination = data?.pagination ?? { page: 1, total: 0, hasNextPage: false, hasPrevPage: false };
+	const pagination = (data?.pagination as Pagination | undefined) ?? {
+		page: 1,
+		total: 0,
+		limit: 24,
+		hasNextPage: false,
+		hasPrevPage: false,
+	};
 
 	const cardsHtml =
 		resources.length === 0
 			? `<div class="category-empty"><p>${t(cfg.emptyKey)}</p></div>`
 			: `<div class="grid">${resources.map((r) => card(cfg, r)).join('')}</div>`;
 
-	const prevBtn = pagination.hasPrevPage
-		? `<a href="${cfg.route}?${pageParams(params, page - 1)}" data-link class="btn">${t('filterPanel.prev')}</a>`
-		: '';
-	const nextBtn = pagination.hasNextPage
-		? `<a href="${cfg.route}?${pageParams(params, page + 1)}" data-link class="btn">${t('filterPanel.next')}</a>`
-		: '';
+	const limit = (pagination as Pagination).limit ?? 24;
+	const totalPages = Math.max(1, Math.ceil(pagination.total / limit));
+	const displayPage = Math.min(Math.max(1, pagination.page), totalPages);
+	const jumpInputId = `${cfg.slug}-page-jump`;
 	const pagCtrls =
-		prevBtn || nextBtn
-			? `<div class="pagination" style="display:flex;gap:10px;justify-content:center;margin-top:30px;">
-			${prevBtn}<span style="align-self:center;">${t('filterPanel.pagePrefix')} ${pagination.page}</span>${nextBtn}
-		  </div>`
+		pagination.total > 0 && totalPages > 1
+			? paginationHtml({
+					page: displayPage,
+					totalPages,
+					route: cfg.route,
+					params,
+					jumpInputId,
+					labels: {
+						first: t('pagination.first'),
+						prev: t('pagination.prev'),
+						next: t('pagination.next'),
+						last: t('pagination.last'),
+						of: t('pagination.of'),
+						pageLabel: t('pagination.page'),
+						jumpLabel: t('pagination.jumpLabel'),
+						go: t('pagination.go'),
+					},
+				})
 			: '';
 
 	return `<div class="filter-results-header">
@@ -203,6 +216,7 @@ export function createFilteredListView<Meta>(cfg: FilteredListConfig<Meta>): {
 			initLazyImages();
 			initMediaPolling();
 			bindSortSelect(newParams);
+			bindPaginationJump(newParams);
 		}
 
 		function bindSortSelect(currentParams: URLSearchParams): void {
@@ -215,6 +229,32 @@ export function createFilteredListView<Meta>(cfg: FilteredListConfig<Meta>): {
 			});
 		}
 
+		function bindPaginationJump(currentParams: URLSearchParams): void {
+			const resultsEl = document.getElementById(resultsId);
+			if (!resultsEl) return;
+			const input = resultsEl.querySelector<HTMLInputElement>(`#${cfg.slug}-page-jump`);
+			const btn = resultsEl.querySelector<HTMLButtonElement>('[data-pagination-go]');
+			if (!input || !btn) return;
+
+			const go = (): void => {
+				const raw = parseInt(input.value, 10);
+				if (!Number.isFinite(raw)) return;
+				const max = parseInt(input.max || '1', 10) || 1;
+				const clamped = Math.min(Math.max(1, raw), max);
+				const p = new URLSearchParams(currentParams.toString());
+				p.set('page', String(clamped));
+				refreshResults(p);
+			};
+
+			btn.addEventListener('click', go);
+			input.addEventListener('keydown', (e) => {
+				if (e.key === 'Enter') {
+					e.preventDefault();
+					go();
+				}
+			});
+		}
+
 		initFilterPanel(panel, (newParams) => {
 			const sortEl = document.getElementById(sortId) as HTMLSelectElement | null;
 			if (sortEl?.value) newParams.set('sort_by', sortEl.value);
@@ -223,6 +263,7 @@ export function createFilteredListView<Meta>(cfg: FilteredListConfig<Meta>): {
 		});
 
 		bindSortSelect(ctx.query);
+		bindPaginationJump(ctx.query);
 	}
 
 	return { view, after };
