@@ -185,32 +185,39 @@ export async function settingsView(_ctx: RouteContext): Promise<string> {
 
 					<!-- Drive -->
 					<section class="settings-panel" id="panel-drive" role="tabpanel" hidden>
-						<h2 class="settings-panel-title" style="display:flex;align-items:center;gap:8px">${icons['hard-drive'](18)} ${t('settings.section_drive')}</h2>
+						<h2 class="settings-panel-title">${t('settings.section_drive')}</h2>
+						<p class="settings-panel-desc">${t('settings.section_drive_desc')}</p>
+
 						<div id="drive-status" class="settings-panel-desc">${t('common.loading')}</div>
-						<div id="drive-controls" hidden style="margin-top:14px;">
-							<div id="drive-linked-row" class="drive-card" hidden>
-								<div class="drive-head">
-									<span id="drive-linked-text" class="drive-badge is-connected"></span>
-									<span id="drive-folder-text" class="drive-folder-meta"></span>
+
+						<div id="drive-controls" hidden>
+							<div id="drive-linked-row" hidden>
+								<div style="margin:10px 0;padding:10px;border:1px solid var(--border-color);background:var(--bg-code);">
+									<span id="drive-linked-text" style="color:var(--success-color,green)"></span>
+									<div id="drive-folder-text" style="margin-top:4px;color:var(--text-muted);font-size:0.8rem;word-break:break-all"></div>
 								</div>
-								<div class="form-group" style="margin:14px 0 0;">
-									<label for="drive-folder-id-input" class="drive-label">${t('settings.driveFolder')} <span style="font-weight:normal;color:var(--text-muted)">· ID</span></label>
-									<div class="drive-input-row">
-										<input type="text" id="drive-folder-id-input" name="drive-folder-id" placeholder="https://drive.google.com/drive/folders/ID  ·  o  ID" maxlength="256" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other" data-lpignore="true" data-1p-ignore="true" data-bwignore="true">
-										<button id="drive-save-folder-btn" class="btn btn-sm">${icons.check(14)} ${t('settings.save')}</button>
+
+								<div class="form-group" style="border:1px solid var(--border-color);padding:12px;margin-bottom:12px;">
+									<label for="drive-folder-id-input"><strong>${t('settings.driveFolder')}</strong></label>
+									<small class="settings-hint">${t('settings.driveFolderPrompt')}</small>
+									<div class="drive-input-row" style="margin-top:10px;">
+										<input type="text" id="drive-folder-id-input" name="drive-folder-id" placeholder="https://drive.google.com/drive/folders/ID" maxlength="256" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other" data-lpignore="true" data-1p-ignore="true" data-bwignore="true">
+										<button id="drive-save-folder-btn" class="btn" style="white-space:nowrap">${icons.check(16)} ${t('settings.save')}</button>
 									</div>
-									<small class="settings-hint" style="margin-top:6px">${t('settings.driveFolderPrompt')}</small>
 								</div>
-								<div class="drive-actions">
-									<button id="drive-clear-folder-btn" class="btn-outline btn-sm">${t('settings.driveClearFolder')}</button>
-									<button id="drive-disconnect-btn" class="btn-danger btn-sm">${t('settings.driveDisconnect')}</button>
+
+								<div style="margin-top:16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+									<button id="drive-clear-folder-btn" class="btn btn-outline">${t('settings.driveClearFolder')}</button>
+									<button id="drive-disconnect-btn" class="btn btn-danger">${t('settings.driveDisconnect')}</button>
 								</div>
 								<button id="drive-change-folder-btn" hidden>${t('settings.driveChangeFolder')}</button>
 							</div>
-							<div id="drive-unlinked-row" class="drive-card drive-card--empty" hidden>
-								<p class="settings-panel-desc" style="margin:0 0 14px 0">${t('settings.driveConnectHint')}</p>
+
+							<div id="drive-unlinked-row" hidden>
+								<div style="margin:10px 0;padding:10px;border:1px solid var(--border-color);background:var(--bg-code);">
+									<p class="settings-panel-desc" style="margin:0">${t('settings.driveConnectHint')}</p>
+								</div>
 								<button id="drive-connect-btn" class="btn">${icons['hard-drive'](16)} ${t('settings.driveConnect')}</button>
-								<small class="settings-hint" style="margin-top:10px;display:block;opacity:0.8"><code style="font-family:inherit;border:1px solid var(--border-color);padding:1px 4px;background:var(--bg-code)">drive.file</code> · ${t('settings.section_drive_desc').split('—')[0].trim()}</small>
 							</div>
 						</div>
 					</section>

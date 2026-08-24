@@ -170,49 +170,7 @@
 	margin-top: 4px;
 }
 
-/* ---- Drive ---- */
-.drive-card {
-	border: 2px solid var(--border-color);
-	background: var(--bg-card);
-	padding: 16px;
-}
-
-.drive-card--empty {
-	text-align: center;
-	padding: 22px 16px;
-}
-
-.drive-head {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	gap: 10px;
-}
-
-.drive-badge.is-connected {
-	display: inline-flex;
-	align-items: center;
-	gap: 6px;
-	font-size: 0.82rem;
-	font-weight: bold;
-	border: 2px solid var(--border-color);
-	background: var(--bg-code);
-	padding: 6px 10px;
-}
-
-.drive-folder-meta {
-	font-size: 0.78rem;
-	color: var(--text-muted);
-	word-break: break-all;
-}
-
-.drive-label {
-	display: block;
-	font-size: 0.82rem;
-	font-weight: bold;
-	margin-bottom: 6px;
-}
-
+/* ---- Drive (follows same patterns as Notifications panel) ---- */
 .drive-input-row {
 	display: flex;
 	gap: 8px;
@@ -221,23 +179,7 @@
 .drive-input-row input {
 	flex: 1;
 	min-width: 0;
-	padding: 8px 10px;
-	border: 2px solid var(--border-color);
-	background: var(--bg-input);
-	color: var(--text-main);
-	font-family: inherit;
-	font-size: 0.88rem;
-}
-
-.drive-input-row .btn {
-	white-space: nowrap;
-}
-
-.drive-actions {
-	display: flex;
-	gap: 8px;
-	flex-wrap: wrap;
-	margin-top: 14px;
+	margin-right: 0;
 }
 
 @media (max-width: 520px) {

@@ -415,6 +415,8 @@ export interface DriveTransferJob {
 	status: DriveJobStatus;
 	google_file_id: string | null;
 	error: string | null;
+	total_bytes: number | null;
+	bytes_uploaded: number;
 	created_at: number;
 	updated_at: number;
 }

@@ -4,7 +4,7 @@
 
 import { t } from '../core/i18n';
 import { DataCache } from '../core/cache';
-import { TimeUnit, mediaUrl, videoUrl, progressiveImg, htmlDecode, initLazyImages, initMediaPolling, metaLabel, showToast } from '../lib/utils';
+import { TimeUnit, mediaUrl, videoUrl, progressiveImg, htmlDecode, initLazyImages, initMediaPolling, metaLabel, showToast, showProgressToast } from '../lib/utils';
 import { downloadHost, type HostInfo } from '../lib/download-hosts';
 import { deleteComment, approveResource, rejectResource, deactivateResource } from '../features/admin';
 import { icons, getIcon } from '../lib/icons';
@@ -663,6 +663,13 @@ export async function itemAfter(ctx: RouteContext): Promise<void> {
 	const uuid = ctx.params.id;
 	const commentsContainer = document.getElementById('comments-container')!;
 
+	// For Drive progress + notification avatar thumbnail (rehydration needs it even before polling)
+	let driveThumbUuid: string | null = null;
+	try {
+		const r = (await DataCache.fetch(`/api/resources/${uuid}`, { ttl: TimeUnit.Hour, persistent: true })) as Resource & { thumbnail_uuid?: string; thumbnail?: string };
+		driveThumbUuid = (r as unknown as { thumbnail_uuid?: string }).thumbnail_uuid ?? null;
+	} catch {}
+
 	// Recover lightbox images from data attribute
 	const box = document.querySelector<HTMLElement>('.details-box');
 	const lightboxData = box?.dataset.lightbox;
@@ -746,7 +753,139 @@ export async function itemAfter(ctx: RouteContext): Promise<void> {
 		commentsContainer.innerHTML = `<p>${t('item.errorLoadingComments')}</p>`;
 	}
 
-	// Drive Save-to-Drive icon buttons (right side of local download)
+	// Drive Save-to-Drive icon buttons (right side of local download) — with progress toast + rehydration
+	type DriveJob = { uuid: string; r2_key: string; status: string; google_file_id: string | null; error: string | null; file_name: string; total_bytes: number | null; bytes_uploaded: number };
+
+	const formatBytes = (b: number) => {
+		if (b < 1024) return `${b} B`;
+		if (b < 1024 * 1024) return `${(b / 1024).toFixed(1)} KB`;
+		if (b < 1024 * 1024 * 1024) return `${(b / (1024 * 1024)).toFixed(1)} MB`;
+		return `${(b / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+	};
+
+	const drivePoll = async (jobUuid: string, btn: HTMLButtonElement, originalHtml: string, progressHandle?: ReturnType<typeof showProgressToast>) => {
+		const prog = progressHandle ?? showProgressToast(`${t('item.driveQueued')} — 0%`, 'info');
+		let attempts = 0;
+		const poll = async (): Promise<void> => {
+			attempts++;
+			const j = await fetch(`/api/drive/jobs/${jobUuid}`).then((r) => r.json() as Promise<DriveJob>);
+			// Backend may still have no total_bytes if migration not applied — fall back to attempt-based pulse so bar never sticks at 0%
+			let pct: number;
+			let label: string;
+			if (j.total_bytes && j.total_bytes > 0) {
+				pct = Math.round((j.bytes_uploaded / j.total_bytes) * 100);
+				label = `${formatBytes(j.bytes_uploaded)} / ${formatBytes(j.total_bytes)}`;
+			} else if (j.bytes_uploaded > 0) {
+				// total unknown but we have bytes — show bytes and fake pct
+				pct = Math.min(90, Math.round((j.bytes_uploaded / (32 * 1024 * 1024)) * 7));
+				label = `${formatBytes(j.bytes_uploaded)} transferido`;
+			} else {
+				pct = j.status === 'completed' ? 100 : j.status === 'processing' ? Math.min(80, 10 + attempts * 4) : 5;
+				label = j.status === 'queued' ? t('item.driveQueued') : `${pct}%`;
+			}
+			prog.update(pct, `${j.file_name} — ${label}`);
+
+			if (j.status === 'completed') {
+				prog.update(100, `${j.file_name} — ${t('item.driveDone')}`);
+				setTimeout(() => prog.dismiss(), 2000);
+				const driveUrl = j.google_file_id ? `https://drive.google.com/file/d/${j.google_file_id}/view` : null;
+				showToast(t('item.driveDone'), 'success', 9000);
+				if (driveUrl) {
+					try {
+						if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+							let iconUrl = '/favicon.ico';
+							if (driveThumbUuid) {
+								try { iconUrl = mediaUrl(driveThumbUuid, 'low', 'webp'); } catch {}
+							}
+							const n = new Notification(t('item.driveDone'), {
+								body: j.file_name ? `${j.file_name}` : driveUrl,
+								icon: iconUrl,
+								badge: '/favicon.ico',
+								tag: `drive-${j.google_file_id}`,
+							});
+							n.onclick = () => {
+								window.open(driveUrl, '_blank', 'noopener');
+								n.close();
+								window.focus();
+							};
+						}
+					} catch {}
+					try {
+						const container = document.getElementById('toast-container');
+						const lastToast = container?.lastElementChild as HTMLElement | null;
+						if (lastToast) {
+							lastToast.style.cursor = 'pointer';
+							lastToast.title = driveUrl;
+							lastToast.addEventListener('click', () => window.open(driveUrl, '_blank', 'noopener'), { once: true });
+						}
+					} catch {}
+					try {
+						const link = document.createElement('a');
+						link.href = driveUrl;
+						link.target = '_blank';
+						link.rel = 'noopener';
+						link.className = btn.className;
+						link.title = driveUrl;
+						link.setAttribute('aria-label', t('item.driveDone'));
+						link.innerHTML = getIcon('googledrive', 16);
+						link.style.opacity = '';
+						btn.replaceWith(link);
+						btn.disabled = false;
+						return;
+					} catch {}
+				}
+				btn.innerHTML = getIcon('googledrive', 18);
+				btn.style.opacity = '';
+				btn.disabled = false;
+				return;
+			}
+			if (j.status === 'failed') {
+				prog.dismiss();
+				throw new Error(j.error ?? t('item.driveFailed'));
+			}
+			if (attempts > 180) {
+				prog.dismiss();
+				throw new Error(t('item.driveFailed'));
+			}
+			await new Promise((r) => setTimeout(r, 2000));
+			return poll();
+		};
+		try {
+			await poll();
+		} catch (e) {
+			prog.dismiss();
+			throw e;
+		}
+	};
+
+	// Rehydrate ongoing transfers when (re)entering the page
+	try {
+		if (window.appState.isLoggedIn) {
+			const jobs = (await fetch('/api/drive/jobs').then((r) => (r.ok ? r.json() : [])) as DriveJob[]);
+			const btnsByR2 = new Map<string, HTMLButtonElement>();
+			for (const b of Array.from(document.querySelectorAll<HTMLButtonElement>('.download-drive-btn'))) {
+				if (b.dataset.r2) btnsByR2.set(b.dataset.r2, b);
+			}
+			for (const job of jobs) {
+				if ((job.status === 'queued' || job.status === 'processing') && btnsByR2.has(job.r2_key)) {
+					const b = btnsByR2.get(job.r2_key)!;
+					const orig = b.innerHTML;
+					b.disabled = true;
+					b.innerHTML = getIcon('googledrive', 16);
+					b.style.opacity = '0.6';
+					// fire and forget — each job polls independently
+					drivePoll(job.uuid, b, orig).catch((err) => {
+						showToast((err as Error).message || t('item.driveFailed'), 'error');
+						b.disabled = false;
+						b.innerHTML = orig;
+						(b as HTMLElement).style.opacity = '';
+					});
+					btnsByR2.delete(job.r2_key);
+				}
+			}
+		}
+	} catch {}
+
 	for (const btn of Array.from(document.querySelectorAll<HTMLButtonElement>('.download-drive-btn'))) {
 		btn.addEventListener('click', async () => {
 			const r2Key = btn.dataset.r2!;
@@ -754,8 +893,8 @@ export async function itemAfter(ctx: RouteContext): Promise<void> {
 			btn.disabled = true;
 			btn.innerHTML = getIcon('googledrive', 16);
 			btn.style.opacity = '0.6';
+			let prog: ReturnType<typeof showProgressToast> | null = null;
 			try {
-				// Check if Drive is linked
 				const statusRes = await fetch('/api/drive/status');
 				if (!statusRes.ok) throw new Error(t('common.networkError'));
 				const status = (await statusRes.json()) as { linked: boolean };
@@ -769,9 +908,9 @@ export async function itemAfter(ctx: RouteContext): Promise<void> {
 					if (ok) location.href = '/api/drive/auth';
 					btn.disabled = false;
 					btn.innerHTML = original;
+					btn.style.opacity = '';
 					return;
 				}
-				// Enqueue transfer
 				const tr = await fetch('/api/drive/transfer', {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
@@ -782,27 +921,10 @@ export async function itemAfter(ctx: RouteContext): Promise<void> {
 					throw new Error(data.error ?? t('common.error'));
 				}
 				const { job_uuid } = (await tr.json()) as { job_uuid: string };
-				showToast(t('item.driveQueued'), 'info');
-				// Poll job status
-				let attempts = 0;
-				const poll = async (): Promise<void> => {
-					attempts++;
-					const j = await fetch(`/api/drive/jobs/${job_uuid}`).then((r) => r.json() as Promise<{ status: string; google_file_id: string | null; error: string | null }>);
-					if (j.status === 'completed') {
-						showToast(t('item.driveDone'), 'success');
-						btn.innerHTML = getIcon('googledrive', 18);
-						btn.style.opacity = '';
-						btn.disabled = false;
-						if (j.google_file_id) window.open(`https://drive.google.com/file/d/${j.google_file_id}/view`, '_blank', 'noopener');
-						return;
-					}
-					if (j.status === 'failed') throw new Error(j.error ?? t('item.driveFailed'));
-					if (attempts > 60) throw new Error(t('item.driveFailed'));
-					await new Promise((r) => setTimeout(r, 2000));
-					return poll();
-				};
-				await poll();
+				prog = showProgressToast(`${t('item.driveQueued')} — 0%`, 'info');
+				await drivePoll(job_uuid, btn, original, prog);
 			} catch (e) {
+				if (prog) prog.dismiss();
 				showToast((e as Error).message || t('item.driveFailed'), 'error');
 				btn.disabled = false;
 				btn.innerHTML = original;

@@ -10,7 +10,7 @@
 export { TimeUnit } from './time';
 export { $, $$, htmlDecode, loadingBtn } from './dom';
 export { stripMarkdown, renderMarkdown, parseMarkdownToHtml } from './markdown';
-export { showToast, type ToastType } from './toast';
+export { showToast, showProgressToast, type ToastType } from './toast';
 export { renderTurnstile } from './turnstile';
 export { CHUNK_SIZE, uploadChunked, type ChunkedUploadResult } from './upload';
 export { downloadHost, type DownloadKind, type HostInfo } from './download-hosts';

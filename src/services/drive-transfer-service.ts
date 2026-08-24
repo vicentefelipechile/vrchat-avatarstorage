@@ -13,6 +13,7 @@
 import type { DB } from '../db/client';
 import type { DriveTransferMessage } from '../types';
 import { DriveTransferRepository } from '../repositories/drive-transfer-repository';
+import { MediaRepository } from '../repositories/media-repository';
 import { OAuthRepository } from '../repositories/oauth-repository';
 import { decryptSecret } from '../auth/2fa';
 import { refreshGoogleAccessToken } from '../auth/google';
@@ -21,7 +22,7 @@ import { refreshGoogleAccessToken } from '../auth/google';
 // Constants
 // =========================================================================================================
 
-const CHUNK_SIZE = 8 * 1024 * 1024; // 8 MB — balanced between requests and memory
+const CHUNK_SIZE = 32 * 1024 * 1024; // 32 MB — 128×256 KiB, free tier has 50 fetch subrequests/invocation; 500 MB → 16 PUTs+init (<50), 1.5 GB → 47 PUTs+init (<50) so max file fits without limit raise
 const DRIVE_UPLOAD_INIT_URL = 'https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable';
 
 // =========================================================================================================
@@ -31,6 +32,7 @@ const DRIVE_UPLOAD_INIT_URL = 'https://www.googleapis.com/upload/drive/v3/files?
 export class DriveTransferService {
 	private readonly driveRepo: DriveTransferRepository;
 	private readonly oauthRepo: OAuthRepository;
+	private readonly mediaRepo: MediaRepository;
 
 	constructor(
 		private readonly db: DB,
@@ -42,6 +44,7 @@ export class DriveTransferService {
 	) {
 		this.driveRepo = new DriveTransferRepository(db);
 		this.oauthRepo = new OAuthRepository(db);
+		this.mediaRepo = new MediaRepository(db);
 	}
 
 	async process(msg: DriveTransferMessage): Promise<void> {
@@ -54,6 +57,7 @@ export class DriveTransferService {
 			if (!head) throw new Error(`R2 object not found: ${r2_key}`);
 			const size = head.size;
 			const mime = head.httpMetadata?.contentType ?? 'application/octet-stream';
+			await this.driveRepo.updateProgress(job_uuid, 0, size);
 
 			const accessToken = await this.resolveAccessToken(user_uuid);
 
@@ -104,6 +108,7 @@ export class DriveTransferService {
 				// 308 Resume Incomplete -> continue
 				if (putRes.status === 308) {
 					offset += chunk.byteLength;
+					await this.driveRepo.updateProgress(job_uuid, offset, size).catch(() => {});
 					continue;
 				}
 
@@ -116,6 +121,7 @@ export class DriveTransferService {
 				const data = (await putRes.json()) as { id?: string };
 				googleFileId = data.id ?? null;
 				offset += chunk.byteLength;
+				await this.driveRepo.updateProgress(job_uuid, offset, size).catch(() => {});
 				break;
 			}
 
@@ -132,7 +138,14 @@ export class DriveTransferService {
 
 			if (!googleFileId) throw new Error('Drive upload completed but no file id returned');
 
-			await this.driveRepo.updateCompleted(job_uuid, googleFileId);
+			await this.driveRepo.updateCompleted(job_uuid, googleFileId, offset, size);
+			// Count as download — mirrors GET /api/download/:key increment (MediaRepository.incrementResourceDownloads)
+			try {
+				const media = await this.mediaRepo.findByKey(r2_key);
+				if (media) await this.mediaRepo.incrementResourceDownloads(media.uuid);
+			} catch (e) {
+				console.warn(`[DRIVE_QUEUE] download_count increment failed for ${r2_key}:`, e);
+			}
 		} catch (e) {
 			const msg_ = e instanceof Error ? e.message : String(e);
 			console.error(`[DRIVE_QUEUE] failed ${job_uuid}:`, msg_);

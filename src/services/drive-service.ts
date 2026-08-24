@@ -198,6 +198,7 @@ export class DriveService {
 		const jobUuid = crypto.randomUUID();
 		const now = Math.floor(Date.now() / 1000);
 		const folderId = folderIdOverride ?? status.folder_id ?? null;
+		const totalBytes = (obj as unknown as { size: number }).size ?? null;
 
 		await this.driveRepo.create({
 			uuid: jobUuid,
@@ -208,6 +209,8 @@ export class DriveService {
 			status: 'queued',
 			google_file_id: null,
 			error: null,
+			total_bytes: totalBytes,
+			bytes_uploaded: 0,
 			created_at: now,
 			updated_at: now,
 		});
@@ -218,10 +221,10 @@ export class DriveService {
 		return { job_uuid: jobUuid };
 	}
 
-	async getJob(userUuid: string, jobUuid: string): Promise<{ uuid: string; status: string; google_file_id: string | null; error: string | null; file_name: string }> {
+	async getJob(userUuid: string, jobUuid: string): Promise<{ uuid: string; status: string; google_file_id: string | null; error: string | null; file_name: string; total_bytes: number | null; bytes_uploaded: number }> {
 		const job = await this.driveRepo.findByUuid(jobUuid);
 		if (!job || job.user_uuid !== userUuid) throw new NotFoundError('Job not found');
-		return { uuid: job.uuid, status: job.status, google_file_id: job.google_file_id, error: job.error, file_name: job.file_name };
+		return { uuid: job.uuid, status: job.status, google_file_id: job.google_file_id, error: job.error, file_name: job.file_name, total_bytes: job.total_bytes ?? null, bytes_uploaded: job.bytes_uploaded ?? 0 };
 	}
 
 	async listJobs(userUuid: string): Promise<ReturnType<DriveTransferRepository['findByUser']>> {
