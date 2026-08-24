@@ -150,7 +150,7 @@ export function buildFilterPanel(config: FilterPanelConfig): string {
 		</div>
 		<div class="filter-group">
 			<span class="filter-group-label">${escapeHtmlAttr(searchLabel)}</span>
-			<input type="search" name="q" id="filter-search-q" value="${escapeHtmlAttr(currentQ)}" placeholder="${escapeHtmlAttr(searchPlaceholder)}" autocomplete="off" style="width:100%;max-width:100%;box-sizing:border-box;margin:0;padding:6px 8px;border:2px solid var(--border-color);background:var(--bg-input);color:var(--text-main);font-family:inherit;font-size:0.83rem;display:block">
+			<input type="search" name="q" id="filter-search-q" value="${escapeHtmlAttr(currentQ)}" placeholder="${escapeHtmlAttr(searchPlaceholder)}" autocomplete="off" style="width:100%;max-width:100%;box-sizing:border-box;margin:0;padding:6px 8px;border:1px solid var(--border-color);background:var(--bg-input);color:var(--text-main);font-family:inherit;font-size:0.83rem;display:block">
 		</div>
 		${groups}
 	</aside>`;
