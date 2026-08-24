@@ -58,7 +58,7 @@ function toAscii(s: string): string {
 }
 
 function escapeMd(s: string): string {
-	return toAscii(s).replace(/\|/g, '\\|');
+	return toAscii(s).replace(/\\/g, '\\\\').replace(/\|/g, '\\|');
 }
 
 function paramTable(params: EndpointDoc['params']): string {

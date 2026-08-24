@@ -12,6 +12,10 @@ import { showToast, mediaUrl } from '../lib/utils';
 import { navigateTo } from '../core/router';
 import type { RouteContext, Resource } from '../types';
 
+function escapeAttr(s: string): string {
+	return s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
 // =========================================================================
 // Types
 // =========================================================================
@@ -264,21 +268,25 @@ async function loadResources(el: HTMLElement, page = 1, category = '', status = 
 	el.innerHTML = `<h2 class="admin-section-title">${t('admin.resources.title')}</h2>
 		<div class="admin-form-panel" style="padding: 16px;">
 			<div class="admin-action-bar">
-				<input type="text" id="res-search" class="admin-search-input" placeholder="${t('admin.resources.searchPlaceholder')}" value="${q}">
+				<input type="text" id="res-search" class="admin-search-input" placeholder="${t('admin.resources.searchPlaceholder')}">
 				<select id="res-cat" class="filter-select" style="width:140px">
 					<option value="">${t('admin.resources.allCats')}</option>
-					<option value="avatars" ${category === 'avatars' ? 'selected' : ''}>${t('admin.stats.avatars')}</option>
-					<option value="assets" ${category === 'assets' ? 'selected' : ''}>${t('admin.stats.assets')}</option>
-					<option value="clothes" ${category === 'clothes' ? 'selected' : ''}>${t('admin.stats.clothes')}</option>
+					<option value="avatars">${t('admin.stats.avatars')}</option>
+					<option value="assets">${t('admin.stats.assets')}</option>
+					<option value="clothes">${t('admin.stats.clothes')}</option>
 				</select>
 				<select id="res-status" class="filter-select" style="width:120px">
 					<option value="">${t('admin.resources.allStatus')}</option>
-					<option value="1" ${status === '1' ? 'selected' : ''}>${t('admin.resources.approved')}</option>
-					<option value="0" ${status === '0' ? 'selected' : ''}>${t('admin.resources.pending')}</option>
+					<option value="1">${t('admin.resources.approved')}</option>
+					<option value="0">${t('admin.resources.pending')}</option>
 				</select>
 			</div>
 			<div id="res-table-wrap" class="admin-loading">${t('common.loading')}</div>
 		</div>`;
+	// Set tainted filter values via property (not HTML) — CodeQL-safe, no escaping needed
+	(el.querySelector('#res-search') as HTMLInputElement).value = q;
+	(el.querySelector('#res-cat') as HTMLSelectElement).value = category;
+	(el.querySelector('#res-status') as HTMLSelectElement).value = status;
 
 	const qp = new URLSearchParams({ page: String(page) });
 	if (category) qp.set('category', category);
@@ -361,10 +369,11 @@ async function loadUsers(el: HTMLElement, page = 1, q = ''): Promise<void> {
 	el.innerHTML = `<h2 class="admin-section-title">${t('admin.users.title')}</h2>
 		<div class="admin-form-panel" style="padding: 16px;">
 			<div class="admin-action-bar">
-				<input type="text" id="user-search" class="admin-search-input" placeholder="${t('admin.users.searchPlaceholder')}" value="${q}">
+				<input type="text" id="user-search" class="admin-search-input" placeholder="${t('admin.users.searchPlaceholder')}">
 			</div>
 			<div id="user-table-wrap" class="admin-loading">${t('common.loading')}</div>
 		</div>`;
+	(el.querySelector('#user-search') as HTMLInputElement).value = q;
 
 	try {
 		const qp = new URLSearchParams({ page: String(page) });

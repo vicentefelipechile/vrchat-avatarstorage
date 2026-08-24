@@ -272,7 +272,9 @@ function createImagePreview(src: string, mediaType: 'image' | 'video' | 'file', 
 	const media = mediaType === 'video'
 		? document.createElement('video')
 		: document.createElement('img');
-	media.setAttribute('src', src);
+	// Allow only browser-generated blob: URLs and our own CDN / R2 download URLs — blocks javascript:/data: injection
+	const isSafeSrc = src.startsWith('blob:') || src.startsWith('https://cdn.vrcstorage.lat/') || src.startsWith('http://localhost:8788/') || src.startsWith('/api/download/');
+	if (isSafeSrc) media.setAttribute('src', src);
 	if (mediaType === 'video') {
 		(media as HTMLVideoElement).controls = false;
 	}
@@ -326,13 +328,14 @@ function setCheckbox(id: string, value: number | boolean | null | undefined): vo
 // Link management helpers
 // =========================================================================
 
-function buildLinkRow(link: ResourceLink, index: number): string {
+function buildLinkRow(link: ResourceLink, _index: number): string {
 	const linkUuid = link.uuid || '';
 	const title = link.link_title || '';
 	const url = link.link_url;
 	const isR2File = link.link_type === 'download' && url.startsWith('/api/download/');
-
-	return `<div class="link-row" data-link-uuid="${linkUuid}" data-r2-file="${isR2File ? '1' : '0'}" style="border:1px solid var(--border-color);padding:12px;margin-bottom:8px;background:var(--bg-card)">
+	// Legacy string builder — kept for reference. Values are escaped; prefer createLinkRow() which avoids HTML-interpreting tainted data entirely.
+	const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+	return `<div class="link-row" data-link-uuid="${esc(linkUuid)}" data-r2-file="${isR2File ? '1' : '0'}" style="border:1px solid var(--border-color);padding:12px;margin-bottom:8px;background:var(--bg-card)">
 		<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
 			<div style="display:flex;flex-direction:column;gap:4px">
 				<button type="button" class="btn-link-up btn btn-sm" style="padding:2px 6px;font-family:inherit" title="${t('edit.moveUp') ?? 'Up'}">▲</button>
@@ -340,11 +343,11 @@ function buildLinkRow(link: ResourceLink, index: number): string {
 			</div>
 			<div style="flex:1;min-width:140px">
 				<label style="font-size:0.8em;color:var(--text-muted)">${t('edit.linkTitle')}</label>
-				<input type="text" class="link-title-input form-control" value="${htmlDecode(title)}" style="width:100%;${isR2File ? 'background-color:var(--bg-dropdown);' : ''}" ${isR2File ? 'readonly' : ''}>
+				<input type="text" class="link-title-input form-control" value="${esc(htmlDecode(title))}" style="width:100%;${isR2File ? 'background-color:var(--bg-dropdown);' : ''}" ${isR2File ? 'readonly' : ''}>
 			</div>
 			<div style="flex:2;min-width:180px">
 				<label style="font-size:0.8em;color:var(--text-muted)">${t('edit.linkUrl')}</label>
-				<input type="text" class="link-url-input form-control" value="${htmlDecode(url)}" style="width:100%;${isR2File ? 'background-color:var(--bg-dropdown);' : ''}" ${isR2File ? 'readonly' : ''}>
+				<input type="text" class="link-url-input form-control" value="${esc(htmlDecode(url))}" style="width:100%;${isR2File ? 'background-color:var(--bg-dropdown);' : ''}" ${isR2File ? 'readonly' : ''}>
 			</div>
 			<div style="display:flex;gap:6px;align-items:flex-end">
 				${isR2File ? '' : `<button type="button" class="btn-link-save btn btn-sm" style="font-family:inherit">${t('edit.linkSave')}</button>`}
@@ -352,6 +355,47 @@ function buildLinkRow(link: ResourceLink, index: number): string {
 			</div>
 		</div>
 	</div>`;
+}
+
+function createLinkRow(link: ResourceLink): HTMLElement {
+	const title = htmlDecode(link.link_title || '');
+	const url = htmlDecode(link.link_url);
+	const isR2File = link.link_type === 'download' && url.startsWith('/api/download/');
+	const row = document.createElement('div');
+	row.className = 'link-row';
+	row.dataset.linkUuid = link.uuid || '';
+	row.dataset.r2File = isR2File ? '1' : '0';
+	row.style.cssText = 'border:1px solid var(--border-color);padding:12px;margin-bottom:8px;background:var(--bg-card)';
+	// Static layout only — tainted title/url are set via .value below, never as HTML
+	row.innerHTML = `<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+			<div style="display:flex;flex-direction:column;gap:4px">
+				<button type="button" class="btn-link-up btn btn-sm" style="padding:2px 6px;font-family:inherit" title="${t('edit.moveUp') ?? 'Up'}">▲</button>
+				<button type="button" class="btn-link-down btn btn-sm" style="padding:2px 6px;font-family:inherit" title="${t('edit.moveDown') ?? 'Down'}">▼</button>
+			</div>
+			<div style="flex:1;min-width:140px">
+				<label style="font-size:0.8em;color:var(--text-muted)">${t('edit.linkTitle')}</label>
+				<input type="text" class="link-title-input form-control" style="width:100%">
+			</div>
+			<div style="flex:2;min-width:180px">
+				<label style="font-size:0.8em;color:var(--text-muted)">${t('edit.linkUrl')}</label>
+				<input type="text" class="link-url-input form-control" style="width:100%">
+			</div>
+			<div style="display:flex;gap:6px;align-items:flex-end">
+				${isR2File ? '' : `<button type="button" class="btn-link-save btn btn-sm" style="font-family:inherit">${t('edit.linkSave')}</button>`}
+				<button type="button" class="btn-link-delete btn btn-sm btn-danger" style="font-family:inherit">${t('edit.linkDelete')}</button>
+			</div>
+		</div>`;
+	const titleInput = row.querySelector<HTMLInputElement>('.link-title-input')!;
+	const urlInput = row.querySelector<HTMLInputElement>('.link-url-input')!;
+	titleInput.value = title;
+	urlInput.value = url;
+	if (isR2File) {
+		titleInput.readOnly = true;
+		urlInput.readOnly = true;
+		titleInput.style.backgroundColor = 'var(--bg-dropdown)';
+		urlInput.style.backgroundColor = 'var(--bg-dropdown)';
+	}
+	return row;
 }
 
 // =========================================================================
@@ -780,7 +824,7 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 		}
 
 		for (let i = 0; i < allLinks.length; i++) {
-			existingLinksEl.innerHTML += buildLinkRow(allLinks[i], i);
+			existingLinksEl.appendChild(createLinkRow(allLinks[i]));
 		}
 
 		existingLinksEl.querySelectorAll<HTMLElement>('.link-row').forEach((row) => {

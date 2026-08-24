@@ -9,16 +9,54 @@ import DOMPurify from 'dompurify';
 // `marked` v17 defaults to GFM, but we set it explicitly so a future upgrade never breaks `>` / `` ` ``.
 marked.setOptions({ gfm: true, breaks: false, pedantic: false });
 
-/** Decode HTML entities for legacy rows that were stored as `&gt;`/`&lt;` via old sanitizeHtml. Handles double-encoding. */
+/** Decode HTML entities for legacy rows that were stored as `&gt;`/`&lt;` via old sanitizeHtml. Handles double-encoding. CodeQL-safe: no innerHTML. */
+function decodeEntityOnce(input: string): string {
+	return input.replace(/&(#x[0-9a-fA-F]+|#\d+|[a-zA-Z0-9]+);/g, (match, entity: string) => {
+		if (entity[0] === '#') {
+			const code = entity[1] === 'x' || entity[1] === 'X' ? parseInt(entity.slice(2), 16) : parseInt(entity.slice(1), 10);
+			if (!Number.isNaN(code)) return String.fromCodePoint(code);
+			return match;
+		}
+		switch (entity) {
+			case 'amp':
+				return '&';
+			case 'lt':
+				return '<';
+			case 'gt':
+				return '>';
+			case 'quot':
+				return '"';
+			case 'apos':
+				return "'";
+			case 'nbsp':
+				return '\u00A0';
+			case 'copy':
+				return '©';
+			case 'reg':
+				return '®';
+			case 'hellip':
+				return '…';
+			case 'mdash':
+				return '—';
+			case 'ndash':
+				return '–';
+			case 'laquo':
+				return '«';
+			case 'raquo':
+				return '»';
+			default:
+				return match;
+		}
+	});
+}
+
 function decodeLegacyEntities(input: string): string {
 	if (!input.includes('&')) return input;
-	const el = document.createElement('textarea');
 	let prev = input;
 	let decoded = input;
 	// Loop to handle double-encoded `&amp;gt;` → `&gt;` → `>`
 	for (let i = 0; i < 3; i++) {
-		el.innerHTML = decoded;
-		decoded = el.value;
+		decoded = decodeEntityOnce(decoded);
 		if (decoded === prev) break;
 		prev = decoded;
 		if (!decoded.includes('&')) break;
