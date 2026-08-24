@@ -192,11 +192,20 @@ export async function settingsView(_ctx: RouteContext): Promise<string> {
 							<div id="drive-linked-row" style="border:1px solid var(--border-color);padding:12px;margin-bottom:12px;background:var(--bg-card);">
 								<p id="drive-linked-text" style="margin:0 0 8px 0;"></p>
 								<p id="drive-folder-text" style="margin:0 0 12px 0;font-size:0.9em;color:var(--text-muted);"></p>
+								<div class="form-group" style="margin-bottom:12px;">
+									<label for="drive-folder-id-input" style="font-size:0.85rem;font-weight:bold;">${t('settings.driveFolder')} — ID</label>
+									<div style="display:flex;gap:8px;margin-top:6px;">
+										<input type="text" id="drive-folder-id-input" placeholder="1a2B3c...  (de https://drive.google.com/drive/folders/ID)" style="flex:1;padding:8px 10px;border:2px solid var(--border-color);background:var(--bg-input);color:var(--text-main);font-family:inherit;font-size:0.9rem;" maxlength="256">
+										<button id="drive-save-folder-btn" class="btn">${icons.check(16)} ${t('settings.save')}</button>
+									</div>
+									<small class="settings-hint" style="margin-top:6px;display:block;">${t('settings.driveFolderPrompt')}<br><span style="opacity:0.8">https://drive.google.com/drive/folders/<b>ID</b> — copia solo el ID</span></small>
+								</div>
 								<div style="display:flex;gap:10px;flex-wrap:wrap;">
-									<button id="drive-change-folder-btn" class="btn-outline">${t('settings.driveChangeFolder')}</button>
 									<button id="drive-clear-folder-btn" class="btn-outline">${t('settings.driveClearFolder')}</button>
 									<button id="drive-disconnect-btn" class="btn-danger">${t('settings.driveDisconnect')}</button>
 								</div>
+								<!-- Browser preserved for future: drive-picker not wired until drive.readonly approved -->
+								<button id="drive-change-folder-btn" hidden>${t('settings.driveChangeFolder')}</button>
 							</div>
 							<div id="drive-unlinked-row" hidden>
 								<button id="drive-connect-btn" class="btn">${icons['hard-drive'](16)} ${t('settings.driveConnect')}</button>
@@ -693,12 +702,24 @@ async function loadDrivePanel(): Promise<void> {
 	const unlinkedRow = document.getElementById('drive-unlinked-row') as HTMLElement;
 	const linkedText = document.getElementById('drive-linked-text') as HTMLElement;
 	const folderText = document.getElementById('drive-folder-text') as HTMLElement;
+	const folderInput = document.getElementById('drive-folder-id-input') as HTMLInputElement | null;
 
 	if (!statusEl || !controlsEl) return;
 	if (!window.appState.isLoggedIn) {
 		statusEl.textContent = t('settings.driveLoginRequired');
 		return;
 	}
+
+	const extractFolderId = (raw: string): string | null => {
+		const v = raw.trim();
+		if (!v) return null;
+		// Accept full URL: https://drive.google.com/drive/folders/<ID> or /folders/<ID>
+		const m = v.match(/\/folders\/([a-zA-Z0-9_-]+)/);
+		if (m) return m[1];
+		// Accept raw ID (most common): strip query/hash if user pasted url with params
+		const id = v.split(/[?#\s]/)[0].split('/').pop() ?? v;
+		return id.trim() || null;
+	};
 
 	const refresh = async () => {
 		try {
@@ -711,7 +732,14 @@ async function loadDrivePanel(): Promise<void> {
 				linkedRow.hidden = false;
 				unlinkedRow.hidden = true;
 				linkedText.textContent = `✓ ${t('settings.driveLinked')}`;
-				folderText.textContent = data.folder_name ? `${t('settings.driveFolder')}: ${data.folder_name}` : t('settings.driveNoFolder');
+				if (data.folder_id) {
+					// Manual mode: show ID (name may be null until readonly approved)
+					const label = data.folder_name && data.folder_name !== data.folder_id ? `${data.folder_name} (${data.folder_id})` : data.folder_id;
+					folderText.textContent = `${t('settings.driveFolder')}: ${label}`;
+				} else {
+					folderText.textContent = t('settings.driveNoFolder');
+				}
+				if (folderInput) folderInput.value = data.folder_id ?? '';
 			} else {
 				linkedRow.hidden = true;
 				unlinkedRow.hidden = false;
@@ -741,32 +769,33 @@ async function loadDrivePanel(): Promise<void> {
 		}
 	});
 
-	document.getElementById('drive-change-folder-btn')?.addEventListener('click', async () => {
-		const { showDrivePicker } = await import('../features/drive-picker');
-		// Fetch current folder to pre-select
-		let currentId: string | null = null;
+	// Manual folder ID save (temporary until drive.readonly approved — browser preserved in drive-picker.ts)
+	document.getElementById('drive-save-folder-btn')?.addEventListener('click', async () => {
+		const raw = folderInput?.value ?? '';
+		const folderId = extractFolderId(raw);
+		const btn = document.getElementById('drive-save-folder-btn') as HTMLButtonElement;
+		const restore = loadingBtn(btn, '…');
 		try {
-			const s = await fetch('/api/drive/status').then((r) => r.json() as Promise<{ folder_id: string | null }>);
-			currentId = s.folder_id;
-		} catch {
-			/* ignore */
-		}
-		const picked = await showDrivePicker(currentId);
-		if (picked === null) return; // cancelled
-		try {
-			const res = await fetch('/api/drive/folder', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ folder_id: picked.id, folder_name: picked.name }) });
+			const res = await fetch('/api/drive/folder', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ folder_id: folderId, folder_name: folderId }),
+			});
 			if (!res.ok) {
 				const data = (await res.json()) as { error?: string };
 				throw new Error(data.error ?? 'Failed');
 			}
-			showToast(picked.id ? t('settings.driveFolderSaved') : t('settings.driveFolderCleared'), 'success');
+			showToast(folderId ? t('settings.driveFolderSaved') : t('settings.driveFolderCleared'), 'success');
 			await refresh();
 		} catch (e) {
 			showToast((e as Error).message, 'error');
+		} finally {
+			restore();
 		}
 	});
 
 	document.getElementById('drive-clear-folder-btn')?.addEventListener('click', async () => {
+		if (folderInput) folderInput.value = '';
 		try {
 			await fetch('/api/drive/folder', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ folder_id: null, folder_name: null }) });
 			showToast(t('settings.driveFolderCleared'), 'success');
@@ -775,6 +804,16 @@ async function loadDrivePanel(): Promise<void> {
 			showToast(t('common.networkError'), 'error');
 		}
 	});
+
+	// Browser kept for future — hidden until drive.readonly is approved.
+	// Re-enable by wiring showDrivePicker here again:
+	// document.getElementById('drive-change-folder-btn')?.addEventListener('click', async () => {
+	// 	const { showDrivePicker } = await import('../features/drive-picker');
+	// 	let currentId: string | null = null;
+	// 	try { const s = await fetch('/api/drive/status').then((r) => r.json() as Promise<{ folder_id: string | null }>); currentId = s.folder_id; } catch {}
+	// 	const picked = await showDrivePicker(currentId); if (picked === null) return;
+	// 	await fetch('/api/drive/folder', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ folder_id: picked.id, folder_name: picked.name }) }); await refresh();
+	// });
 }
 
 // =========================================================================

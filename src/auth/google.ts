@@ -198,7 +198,7 @@ async function verifyWithKey(
  *
  * @see https://developers.google.com/identity/protocols/oauth2/web-server#creatingclient
  */
-export const DRIVE_FILE_SCOPE = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly';
+export const DRIVE_FILE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
 
 export function buildGoogleAuthUrl(clientId: string, redirectUri: string, state: string): string {
 	const params = new URLSearchParams({
