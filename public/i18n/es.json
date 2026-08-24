@@ -832,7 +832,9 @@
 		"filterTitle": "Filtros",
 		"reset": "Reestablecer",
 		"titleClothes": "VRCStorage — Ropa",
-		"noClothes": "No se encontraron ropas con estos filtros."
+		"noClothes": "No se encontraron ropas con estos filtros.",
+		"searchLabel": "Buscar",
+		"searchPlaceholder": "Buscar por nombre..."
 	},
 	"authorProfile": {
 		"notFound": "El autor no fue encontrado.",

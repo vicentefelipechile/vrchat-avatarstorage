@@ -116,24 +116,6 @@ function card<Meta>(cfg: FilteredListConfig<Meta>, res: FilteredResource<Meta>):
 	</div>`;
 }
 
-function escapeHtml(s: string): string {
-	return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
-
-function searchBarHtml(slug: string, params: URLSearchParams): string {
-	const q = params.get('q') || '';
-	const placeholder = (() => {
-		try { const v = t('search.placeholder'); return v === 'search.placeholder' ? 'Search by name...' : v; } catch { return 'Search by name...'; }
-	})();
-	const clearLabel = (() => {
-		try { const v = t('search.clear'); return v === 'search.clear' ? 'Clear' : v; } catch { return 'Clear'; }
-	})();
-	return `<div class="search-bar" style="margin-bottom:16px;display:flex;gap:8px;">
-		<input type="search" id="${slug}-search" name="q" value="${escapeHtml(q)}" placeholder="${escapeHtml(placeholder)}" autocomplete="off" style="flex:1;padding:8px;border:1px solid var(--border-color);background:var(--bg-input);font-family:inherit">
-		<button id="${slug}-search-clear" type="button" class="btn btn-outline" style="white-space:nowrap">${escapeHtml(clearLabel)}</button>
-	</div>`;
-}
-
 /** Builds only the results section (no filter panel). Runs on load and on every filter/sort change. */
 async function buildResults<Meta>(cfg: FilteredListConfig<Meta>, params: URLSearchParams): Promise<string> {
 	const page = parseInt(params.get('page') || '1', 10);
@@ -200,26 +182,20 @@ export function createFilteredListView<Meta>(cfg: FilteredListConfig<Meta>): {
 		return `
 			<div class="category-layout">
 				${buildFilterPanel(cfg.filters)}
-				<div class="category-results" style="flex:1;min-width:0;padding-left:24px">
-					${searchBarHtml(cfg.slug, ctx.query)}
-					<div id="${resultsId}">${resultsHtml}</div>
+				<div class="category-results" id="${resultsId}">
+					${resultsHtml}
 				</div>
 			</div>`;
 	}
 
 	function after(ctx: RouteContext): void {
 		const panel = document.getElementById('filter-panel');
-		const searchInput = document.getElementById(`${cfg.slug}-search`) as HTMLInputElement | null;
-		const clearBtn = document.getElementById(`${cfg.slug}-search-clear`) as HTMLButtonElement | null;
 		if (!panel) return;
 
-		let currentParams = new URLSearchParams(ctx.query.toString());
-
 		async function refreshResults(newParams: URLSearchParams): Promise<void> {
-			currentParams = new URLSearchParams(newParams.toString());
 			const resultsEl = document.getElementById(resultsId);
 			if (!resultsEl) return;
-			// Update the URL in place, then swap only the results — the panel and search bar keep state.
+			// Update the URL in place, then swap only the results — the panel keeps its state.
 			history.replaceState(null, '', `${cfg.route}?${newParams.toString()}`);
 			resultsEl.style.opacity = '0.5';
 			resultsEl.innerHTML = await buildResults(cfg, newParams);
@@ -229,58 +205,19 @@ export function createFilteredListView<Meta>(cfg: FilteredListConfig<Meta>): {
 			bindSortSelect(newParams);
 		}
 
-		function bindSortSelect(cur: URLSearchParams): void {
+		function bindSortSelect(currentParams: URLSearchParams): void {
+			// The select is recreated on every refresh, so it needs rebinding each time.
 			document.getElementById(sortId)?.addEventListener('change', (e) => {
-				const p = new URLSearchParams(cur.toString());
+				const p = new URLSearchParams(currentParams.toString());
 				p.set('sort_by', (e.target as HTMLSelectElement).value);
 				p.delete('page');
-				const qVal = searchInput?.value.trim();
-				if (qVal) p.set('q', qVal); else p.delete('q');
 				refreshResults(p);
 			});
 		}
-
-		function collectPanelParams(): URLSearchParams {
-			const params = new URLSearchParams();
-			panel!.querySelectorAll<HTMLInputElement>('input[type="checkbox"]:checked').forEach((input) => {
-				if (input.name === input.value) params.set(input.name, '1');
-				else params.append(input.name, input.value);
-			});
-			panel!.querySelectorAll<HTMLSelectElement>('select').forEach((sel) => {
-				if (sel.value) params.set(sel.name, sel.value);
-			});
-			return params;
-		}
-
-		// Search with debounce
-		let searchDebounce: ReturnType<typeof setTimeout> | null = null;
-		searchInput?.addEventListener('input', () => {
-			if (searchDebounce) clearTimeout(searchDebounce);
-			searchDebounce = setTimeout(() => {
-				const p = collectPanelParams();
-				const sortEl = document.getElementById(sortId) as HTMLSelectElement | null;
-				if (sortEl?.value) p.set('sort_by', sortEl.value);
-				const qVal = searchInput.value.trim();
-				if (qVal) p.set('q', qVal); else p.delete('q');
-				p.delete('page');
-				refreshResults(p);
-			}, 300);
-		});
-		clearBtn?.addEventListener('click', () => {
-			if (searchInput) searchInput.value = '';
-			const p = collectPanelParams();
-			const sortEl = document.getElementById(sortId) as HTMLSelectElement | null;
-			if (sortEl?.value) p.set('sort_by', sortEl.value);
-			p.delete('q');
-			p.delete('page');
-			refreshResults(p);
-		});
 
 		initFilterPanel(panel, (newParams) => {
 			const sortEl = document.getElementById(sortId) as HTMLSelectElement | null;
 			if (sortEl?.value) newParams.set('sort_by', sortEl.value);
-			const qVal = searchInput?.value.trim();
-			if (qVal) newParams.set('q', qVal);
 			newParams.delete('page');
 			refreshResults(newParams);
 		});

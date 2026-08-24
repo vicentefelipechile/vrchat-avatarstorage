@@ -764,7 +764,9 @@
 		"titleClothes": "VRCStorage — Ubrania",
 		"filterTitle": "Filtry",
 		"reset": "Zresetuj filtry",
-		"noClothes": "Nie znaleziono ubrań z tymi filtrami."
+		"noClothes": "Nie znaleziono ubrań z tymi filtrami.",
+		"searchLabel": "Szukaj",
+		"searchPlaceholder": "Szukaj według nazwy..."
 	},
 	"autorProfile": {
 		"notFound": "Nie ma autora o tej nazwie.",

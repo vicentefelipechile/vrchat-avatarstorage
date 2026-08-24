@@ -763,7 +763,9 @@
 		"titleClothes": "VRCStorage — Kıyafetler",
 		"filterTitle": "Filtreler",
 		"reset": "Filtreleri Sıfırla",
-		"noClothes": "Bu filtrelerle kıyafet bulunamadı."
+		"noClothes": "Bu filtrelerle kıyafet bulunamadı.",
+		"searchLabel": "Ara",
+		"searchPlaceholder": "Ada göre ara..."
 	},
 	"autorProfile": {
 		"notFound": "Bu isimde bir yazar yok.",

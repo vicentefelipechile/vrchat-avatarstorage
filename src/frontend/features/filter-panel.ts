@@ -81,7 +81,12 @@ function resolveOptionLabel(g: FilterGroupConfig, o: FilterOption): string {
 // Returns the HTML string for the filter panel sidebar.
 // =========================================================================
 
+function escapeHtmlAttr(s: string): string {
+	return s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
 export function buildFilterPanel(config: FilterPanelConfig): string {
+	const currentQ = new URLSearchParams(window.location.search).get('q') ?? '';
 	const groups = config.groups
 		.map((g) => {
 			const groupLabel = resolveGroupLabel(g);
@@ -135,10 +140,17 @@ export function buildFilterPanel(config: FilterPanelConfig): string {
 		})
 		.join('');
 
+	const searchLabel = (() => { try { const v = t('filterPanel.searchLabel'); return v === 'filterPanel.searchLabel' ? 'Search' : v; } catch { return 'Search'; } })();
+	const searchPlaceholder = (() => { try { const v = t('filterPanel.searchPlaceholder'); return v === 'filterPanel.searchPlaceholder' ? 'Search by name...' : v; } catch { return 'Search by name...'; } })();
+
 	return `<aside class="filter-panel" id="filter-panel">
 		<div class="filter-panel-header">
 			<h3>${t('filterPanel.filterTitle')}</h3>
 			<button class="filter-reset-btn" id="filter-reset-btn" type="button">${t('filterPanel.reset')}</button>
+		</div>
+		<div class="filter-group">
+			<span class="filter-group-label">${escapeHtmlAttr(searchLabel)}</span>
+			<input type="search" name="q" id="filter-search-q" value="${escapeHtmlAttr(currentQ)}" placeholder="${escapeHtmlAttr(searchPlaceholder)}" autocomplete="off" style="width:100%;max-width:100%;box-sizing:border-box;margin:0;padding:6px 8px;border:2px solid var(--border-color);background:var(--bg-input);color:var(--text-main);font-family:inherit;font-size:0.83rem;display:block">
 		</div>
 		${groups}
 	</aside>`;
@@ -174,7 +186,17 @@ export function initFilterPanel(panelEl: HTMLElement, onFilter: (p: URLSearchPar
 		if (v) sel.value = v;
 	});
 
-	// Listen for changes
+	// Search input (inside panel) — debounce on typing
+	const searchInput = panelEl.querySelector<HTMLInputElement>('input[name="q"]');
+	let searchDebounce: ReturnType<typeof setTimeout> | null = null;
+	searchInput?.addEventListener('input', () => {
+		if (searchDebounce) clearTimeout(searchDebounce);
+		searchDebounce = setTimeout(() => {
+			onFilter(collectParams(panelEl));
+		}, 300);
+	});
+
+	// Listen for changes (checkbox/select)
 	panelEl.addEventListener('change', () => {
 		if (_debounceTimer) clearTimeout(_debounceTimer);
 		_debounceTimer = setTimeout(() => {
@@ -214,6 +236,10 @@ function collectParams(panelEl: HTMLElement): URLSearchParams {
 		if (sel.value) params.set(sel.name, sel.value);
 	});
 
+	const searchInput = panelEl.querySelector<HTMLInputElement>('input[name="q"]');
+	const qVal = searchInput?.value.trim();
+	if (qVal) params.set('q', qVal);
+
 	return params;
 }
 
@@ -229,4 +255,6 @@ export function resetFilters(panelEl: HTMLElement): void {
 	panelEl.querySelectorAll<HTMLSelectElement>('select').forEach((sel) => {
 		sel.value = '';
 	});
+	const searchInput = panelEl.querySelector<HTMLInputElement>('input[name="q"]');
+	if (searchInput) searchInput.value = '';
 }

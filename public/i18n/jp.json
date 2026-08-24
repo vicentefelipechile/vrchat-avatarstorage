@@ -656,7 +656,9 @@
 		"titleClothes": "VRCStorage — 衣装",
 		"filterTitle": "フィルター",
 		"reset": "フィルターをリセット",
-		"noClothes": "このフィルターに一致する服が見つかりませんでした。"
+		"noClothes": "このフィルターに一致する服が見つかりませんでした。",
+		"searchLabel": "検索",
+		"searchPlaceholder": "名前で検索..."
 	},
 	"autorProfile": {
 		"notFound": "この名前の作者は存在しません。",

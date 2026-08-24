@@ -656,7 +656,9 @@
 		"titleClothes": "VRCStorage — Одежда",
 		"filterTitle": "Фильтры",
 		"reset": "Сбросить фильтры",
-		"noClothes": "Одежда по заданным фильтрам не найдена."
+		"noClothes": "Одежда по заданным фильтрам не найдена.",
+		"searchLabel": "Поиск",
+		"searchPlaceholder": "Поиск по имени..."
 	},
 	"autorProfile": {
 		"notFound": "Автора с таким именем не существует.",
