@@ -25,6 +25,12 @@ import { queryOne } from '../db/client';
 const DRIVE_KV_PREFIX = 'drive_access:';
 const DRIVE_KV_TTL = 60 * 50; // 50 min (Google expires in 3600s, refresh a bit early)
 
+// Google Drive query literals are single-quoted. Escape backslashes first, then single quotes,
+// so a value containing `\` or `'` cannot break out of the literal (CodeQL: incomplete sanitization).
+function escapeDriveQuery(value: string): string {
+	return value.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+}
+
 // =========================================================================================================
 // Service
 // =========================================================================================================
@@ -122,7 +128,7 @@ export class DriveService {
 
 	async listFolders(userUuid: string, parentId: string | null = null): Promise<Array<{ id: string; name: string }>> {
 		const accessToken = await this.getAccessToken(userUuid);
-		const parentClause = parentId ? `'${parentId.replace(/'/g, "\\'")}' in parents` : `'root' in parents`;
+		const parentClause = parentId ? `'${escapeDriveQuery(parentId)}' in parents` : `'root' in parents`;
 		const q = encodeURIComponent(`${parentClause} and mimeType='application/vnd.google-apps.folder' and trashed=false`);
 		const url = `https://www.googleapis.com/drive/v3/files?q=${q}&pageSize=100&fields=files(id,name)&orderBy=name&supportsAllDrives=true&includeItemsFromAllDrives=true`;
 		const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
@@ -148,8 +154,8 @@ export class DriveService {
 
 	async ensureFolder(userUuid: string, name: string, parentId: string | null = null): Promise<{ id: string; name: string }> {
 		const accessToken = await this.getAccessToken(userUuid);
-		const parentClause = parentId ? ` and '${parentId.replace(/'/g, "\\'")}' in parents` : ` and 'root' in parents`;
-		const q = encodeURIComponent(`mimeType='application/vnd.google-apps.folder' and trashed=false and name='${name.replace(/'/g, "\\'")}'${parentClause}`);
+		const parentClause = parentId ? ` and '${escapeDriveQuery(parentId)}' in parents` : ` and 'root' in parents`;
+		const q = encodeURIComponent(`mimeType='application/vnd.google-apps.folder' and trashed=false and name='${escapeDriveQuery(name)}'${parentClause}`);
 		const listUrl = `https://www.googleapis.com/drive/v3/files?q=${q}&pageSize=10&fields=files(id,name)`;
 		const listRes = await fetch(listUrl, { headers: { Authorization: `Bearer ${accessToken}` } });
 		if (listRes.ok) {
