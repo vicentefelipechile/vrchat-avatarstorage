@@ -64,7 +64,7 @@ export async function settingsView(_ctx: RouteContext): Promise<string> {
 								<div class="settings-profile-fields">
 									<div class="form-group">
 										<label for="username">${t('login.username')}</label>
-										<input type="text" id="username" value="${username}" required minlength="3" maxlength="32">
+										<input type="text" id="username" name="username" value="${username}" required minlength="3" maxlength="32" autocomplete="username">
 									</div>
 									<div class="form-group">
 										<label for="avatar">${t('settings.avatar')}</label>
@@ -130,7 +130,7 @@ export async function settingsView(_ctx: RouteContext): Promise<string> {
 							<div id="2fa-password-section" hidden>
 								<div class="form-group" id="2fa-password-group">
 									<label for="2fa-setup-password">${t('settings.2fa_password')}</label>
-									<input type="password" id="2fa-setup-password">
+									<input type="password" id="2fa-setup-password" autocomplete="current-password">
 								</div>
 								<div class="settings-actions">
 									<button id="2fa-confirm-password-btn" class="btn">${t('settings.2fa_continue')}</button>
@@ -147,7 +147,7 @@ export async function settingsView(_ctx: RouteContext): Promise<string> {
 								</div>
 								<div class="form-group">
 									<label for="2fa-code">${t('settings.2fa_verify')}</label>
-									<input type="text" id="2fa-code" maxlength="6" placeholder="000000">
+									<input type="text" id="2fa-code" maxlength="6" placeholder="000000" autocomplete="one-time-code" inputmode="numeric">
 								</div>
 								<div class="settings-actions">
 									<button id="2fa-verify-btn" class="btn">${icons.check(16)} ${t('settings.2fa_enable')}</button>
@@ -169,11 +169,11 @@ export async function settingsView(_ctx: RouteContext): Promise<string> {
 							<div id="2fa-disable-section" hidden>
 								<div class="form-group" id="2fa-disable-password-group">
 									<label for="2fa-disable-password">${t('settings.2fa_password')}</label>
-									<input type="password" id="2fa-disable-password">
+									<input type="password" id="2fa-disable-password" autocomplete="current-password">
 								</div>
 								<div class="form-group">
 									<label for="2fa-disable-code">${t('settings.2fa_code')}</label>
-									<input type="text" id="2fa-disable-code" maxlength="6" placeholder="000000">
+									<input type="text" id="2fa-disable-code" maxlength="6" placeholder="000000" autocomplete="one-time-code" inputmode="numeric">
 								</div>
 								<div class="settings-actions">
 									<button id="2fa-confirm-disable-btn" class="btn-danger">${t('settings.2fa_confirm_disable')}</button>
@@ -185,31 +185,32 @@ export async function settingsView(_ctx: RouteContext): Promise<string> {
 
 					<!-- Drive -->
 					<section class="settings-panel" id="panel-drive" role="tabpanel" hidden>
-						<h2 class="settings-panel-title">${t('settings.section_drive')}</h2>
-						<p class="settings-panel-desc">${t('settings.section_drive_desc')}</p>
+						<h2 class="settings-panel-title" style="display:flex;align-items:center;gap:8px">${icons['hard-drive'](18)} ${t('settings.section_drive')}</h2>
 						<div id="drive-status" class="settings-panel-desc">${t('common.loading')}</div>
-						<div id="drive-controls" hidden style="margin-top:16px;">
-							<div id="drive-linked-row" style="border:1px solid var(--border-color);padding:12px;margin-bottom:12px;background:var(--bg-card);">
-								<p id="drive-linked-text" style="margin:0 0 8px 0;"></p>
-								<p id="drive-folder-text" style="margin:0 0 12px 0;font-size:0.9em;color:var(--text-muted);"></p>
-								<div class="form-group" style="margin-bottom:12px;">
-									<label for="drive-folder-id-input" style="font-size:0.85rem;font-weight:bold;">${t('settings.driveFolder')} — ID</label>
-									<div style="display:flex;gap:8px;margin-top:6px;">
-										<input type="text" id="drive-folder-id-input" placeholder="1a2B3c...  (de https://drive.google.com/drive/folders/ID)" style="flex:1;padding:8px 10px;border:2px solid var(--border-color);background:var(--bg-input);color:var(--text-main);font-family:inherit;font-size:0.9rem;" maxlength="256">
-										<button id="drive-save-folder-btn" class="btn">${icons.check(16)} ${t('settings.save')}</button>
+						<div id="drive-controls" hidden style="margin-top:14px;">
+							<div id="drive-linked-row" class="drive-card" hidden>
+								<div class="drive-head">
+									<span id="drive-linked-text" class="drive-badge is-connected"></span>
+									<span id="drive-folder-text" class="drive-folder-meta"></span>
+								</div>
+								<div class="form-group" style="margin:14px 0 0;">
+									<label for="drive-folder-id-input" class="drive-label">${t('settings.driveFolder')} <span style="font-weight:normal;color:var(--text-muted)">· ID</span></label>
+									<div class="drive-input-row">
+										<input type="text" id="drive-folder-id-input" name="drive-folder-id" placeholder="https://drive.google.com/drive/folders/ID  ·  o  ID" maxlength="256" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other" data-lpignore="true" data-1p-ignore="true" data-bwignore="true">
+										<button id="drive-save-folder-btn" class="btn btn-sm">${icons.check(14)} ${t('settings.save')}</button>
 									</div>
-									<small class="settings-hint" style="margin-top:6px;display:block;">${t('settings.driveFolderPrompt')}<br><span style="opacity:0.8">https://drive.google.com/drive/folders/<b>ID</b> — copia solo el ID</span></small>
+									<small class="settings-hint" style="margin-top:6px">${t('settings.driveFolderPrompt')}</small>
 								</div>
-								<div style="display:flex;gap:10px;flex-wrap:wrap;">
-									<button id="drive-clear-folder-btn" class="btn-outline">${t('settings.driveClearFolder')}</button>
-									<button id="drive-disconnect-btn" class="btn-danger">${t('settings.driveDisconnect')}</button>
+								<div class="drive-actions">
+									<button id="drive-clear-folder-btn" class="btn-outline btn-sm">${t('settings.driveClearFolder')}</button>
+									<button id="drive-disconnect-btn" class="btn-danger btn-sm">${t('settings.driveDisconnect')}</button>
 								</div>
-								<!-- Browser preserved for future: drive-picker not wired until drive.readonly approved -->
 								<button id="drive-change-folder-btn" hidden>${t('settings.driveChangeFolder')}</button>
 							</div>
-							<div id="drive-unlinked-row" hidden>
+							<div id="drive-unlinked-row" class="drive-card drive-card--empty" hidden>
+								<p class="settings-panel-desc" style="margin:0 0 14px 0">${t('settings.driveConnectHint')}</p>
 								<button id="drive-connect-btn" class="btn">${icons['hard-drive'](16)} ${t('settings.driveConnect')}</button>
-								<p class="settings-hint" style="margin-top:8px;">${t('settings.driveConnectHint')}</p>
+								<small class="settings-hint" style="margin-top:10px;display:block;opacity:0.8"><code style="font-family:inherit;border:1px solid var(--border-color);padding:1px 4px;background:var(--bg-code)">drive.file</code> · ${t('settings.section_drive_desc').split('—')[0].trim()}</small>
 							</div>
 						</div>
 					</section>
