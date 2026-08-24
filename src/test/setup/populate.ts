@@ -41,13 +41,16 @@ const isRemote = args.includes('--remote');
 const noR2 = args.includes('--no-r2');
 const keepExisting = args.includes('--keep');
 const help = args.includes('--help') || args.includes('-h');
+const countArg = args.find((a) => a.startsWith('--count='));
+const countOverride = countArg ? parseInt(countArg.split('=')[1] as string, 10) : NaN;
 
 if (help) {
 	console.log(`
 Seed — VRCStorage
 
 Usage:
-  npm run seed                 Local DB + R2
+  npm run seed                 Local DB + R2 (default 120 resources, 40% clothes / 30% avatars / 30% assets)
+  npm run seed -- --count=120  Custom total (e.g. 30, 90, 150, 300) — distribution stays weighted
   npm run seed -- --remote     Remote (prod) DB + R2
   npm run seed -- --no-r2      DB only, skip R2 uploads
   npm run seed -- --keep       Keep existing data, only ensure users
@@ -141,7 +144,12 @@ function r2PutBuffer(key: string, buffer: Buffer, contentType = 'application/oct
 
 function r2PutMedia(key: string, filePath: string): void {
 	if (noR2) return;
-	const flag = isRemote ? '--remote' : '--local';
+	if (!isRemote) {
+		// Local fast path is batched in main(); this sync helper is legacy — fire-and-forget via batch
+		r2PutLocalBatch([{ key, filePath, isMedia: true }]).catch(() => {});
+		return;
+	}
+	const flag = '--remote';
 	const result = spawnSync(process.execPath, [WRANGLER_BIN, 'r2', 'object', 'put', `${MEDIA_BUCKET_NAME}/${key}`, `--file=${filePath}`, flag], {
 		shell: false,
 		encoding: 'utf8',
@@ -151,9 +159,43 @@ function r2PutMedia(key: string, filePath: string): void {
 	}
 }
 
+async function r2PutLocalBatch(entries: Array<{ key: string; filePath: string; isMedia: boolean }>): Promise<{ ok: number; fail: number }> {
+	if (noR2 || entries.length === 0) return { ok: 0, fail: 0 };
+	try {
+		const { readFileSync } = await import('node:fs');
+		// Use wrangler's getPlatformProxy — the only portable way to get the real R2 bindings for any account/bucket name.
+		// It reads wrangler.jsonc, creates the correct Durable Object IDs and persists to .wrangler/state/v3, no hard-coded hashes.
+		const { getPlatformProxy } = await import('wrangler');
+		const { env, dispose } = await getPlatformProxy({ configPath: 'wrangler.jsonc', persistTo: '.wrangler/state/v3' } as unknown as never) as unknown as { env: Record<string, unknown>; dispose: () => Promise<void> };
+		// Binding names are BUCKET / MEDIA_BUCKET (not the bucket_name values vrcstorage / vrcstorage-media)
+		const bucketMain = (env as Record<string, unknown>)['BUCKET'] as unknown as { put: (key: string, value: Uint8Array | Buffer) => Promise<unknown> } | undefined;
+		const bucketMedia = (env as Record<string, unknown>)['MEDIA_BUCKET'] as unknown as { put: (key: string, value: Uint8Array | Buffer) => Promise<unknown> } | undefined;
+		if (!bucketMain || !bucketMedia) throw new Error('R2 bindings not found via getPlatformProxy');
+		let ok = 0, fail = 0;
+		for (const { key, filePath, isMedia } of entries) {
+			try {
+				const buf = readFileSync(filePath);
+				const bucket = isMedia ? bucketMedia : bucketMain;
+				await bucket.put(key, buf);
+				ok++;
+			} catch {
+				fail++;
+			}
+		}
+		await dispose();
+		return { ok, fail };
+	} catch (e) {
+		console.warn(`[seed] r2PutLocalBatch via getPlatformProxy failed, falling back to wrangler:`, String(e).slice(0, 500));
+		return { ok: 0, fail: entries.length };
+	}
+}
+
 function r2PutAsync(key: string, filePath: string, isMedia = false): Promise<boolean> {
 	if (noR2) return Promise.resolve(true);
-	const flag = isRemote ? '--remote' : '--local';
+	if (!isRemote) {
+		return r2PutLocalBatch([{ key, filePath, isMedia }]).then((res) => res.ok === 1).catch(() => false);
+	}
+	const flag = '--remote';
 	const bucket = isMedia ? MEDIA_BUCKET_NAME : BUCKET_NAME;
 	return new Promise((resolve) => {
 		const child = spawn(process.execPath, [WRANGLER_BIN, 'r2', 'object', 'put', `${bucket}/${key}`, `--file=${filePath}`, flag], {
@@ -230,6 +272,28 @@ function randomDescription(): string {
 	];
 	return descs[Math.floor(Math.random() * descs.length)] as string;
 }
+
+function pick<T>(arr: readonly T[]): T {
+	return arr[Math.floor(Math.random() * arr.length)] as T;
+}
+function coin(p = 0.5): number {
+	return Math.random() < p ? 1 : 0;
+}
+function coinBool(p = 0.5): boolean {
+	return Math.random() < p;
+}
+
+// Real enum pools mirrored from src/validators.ts — keeps seed in sync with allowed values
+// 'undefined' = internal fallback (missing data), 'androgynous' = legacy retrocompat, neither used as standard — excluded from seed
+const AVATAR_GENDERS = ['male', 'female', 'both'] as const;
+const AVATAR_SIZES = ['tiny', 'small', 'medium', 'tall', 'giant'] as const;
+const AVATAR_TYPES = ['human', 'anime', 'furry', 'chibi', 'cartoon', 'semi-realistic', 'monster', 'fantasy', 'mecha', 'kemono', 'other'] as const;
+const ASSET_TYPES = ['prop', 'shader', 'particle', 'vfx', 'prefab', 'script', 'animation', 'avatar-base', 'texture-pack', 'sound', 'tool', 'hud', 'other'] as const;
+const CLOTHES_GENDERS = ['male', 'female', 'unisex', 'kemono'] as const;
+const CLOTHES_TYPES = ['top', 'jacket', 'bottom', 'dress', 'fullbody', 'swimwear', 'shoes', 'legwear', 'hat', 'hair', 'accessory', 'tail', 'ears', 'wings', 'body-part', 'underwear', 'other'] as const;
+const PLATFORMS = ['pc', 'quest', 'cross'] as const;
+const SDK_VERSIONS = ['sdk3', 'sdk2'] as const;
+const UNITY_VERSIONS = ['2019', '2022'] as const;
 
 // ---------------------------------------------------------------------------
 // Main
@@ -332,9 +396,29 @@ async function main(): Promise<void> {
 		return;
 	}
 
-	// 2) Seed resources with variety
-	const RESOURCE_COUNT = Math.min(15, Math.max(6, seedFiles.length));
-	console.log(`\n[seed] Seeding ${RESOURCE_COUNT} resources with variety...`);
+	// 2) Seed resources with variety — production-like volume so pagination + filters are testable
+	// Default 200 gives ~36 avatars / 36 assets / 48 clothes (clothes weighted larger, mirrors 50/100/150 example).
+	// Override with --count=N (e.g. --count=30 for fast run, --count=200 for full prod scale). Files are reused via modulo.
+	const DEFAULT_COUNT = 200;
+	const requestedCount = Number.isFinite(countOverride) && countOverride > 0 ? countOverride : DEFAULT_COUNT;
+	const RESOURCE_COUNT = Math.min(requestedCount, 400);
+	if (seedFiles.length > 0 && RESOURCE_COUNT > seedFiles.length * 4) {
+		console.log(`[seed] Requested ${RESOURCE_COUNT} resources but only ${seedFiles.length} seed files available — files will be reused cyclically.`);
+	}
+	// Weighted distribution: 60% avatars / 15% assets / 25% clothes (clothes intentionally largest)
+	const avatarsN = Math.max(1, Math.round(RESOURCE_COUNT * 0.65));
+	const assetsN = Math.max(1, Math.round(RESOURCE_COUNT * 0.15));
+	const clothesN = Math.max(1, RESOURCE_COUNT - avatarsN - assetsN);
+	const pool: string[] = [
+		...Array(avatarsN).fill('avatars'),
+		...Array(assetsN).fill('assets'),
+		...Array(clothesN).fill('clothes'),
+	];
+	for (let i = pool.length - 1; i > 0; i--) {
+		const j = Math.floor(Math.random() * (i + 1));
+		[pool[i], pool[j]] = [pool[j] as string, pool[i] as string];
+	}
+	console.log(`\n[seed] Seeding ${RESOURCE_COUNT} resources (${avatarsN} avatars / ${assetsN} assets / ${clothesN} clothes) with variety...`);
 
 	let resourceSql = '';
 	const r2Uploads: Array<{ key: string; filePath: string }> = [];
@@ -362,7 +446,7 @@ async function main(): Promise<void> {
 	}
 
 	for (let i = 0; i < RESOURCE_COUNT; i++) {
-		const cat = randomCategory();
+		const cat = pool[i] as string;
 		const title = randomTitle(cat, i + 1);
 		const desc = randomDescription();
 		const resUuid = crypto.randomUUID();
@@ -402,13 +486,26 @@ async function main(): Promise<void> {
 		const safeDesc = desc.replace(/'/g, "''");
 		resourceSql += `INSERT INTO resources (uuid, title, description, category, thumbnail_uuid, reference_image_uuid, author_uuid, download_count, is_active, created_at, updated_at) VALUES (${sqlQuote(resUuid)}, ${sqlQuote(safeTitle)}, ${sqlQuote(safeDesc)}, ${sqlQuote(cat)}, ${sqlQuote(thumbUuid)}, NULL, ${sqlQuote(authorUuid)}, ${Math.floor(Math.random() * 200)}, 1, ${now - i * 3600}, ${now - i * 3600});\n`;
 
-		// Category meta (so filtered listings show results)
+		// Category meta — varied so every faceted filter has coverage (mirrors production distribution)
 		if (cat === 'avatars') {
-			resourceSql += `INSERT INTO avatar_meta (resource_uuid, gender, avatar_size, avatar_type, is_nsfw, has_physbones, has_face_tracking, has_dps, has_gogoloco, has_toggles, is_quest_optimized, sdk_version, platform) VALUES (${sqlQuote(resUuid)}, 'undefined', 'medium', 'other', 0, 0, 0, 0, 0, 0, 0, 'sdk3', 'pc');\n`;
+			const gender = pick(AVATAR_GENDERS);
+			const size = pick(AVATAR_SIZES);
+			const type = pick(AVATAR_TYPES);
+			const platform = pick(PLATFORMS);
+			const sdk = pick(SDK_VERSIONS);
+			// ~15% NSFW, ~60% physbones, flags varied
+			resourceSql += `INSERT INTO avatar_meta (resource_uuid, gender, avatar_size, avatar_type, is_nsfw, has_physbones, has_face_tracking, has_dps, has_gogoloco, has_toggles, is_quest_optimized, sdk_version, platform) VALUES (${sqlQuote(resUuid)}, ${sqlQuote(gender)}, ${sqlQuote(size)}, ${sqlQuote(type)}, ${coin(0.15)}, ${coin(0.6)}, ${coin(0.35)}, ${coin(0.25)}, ${coin(0.4)}, ${coin(0.5)}, ${coin(0.3)}, ${sqlQuote(sdk)}, ${sqlQuote(platform)});\n`;
 		} else if (cat === 'assets') {
-			resourceSql += `INSERT INTO asset_meta (resource_uuid, asset_type, is_nsfw, unity_version, platform, sdk_version) VALUES (${sqlQuote(resUuid)}, 'other', 0, '2022', 'cross', 'sdk3');\n`;
+			const atype = pick(ASSET_TYPES);
+			const platform = pick(PLATFORMS);
+			const unity = pick(UNITY_VERSIONS);
+			const sdk = pick(SDK_VERSIONS);
+			resourceSql += `INSERT INTO asset_meta (resource_uuid, asset_type, is_nsfw, unity_version, platform, sdk_version) VALUES (${sqlQuote(resUuid)}, ${sqlQuote(atype)}, ${coin(0.12)}, ${sqlQuote(unity)}, ${sqlQuote(platform)}, ${sqlQuote(sdk)});\n`;
 		} else if (cat === 'clothes') {
-			resourceSql += `INSERT INTO clothes_meta (resource_uuid, gender_fit, clothing_type, is_base, is_nsfw, has_physbones, platform) VALUES (${sqlQuote(resUuid)}, 'unisex', 'other', 0, 0, 0, 'cross');\n`;
+			const gfit = pick(CLOTHES_GENDERS);
+			const ctype = pick(CLOTHES_TYPES);
+			const platform = pick(PLATFORMS);
+			resourceSql += `INSERT INTO clothes_meta (resource_uuid, gender_fit, clothing_type, is_base, is_nsfw, has_physbones, platform) VALUES (${sqlQuote(resUuid)}, ${sqlQuote(gfit)}, ${sqlQuote(ctype)}, ${coin(0.1)}, ${coin(0.15)}, ${coin(0.35)}, ${sqlQuote(platform)});\n`;
 		}
 
 		// Link gallery via resource_n_media
@@ -440,41 +537,65 @@ async function main(): Promise<void> {
 		try { unlinkSync(tmpResSql); } catch {}
 	}
 
-	// R2 uploads: images + dummy files (parallel async)
+	// R2 uploads: images + dummy files
 	if (!noR2 && (r2Uploads.length > 0 || pendingR2Buffers.length > 0)) {
-		console.log(`\n[seed] Uploading ${r2Uploads.length} images + ${pendingR2Buffers.length} dummy files to R2 bucket "${BUCKET_NAME}" (${mode})...`);
-		const tasks: Array<() => Promise<boolean>> = [];
-		for (const u of r2Uploads) tasks.push(() => r2PutAsync(u.key, u.filePath, false));
-		for (const b of pendingR2Buffers) {
-			const tmp = join(tmpdir(), `vrc-seed-buf-${b.key}.tmp`);
-			writeFileSync(tmp, b.buffer);
-			tasks.push(() => r2PutAsync(b.key, tmp, false).finally(() => { try { unlinkSync(tmp); } catch {} }) as Promise<boolean>);
+		if (!isRemote) {
+			// Fast local path: single getPlatformProxy + batch put, no wrangler spawn, no internet, portable across accounts
+			console.log(`\n[seed] Uploading ${r2Uploads.length} images + ${pendingR2Buffers.length} dummy files to R2 bucket "${BUCKET_NAME}" (${mode} direct)...`);
+			const allEntries: Array<{ key: string; filePath: string; isMedia: boolean }> = [];
+			for (const u of r2Uploads) allEntries.push({ key: u.key, filePath: u.filePath, isMedia: false });
+			const tmpFiles: string[] = [];
+			for (const b of pendingR2Buffers) {
+				const tmp = join(tmpdir(), `vrc-seed-buf-${b.key}.tmp`);
+				writeFileSync(tmp, b.buffer);
+				tmpFiles.push(tmp);
+				allEntries.push({ key: b.key, filePath: tmp, isMedia: false });
+			}
+			const { ok, fail } = await r2PutLocalBatch(allEntries);
+			for (const t of tmpFiles) try { unlinkSync(t); } catch {}
+			console.log(`\n[seed] R2 done: ${ok} ok, ${fail} failed (local direct)`);
+		} else {
+			console.log(`\n[seed] Uploading ${r2Uploads.length} images + ${pendingR2Buffers.length} dummy files to R2 bucket "${BUCKET_NAME}" (${mode})...`);
+			const tasks: Array<() => Promise<boolean>> = [];
+			for (const u of r2Uploads) tasks.push(() => r2PutAsync(u.key, u.filePath, false));
+			for (const b of pendingR2Buffers) {
+				const tmp = join(tmpdir(), `vrc-seed-buf-${b.key}.tmp`);
+				writeFileSync(tmp, b.buffer);
+				tasks.push(() => r2PutAsync(b.key, tmp, false).finally(() => { try { unlinkSync(tmp); } catch {} }) as Promise<boolean>);
+			}
+			let ok = 0, fail = 0;
+			const concurrency = 8;
+			for (let i = 0; i < tasks.length; i += concurrency) {
+				const batch = tasks.slice(i, i + concurrency);
+				const results = await Promise.all(batch.map((fn) => fn()));
+				for (const r of results) if (r) ok++; else fail++;
+				process.stdout.write(`\r[seed] R2 ${ok + fail}/${tasks.length}`);
+			}
+			console.log(`\n[seed] R2 done: ${ok} ok, ${fail} failed`);
 		}
-		let ok = 0, fail = 0;
-		const concurrency = 8;
-		for (let i = 0; i < tasks.length; i += concurrency) {
-			const batch = tasks.slice(i, i + concurrency);
-			const results = await Promise.all(batch.map((fn) => fn()));
-			for (const r of results) if (r) ok++; else fail++;
-			process.stdout.write(`\r[seed] R2 ${ok + fail}/${tasks.length}`);
-		}
-		console.log(`\n[seed] R2 done: ${ok} ok, ${fail} failed`);
 	} else if (noR2) {
 		console.log('[seed] Skipped R2 uploads (--no-r2). Resources will show processing placeholder until queue runs.');
 	}
 
 	// Media bucket variants (so CDN shows images instead of "Procesando")
 	if (!noR2 && mediaBucketUploads.length > 0) {
-		console.log(`\n[seed] Uploading ${mediaBucketUploads.length} variants to R2 bucket "${MEDIA_BUCKET_NAME}"...`);
-		let ok = 0;
-		const concurrency = 8;
-		for (let i = 0; i < mediaBucketUploads.length; i += concurrency) {
-			const batch = mediaBucketUploads.slice(i, i + concurrency);
-			const results = await Promise.all(batch.map((u) => r2PutAsync(u.key, u.filePath, true)));
-			for (const r of results) if (r) ok++;
-			process.stdout.write(`\r[seed] MEDIA R2 ${ok}/${mediaBucketUploads.length}`);
+		if (!isRemote) {
+			console.log(`\n[seed] Uploading ${mediaBucketUploads.length} variants to R2 bucket "${MEDIA_BUCKET_NAME}" (${mode} direct)...`);
+			const entries = mediaBucketUploads.map((u) => ({ key: u.key, filePath: u.filePath, isMedia: true }));
+			const { ok, fail } = await r2PutLocalBatch(entries);
+			console.log(`\n[seed] MEDIA R2 done: ${ok} ok, ${fail} failed (local direct)`);
+		} else {
+			console.log(`\n[seed] Uploading ${mediaBucketUploads.length} variants to R2 bucket "${MEDIA_BUCKET_NAME}"...`);
+			let ok = 0;
+			const concurrency = 8;
+			for (let i = 0; i < mediaBucketUploads.length; i += concurrency) {
+				const batch = mediaBucketUploads.slice(i, i + concurrency);
+				const results = await Promise.all(batch.map((u) => r2PutAsync(u.key, u.filePath, true)));
+				for (const r of results) if (r) ok++;
+				process.stdout.write(`\r[seed] MEDIA R2 ${ok}/${mediaBucketUploads.length}`);
+			}
+			console.log(`\n[seed] MEDIA R2 done: ${ok}/${mediaBucketUploads.length}`);
 		}
-		console.log(`\n[seed] MEDIA R2 done: ${ok}/${mediaBucketUploads.length}`);
 	}
 
 	console.log('\n[seed] Done ✔');

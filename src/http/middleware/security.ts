@@ -13,8 +13,9 @@ export const securityMiddleware = (app: any) => {
 			contentSecurityPolicy: {
 				defaultSrc: ["'self'", 'https:', 'data:', "'unsafe-inline'"],
 				scriptSrc: ["'self'", 'https://challenges.cloudflare.com', "'unsafe-inline'", "'unsafe-eval'"],
-				imgSrc: ["'self'", 'https:', 'data:', 'blob:'],
-				mediaSrc: ["'self'", 'https:', 'data:', 'blob:'],
+				// cdn.vrcstorage.lat is https (prod) → covered by https:. Local dev CDN is http://localhost:8788 / 127.0.0.1:8788 → needs explicit http allow
+				imgSrc: ["'self'", 'https:', 'data:', 'blob:', 'http://localhost:8788', 'http://127.0.0.1:8788', 'http://localhost:*', 'http://127.0.0.1:*'],
+				mediaSrc: ["'self'", 'https:', 'data:', 'blob:', 'http://localhost:8788', 'http://127.0.0.1:8788', 'http://localhost:*', 'http://127.0.0.1:*'],
 				objectSrc: ["'none'"],
 			},
 		}),

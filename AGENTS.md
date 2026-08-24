@@ -53,7 +53,7 @@ This guide is for agentic coding agents (like yourself) operating in the VRCStor
 | **Watch Frontend**       | `npm run build-frontend:watch` (esbuild watch mode, dev bundle)                          |
 | **Generate Types**       | `npm run cf-typegen` (updates `worker-configuration.d.ts` from `wrangler.jsonc`)         |
 | **Manage i18n**          | `npm run i18n-manager [ADD\|FILL\|LIST\|CHECK] ...` (see [i18n section](#i18n-frontend)) |
-| **Seed DB**              | `npm run seed` — **currently broken**, see [Testing](#testing)                            |
+| **Seed DB**              | `npm run seed [--count=N] [--no-r2] [--keep] [--remote]` (default 120, weighted 30/30/40) — see [Testing](#testing) |
 | **Start (Dev)**          | `npm start` (shorthand for `wrangler dev`)                                               |
 | **Password Recovery**    | `npm run user-passrecover` (reset user password via wrangler d1)                         |
 | **Linting**              | `npx prettier --check src/` (Formatting check — only src/ directory)                     |
@@ -74,7 +74,7 @@ There is no test suite (see [Testing](#testing)), so the build **is** the check.
 **The repository has no tests and no test runner configured.** `vitest` is present in `devDependencies` but there is no `vitest.config.*`, no `*.test.ts`/`*.spec.ts` file anywhere, and no `test` script in `package.json`.
 
 - Do **not** claim a change is "tested" or that tests pass. Verify with the type-check + build commands above and say what you actually ran.
-- `npm run seed` is **broken**: it invokes `tsx src/test/setup/populate.ts`, and neither `src/test/` nor that file exists. Do not suggest it to seed a local database. (The sample images in `public/test/` are the leftovers it consumed.)
+- `npm run seed` is **working** via `tsx src/test/setup/populate.ts` (`src/test/setup/`). It seeds D1 + R2 locally (default 120 resources, weighted 30% avatars / 30% assets / 40% clothes) with production-like variety. Use `npm run seed -- --count=30` for a fast run, `--count=200` for full scale, `--no-r2` for DB-only, `--keep` to preserve existing data, `--remote` for prod (with care). Standard values only: avatar genders `male`/`female`/`both` (excludes internal `undefined` and legacy `androgynous`), avatar/assets/clothes `other` kept as rare exceptional fallback. R2 local upload uses `getPlatformProxy` with binding names `BUCKET`/`MEDIA_BUCKET` (not bucket names). The sample images in `public/test/` are the fallback when `.wrangler/img-seed/` is empty.
 - If you add the first test, also add the runner config and a `test` script, then update this section — do not leave the repo in a state where `npm test` is still undefined.
 
 ## Code Style & Conventions
@@ -427,7 +427,7 @@ STOP. Your knowledge of Cloudflare Workers APIs and limits may be outdated. Alwa
 
 ### Middleware Details
 
-- `securityMiddleware`: Sets `HSTS`, `Content-Security-Policy`, `X-Content-Type-Options`, `X-Frame-Options`, and `CORS`.
+- `securityMiddleware`: Sets `HSTS`, `Content-Security-Policy`, `X-Content-Type-Options`, `X-Frame-Options`, and `CORS`. `img-src`/`media-src` allow `https:` (prod `cdn.vrcstorage.lat`) plus `http://localhost:8788`/`http://127.0.0.1:8788` for the local CDN worker — without it, `http://localhost:8788` images are blocked on hard reload at `/avatars`.
 - `rateLimit` (legacy): KV-based rate limiter in `src/http/middleware/rate-limit.ts`. Key format: `rate_limit:{prefix}:{key}`. Most endpoints now use the **Cloudflare native Rate Limiting bindings** (`RL_STRICT`, `RL_MEDIUM`, `RL_GLOBAL`, `RL_LOGIN`) configured directly in `wrangler.jsonc` and applied in `src/http/rate-limits.ts` via `rateLimit({ binding: c.env.RL_*, keyPrefix: '...' })`.
 - `getAuthUser`: Helper in `src/auth.ts` to retrieve user from session/cookie.
 
