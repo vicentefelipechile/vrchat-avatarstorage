@@ -210,6 +210,10 @@ route('/example', exampleView, { after: exampleAfter });
 
 `AvatarsView`, `AssetsView` and `ClothesView` are the same page with a different endpoint. They are **not** written by hand — each calls `createFilteredListView(...)` from `src/frontend/features/filtered-list.ts`, supplying only what differs: the API endpoint, the `FilterPanelConfig`, the i18n key namespace, and how a card renders its meta badge. Adding a fourth resource listing means another factory call, never a copy of an existing view.
 
+#### Name search (q) and multi-value faceted filters
+
+All three listing endpoints (`GET /api/avatars`, `/api/assets`, `/api/clothes`, and generic `/api/resources`) accept `?q=` for substring search on `resources.title` (and `description` fallback). The DB has `resources_fts` FTS5 virtual table (`migrations/0023_resources_fts.sql`, `tokenize='porter unicode61', prefix='2 3'`, trigram-optimized) with triggers that keep it in sync; queries do `r.uuid IN (SELECT uuid FROM resources_fts WHERE title LIKE ? ESCAPE '\')` and fall back to `r.title LIKE ?` if the table is missing (pre-migration). `q` is `1..100` chars, at least 1 char after trim; multi-value faceted filters use the standard repeated-key format `?avatar_type=human&avatar_type=furry` (never `human,furry` or `human+furry` — `+` decodes to space). Backend parses with `new URL(url).searchParams.getAll()` (`src/http/routes/avatars.ts:26`) and validates as `z.union([z.enum(...), z.array(z.enum(...))])` (`src/validators.ts:389`); repos build `IN (?,...)` for arrays (`src/repositories/avatar-repository.ts:96`). Frontend `src/frontend/features/filtered-list.ts` adds a debounced `input[type=search] name=q` bar above results (300ms), preserves `q` across sort/filter/pagination via `history.replaceState`, and on `q` change resets `page`.
+
 #### Type-checking the frontend
 
 `tsc` and `esbuild` disagree about what breaks: `tsc -p tsconfig.frontend.json` catches type errors but resolves paths loosely, while esbuild catches unresolved imports and circular-layer mistakes but ignores types. **Verify a frontend change with both** — `npx tsc -p tsconfig.frontend.json --noEmit` and `npm run build-frontend`. Passing only one is not a green build.
@@ -383,6 +387,11 @@ migrations/               # D1 schema & migration files
   0017_favorite_global_order.sql     # global_order column on user_favorites ("All" tab order,
                                      # independent of per-collection display_order)
   0018_media_variants_video_format.sql # Widens the media_variants format CHECK to allow 'mp4'
+  0019_drive_transfer.sql     # drive_transfer_jobs + Drive OAuth columns on user_oauth_providers
+  0020_notification_preferences.sql # user_notification_prefs table
+  0021_user_anonymity.sql     # is_anonymous on users
+  0022_drive_progress.sql     # total_bytes/bytes_uploaded on drive_transfer_jobs (Drive progress toast)
+  0023_resources_fts.sql      # FTS5 resources_fts (title/description) for q search, trigram-optimized, with triggers
                               # New migrations follow the pattern: NNNN_description.sql
 
 wrangler.jsonc            # Main Worker configuration & bindings

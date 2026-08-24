@@ -30,12 +30,13 @@ const SORT_COLUMNS: Record<string, string> = {
 
 /** Normalised, already-validated faceted filters (the service passes these in). */
 export interface ClothesFilters {
-	gender_fit?: string;
-	clothing_type?: string;
-	platform?: string;
+	gender_fit?: string | string[];
+	clothing_type?: string | string[];
+	platform?: string | string[];
 	is_base?: number;
 	is_nsfw?: number;
 	has_physbones?: number;
+	q?: string;
 }
 
 export interface ClothesListParams extends ClothesFilters {
@@ -82,7 +83,17 @@ export class ClothesRepository {
 		const params: unknown[] = [];
 
 		const eq = (col: string, value: unknown) => {
-			if (value !== undefined) {
+			if (value === undefined || value === null) return;
+			if (Array.isArray(value)) {
+				if (value.length === 0) return;
+				if (value.length === 1) {
+					clauses.push(`cm.${col} = ?`);
+					params.push(value[0]);
+				} else {
+					clauses.push(`cm.${col} IN (${value.map(() => '?').join(', ')})`);
+					params.push(...value);
+				}
+			} else {
 				clauses.push(`cm.${col} = ?`);
 				params.push(value);
 			}
@@ -106,26 +117,45 @@ export class ClothesRepository {
 	/** Total active clothes matching the filters (for pagination). */
 	async count(f: ClothesFilters): Promise<number> {
 		const { where, params } = this.compileFilters(f);
-		const row = await queryOne<{ total: number }>(
-			this.db,
-			`SELECT COUNT(*) AS total
+		const q = (f as { q?: string }).q?.trim();
+		const likePattern = q ? `%${q.replace(/[%_\\]/g, '\\$&')}%` : null;
+		const titleFilter = likePattern
+			? `AND r.uuid IN (SELECT uuid FROM resources_fts WHERE title LIKE ? ESCAPE '\\' OR description LIKE ? ESCAPE '\\')`
+			: '';
+		const titleParams = likePattern ? [likePattern, likePattern] : [];
+		const sql = `SELECT COUNT(*) AS total
 			 FROM resources r
 			 INNER JOIN clothes_meta cm ON r.uuid = cm.resource_uuid
-			 WHERE r.is_active = 1 ${where}`,
-			params,
-		);
-		return row?.total ?? 0;
+			 WHERE r.is_active = 1 ${where} ${titleFilter}`;
+		try {
+			const row = await queryOne<{ total: number }>(this.db, sql, [...params, ...titleParams]);
+			return row?.total ?? 0;
+		} catch (e) {
+			if (String((e as Error).message).includes('no such table: resources_fts')) {
+				const fallback = likePattern ? `AND (r.title LIKE ? ESCAPE '\\' OR r.description LIKE ? ESCAPE '\\')` : '';
+				const row = await queryOne<{ total: number }>(
+					this.db,
+					`SELECT COUNT(*) AS total FROM resources r INNER JOIN clothes_meta cm ON r.uuid = cm.resource_uuid WHERE r.is_active = 1 ${where} ${fallback}`,
+					[...params, ...titleParams],
+				);
+				return row?.total ?? 0;
+			}
+			throw e;
+		}
 	}
 
 	/** Paginated faceted list of clothes (INNER JOIN clothes_meta — only clothes with metadata). */
-	list(p: ClothesListParams): Promise<ClothesListRow[]> {
+	async list(p: ClothesListParams): Promise<ClothesListRow[]> {
 		const { where, params } = this.compileFilters(p);
 		const orderColumn = SORT_COLUMNS[p.sortBy] ?? 'r.created_at';
 		const offset = (p.page - 1) * p.limit;
-
-		return queryAll<ClothesListRow>(
-			this.db,
-			`SELECT
+		const q = (p as { q?: string }).q?.trim();
+		const likePattern = q ? `%${q.replace(/[%_\\]/g, '\\$&')}%` : null;
+		const titleFilter = likePattern
+			? `AND r.uuid IN (SELECT uuid FROM resources_fts WHERE title LIKE ? ESCAPE '\\' OR description LIKE ? ESCAPE '\\')`
+			: '';
+		const titleParams = likePattern ? [likePattern, likePattern] : [];
+		const sql = `SELECT
 				r.uuid,
 				r.title,
 				r.download_count,
@@ -145,11 +175,19 @@ export class ClothesRepository {
 			FROM resources r
 			INNER JOIN clothes_meta cm ON r.uuid = cm.resource_uuid
 			LEFT JOIN media m ON r.thumbnail_uuid = m.uuid
-			WHERE r.is_active = 1 ${where}
+			WHERE r.is_active = 1 ${where} ${titleFilter}
 			ORDER BY ${orderColumn} ${p.sortOrder}
-			LIMIT ? OFFSET ?`,
-			[...params, p.limit, offset],
-		);
+			LIMIT ? OFFSET ?`;
+		try {
+			return await queryAll<ClothesListRow>(this.db, sql, [...params, ...titleParams, p.limit, offset]);
+		} catch (e) {
+			if (String((e as Error).message).includes('no such table: resources_fts')) {
+				const fallbackSql = sql.replace(titleFilter, likePattern ? `AND (r.title LIKE ? ESCAPE '\\' OR r.description LIKE ? ESCAPE '\\')` : '');
+				const fallbackParams = likePattern ? [...params, likePattern, likePattern, p.limit, offset] : [...params, p.limit, offset];
+				return queryAll<ClothesListRow>(this.db, fallbackSql, fallbackParams);
+			}
+			throw e;
+		}
 	}
 
 	/** Single clothes item (resource core + flat clothes_meta). */

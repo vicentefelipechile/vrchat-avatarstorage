@@ -32,7 +32,7 @@ Base: Static assets / SSR pages
 
 Base: `https://vrcstorage.lat/api/avatars`
 
-- [`GET` /api/avatars](https://vrcstorage.lat/api/avatars): List avatars with faceted filtering - Paginated avatar listing filtered by gender, size, type, platform, SDK, NSFW, feature flags, and author. Uses INNER JOIN avatar_meta - only avatars with metadata appear. (No auth. Query: `page`, `limit`, `sort_by`, `sort_order`, `avatar_gender`, `avatar_size`, `avatar_type`, `platform`, `sdk_version`, `is_nsfw`, `has_physbones`, `has_face_tracking`, `has_dps`, `has_gogoloco`, `has_toggles`, `is_quest_optimized`, `author_uuid`. Response: JSON - { resources: AvatarWithMeta[], pagination: { page, limit, total, hasNextPage, hasPrevPage } })
+- [`GET` /api/avatars](https://vrcstorage.lat/api/avatars): List avatars with faceted filtering - Paginated avatar listing filtered by title substring (q), gender, size, type, platform, SDK, NSFW, feature flags, and author. Uses INNER JOIN avatar_meta; q is substring search on resources.title via FTS5 resources_fts (trigram) with LIKE fallback. Multi-value filters use repeated keys (?avatar_type=human&avatar_type=furry). (No auth. Query: `page`, `limit`, `sort_by`, `sort_order`, `q`, `avatar_gender`, `avatar_size`, `avatar_type`, `platform`, `sdk_version`, `is_nsfw`, `has_physbones`, `has_face_tracking`, `has_dps`, `has_gogoloco`, `has_toggles`, `is_quest_optimized`, `author_uuid`. Response: JSON - { resources: AvatarWithMeta[], pagination: { page, limit, total, hasNextPage, hasPrevPage } })
 - [`GET` /api/avatars/search](https://vrcstorage.lat/api/avatars/search): Lightweight avatar name autocomplete - Returns at most `limit` avatar titles matching a prefix - intended for the clothes base-avatar selector and similar autocomplete fields. (No auth. Query: `q`, `limit`. Response: JSON - [{ uuid, title }])
 - [`GET` /api/avatars/:uuid](https://vrcstorage.lat/api/avatars/:uuid): Get a single avatar with metadata - Full avatar detail including avatar_meta row. Used by HistoryView to compute diffs. (No auth. Response: JSON - AvatarWithMeta (resource + meta + links + media))
 
@@ -40,14 +40,14 @@ Base: `https://vrcstorage.lat/api/avatars`
 
 Base: `https://vrcstorage.lat/api/assets`
 
-- [`GET` /api/assets](https://vrcstorage.lat/api/assets): List assets with faceted filtering - Paginated asset listing filtered by asset_type, platform, SDK, Unity version, and NSFW. INNER JOIN asset_meta. (No auth. Query: `page`, `limit`, `sort_by`, `sort_order`, `asset_type`, `platform`, `sdk_version`, `unity_version`, `is_nsfw`. Response: JSON - { resources: AssetWithMeta[], pagination })
+- [`GET` /api/assets](https://vrcstorage.lat/api/assets): List assets with faceted filtering - Paginated asset listing filtered by title substring (q) plus asset_type, platform, SDK, Unity version, and NSFW. q is substring on resources.title via FTS5 resources_fts. Multi-value filters use repeated keys (?asset_type=prop&asset_type=shader). (No auth. Query: `page`, `limit`, `sort_by`, `sort_order`, `q`, `asset_type`, `platform`, `sdk_version`, `unity_version`, `is_nsfw`. Response: JSON - { resources: AssetWithMeta[], pagination })
 - [`GET` /api/assets/:uuid](https://vrcstorage.lat/api/assets/:uuid): Get a single asset with metadata - Full asset detail including asset_meta row. (No auth. Response: JSON - AssetWithMeta)
 
 ## Public API - Clothes - Clothing listing and mutation
 
 Base: `https://vrcstorage.lat/api/clothes`
 
-- [`GET` /api/clothes](https://vrcstorage.lat/api/clothes): List clothing items with faceted filtering - Paginated clothes listing filtered by gender_fit, clothing_type, platform, is_base, is_nsfw, and has_physbones. INNER JOIN clothes_meta. (No auth. Query: `page`, `limit`, `sort_by`, `sort_order`, `gender_fit`, `clothing_type`, `platform`, `is_base`, `is_nsfw`, `has_physbones`, `compatible_avatar`. Response: JSON - { resources: ClothesWithMeta[], pagination })
+- [`GET` /api/clothes](https://vrcstorage.lat/api/clothes): List clothing items with faceted filtering - Paginated clothes listing filtered by title substring (q) plus gender_fit, clothing_type, platform, is_base, is_nsfw, and has_physbones. q is substring on resources.title via FTS5 resources_fts. Multi-value filters use repeated keys. (No auth. Query: `page`, `limit`, `sort_by`, `sort_order`, `q`, `gender_fit`, `clothing_type`, `platform`, `is_base`, `is_nsfw`, `has_physbones`, `compatible_avatar`. Response: JSON - { resources: ClothesWithMeta[], pagination })
 - [`GET` /api/clothes/:uuid](https://vrcstorage.lat/api/clothes/:uuid): Get a single clothing item with metadata - Full clothing detail including clothes_meta row. (No auth. Response: JSON - ClothesWithMeta)
 
 ## Public API - Resources - Generic resource CRUD and links

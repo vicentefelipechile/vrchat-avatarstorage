@@ -72,6 +72,7 @@ export class ResourceService {
 		category?: string;
 		sortBy?: string;
 		sortOrder: 'ASC' | 'DESC';
+		q?: string;
 	}) {
 		const rows = await this.repo.search(params);
 		const hasNextPage = rows.length > params.limit;

@@ -361,13 +361,18 @@ export const AssetMetaSchema = z.object({
  * unrecognized facet values are dropped and malformed pagination/sort falls back to defaults,
  * mirroring the legacy handler which silently ignored unsupported filters.
  */
+const assetTypeMulti = z.union([AssetMetaSchema.shape.asset_type, z.array(AssetMetaSchema.shape.asset_type)]).optional().catch(undefined);
+const assetPlatformMulti = z.union([AssetMetaSchema.shape.platform.unwrap(), z.array(AssetMetaSchema.shape.platform.unwrap())]).optional().catch(undefined);
+const assetSdkMulti = z.union([AssetMetaSchema.shape.sdk_version.unwrap(), z.array(AssetMetaSchema.shape.sdk_version.unwrap())]).optional().catch(undefined);
+const assetUnityMulti = z.union([AssetMetaSchema.shape.unity_version.unwrap(), z.array(AssetMetaSchema.shape.unity_version.unwrap())]).optional().catch(undefined);
+
 export const AssetFilterSchema = z.object({
-	asset_type: 		AssetMetaSchema.shape.asset_type.optional().catch(undefined),
-	// Unwrap the meta-schema's `.default()` so an absent facet applies no filter (else it silently forces platform/sdk/unity).
-	platform: 			AssetMetaSchema.shape.platform.unwrap().optional().catch(undefined),
-	sdk_version: 		AssetMetaSchema.shape.sdk_version.unwrap().optional().catch(undefined),
-	unity_version: 		AssetMetaSchema.shape.unity_version.unwrap().optional().catch(undefined),
+	asset_type: 		assetTypeMulti,
+	platform: 			assetPlatformMulti,
+	sdk_version: 		assetSdkMulti,
+	unity_version: 		assetUnityMulti,
 	is_nsfw: 			z.enum(BOOLEAN_STRING).optional().catch(undefined),
+	q: 					z.string().trim().min(1).max(100).optional().catch(undefined),
 	page: 				z.coerce.number().int().min(1).catch(1).default(1),
 	limit: 				z.coerce.number().int().min(1).max(60).catch(24).default(24),
 	sort_by: 			z.enum(['created_at', 'download_count', 'title']).catch('created_at').default('created_at'),
@@ -385,14 +390,19 @@ export type AssetFilter = z.infer<typeof AssetFilterSchema>;
  * back to their defaults. This mirrors the legacy handler, which silently ignored
  * unsupported filter keys instead of returning 400.
  */
+const avatarGenderMulti = z.union([AvatarMetaSchema.shape.gender, z.array(AvatarMetaSchema.shape.gender)]).optional().catch(undefined);
+const avatarSizeMulti = z.union([AvatarMetaSchema.shape.avatar_size, z.array(AvatarMetaSchema.shape.avatar_size)]).optional().catch(undefined);
+const avatarTypeMulti = z.union([AvatarMetaSchema.shape.avatar_type, z.array(AvatarMetaSchema.shape.avatar_type)]).optional().catch(undefined);
+const platformMulti = z.union([AvatarMetaSchema.shape.platform.unwrap(), z.array(AvatarMetaSchema.shape.platform.unwrap())]).optional().catch(undefined);
+const sdkVersionMulti = z.union([AvatarMetaSchema.shape.sdk_version.unwrap(), z.array(AvatarMetaSchema.shape.sdk_version.unwrap())]).optional().catch(undefined);
+
 export const AvatarFilterSchema = z.object({
-	// Faceted filters — reuse the same enums as AvatarMetaSchema
-	avatar_gender: 		AvatarMetaSchema.shape.gender.optional().catch(undefined),
-	avatar_size: 		AvatarMetaSchema.shape.avatar_size.optional().catch(undefined),
-	avatar_type: 		AvatarMetaSchema.shape.avatar_type.optional().catch(undefined),
-	// Unwrap the meta-schema's `.default()` so an absent facet applies no filter (else it silently forces platform/sdk).
-	platform: 			AvatarMetaSchema.shape.platform.unwrap().optional().catch(undefined),
-	sdk_version: 		AvatarMetaSchema.shape.sdk_version.unwrap().optional().catch(undefined),
+	// Faceted filters — multi-value via repeated query params (?avatar_type=human&avatar_type=furry); single still accepted
+	avatar_gender: 		avatarGenderMulti,
+	avatar_size: 		avatarSizeMulti,
+	avatar_type: 		avatarTypeMulti,
+	platform: 			platformMulti,
+	sdk_version: 		sdkVersionMulti,
 	// Boolean flags come as '0'/'1' strings from URLSearchParams
 	is_nsfw: 			z.enum(BOOLEAN_STRING).optional().catch(undefined),
 	has_physbones: 		z.enum(BOOLEAN_STRING).optional().catch(undefined),
@@ -403,6 +413,7 @@ export const AvatarFilterSchema = z.object({
 	is_quest_optimized: z.enum(BOOLEAN_STRING).optional().catch(undefined),
 	// Author filter
 	author_uuid: 		z.uuid().optional().catch(undefined),
+	q: 					z.string().trim().min(1).max(100).optional().catch(undefined),
 	// Pagination & sorting
 	page: 				z.coerce.number().int().min(1).catch(1).default(1),
 	limit: 				z.coerce.number().int().min(1).max(60).catch(24).default(24),
@@ -433,14 +444,18 @@ export const ClothesMetaSchema = z.object({
  * unrecognized facet values are dropped and malformed pagination/sort falls back to defaults,
  * mirroring the legacy handler which silently ignored unsupported filters.
  */
+const clothesGenderMulti = z.union([ClothesMetaSchema.shape.gender_fit, z.array(ClothesMetaSchema.shape.gender_fit)]).optional().catch(undefined);
+const clothesTypeMulti = z.union([ClothesMetaSchema.shape.clothing_type, z.array(ClothesMetaSchema.shape.clothing_type)]).optional().catch(undefined);
+const clothesPlatformMulti = z.union([ClothesMetaSchema.shape.platform.unwrap(), z.array(ClothesMetaSchema.shape.platform.unwrap())]).optional().catch(undefined);
+
 export const ClothesFilterSchema = z.object({
-	gender_fit: 		ClothesMetaSchema.shape.gender_fit.optional().catch(undefined),
-	clothing_type: 		ClothesMetaSchema.shape.clothing_type.optional().catch(undefined),
-	// Unwrap the meta-schema's `.default()` so an absent facet applies no filter (else it silently forces platform).
-	platform: 			ClothesMetaSchema.shape.platform.unwrap().optional().catch(undefined),
+	gender_fit: 		clothesGenderMulti,
+	clothing_type: 		clothesTypeMulti,
+	platform: 			clothesPlatformMulti,
 	is_base: 			z.enum(BOOLEAN_STRING).optional().catch(undefined),
 	is_nsfw: 			z.enum(BOOLEAN_STRING).optional().catch(undefined),
 	has_physbones: 		z.enum(BOOLEAN_STRING).optional().catch(undefined),
+	q: 					z.string().trim().min(1).max(100).optional().catch(undefined),
 	page: 				z.coerce.number().int().min(1).catch(1).default(1),
 	limit: 				z.coerce.number().int().min(1).max(60).catch(24).default(24),
 	sort_by: 			z.enum(['created_at', 'download_count', 'title']).catch('created_at').default('created_at'),

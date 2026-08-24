@@ -200,6 +200,7 @@ export class ClothesService {
 			is_base: bool(filter.is_base),
 			is_nsfw: bool(filter.is_nsfw),
 			has_physbones: bool(filter.has_physbones),
+			q: filter.q,
 		};
 	}
 }

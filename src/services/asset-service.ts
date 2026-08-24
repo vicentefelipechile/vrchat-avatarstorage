@@ -193,6 +193,7 @@ export class AssetService {
 			sdk_version: filter.sdk_version,
 			unity_version: filter.unity_version,
 			is_nsfw: bool(filter.is_nsfw),
+			q: filter.q,
 		};
 	}
 }

@@ -42,6 +42,7 @@ export interface ResourceSearchParams {
 	category?: string;
 	sortBy?: string;
 	sortOrder: 'ASC' | 'DESC';
+	q?: string;
 }
 
 /** A single row of the search result set (list card shape from the DB). */
@@ -115,8 +116,10 @@ export class ResourceRepository {
 	 * detect a next page without a COUNT(*). Returns the raw rows; the service
 	 * slices and maps.
 	 */
-	search(p: ResourceSearchParams): Promise<ResourceListRow[]> {
+	async search(p: ResourceSearchParams): Promise<ResourceListRow[]> {
 		const orderColumn = SORT_COLUMNS[p.sortBy ?? ''] ?? 'r.created_at';
+		const q = p.q?.trim();
+		const likePattern = q ? `%${q.replace(/[%_\\]/g, '\\$&')}%` : null;
 
 		const qb = new QueryBuilder('resources', 'r')
 			.select([
@@ -138,11 +141,23 @@ export class ResourceRepository {
 			.join('LEFT JOIN clothes_meta cm ON r.uuid = cm.resource_uuid')
 			.where('r.is_active = 1')
 			.whereIf(!!p.category && RESOURCE_CATEGORIES.includes(p.category as ResourceCategory), 'r.category = ?', p.category)
+			.whereIf(!!likePattern, `r.uuid IN (SELECT uuid FROM resources_fts WHERE title LIKE ? ESCAPE '\\')`, likePattern)
 			.orderBy(orderColumn, p.sortOrder)
 			.paginate(p.page, p.limit + 1);
 
 		const { sql, params } = qb.build();
-		return queryAll<ResourceListRow>(this.db, sql, params);
+		try {
+			return await queryAll<ResourceListRow>(this.db, sql, params);
+		} catch (e) {
+			if (String((e as Error).message).includes('no such table: resources_fts')) {
+				const fallbackSql = sql.replace(
+					`r.uuid IN (SELECT uuid FROM resources_fts WHERE title LIKE ? ESCAPE '\\')`,
+					`r.title LIKE ? ESCAPE '\\'`,
+				);
+				return queryAll<ResourceListRow>(this.db, fallbackSql, params);
+			}
+			throw e;
+		}
 	}
 
 	/** Full joined detail row (metadata, links json, media json) by uuid. */

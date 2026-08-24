@@ -30,8 +30,18 @@ const clothes = new Hono<{ Bindings: Env; Variables: AuthVariables }>();
 // List clothes with faceted filtering (INNER JOIN clothes_meta — only clothes with metadata).
 // =========================================================================================================
 
+function parseQueryWithArrays(url: string): Record<string, string | string[]> {
+	const sp = new URL(url).searchParams;
+	const out: Record<string, string | string[]> = {};
+	for (const k of new Set(sp.keys())) {
+		const all = sp.getAll(k);
+		out[k] = all.length === 1 ? all[0]! : all;
+	}
+	return out;
+}
+
 clothes.get('/', async (c) => {
-	const parsed = ClothesFilterSchema.safeParse(c.req.query());
+	const parsed = ClothesFilterSchema.safeParse(parseQueryWithArrays(c.req.url));
 	if (!parsed.success) return fail(c, 'Invalid filters', 400, parsed.error.issues);
 
 	try {

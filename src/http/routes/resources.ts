@@ -69,9 +69,10 @@ resources.get('/', async (c) => {
 	const category = c.req.query('category');
 	const sortBy = c.req.query('sort_by');
 	const sortOrder = (c.req.query('sort_order')?.toUpperCase() === 'ASC' ? 'ASC' : 'DESC') as 'ASC' | 'DESC';
+	const q = c.req.query('q')?.trim() || undefined;
 
 	try {
-		const result = await new ResourceService(c.env.DB).search({ page, limit, category, sortBy, sortOrder });
+		const result = await new ResourceService(c.env.DB).search({ page, limit, category, sortBy, sortOrder, q });
 		return c.json(result);
 	} catch (e) {
 		console.error('[GET /resources] search error:', e);

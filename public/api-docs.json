@@ -64,7 +64,7 @@
       "visibility": "public",
       "tag": "avatars",
       "schema": "AvatarFilterSchema",
-      "description": "Paginated avatar listing filtered by gender, size, type, platform, SDK, NSFW, feature flags, and author. Uses INNER JOIN avatar_meta — only avatars with metadata appear.",
+      "description": "Paginated avatar listing filtered by title substring (q), gender, size, type, platform, SDK, NSFW, feature flags, and author. Uses INNER JOIN avatar_meta; q is substring search on resources.title via FTS5 resources_fts (trigram) with LIKE fallback. Multi-value filters use repeated keys (?avatar_type=human&avatar_type=furry).",
       "params": [
         {
           "name": "page",
@@ -111,11 +111,18 @@
           "defaultValue": "desc"
         },
         {
+          "name": "q",
+          "location": "query",
+          "required": false,
+          "type": "string",
+          "description": "Filter by title substring (1..100 chars)"
+        },
+        {
           "name": "avatar_gender",
           "location": "query",
           "required": false,
           "type": "enum",
-          "description": "Filter by gender",
+          "description": "Filter by gender (repeat for OR, e.g. ?avatar_gender=male&avatar_gender=female)",
           "enumValues": [
             "male",
             "female",
@@ -129,7 +136,7 @@
           "location": "query",
           "required": false,
           "type": "enum",
-          "description": "Filter by size",
+          "description": "Filter by size (repeat for OR)",
           "enumValues": [
             "tiny",
             "small",
@@ -143,7 +150,7 @@
           "location": "query",
           "required": false,
           "type": "enum",
-          "description": "Filter by avatar type",
+          "description": "Filter by avatar type (repeat for OR, e.g. ?avatar_type=human&avatar_type=furry)",
           "enumValues": [
             "human",
             "furry",
@@ -165,7 +172,7 @@
           "location": "query",
           "required": false,
           "type": "enum",
-          "description": "Filter by platform",
+          "description": "Filter by platform (repeat for OR)",
           "enumValues": [
             "pc",
             "quest",
@@ -177,7 +184,7 @@
           "location": "query",
           "required": false,
           "type": "enum",
-          "description": "Filter by SDK",
+          "description": "Filter by SDK (repeat for OR)",
           "enumValues": [
             "sdk3",
             "sdk2"
@@ -448,7 +455,7 @@
       "visibility": "public",
       "tag": "assets",
       "schema": "AssetFilterSchema",
-      "description": "Paginated asset listing filtered by asset_type, platform, SDK, Unity version, and NSFW. INNER JOIN asset_meta.",
+      "description": "Paginated asset listing filtered by title substring (q) plus asset_type, platform, SDK, Unity version, and NSFW. q is substring on resources.title via FTS5 resources_fts. Multi-value filters use repeated keys (?asset_type=prop&asset_type=shader).",
       "params": [
         {
           "name": "page",
@@ -495,11 +502,18 @@
           "defaultValue": "desc"
         },
         {
+          "name": "q",
+          "location": "query",
+          "required": false,
+          "type": "string",
+          "description": "Filter by title substring (1..100 chars)"
+        },
+        {
           "name": "asset_type",
           "location": "query",
           "required": false,
           "type": "enum",
-          "description": "Filter by asset type",
+          "description": "Filter by asset type (repeat for OR)",
           "enumValues": [
             "prop",
             "shader",
@@ -521,7 +535,7 @@
           "location": "query",
           "required": false,
           "type": "enum",
-          "description": "Filter by platform",
+          "description": "Filter by platform (repeat for OR)",
           "enumValues": [
             "pc",
             "quest",
@@ -533,7 +547,7 @@
           "location": "query",
           "required": false,
           "type": "enum",
-          "description": "Filter by SDK",
+          "description": "Filter by SDK (repeat for OR)",
           "enumValues": [
             "sdk3",
             "sdk2"
@@ -544,7 +558,7 @@
           "location": "query",
           "required": false,
           "type": "enum",
-          "description": "Filter by Unity version",
+          "description": "Filter by Unity version (repeat for OR)",
           "enumValues": [
             "2019",
             "2022"
@@ -657,7 +671,7 @@
       "visibility": "public",
       "tag": "clothes",
       "schema": "ClothesFilterSchema",
-      "description": "Paginated clothes listing filtered by gender_fit, clothing_type, platform, is_base, is_nsfw, and has_physbones. INNER JOIN clothes_meta.",
+      "description": "Paginated clothes listing filtered by title substring (q) plus gender_fit, clothing_type, platform, is_base, is_nsfw, and has_physbones. q is substring on resources.title via FTS5 resources_fts. Multi-value filters use repeated keys.",
       "params": [
         {
           "name": "page",
@@ -704,11 +718,18 @@
           "defaultValue": "desc"
         },
         {
+          "name": "q",
+          "location": "query",
+          "required": false,
+          "type": "string",
+          "description": "Filter by title substring (1..100 chars)"
+        },
+        {
           "name": "gender_fit",
           "location": "query",
           "required": false,
           "type": "enum",
-          "description": "Filter by gender fit",
+          "description": "Filter by gender fit (repeat for OR)",
           "enumValues": [
             "male",
             "female",
@@ -721,7 +742,7 @@
           "location": "query",
           "required": false,
           "type": "enum",
-          "description": "Filter by clothing type",
+          "description": "Filter by clothing type (repeat for OR)",
           "enumValues": [
             "top",
             "jacket",
@@ -747,7 +768,7 @@
           "location": "query",
           "required": false,
           "type": "enum",
-          "description": "Filter by platform",
+          "description": "Filter by platform (repeat for OR)",
           "enumValues": [
             "pc",
             "quest",

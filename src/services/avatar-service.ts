@@ -226,6 +226,7 @@ export class AvatarService {
 			has_toggles: bool(filter.has_toggles),
 			is_quest_optimized: bool(filter.is_quest_optimized),
 			author_uuid: filter.author_uuid,
+			q: filter.q,
 		};
 	}
 }

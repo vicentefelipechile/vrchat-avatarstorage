@@ -30,8 +30,18 @@ const avatars = new Hono<{ Bindings: Env; Variables: AuthVariables }>();
 // List avatars with faceted filtering (INNER JOIN avatar_meta — only avatars with metadata).
 // =========================================================================================================
 
+function parseQueryWithArrays(url: string): Record<string, string | string[]> {
+	const sp = new URL(url).searchParams;
+	const out: Record<string, string | string[]> = {};
+	for (const k of new Set(sp.keys())) {
+		const all = sp.getAll(k);
+		out[k] = all.length === 1 ? all[0]! : all;
+	}
+	return out;
+}
+
 avatars.get('/', async (c) => {
-	const parsed = AvatarFilterSchema.safeParse(c.req.query());
+	const parsed = AvatarFilterSchema.safeParse(parseQueryWithArrays(c.req.url));
 	if (!parsed.success) return fail(c, 'Invalid filters', 400, parsed.error.issues);
 
 	try {

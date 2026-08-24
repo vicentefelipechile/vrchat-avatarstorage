@@ -26,7 +26,7 @@ Base API URL: `https://vrcstorage.lat/api`. CDN: `https://cdn.vrcstorage.lat/{uu
 
 ### `GET /api/avatars`
 
-**List avatars with faceted filtering** - Paginated avatar listing filtered by gender, size, type, platform, SDK, NSFW, feature flags, and author. Uses INNER JOIN avatar_meta - only avatars with metadata appear.
+**List avatars with faceted filtering** - Paginated avatar listing filtered by title substring (q), gender, size, type, platform, SDK, NSFW, feature flags, and author. Uses INNER JOIN avatar_meta; q is substring search on resources.title via FTS5 resources_fts (trigram) with LIKE fallback. Multi-value filters use repeated keys (?avatar_type=human&avatar_type=furry).
 
 - Auth: No auth | Rate limit: global | Visibility: public
 
@@ -38,11 +38,12 @@ Base API URL: `https://vrcstorage.lat/api`. CDN: `https://cdn.vrcstorage.lat/{uu
 | query | `limit` | integer (1..60) | No | Items per page Default: `24`. |
 | query | `sort_by` | enum (created_at, download_count, title) | No | Sort field Default: `created_at`. |
 | query | `sort_order` | enum (asc, desc) | No | Sort direction Default: `desc`. |
-| query | `avatar_gender` | enum (male, female, androgynous, undefined, both) | No | Filter by gender |
-| query | `avatar_size` | enum (tiny, small, medium, tall, giant) | No | Filter by size |
-| query | `avatar_type` | enum (human, furry, anime, chibi, cartoon, semi-realistic, monster, fantasy, mecha, kemono, sci-fi, vtuber, other) | No | Filter by avatar type |
-| query | `platform` | enum (pc, quest, cross) | No | Filter by platform |
-| query | `sdk_version` | enum (sdk3, sdk2) | No | Filter by SDK |
+| query | `q` | string | No | Filter by title substring (1..100 chars) |
+| query | `avatar_gender` | enum (male, female, androgynous, undefined, both) | No | Filter by gender (repeat for OR, e.g. ?avatar_gender=male&avatar_gender=female) |
+| query | `avatar_size` | enum (tiny, small, medium, tall, giant) | No | Filter by size (repeat for OR) |
+| query | `avatar_type` | enum (human, furry, anime, chibi, cartoon, semi-realistic, monster, fantasy, mecha, kemono, sci-fi, vtuber, other) | No | Filter by avatar type (repeat for OR, e.g. ?avatar_type=human&avatar_type=furry) |
+| query | `platform` | enum (pc, quest, cross) | No | Filter by platform (repeat for OR) |
+| query | `sdk_version` | enum (sdk3, sdk2) | No | Filter by SDK (repeat for OR) |
 | query | `is_nsfw` | enum (0, 1) | No | NSFW filter |
 | query | `has_physbones` | enum (0, 1) | No | Has PhysBones |
 | query | `has_face_tracking` | enum (0, 1) | No | Has face tracking |
@@ -125,7 +126,7 @@ Base API URL: `https://vrcstorage.lat/api`. CDN: `https://cdn.vrcstorage.lat/{uu
 
 ### `GET /api/assets`
 
-**List assets with faceted filtering** - Paginated asset listing filtered by asset_type, platform, SDK, Unity version, and NSFW. INNER JOIN asset_meta.
+**List assets with faceted filtering** - Paginated asset listing filtered by title substring (q) plus asset_type, platform, SDK, Unity version, and NSFW. q is substring on resources.title via FTS5 resources_fts. Multi-value filters use repeated keys (?asset_type=prop&asset_type=shader).
 
 - Auth: No auth | Rate limit: global | Visibility: public
 
@@ -137,10 +138,11 @@ Base API URL: `https://vrcstorage.lat/api`. CDN: `https://cdn.vrcstorage.lat/{uu
 | query | `limit` | integer (1..60) | No | Items per page Default: `24`. |
 | query | `sort_by` | enum (created_at, download_count, title) | No | Sort field Default: `created_at`. |
 | query | `sort_order` | enum (asc, desc) | No | Sort direction Default: `desc`. |
-| query | `asset_type` | enum (prop, shader, particle, vfx, prefab, script, animation, avatar-base, texture-pack, sound, tool, hud, other) | No | Filter by asset type |
-| query | `platform` | enum (pc, quest, cross) | No | Filter by platform |
-| query | `sdk_version` | enum (sdk3, sdk2) | No | Filter by SDK |
-| query | `unity_version` | enum (2019, 2022) | No | Filter by Unity version |
+| query | `q` | string | No | Filter by title substring (1..100 chars) |
+| query | `asset_type` | enum (prop, shader, particle, vfx, prefab, script, animation, avatar-base, texture-pack, sound, tool, hud, other) | No | Filter by asset type (repeat for OR) |
+| query | `platform` | enum (pc, quest, cross) | No | Filter by platform (repeat for OR) |
+| query | `sdk_version` | enum (sdk3, sdk2) | No | Filter by SDK (repeat for OR) |
+| query | `unity_version` | enum (2019, 2022) | No | Filter by Unity version (repeat for OR) |
 | query | `is_nsfw` | enum (0, 1) | No | NSFW filter |
 
 **Response** - JSON - { resources: AssetWithMeta[], pagination }
@@ -194,7 +196,7 @@ Base API URL: `https://vrcstorage.lat/api`. CDN: `https://cdn.vrcstorage.lat/{uu
 
 ### `GET /api/clothes`
 
-**List clothing items with faceted filtering** - Paginated clothes listing filtered by gender_fit, clothing_type, platform, is_base, is_nsfw, and has_physbones. INNER JOIN clothes_meta.
+**List clothing items with faceted filtering** - Paginated clothes listing filtered by title substring (q) plus gender_fit, clothing_type, platform, is_base, is_nsfw, and has_physbones. q is substring on resources.title via FTS5 resources_fts. Multi-value filters use repeated keys.
 
 - Auth: No auth | Rate limit: global | Visibility: public
 
@@ -206,9 +208,10 @@ Base API URL: `https://vrcstorage.lat/api`. CDN: `https://cdn.vrcstorage.lat/{uu
 | query | `limit` | integer (1..60) | No | Items per page Default: `24`. |
 | query | `sort_by` | enum (created_at, download_count, title) | No | Sort field Default: `created_at`. |
 | query | `sort_order` | enum (asc, desc) | No | Sort direction Default: `desc`. |
-| query | `gender_fit` | enum (male, female, unisex, kemono) | No | Filter by gender fit |
-| query | `clothing_type` | enum (top, jacket, bottom, dress, fullbody, swimwear, shoes, legwear, hat, hair, accessory, tail, ears, wings, body-part, underwear, other) | No | Filter by clothing type |
-| query | `platform` | enum (pc, quest, cross) | No | Filter by platform |
+| query | `q` | string | No | Filter by title substring (1..100 chars) |
+| query | `gender_fit` | enum (male, female, unisex, kemono) | No | Filter by gender fit (repeat for OR) |
+| query | `clothing_type` | enum (top, jacket, bottom, dress, fullbody, swimwear, shoes, legwear, hat, hair, accessory, tail, ears, wings, body-part, underwear, other) | No | Filter by clothing type (repeat for OR) |
+| query | `platform` | enum (pc, quest, cross) | No | Filter by platform (repeat for OR) |
 | query | `is_base` | enum (0, 1) | No | Base avatar flag |
 | query | `is_nsfw` | enum (0, 1) | No | NSFW filter |
 | query | `has_physbones` | enum (0, 1) | No | Has PhysBones |
