@@ -86,9 +86,9 @@ Base API URL: `https://vrcstorage.lat/api`. CDN: `https://cdn.vrcstorage.lat/{uu
 
 ### `POST /api/avatars`
 
-**Create an avatar resource** - Creates a resource, its avatar_meta row, links, and media relations in one batch. Created as inactive (pending approval). No history entry on creation.
+**Create an avatar resource** - Creates a resource, its avatar_meta row, links, and media relations in one batch. Created as inactive (pending approval). No history entry on creation. Turnstile required.
 
-- Auth: Auth required | Rate limit: medium | Visibility: private
+- Auth: Auth required | Rate limit: strict | Visibility: private
 
 **Parameters**
 
@@ -99,8 +99,8 @@ Base API URL: `https://vrcstorage.lat/api`. CDN: `https://cdn.vrcstorage.lat/{uu
 | body | `category` | enum | Yes | Must be "avatars" |
 | body | `thumbnail_uuid` | string (uuid v4) | Yes | Media UUID for the thumbnail |
 | body | `reference_image_uuid` | string (uuid v4) | No | Optional reference image media UUID |
-| body | `links` | array<LinkSchema> | No | Download/demo links |
-| body | `media_files` | array<uuid> | No | Gallery media UUIDs |
+| body | `links` | LinkSchema[] | No | Download/demo links |
+| body | `media_files` | uuid[] | No | Gallery media UUIDs |
 | body | `meta` | object | Yes | AvatarMetaSchema payload (gender, size, type, platform, etc.) |
 | query | `validate_only` | enum (true) | No | When "true", only validates without creating |
 
@@ -163,9 +163,9 @@ Base API URL: `https://vrcstorage.lat/api`. CDN: `https://cdn.vrcstorage.lat/{uu
 
 ### `POST /api/assets`
 
-**Create an asset resource** - Creates a resource + asset_meta + links + media in one batch (inactive, pending approval).
+**Create an asset resource** - Creates a resource + asset_meta + links + media in one batch (inactive, pending approval). Turnstile required.
 
-- Auth: Auth required | Rate limit: medium | Visibility: private
+- Auth: Auth required | Rate limit: strict | Visibility: private
 
 **Parameters**
 
@@ -235,9 +235,9 @@ Base API URL: `https://vrcstorage.lat/api`. CDN: `https://cdn.vrcstorage.lat/{uu
 
 ### `POST /api/clothes`
 
-**Create a clothing resource** - Creates a resource + clothes_meta + links + media in one batch (inactive, pending approval).
+**Create a clothing resource** - Creates a resource + clothes_meta + links + media in one batch (inactive, pending approval). Turnstile required.
 
-- Auth: Auth required | Rate limit: medium | Visibility: private
+- Auth: Auth required | Rate limit: strict | Visibility: private
 
 **Parameters**
 
@@ -359,8 +359,8 @@ No parameters.
 | body | `title` | string | No | New title |
 | body | `description` | string | No | New markdown description |
 | body | `is_active` | integer | No | Active flag (0/1) |
-| body | `new_links` | array<LinkSchema> | No | Additional links to append |
-| body | `gallery_media_uuids` | array<uuid> | No | Replacement gallery UUIDs |
+| body | `new_links` | LinkSchema[] | No | Additional links to append |
+| body | `gallery_media_uuids` | uuid[] | No | Replacement gallery UUIDs |
 
 **Response** - JSON - { success: true }
 
@@ -389,7 +389,7 @@ No parameters.
 | Location | Name | Type | Required | Description |
 | :------- | :--- | :--- | :------- | :---------- |
 | path | `uuid` | string (uuid v4) | Yes | Resource UUID |
-| body | `ordered_uuids` | array<uuid (1..100)> | Yes | All link UUIDs in desired order |
+| body | `ordered_uuids` | uuid[] (1..100) | Yes | All link UUIDs in desired order |
 
 **Response** - JSON - { ok: true }
 
@@ -477,9 +477,9 @@ No parameters.
 
 ### `POST /api/authors`
 
-**Create an author record (admin)** - Creates a normalized author profile. Service enforces admin role even though the route guard is requireAuth.
+**Create an author record (admin)** - Creates a normalized author profile. Requires admin (route guard requireAdmin).
 
-- Auth: Auth required | Rate limit: medium | Visibility: private
+- Auth: Admin only | Rate limit: medium | Visibility: private
 
 **Parameters**
 
@@ -493,9 +493,9 @@ No parameters.
 
 ### `PUT /api/authors/:slug`
 
-**Edit an author record (admin)** - Updates a normalized author profile. Admin-only (enforced in service).
+**Edit an author record (admin)** - Updates a normalized author profile. Requires admin.
 
-- Auth: Auth required | Rate limit: medium | Visibility: private
+- Auth: Admin only | Rate limit: medium | Visibility: private
 
 **Parameters**
 
@@ -507,9 +507,9 @@ No parameters.
 
 ### `DELETE /api/authors/:slug`
 
-**Delete an author (admin, no linked avatars)** - Deletes an author only when no avatars are linked to it. Admin-only.
+**Delete an author (admin, no linked avatars)** - Deletes an author only when no avatars are linked to it. Requires admin.
 
-- Auth: Auth required | Rate limit: medium | Visibility: private
+- Auth: Admin only | Rate limit: medium | Visibility: private
 
 **Parameters**
 
@@ -521,9 +521,9 @@ No parameters.
 
 ### `POST /api/authors/:slug/link-resource`
 
-**Link an avatar to an author (admin)** - Links an avatar resource to an author. Records a meta_edit history snapshot. Admin-only.
+**Link an avatar to an author (admin)** - Links an avatar resource to an author. Records a meta_edit history snapshot. Requires admin.
 
-- Auth: Auth required | Rate limit: medium | Visibility: private
+- Auth: Admin only | Rate limit: medium | Visibility: private
 
 **Parameters**
 
@@ -570,7 +570,7 @@ No parameters.
 
 **Create a blog post (admin)** - Creates a new blog post. Bumps the change_feed (blog scope) and broadcasts via FeedRoom.
 
-- Auth: Admin only | Rate limit: medium | Visibility: private
+- Auth: Admin only | Rate limit: strict | Visibility: private
 
 **Parameters**
 
@@ -940,7 +940,7 @@ No parameters.
 
 | Location | Name | Type | Required | Description |
 | :------- | :--- | :--- | :------- | :---------- |
-| body | `ordered_uuids` | array<uuid (<=500)> | Yes | All favorite resource UUIDs in desired order |
+| body | `ordered_uuids` | uuid[] (<=500) | Yes | All favorite resource UUIDs in desired order |
 | body | `collection_uuid` | string (uuid \| "all" \| null) | Yes | Target scope: collection UUID, null (uncategorized), or "all" (global order) |
 
 **Response** - JSON - { success: true }
@@ -1042,7 +1042,7 @@ No parameters.
 
 | Location | Name | Type | Required | Description |
 | :------- | :--- | :--- | :------- | :---------- |
-| body | `ordered_uuids` | array<uuid (<=20)> | Yes | All collection UUIDs in desired order |
+| body | `ordered_uuids` | uuid[] (<=20) | Yes | All collection UUIDs in desired order |
 
 **Response** - JSON - { success: true }
 
@@ -1125,7 +1125,7 @@ No parameters.
 
 **Update own profile** - Updates the caller's username, avatar_url, or anonymity flag. Turnstile may be required.
 
-- Auth: Optional auth (gated field) | Rate limit: medium | Visibility: private
+- Auth: Auth required | Rate limit: medium | Visibility: private
 
 **Parameters**
 
@@ -1141,7 +1141,7 @@ No parameters.
 
 **Change own password** - Changes the caller's password. Requires current_password (unless OAuth-only account) and a valid 2FA code when 2FA is enabled.
 
-- Auth: Optional auth (gated field) | Rate limit: medium | Visibility: private
+- Auth: Auth required | Rate limit: medium | Visibility: private
 
 **Parameters**
 
@@ -1541,9 +1541,9 @@ No parameters.
 | :------- | :--- | :--- | :------- | :---------- |
 | body | `enabled` | boolean | Yes | Master toggle |
 | body | `avatars_enabled` | boolean | Yes | Notify for avatars |
-| body | `avatar_types` | array<string> \| null | No | Which avatar types to notify |
+| body | `avatar_types` | string[] \| null | No | Which avatar types to notify |
 | body | `assets_enabled` | boolean | Yes | Notify for assets |
-| body | `asset_types` | array<string> \| null | No | Which asset types to notify |
+| body | `asset_types` | string[] \| null | No | Which asset types to notify |
 | body | `clothes_enabled` | boolean | Yes | Notify for clothes |
 
 **Response** - JSON - { success: true }

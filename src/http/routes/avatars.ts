@@ -17,6 +17,7 @@ import { Hono } from 'hono';
 import { requireAuth, requireAdmin, type AuthVariables } from '../middleware/auth';
 import { AvatarService } from '../../services/avatar-service';
 import { ResourceSchema, AvatarMetaSchema, AvatarFilterSchema } from '../../validators';
+import { verifyTurnstile } from '../../helpers/turnstile';
 import { fail } from '../responses';
 
 // =========================================================================================================
@@ -108,6 +109,10 @@ avatars.post('/', requireAuth, async (c) => {
 	if (c.req.query('validate_only') === 'true') {
 		return c.json({ valid: true });
 	}
+
+	// Turnstile required — prevent automated avatar spam
+	const isValid = await verifyTurnstile(resourceParsed.data.token || '', c.env.TURNSTILE_SECRET_KEY);
+	if (!isValid) return fail(c, 'Invalid CAPTCHA', 403);
 
 	const d = resourceParsed.data;
 

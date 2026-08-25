@@ -143,16 +143,16 @@ export const ENDPOINTS: EndpointDoc[] = [
 		response: { description: 'JSON — AvatarWithMeta (resource + meta + links + media)' },
 	},
 	{
-		method: 'POST', path: '/api/avatars', summary: 'Create an avatar resource', auth: 'auth', rateLimit: 'medium', visibility: 'private', tag: 'avatars', schema: 'ResourceSchema + AvatarMetaSchema',
-		description: 'Creates a resource, its avatar_meta row, links, and media relations in one batch. Created as inactive (pending approval). No history entry on creation.',
+		method: 'POST', path: '/api/avatars', summary: 'Create an avatar resource', auth: 'auth', rateLimit: 'strict', visibility: 'private', tag: 'avatars', schema: 'ResourceSchema + AvatarMetaSchema',
+		description: 'Creates a resource, its avatar_meta row, links, and media relations in one batch. Created as inactive (pending approval). No history entry on creation. Turnstile required.',
 		params: [
 			b('title', 'Avatar title (3–100 chars)', { required: true, type: 'string' }),
 			b('description', 'Markdown description (≤8000 chars)', { type: 'string' }),
 			b('category', 'Must be "avatars"', { required: true, type: 'enum', }),
 			b('thumbnail_uuid', 'Media UUID for the thumbnail', { required: true, type: 'string (uuid v4)' }),
 			b('reference_image_uuid', 'Optional reference image media UUID', { type: 'string (uuid v4)' }),
-			b('links', 'Download/demo links', { type: 'array<LinkSchema>' }),
-			b('media_files', 'Gallery media UUIDs', { type: 'array<uuid>' }),
+			b('links', 'Download/demo links', { type: 'LinkSchema[]' }),
+			b('media_files', 'Gallery media UUIDs', { type: 'uuid[]' }),
 			b('meta', 'AvatarMetaSchema payload (gender, size, type, platform, etc.)', { required: true, type: 'object' }),
 			q('validate_only', 'When "true", only validates without creating', { type: 'enum', enumValues: ['true'] }),
 		],
@@ -189,8 +189,8 @@ export const ENDPOINTS: EndpointDoc[] = [
 		response: { description: 'JSON — AssetWithMeta' },
 	},
 	{
-		method: 'POST', path: '/api/assets', summary: 'Create an asset resource', auth: 'auth', rateLimit: 'medium', visibility: 'private', tag: 'assets', schema: 'ResourceSchema + AssetMetaSchema',
-		description: 'Creates a resource + asset_meta + links + media in one batch (inactive, pending approval).',
+		method: 'POST', path: '/api/assets', summary: 'Create an asset resource', auth: 'auth', rateLimit: 'strict', visibility: 'private', tag: 'assets', schema: 'ResourceSchema + AssetMetaSchema',
+		description: 'Creates a resource + asset_meta + links + media in one batch (inactive, pending approval). Turnstile required.',
 		params: [b('title', 'Asset title', { required: true }), b('thumbnail_uuid', 'Media UUID for thumbnail', { required: true }), b('meta', 'AssetMetaSchema payload', { required: true, type: 'object' })],
 		response: { description: '201 — { uuid }' },
 	},
@@ -227,8 +227,8 @@ export const ENDPOINTS: EndpointDoc[] = [
 		response: { description: 'JSON — ClothesWithMeta' },
 	},
 	{
-		method: 'POST', path: '/api/clothes', summary: 'Create a clothing resource', auth: 'auth', rateLimit: 'medium', visibility: 'private', tag: 'clothes', schema: 'ResourceSchema + ClothesMetaSchema',
-		description: 'Creates a resource + clothes_meta + links + media in one batch (inactive, pending approval).',
+		method: 'POST', path: '/api/clothes', summary: 'Create a clothing resource', auth: 'auth', rateLimit: 'strict', visibility: 'private', tag: 'clothes', schema: 'ResourceSchema + ClothesMetaSchema',
+		description: 'Creates a resource + clothes_meta + links + media in one batch (inactive, pending approval). Turnstile required.',
 		params: [b('title', 'Clothing title', { required: true }), b('thumbnail_uuid', 'Media UUID for thumbnail', { required: true }), b('meta', 'ClothesMetaSchema payload', { required: true, type: 'object' })],
 		response: { description: '201 — { uuid }' },
 	},
@@ -280,7 +280,7 @@ export const ENDPOINTS: EndpointDoc[] = [
 	{
 		method: 'PUT', path: '/api/resources/:uuid', summary: 'Update a resource (owner or admin)', auth: 'auth', rateLimit: 'medium', visibility: 'private', tag: 'resources', schema: 'ResourceSchema (partial)',
 		description: 'Owner or admin may update. Approved resources are admin-only for edits.',
-		params: [p('uuid', 'Resource UUID'), b('title', 'New title', { type: 'string' }), b('description', 'New markdown description', { type: 'string' }), b('is_active', 'Active flag (0/1)', { type: 'integer' }), b('new_links', 'Additional links to append', { type: 'array<LinkSchema>' }), b('gallery_media_uuids', 'Replacement gallery UUIDs', { type: 'array<uuid>' })],
+		params: [p('uuid', 'Resource UUID'), b('title', 'New title', { type: 'string' }), b('description', 'New markdown description', { type: 'string' }), b('is_active', 'Active flag (0/1)', { type: 'integer' }), b('new_links', 'Additional links to append', { type: 'LinkSchema[]' }), b('gallery_media_uuids', 'Replacement gallery UUIDs', { type: 'uuid[]' })],
 		response: { description: 'JSON — { success: true }' },
 	},
 	{
@@ -292,7 +292,7 @@ export const ENDPOINTS: EndpointDoc[] = [
 	{
 		method: 'POST', path: '/api/resources/:uuid/links/reorder', summary: 'Reorder download links', auth: 'auth', rateLimit: 'medium', visibility: 'private', tag: 'resources',
 		description: 'Batch-reorders links for a resource. Must include every link UUID in the desired order. Owner or admin.',
-		params: [p('uuid', 'Resource UUID'), b('ordered_uuids', 'All link UUIDs in desired order', { required: true, type: 'array<uuid (1..100)>' })],
+		params: [p('uuid', 'Resource UUID'), b('ordered_uuids', 'All link UUIDs in desired order', { required: true, type: 'uuid[] (1..100)' })],
 		response: { description: 'JSON — { ok: true }' },
 	},
 	{
@@ -327,26 +327,26 @@ export const ENDPOINTS: EndpointDoc[] = [
 		response: { description: 'JSON — { author, avatars: ResourceWithMedia[], pagination }' },
 	},
 	{
-		method: 'POST', path: '/api/authors', summary: 'Create an author record (admin)', auth: 'auth', rateLimit: 'medium', visibility: 'private', tag: 'authors', schema: 'AvatarAuthorSchema',
-		description: 'Creates a normalized author profile. Service enforces admin role even though the route guard is requireAuth.',
+		method: 'POST', path: '/api/authors', summary: 'Create an author record (admin)', auth: 'admin', rateLimit: 'medium', visibility: 'private', tag: 'authors', schema: 'AvatarAuthorSchema',
+		description: 'Creates a normalized author profile. Requires admin (route guard requireAdmin).',
 		params: [b('name', 'Author display name (1–70 chars)', { required: true }), b('description', 'Author bio (≤2000 chars)', { type: 'string' }), b('avatar_url', 'Avatar image URL', { type: 'string' })],
 		response: { description: '201 — Author' },
 	},
 	{
-		method: 'PUT', path: '/api/authors/:slug', summary: 'Edit an author record (admin)', auth: 'auth', rateLimit: 'medium', visibility: 'private', tag: 'authors', schema: 'AvatarAuthorSchema (partial)',
-		description: 'Updates a normalized author profile. Admin-only (enforced in service).',
+		method: 'PUT', path: '/api/authors/:slug', summary: 'Edit an author record (admin)', auth: 'admin', rateLimit: 'medium', visibility: 'private', tag: 'authors', schema: 'AvatarAuthorSchema (partial)',
+		description: 'Updates a normalized author profile. Requires admin.',
 		params: [p('slug', 'Author slug', 'string (slug)')],
 		response: { description: 'JSON — { success: true }' },
 	},
 	{
-		method: 'DELETE', path: '/api/authors/:slug', summary: 'Delete an author (admin, no linked avatars)', auth: 'auth', rateLimit: 'medium', visibility: 'private', tag: 'authors',
-		description: 'Deletes an author only when no avatars are linked to it. Admin-only.',
+		method: 'DELETE', path: '/api/authors/:slug', summary: 'Delete an author (admin, no linked avatars)', auth: 'admin', rateLimit: 'medium', visibility: 'private', tag: 'authors',
+		description: 'Deletes an author only when no avatars are linked to it. Requires admin.',
 		params: [p('slug', 'Author slug', 'string (slug)')],
 		response: { description: 'JSON — { success: true }' },
 	},
 	{
-		method: 'POST', path: '/api/authors/:slug/link-resource', summary: 'Link an avatar to an author (admin)', auth: 'auth', rateLimit: 'medium', visibility: 'private', tag: 'authors',
-		description: 'Links an avatar resource to an author. Records a meta_edit history snapshot. Admin-only.',
+		method: 'POST', path: '/api/authors/:slug/link-resource', summary: 'Link an avatar to an author (admin)', auth: 'admin', rateLimit: 'medium', visibility: 'private', tag: 'authors',
+		description: 'Links an avatar resource to an author. Records a meta_edit history snapshot. Requires admin.',
 		params: [p('slug', 'Author slug', 'string (slug)'), b('resource_uuid', 'Avatar resource UUID to link', { required: true, type: 'string (uuid v4)' })],
 		response: { description: 'JSON — { success: true }' },
 	},
@@ -364,7 +364,7 @@ export const ENDPOINTS: EndpointDoc[] = [
 		response: { description: 'JSON — BlogPostWithAuthor' },
 	},
 	{
-		method: 'POST', path: '/api/blog', summary: 'Create a blog post (admin)', auth: 'admin', rateLimit: 'medium', visibility: 'private', tag: 'blog', schema: 'BlogPostSchema',
+		method: 'POST', path: '/api/blog', summary: 'Create a blog post (admin)', auth: 'admin', rateLimit: 'strict', visibility: 'private', tag: 'blog', schema: 'BlogPostSchema',
 		description: 'Creates a new blog post. Bumps the change_feed (blog scope) and broadcasts via FeedRoom.',
 		params: [b('title', 'Title (3–200 chars)', { required: true }), b('content', 'Markdown body (≤100k chars)', { required: true }), b('excerpt', 'Optional excerpt (≤500 chars)', { type: 'string' }), b('cover_image_uuid', 'Cover image media UUID', { type: 'string (uuid v4)' }), b('author_display', 'Author display mode', { type: 'enum', })],
 		response: { description: '201 — { uuid, slug }' },
@@ -514,7 +514,7 @@ export const ENDPOINTS: EndpointDoc[] = [
 	{
 		method: 'POST', path: '/api/favorites/reorder', summary: 'Reorder favorites within a collection', auth: 'auth', rateLimit: 'medium', visibility: 'private', tag: 'favorites', schema: 'FavoriteReorderSchema',
 		description: 'Batch-reorders favorites. The ordered_uuids array must contain every favorite in the target scope in the desired order.',
-		params: [b('ordered_uuids', 'All favorite resource UUIDs in desired order', { required: true, type: 'array<uuid (≤500)>' }), b('collection_uuid', 'Target scope: collection UUID, null (uncategorized), or "all" (global order)', { required: true, type: 'string (uuid | "all" | null)' })],
+		params: [b('ordered_uuids', 'All favorite resource UUIDs in desired order', { required: true, type: 'uuid[] (≤500)' }), b('collection_uuid', 'Target scope: collection UUID, null (uncategorized), or "all" (global order)', { required: true, type: 'string (uuid | "all" | null)' })],
 		response: { description: 'JSON — { success: true }' },
 	},
 	{
@@ -556,7 +556,7 @@ export const ENDPOINTS: EndpointDoc[] = [
 	{
 		method: 'POST', path: '/api/collections/reorder', summary: 'Reorder collections', auth: 'auth', rateLimit: 'medium', visibility: 'private', tag: 'collections', schema: 'CollectionReorderSchema',
 		description: 'Batch-reorders all collections for the caller. The array must contain every collection UUID in the desired order.',
-		params: [b('ordered_uuids', 'All collection UUIDs in desired order', { required: true, type: 'array<uuid (≤20)>' })],
+		params: [b('ordered_uuids', 'All collection UUIDs in desired order', { required: true, type: 'uuid[] (≤20)' })],
 		response: { description: 'JSON — { success: true }' },
 	},
 	// ---- Auth / Users -----------------------------------------------------------------------------------------
@@ -591,13 +591,13 @@ export const ENDPOINTS: EndpointDoc[] = [
 		response: { description: 'JSON — { success: true }' },
 	},
 	{
-		method: 'PUT', path: '/api/auth/me', summary: 'Update own profile', auth: 'optional', rateLimit: 'medium', visibility: 'private', tag: 'auth', schema: 'UserUpdateSchema',
+		method: 'PUT', path: '/api/auth/me', summary: 'Update own profile', auth: 'auth', rateLimit: 'medium', visibility: 'private', tag: 'auth', schema: 'UserUpdateSchema',
 		description: 'Updates the caller’s username, avatar_url, or anonymity flag. Turnstile may be required.',
 		params: [b('username', 'New username (3–32 chars, alphanumeric+_)', { type: 'string' }), b('avatar_url', 'New avatar URL (https:// or /)', { type: 'string' }), b('is_anonymous', 'Anonymity flag', { type: 'integer (0|1)' })],
 		response: { description: 'JSON — { success: true, user }' },
 	},
 	{
-		method: 'POST', path: '/api/auth/me/password', summary: 'Change own password', auth: 'optional', rateLimit: 'medium', visibility: 'private', tag: 'auth', schema: 'ChangePasswordSchema',
+		method: 'POST', path: '/api/auth/me/password', summary: 'Change own password', auth: 'auth', rateLimit: 'medium', visibility: 'private', tag: 'auth', schema: 'ChangePasswordSchema',
 		description: 'Changes the caller’s password. Requires current_password (unless OAuth-only account) and a valid 2FA code when 2FA is enabled.',
 		params: [b('current_password', 'Current password', { type: 'string' }), b('new_password', 'New password (8–200 chars)', { required: true }), b('two_factor_code', 'TOTP/backup code when 2FA is enabled', { type: 'string' })],
 		response: { description: 'JSON — { success: true }' },
@@ -772,7 +772,7 @@ export const ENDPOINTS: EndpointDoc[] = [
 	{
 		method: 'PUT', path: '/api/notifications/preferences', summary: 'Save notification preferences', auth: 'auth', rateLimit: 'medium', visibility: 'private', tag: 'realtime',
 		description: 'Persists the caller’s Notification preferences (which approved-resource scopes and avatar/asset sub-types should trigger a browser notification).',
-		params: [b('enabled', 'Master toggle', { required: true, type: 'boolean' }), b('avatars_enabled', 'Notify for avatars', { required: true, type: 'boolean' }), b('avatar_types', 'Which avatar types to notify', { type: 'array<string> | null' }), b('assets_enabled', 'Notify for assets', { required: true, type: 'boolean' }), b('asset_types', 'Which asset types to notify', { type: 'array<string> | null' }), b('clothes_enabled', 'Notify for clothes', { required: true, type: 'boolean' })],
+		params: [b('enabled', 'Master toggle', { required: true, type: 'boolean' }), b('avatars_enabled', 'Notify for avatars', { required: true, type: 'boolean' }), b('avatar_types', 'Which avatar types to notify', { type: 'string[] | null' }), b('assets_enabled', 'Notify for assets', { required: true, type: 'boolean' }), b('asset_types', 'Which asset types to notify', { type: 'string[] | null' }), b('clothes_enabled', 'Notify for clothes', { required: true, type: 'boolean' })],
 		response: { description: 'JSON — { success: true }' },
 	},
 	// ---- CDN edge case: wiki markdown raw fetch is not an /api route but should be documented ---------------

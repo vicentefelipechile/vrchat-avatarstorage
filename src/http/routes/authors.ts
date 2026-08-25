@@ -15,7 +15,7 @@
 // =========================================================================================================
 
 import { Hono } from 'hono';
-import { requireAuth, type AuthVariables } from '../middleware/auth';
+import { requireAuth, requireAdmin, type AuthVariables } from '../middleware/auth';
 import { AuthorService } from '../../services/author-service';
 import { AvatarAuthorSchema } from '../../validators';
 import { fail } from '../responses';
@@ -81,7 +81,7 @@ authors.get('/:slug', async (c) => {
 // Create a new author record [admin only].
 // =========================================================================================================
 
-authors.post('/', requireAuth, async (c) => {
+authors.post('/', requireAdmin, async (c) => {
 	let body: unknown;
 	try {
 		body = await c.req.json();
@@ -106,7 +106,7 @@ authors.post('/', requireAuth, async (c) => {
 // Edit an author record [admin only].
 // =========================================================================================================
 
-authors.put('/:slug', requireAuth, async (c) => {
+authors.put('/:slug', requireAdmin, async (c) => {
 	let body: unknown;
 	try {
 		body = await c.req.json();
@@ -131,7 +131,7 @@ authors.put('/:slug', requireAuth, async (c) => {
 // Delete an author — only if no avatars are linked to them [admin only].
 // =========================================================================================================
 
-authors.delete('/:slug', requireAuth, async (c) => {
+authors.delete('/:slug', requireAdmin, async (c) => {
 	try {
 		await new AuthorService(c.env.DB).delete(c.get('user'), c.req.param('slug')!);
 		return c.json({ success: true });
@@ -147,7 +147,7 @@ authors.delete('/:slug', requireAuth, async (c) => {
 // Body: { resource_uuid: string }
 // =========================================================================================================
 
-authors.post('/:slug/link-resource', requireAuth, async (c) => {
+authors.post('/:slug/link-resource', requireAdmin, async (c) => {
 	let body: { resource_uuid?: unknown };
 	try {
 		body = await c.req.json();

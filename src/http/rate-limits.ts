@@ -53,6 +53,33 @@ export function registerRateLimits(app: Hono<{ Bindings: Env }>): void {
 
 	// Sensitive endpoint overrides — medium binding, route-specific key prefix
 	app.use('/api/upload/*', async (c, next) => rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'upload' })(c, next));
+	// Resource writes — POST (create) is STRICT (Turnstile + 1/60s anti-spam), other methods MEDIUM
+	app.use('/api/resources', async (c, next) => {
+		if (c.req.method === 'POST') return rateLimit({ binding: c.env.RL_STRICT, keyPrefix: 'resources_post' })(c, next);
+		return rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'resources' })(c, next);
+	});
+	app.use('/api/resources/*', async (c, next) => rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'resources' })(c, next));
+	app.use('/api/avatars', async (c, next) => {
+		if (c.req.method === 'POST') return rateLimit({ binding: c.env.RL_STRICT, keyPrefix: 'avatars_post' })(c, next);
+		return rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'avatars' })(c, next);
+	});
+	app.use('/api/avatars/*', async (c, next) => rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'avatars' })(c, next));
+	app.use('/api/assets', async (c, next) => {
+		if (c.req.method === 'POST') return rateLimit({ binding: c.env.RL_STRICT, keyPrefix: 'assets_post' })(c, next);
+		return rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'assets' })(c, next);
+	});
+	app.use('/api/assets/*', async (c, next) => rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'assets' })(c, next));
+	app.use('/api/clothes', async (c, next) => {
+		if (c.req.method === 'POST') return rateLimit({ binding: c.env.RL_STRICT, keyPrefix: 'clothes_post' })(c, next);
+		return rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'clothes' })(c, next);
+	});
+	app.use('/api/clothes/*', async (c, next) => rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'clothes' })(c, next));
+	app.use('/api/authors/*', async (c, next) => rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'authors' })(c, next));
+	app.use('/api/blog/*', async (c, next) => rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'blog' })(c, next));
+	app.use('/api/blog', async (c, next) => {
+		if (c.req.method === 'POST') return rateLimit({ binding: c.env.RL_STRICT, keyPrefix: 'blog_post' })(c, next);
+		return rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'blog' })(c, next);
+	});
 	app.use('/api/auth/me', async (c, next) => rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'user_update' })(c, next));
 	app.use('/api/admin/*', async (c, next) => rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'admin' })(c, next));
 	app.use('/api/favorites/*', async (c, next) => rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'favorites' })(c, next));

@@ -1035,15 +1035,9 @@ export async function uploadAfter(_ctx: RouteContext): Promise<void> {
 			window.removeEventListener('beforeunload', preventNav);
 			return;
 		}
-		if (!turnstileToken) {
-			uploadError.textContent = `${t('upload.error')}: ${t('upload.errorCaptcha')}`;
-			resetState();
-			window.removeEventListener('beforeunload', preventNav);
-			return;
-		}
 
 		try {
-			// 0. Pre-flight Validation
+			// 0. Pre-flight Validation (validate_only bypasses Turnstile, no real token needed here)
 			updateProgress(t('upload.validating') ?? 'Validating...', 0);
 			const dummyUuid = '00000000-0000-0000-0000-000000000000';
 			const endpointMap: Record<string, string> = { avatars: '/api/avatars', assets: '/api/assets', clothes: '/api/clothes' };
@@ -1108,7 +1102,10 @@ export async function uploadAfter(_ctx: RouteContext): Promise<void> {
 				uploadedFiles.push({ ...fileData, originalName: f.name, size: f.size });
 			}
 
-			// 4. Create resource via category-specific endpoint
+			// 4. Create resource via category-specific endpoint — check CAPTCHA here so a long upload doesn't expire the token before it's used
+			if (!turnstileToken) {
+				throw new Error(t('upload.errorCaptcha'));
+			}
 			updateProgress(t('upload.creating'), 100);
 
 			const fileLinks = uploadedFiles.map((f, i) => ({

@@ -35,18 +35,16 @@ export const apiDocs = new Hono<{ Bindings: Env }>();
 apiDocs.get('/', (c) => {
 	const tag = c.req.query('tag');
 	const manifest = buildManifest();
+	const headers = { 'Cache-Control': 'public, max-age=3600', 'Content-Type': 'application/json; charset=utf-8' };
 	if (tag) {
 		const filtered = manifest.endpoints.filter((e) => e.tag === tag);
 		if (!filtered.length) {
-			return c.json({ error: `Unknown tag "${tag}"` }, 404);
+			return new Response(JSON.stringify({ error: `Unknown tag "${tag}"` }), { status: 404, headers });
 		}
-		return c.json({ ...manifest, endpoints: filtered }, 200, {
-			'Cache-Control': 'public, max-age=3600',
-		});
+		// Use raw Response with JSON.stringify to avoid Hono's HTML-escaping of `<`/`>` (array<LinkSchema> -> \u003C)
+		return new Response(JSON.stringify({ ...manifest, endpoints: filtered }), { status: 200, headers });
 	}
-	return c.json(buildApiJson(manifest), 200, {
-		'Cache-Control': 'public, max-age=3600',
-	});
+	return new Response(JSON.stringify(buildApiJson(manifest)), { status: 200, headers });
 });
 
 // =========================================================================================================

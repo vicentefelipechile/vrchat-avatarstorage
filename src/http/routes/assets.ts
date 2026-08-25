@@ -17,6 +17,7 @@ import { Hono } from 'hono';
 import { requireAuth, requireAdmin, type AuthVariables } from '../middleware/auth';
 import { AssetService } from '../../services/asset-service';
 import { ResourceSchema, AssetMetaSchema, AssetFilterSchema } from '../../validators';
+import { verifyTurnstile } from '../../helpers/turnstile';
 import { fail } from '../responses';
 
 // =========================================================================================================
@@ -90,6 +91,9 @@ assets.post('/', requireAuth, async (c) => {
 	if (c.req.query('validate_only') === 'true') {
 		return c.json({ valid: true });
 	}
+
+	const isValid = await verifyTurnstile(resourceParsed.data.token || '', c.env.TURNSTILE_SECRET_KEY);
+	if (!isValid) return fail(c, 'Invalid CAPTCHA', 403);
 
 	const d = resourceParsed.data;
 

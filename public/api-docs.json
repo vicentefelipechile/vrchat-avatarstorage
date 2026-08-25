@@ -339,11 +339,11 @@
       "path": "/api/avatars",
       "summary": "Create an avatar resource",
       "auth": "auth",
-      "rateLimit": "medium",
+      "rateLimit": "strict",
       "visibility": "private",
       "tag": "avatars",
       "schema": "ResourceSchema + AvatarMetaSchema",
-      "description": "Creates a resource, its avatar_meta row, links, and media relations in one batch. Created as inactive (pending approval). No history entry on creation.",
+      "description": "Creates a resource, its avatar_meta row, links, and media relations in one batch. Created as inactive (pending approval). No history entry on creation. Turnstile required.",
       "params": [
         {
           "name": "title",
@@ -384,14 +384,14 @@
           "name": "links",
           "location": "body",
           "required": false,
-          "type": "array<LinkSchema>",
+          "type": "LinkSchema[]",
           "description": "Download/demo links"
         },
         {
           "name": "media_files",
           "location": "body",
           "required": false,
-          "type": "array<uuid>",
+          "type": "uuid[]",
           "description": "Gallery media UUIDs"
         },
         {
@@ -607,11 +607,11 @@
       "path": "/api/assets",
       "summary": "Create an asset resource",
       "auth": "auth",
-      "rateLimit": "medium",
+      "rateLimit": "strict",
       "visibility": "private",
       "tag": "assets",
       "schema": "ResourceSchema + AssetMetaSchema",
-      "description": "Creates a resource + asset_meta + links + media in one batch (inactive, pending approval).",
+      "description": "Creates a resource + asset_meta + links + media in one batch (inactive, pending approval). Turnstile required.",
       "params": [
         {
           "name": "title",
@@ -847,11 +847,11 @@
       "path": "/api/clothes",
       "summary": "Create a clothing resource",
       "auth": "auth",
-      "rateLimit": "medium",
+      "rateLimit": "strict",
       "visibility": "private",
       "tag": "clothes",
       "schema": "ResourceSchema + ClothesMetaSchema",
-      "description": "Creates a resource + clothes_meta + links + media in one batch (inactive, pending approval).",
+      "description": "Creates a resource + clothes_meta + links + media in one batch (inactive, pending approval). Turnstile required.",
       "params": [
         {
           "name": "title",
@@ -1128,14 +1128,14 @@
           "name": "new_links",
           "location": "body",
           "required": false,
-          "type": "array<LinkSchema>",
+          "type": "LinkSchema[]",
           "description": "Additional links to append"
         },
         {
           "name": "gallery_media_uuids",
           "location": "body",
           "required": false,
-          "type": "array<uuid>",
+          "type": "uuid[]",
           "description": "Replacement gallery UUIDs"
         }
       ],
@@ -1186,7 +1186,7 @@
           "name": "ordered_uuids",
           "location": "body",
           "required": true,
-          "type": "array<uuid (1..100)>",
+          "type": "uuid[] (1..100)",
           "description": "All link UUIDs in desired order"
         }
       ],
@@ -1377,12 +1377,12 @@
       "method": "POST",
       "path": "/api/authors",
       "summary": "Create an author record (admin)",
-      "auth": "auth",
+      "auth": "admin",
       "rateLimit": "medium",
       "visibility": "private",
       "tag": "authors",
       "schema": "AvatarAuthorSchema",
-      "description": "Creates a normalized author profile. Service enforces admin role even though the route guard is requireAuth.",
+      "description": "Creates a normalized author profile. Requires admin (route guard requireAdmin).",
       "params": [
         {
           "name": "name",
@@ -1414,12 +1414,12 @@
       "method": "PUT",
       "path": "/api/authors/:slug",
       "summary": "Edit an author record (admin)",
-      "auth": "auth",
+      "auth": "admin",
       "rateLimit": "medium",
       "visibility": "private",
       "tag": "authors",
       "schema": "AvatarAuthorSchema (partial)",
-      "description": "Updates a normalized author profile. Admin-only (enforced in service).",
+      "description": "Updates a normalized author profile. Requires admin.",
       "params": [
         {
           "name": "slug",
@@ -1437,11 +1437,11 @@
       "method": "DELETE",
       "path": "/api/authors/:slug",
       "summary": "Delete an author (admin, no linked avatars)",
-      "auth": "auth",
+      "auth": "admin",
       "rateLimit": "medium",
       "visibility": "private",
       "tag": "authors",
-      "description": "Deletes an author only when no avatars are linked to it. Admin-only.",
+      "description": "Deletes an author only when no avatars are linked to it. Requires admin.",
       "params": [
         {
           "name": "slug",
@@ -1459,11 +1459,11 @@
       "method": "POST",
       "path": "/api/authors/:slug/link-resource",
       "summary": "Link an avatar to an author (admin)",
-      "auth": "auth",
+      "auth": "admin",
       "rateLimit": "medium",
       "visibility": "private",
       "tag": "authors",
-      "description": "Links an avatar resource to an author. Records a meta_edit history snapshot. Admin-only.",
+      "description": "Links an avatar resource to an author. Records a meta_edit history snapshot. Requires admin.",
       "params": [
         {
           "name": "slug",
@@ -1545,7 +1545,7 @@
       "path": "/api/blog",
       "summary": "Create a blog post (admin)",
       "auth": "admin",
-      "rateLimit": "medium",
+      "rateLimit": "strict",
       "visibility": "private",
       "tag": "blog",
       "schema": "BlogPostSchema",
@@ -2250,7 +2250,7 @@
           "name": "ordered_uuids",
           "location": "body",
           "required": true,
-          "type": "array<uuid (≤500)>",
+          "type": "uuid[] (≤500)",
           "description": "All favorite resource UUIDs in desired order"
         },
         {
@@ -2421,7 +2421,7 @@
           "name": "ordered_uuids",
           "location": "body",
           "required": true,
-          "type": "array<uuid (≤20)>",
+          "type": "uuid[] (≤20)",
           "description": "All collection UUIDs in desired order"
         }
       ],
@@ -2572,7 +2572,7 @@
       "method": "PUT",
       "path": "/api/auth/me",
       "summary": "Update own profile",
-      "auth": "optional",
+      "auth": "auth",
       "rateLimit": "medium",
       "visibility": "private",
       "tag": "auth",
@@ -2609,7 +2609,7 @@
       "method": "POST",
       "path": "/api/auth/me/password",
       "summary": "Change own password",
-      "auth": "optional",
+      "auth": "auth",
       "rateLimit": "medium",
       "visibility": "private",
       "tag": "auth",
@@ -3241,7 +3241,7 @@
           "name": "avatar_types",
           "location": "body",
           "required": false,
-          "type": "array<string> | null",
+          "type": "string[] | null",
           "description": "Which avatar types to notify"
         },
         {
@@ -3255,7 +3255,7 @@
           "name": "asset_types",
           "location": "body",
           "required": false,
-          "type": "array<string> | null",
+          "type": "string[] | null",
           "description": "Which asset types to notify"
         },
         {

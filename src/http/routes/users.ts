@@ -42,7 +42,10 @@
 // =========================================================================================================
 
 import { Hono } from 'hono';
+import { getCookie } from 'hono/cookie';
+import { verify } from 'hono/jwt';
 import { createSession, getAuthUser, deleteSession, getUserWith2FA, getDecrypted2FASecret, verifyPassword } from '../../auth';
+import { requireAuth, type AuthVariables } from '../middleware/auth';
 import { verifyTwoFactorCode, verifyBackupCode, useBackupCode } from '../../auth/2fa';
 import { RegisterSchema, LoginSchema, UserUpdateSchema, TwoFactorLoginSchema, ChangePasswordSchema } from '../../validators';
 import { verifyTurnstile } from '../../helpers/turnstile';
@@ -80,7 +83,7 @@ async function codeDigest(code: string): Promise<string> {
 // Endpoint
 // =========================================================================================================
 
-const users = new Hono<{ Bindings: Env }>();
+const users = new Hono<{ Bindings: Env; Variables: AuthVariables }>();
 
 // =========================================================================================================
 // POST /api/auth/register
@@ -149,9 +152,8 @@ users.post('/login', async (c) => {
 // Update user profile (username, avatar). Turnstile required.
 // =========================================================================================================
 
-users.put('/me', async (c) => {
-	const authUser = await getAuthUser(c);
-	if (!authUser) return c.json({ error: 'Unauthorized' }, 401);
+users.put('/me', requireAuth, async (c) => {
+	const authUser = c.get('user');
 
 	const body = await c.req.json();
 	const { username, avatar_url, is_anonymous, token } = UserUpdateSchema.parse(body);
@@ -274,9 +276,8 @@ users.post('/login/2fa', async (c) => {
 // re-authentication step, plus a valid 2FA code when 2FA is enabled.
 // =========================================================================================================
 
-users.post('/me/password', async (c) => {
-	const authUser = await getAuthUser(c);
-	if (!authUser) return c.json({ error: 'Unauthorized' }, 401);
+users.post('/me/password', requireAuth, async (c) => {
+	const authUser = c.get('user');
 
 	const body = await c.req.json();
 	const { current_password, new_password, two_factor_code, token } = ChangePasswordSchema.parse(body);
@@ -327,8 +328,21 @@ users.post('/me/password', async (c) => {
 
 	try {
 		await service.setPassword(user.uuid, new_password);
-		// Invalidate the KV session cache so all active sessions must re-authenticate.
+		// Invalidate KV session cache and denylist the current JWT so a stolen session cannot survive the password change.
 		await c.env.VRCSTORAGE_KV.delete(`user:${user.username}`);
+		// Denylist current token jti for its remaining lifetime (forces re-login even if KV repopulates from DB).
+		try {
+			const token = getCookie(c, 'auth_token');
+			if (token && c.env.JWT_SECRET) {
+				const payload = await verify(token, c.env.JWT_SECRET, 'HS256');
+				if (payload?.jti) {
+					const remainingTtl = Math.max(0, (payload.exp as number) - Math.floor(Date.now() / 1000));
+					if (remainingTtl > 0) await c.env.VRCSTORAGE_KV.put(`deny:${payload.jti}`, '1', { expirationTtl: remainingTtl });
+				}
+			}
+		} catch {
+			// Token denylist best-effort
+		}
 		return c.json({ success: true });
 	} catch (e) {
 		console.error('Password change error:', e);

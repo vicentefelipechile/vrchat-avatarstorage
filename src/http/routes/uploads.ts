@@ -104,8 +104,10 @@ upload.post('/init', requireAuth, async (c) => {
 			httpMetadata: { contentType: service.initMimeType(media_type) },
 		});
 
-		// Remember the expected media type for this upload (validated on part 1, trusted on complete).
-		await c.env.VRCSTORAGE_KV.put(`upload_meta:${multipartUpload.uploadId}`, media_type, { expirationTtl: UPLOAD_META_TTL });
+		// Remember the expected media type + owner + key for this upload (validated on part 1, trusted on complete).
+		// Binding to the initiating user prevents one user from hijacking another's multipart session.
+		const meta = JSON.stringify({ media_type, user_uuid: c.get('user').uuid, key: mediaUuid });
+		await c.env.VRCSTORAGE_KV.put(`upload_meta:${multipartUpload.uploadId}`, meta, { expirationTtl: UPLOAD_META_TTL });
 
 		return c.json({ uploadId: multipartUpload.uploadId, key: mediaUuid });
 	} catch (e) {
@@ -135,14 +137,31 @@ upload.put('/part', requireAuth, async (c) => {
 	try {
 		let bodyToUpload: ReadableStream | ArrayBuffer = c.req.raw.body;
 
-		// First part: enforce the magic-byte signature against the media_type declared at init.
+		// First part: enforce the magic-byte signature against the media_type declared at init + owner check.
 		if (partNumber === 1) {
-			const expectedMediaType = await c.env.VRCSTORAGE_KV.get(`upload_meta:${uploadId}`);
-			if (!expectedMediaType) return fail(c, 'Upload session expired or invalid', 400);
+			const rawMeta = await c.env.VRCSTORAGE_KV.get(`upload_meta:${uploadId}`);
+			if (!rawMeta) return fail(c, 'Upload session expired or invalid', 400);
+			let expectedMediaType: string;
+			let ownerUuid: string | undefined;
+			let expectedKey: string | undefined;
+			try {
+				const parsed = JSON.parse(rawMeta) as { media_type: string; user_uuid?: string; key?: string };
+				if (parsed.media_type) {
+					expectedMediaType = parsed.media_type;
+					ownerUuid = parsed.user_uuid;
+					expectedKey = parsed.key;
+				} else {
+					expectedMediaType = rawMeta;
+				}
+			} catch {
+				expectedMediaType = rawMeta;
+			}
+			if (ownerUuid && ownerUuid !== c.get('user').uuid) return fail(c, 'Upload session does not belong to you', 403);
+			if (expectedKey && expectedKey !== key) return fail(c, 'Upload key mismatch', 400);
 
 			// We must buffer the part in memory to read its signature (R2 parts are ~5MB, fits in 128MB).
 			const buffer = await c.req.arrayBuffer();
-			const check = new UploadService().firstPartSignatureMatches(buffer, expectedMediaType);
+			const check = new UploadService().firstPartSignatureMatches(buffer, expectedMediaType!);
 
 			if (!check.ok) {
 				await multipartUpload.abort();
@@ -154,6 +173,18 @@ upload.put('/part', requireAuth, async (c) => {
 			}
 
 			bodyToUpload = buffer;
+		} else {
+			// Subsequent parts: verify session still belongs to the caller (no signature check needed)
+			const rawMeta = await c.env.VRCSTORAGE_KV.get(`upload_meta:${uploadId}`);
+			if (rawMeta) {
+				try {
+					const parsed = JSON.parse(rawMeta) as { user_uuid?: string; key?: string };
+					if (parsed.user_uuid && parsed.user_uuid !== c.get('user').uuid) return fail(c, 'Upload session does not belong to you', 403);
+					if (parsed.key && parsed.key !== key) return fail(c, 'Upload key mismatch', 400);
+				} catch {
+					// legacy string value — allow (already validated on part 1)
+				}
+			}
 		}
 
 		const uploadedPart = await multipartUpload.uploadPart(partNumber, bodyToUpload);
@@ -176,10 +207,27 @@ upload.post('/complete', requireAuth, async (c) => {
 	if (!key || !uploadId || !parts || !Array.isArray(parts) || !filename) return fail(c, 'Missing required fields', 400);
 
 	// Use the media_type stored in KV during /init (already validated against magic bytes in /part).
-	const media_type = await c.env.VRCSTORAGE_KV.get(`upload_meta:${uploadId}`);
-	if (!media_type) return fail(c, 'Upload session expired or invalid', 400);
+	const rawMeta = await c.env.VRCSTORAGE_KV.get(`upload_meta:${uploadId}`);
+	if (!rawMeta) return fail(c, 'Upload session expired or invalid', 400);
+	let media_type: string;
+	let ownerUuid: string | undefined;
+	let expectedKey: string | undefined;
+	try {
+		const parsed = JSON.parse(rawMeta) as { media_type: string; user_uuid?: string; key?: string };
+		if (parsed.media_type) {
+			media_type = parsed.media_type;
+			ownerUuid = parsed.user_uuid;
+			expectedKey = parsed.key;
+		} else {
+			media_type = rawMeta;
+		}
+	} catch {
+		media_type = rawMeta;
+	}
+	if (ownerUuid && ownerUuid !== c.get('user').uuid) return fail(c, 'Upload session does not belong to you', 403);
+	if (expectedKey && expectedKey !== key) return fail(c, 'Upload key mismatch', 400);
 
-	if (!new UploadService().isAllowedMultipartType(media_type)) return fail(c, 'Invalid media type', 400);
+	if (!new UploadService().isAllowedMultipartType(media_type!)) return fail(c, 'Invalid media type', 400);
 
 	try {
 		const multipartUpload = c.env.BUCKET.resumeMultipartUpload(key, uploadId);
@@ -189,7 +237,7 @@ upload.post('/complete', requireAuth, async (c) => {
 		await c.env.VRCSTORAGE_KV.delete(`upload_meta:${uploadId}`);
 
 		// The multipart key IS the media uuid (set in /init), so r2_key === uuid.
-		await new MediaRepository(c.env.DB).insert(key, key, media_type, filename);
+		await new MediaRepository(c.env.DB).insert(key, key, media_type!, filename);
 
 		return c.json({ media_uuid: key, r2_key: key, media_type, file_name: filename });
 	} catch (e) {

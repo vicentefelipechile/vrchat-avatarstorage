@@ -53,7 +53,7 @@ const MAX_AGE = 60 * 60 * 24 * 7; // 7 days in seconds
 // This function creates a new session for a user
 // =========================================================================================================
 
-export async function createSession(c: Context<{ Bindings: Env }>, user: { username: string; is_admin: number }) {
+export async function createSession<E extends { Bindings: Env }>(c: Context<E>, user: { username: string; is_admin: number }) {
 	const secret = c.env.JWT_SECRET;
 	if (!secret) throw new Error('JWT_SECRET is not defined');
 
@@ -129,7 +129,7 @@ export async function getAuthUser<E extends { Bindings: Env }>(c: Context<E>): P
 	}
 }
 
-export async function deleteSession(c: Context<{ Bindings: Env }>) {
+export async function deleteSession<E extends { Bindings: Env }>(c: Context<E>) {
 	// Read token before clearing the cookie so we can invalidate the KV session cache.
 	const token = getCookie(c, COOKIE_NAME);
 
@@ -166,14 +166,14 @@ export async function deleteSession(c: Context<{ Bindings: Env }>) {
 // 2FA Helpers
 // =========================================================================================================
 
-export async function getUserWith2FA(c: Context<{ Bindings: Env }>, username: string): Promise<User | null> {
+export async function getUserWith2FA<E extends { Bindings: Env }>(c: Context<E>, username: string): Promise<User | null> {
 	// Selects the full user row — 2FA columns (two_factor_secret, two_factor_backup_codes) are
 	// required here for decryption and backup-code verification. Only called by 2FA-specific flows.
 	const user = await c.env.DB.prepare('SELECT uuid, username, is_admin, password_hash, two_factor_enabled, two_factor_secret, two_factor_backup_codes FROM users WHERE username = ?').bind(username).first<User>();
 	return user;
 }
 
-export async function getDecrypted2FASecret(c: Context<{ Bindings: Env }>, user: User): Promise<string | null> {
+export async function getDecrypted2FASecret<E extends { Bindings: Env }>(c: Context<E>, user: User): Promise<string | null> {
 	if (!user.two_factor_secret) return null;
 	const secret = c.env.JWT_SECRET;
 	if (!secret) return null;
