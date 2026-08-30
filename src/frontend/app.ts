@@ -170,6 +170,12 @@ async function updateNav(): Promise<void> {
 		prev.username !== window.appState.user?.username;
 
 	if (changed) updateNavDOM();
+
+	// Resource detail is auth-gated: clear stale anonymous cache on login change.
+	if (prev.isLoggedIn !== window.appState.isLoggedIn) {
+		DataCache.clearScope('/api/resources');
+		if (window.appState.isLoggedIn && location.pathname.startsWith('/item/')) navigateTo(location.pathname, true);
+	}
 }
 
 // =========================================================================
@@ -273,7 +279,8 @@ function initPrefetch(): void {
 		const uuid = href.split('/item/')[1];
 		if (!uuid) return;
 
-		DataCache.prefetch(`/api/resources/${uuid}`, { ttl: TimeUnit.Minute * 5, persistent: true });
+		// Don't persist auth-gated detail.
+		DataCache.prefetch(`/api/resources/${uuid}`, { ttl: TimeUnit.Minute * 5 });
 		DataCache.prefetch(`/api/comments/${uuid}`, { ttl: TimeUnit.Minute * 5 });
 	});
 }
@@ -401,6 +408,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 			.register('/sw.js')
 			.then((r) => console.log('SW registered:', r.scope))
 			.catch((e) => console.error('SW registration failed:', e));
+	}
+
+	// One-time eviction of old persistent resource cache.
+	if (!localStorage.getItem('resource_cache_v2')) {
+		DataCache.clearScope('/api/resources');
+		try { localStorage.setItem('resource_cache_v2', '1'); } catch {}
 	}
 
 	// Boot

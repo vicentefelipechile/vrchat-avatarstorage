@@ -310,8 +310,8 @@ export async function historyAfter(ctx: RouteContext): Promise<void> {
 
 	try {
 		const [entries, currentRes] = await Promise.all([
-			DataCache.fetch(`/api/resources/${id}/history`, { ttl: TimeUnit.Minute * 5, persistent: true }) as Promise<HistoryEntry[]>,
-			DataCache.fetch(`/api/resources/${id}`, { ttl: TimeUnit.Minute * 5, persistent: true }) as Promise<Resource>,
+			DataCache.fetch(`/api/resources/${id}/history`, { ttl: TimeUnit.Minute * 5 }) as Promise<HistoryEntry[]>,
+			DataCache.fetch(`/api/resources/${id}`, { ttl: TimeUnit.Minute * 5 }) as Promise<Resource>,
 		]);
 
 		if (!entries || entries.length === 0) {

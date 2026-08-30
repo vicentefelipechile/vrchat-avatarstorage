@@ -119,12 +119,13 @@ function renderCategoryMeta(res: Resource): string {
 	const renderFlags = flagChips.filter(Boolean).join('');
 	if (!textRows.length && !renderFlags) return '';
 
+	const gridClass = res.category === 'clothes' ? 'item-meta-grid item-meta-grid--clothes' : 'item-meta-grid';
 	return `
 		<div class="item-meta-panel">
 			<h3 class="item-meta-title">
 				${t('item.specifications')}
 			</h3>
-			<div class="item-meta-grid">
+			<div class="${gridClass}">
 				${textRows.join('')}
 			</div>
 			${renderFlags ? `<div class="meta-flags-container">${renderFlags}</div>` : ''}
@@ -572,7 +573,8 @@ export async function itemView(ctx: RouteContext): Promise<string> {
 
 	let res: Resource;
 	try {
-		res = (await DataCache.fetch(`/api/resources/${uuid}`, { ttl: TimeUnit.Hour, persistent: true })) as Resource;
+		// Auth-gated: don't persist, otherwise anonymous payload poisons logged-in view.
+		res = (await DataCache.fetch(`/api/resources/${uuid}`, { ttl: TimeUnit.Minute * 5 })) as Resource;
 		if (!res) throw new Error('Not found');
 	} catch {
 		return `<h1>${t('item.notFound')}</h1>`;
@@ -667,7 +669,7 @@ export async function itemAfter(ctx: RouteContext): Promise<void> {
 	// For Drive progress + notification avatar thumbnail (rehydration needs it even before polling)
 	let driveThumbUuid: string | null = null;
 	try {
-		const r = (await DataCache.fetch(`/api/resources/${uuid}`, { ttl: TimeUnit.Hour, persistent: true })) as Resource & { thumbnail_uuid?: string; thumbnail?: string };
+		const r = (await DataCache.fetch(`/api/resources/${uuid}`, { ttl: TimeUnit.Minute * 5 })) as Resource & { thumbnail_uuid?: string; thumbnail?: string };
 		driveThumbUuid = (r as unknown as { thumbnail_uuid?: string }).thumbnail_uuid ?? null;
 	} catch {}
 

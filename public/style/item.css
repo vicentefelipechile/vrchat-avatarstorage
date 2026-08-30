@@ -854,6 +854,10 @@
 	gap: 10px 30px;
 }
 
+.item-meta-grid--clothes {
+	grid-template-columns: 1fr;
+}
+
 .meta-row {
 	display: flex;
 	align-items: center;
