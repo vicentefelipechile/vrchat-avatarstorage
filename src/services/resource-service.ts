@@ -335,10 +335,20 @@ function mapMeta(r: Record<string, unknown>): Record<string, unknown> | null {
 			sdk_version: r.as_sdk_version,
 		};
 	}
-	if (cat === 'clothes' && r.cl_clothing_type != null) {
+	if (cat === 'clothes' && (r.cl_clothing_types_json != null || r.cl_is_base != null)) {
+		let clothing_type: string[] = [];
+		try {
+			const raw = r.cl_clothing_types_json as string | null;
+			if (raw) {
+				const parsed = JSON.parse(raw);
+				if (Array.isArray(parsed)) clothing_type = parsed.filter((v) => typeof v === 'string') as string[];
+			}
+		} catch {
+			clothing_type = [];
+		}
 		return {
 			gender_fit: r.cl_gender_fit,
-			clothing_type: r.cl_clothing_type,
+			clothing_type,
 			is_base: r.cl_is_base,
 			is_nsfw: r.cl_is_nsfw,
 			has_physbones: r.cl_has_physbones,

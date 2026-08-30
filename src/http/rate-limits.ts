@@ -18,30 +18,63 @@ import type { Hono } from 'hono';
 import { rateLimit } from './middleware/rate-limit';
 
 // =========================================================================================================
+// Helpers
+// =========================================================================================================
+
+/** Local dev bypass — only hostname === localhost/127.0.0.1, not substring. */
+function isLocalRequest(c: { req: { header: (n: string) => string | undefined; url: string } }): boolean {
+	const hostHeader = (c.req.header('host') ?? '').split(':')[0].toLowerCase();
+	if (hostHeader === 'localhost' || hostHeader === '127.0.0.1' || hostHeader === '::1') return true;
+	try {
+		const hostname = new URL(c.req.url).hostname.toLowerCase();
+		return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1';
+	} catch {
+		return false;
+	}
+}
+
+/** Validation preflight (validate_only=true) should not consume STRICT budget — use MEDIUM instead. */
+function isValidationRequest(c: { req: { query: (n: string) => string | undefined } }): boolean {
+	return c.req.query('validate_only') === 'true';
+}
+
+// =========================================================================================================
 // Registration
 // =========================================================================================================
 
 /** Wires every rate-limit rule onto the app. Call once, before mounting the routers. */
 export function registerRateLimits(app: Hono<{ Bindings: Env }>): void {
 	// Auth — strict (1 req / 60s per IP), fail-closed to prevent brute-force on binding outage
-	app.use('/api/auth/register', async (c, next) => rateLimit({ binding: c.env.RL_STRICT, keyPrefix: 'register', failClosed: true })(c, next));
-	app.use('/api/auth/login', async (c, next) => rateLimit({ binding: c.env.RL_LOGIN, keyPrefix: 'login', failClosed: true })(c, next));
-	app.use('/api/auth/login/2fa', async (c, next) => rateLimit({ binding: c.env.RL_LOGIN, keyPrefix: 'login_2fa', failClosed: true })(c, next));
+	app.use('/api/auth/register', async (c, next) => {
+		if (isLocalRequest(c)) return next();
+		return rateLimit({ binding: c.env.RL_STRICT, keyPrefix: 'register', failClosed: true })(c, next);
+	});
+	app.use('/api/auth/login', async (c, next) => {
+		if (isLocalRequest(c)) return next();
+		return rateLimit({ binding: c.env.RL_LOGIN, keyPrefix: 'login', failClosed: true })(c, next);
+	});
+	app.use('/api/auth/login/2fa', async (c, next) => {
+		if (isLocalRequest(c)) return next();
+		return rateLimit({ binding: c.env.RL_LOGIN, keyPrefix: 'login_2fa', failClosed: true })(c, next);
+	});
 
 	// Comments — differentiate POST (strict) from GET (medium)
 	app.use('/api/comments/*', async (c, next) => {
+		if (isLocalRequest(c)) return next();
 		if (c.req.method === 'POST') {
 			return rateLimit({ binding: c.env.RL_STRICT, keyPrefix: 'comments_post' })(c, next);
 		}
 		return rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'comments_get' })(c, next);
 	});
 	app.use('/api/wiki/comments', async (c, next) => {
+		if (isLocalRequest(c)) return next();
 		if (c.req.method === 'POST') {
 			return rateLimit({ binding: c.env.RL_STRICT, keyPrefix: 'wiki_comments_post' })(c, next);
 		}
 		return rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'wiki_comments_get' })(c, next);
 	});
 	app.use('/api/blog/:uuid/comments', async (c, next) => {
+		if (isLocalRequest(c)) return next();
 		if (c.req.method === 'POST') {
 			return rateLimit({ binding: c.env.RL_STRICT, keyPrefix: 'blog_comments_post' })(c, next);
 		}
@@ -49,55 +82,130 @@ export function registerRateLimits(app: Hono<{ Bindings: Env }>): void {
 	});
 
 	// Global catch-all (500 req / 60s)
-	app.use('*', async (c, next) => rateLimit({ binding: c.env.RL_GLOBAL })(c, next));
+	app.use('*', async (c, next) => {
+		if (isLocalRequest(c)) return next();
+		return rateLimit({ binding: c.env.RL_GLOBAL })(c, next);
+	});
 
 	// Sensitive endpoint overrides — medium binding, route-specific key prefix
-	app.use('/api/upload/*', async (c, next) => rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'upload' })(c, next));
+	app.use('/api/upload/*', async (c, next) => {
+		if (isLocalRequest(c)) return next();
+		return rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'upload' })(c, next);
+	});
 	// Resource writes — POST (create) is STRICT (Turnstile + 1/60s anti-spam), other methods MEDIUM
+	// validate_only preflight uses MEDIUM to avoid consuming STRICT budget (UploadView does 2 POSTs in <1s)
 	app.use('/api/resources', async (c, next) => {
-		if (c.req.method === 'POST') return rateLimit({ binding: c.env.RL_STRICT, keyPrefix: 'resources_post' })(c, next);
+		if (isLocalRequest(c)) return next();
+		if (c.req.method === 'POST') {
+			if (isValidationRequest(c)) return rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'resources_validate' })(c, next);
+			return rateLimit({ binding: c.env.RL_STRICT, keyPrefix: 'resources_post' })(c, next);
+		}
 		return rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'resources' })(c, next);
 	});
-	app.use('/api/resources/*', async (c, next) => rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'resources' })(c, next));
+	app.use('/api/resources/*', async (c, next) => {
+		if (isLocalRequest(c)) return next();
+		return rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'resources' })(c, next);
+	});
 	app.use('/api/avatars', async (c, next) => {
-		if (c.req.method === 'POST') return rateLimit({ binding: c.env.RL_STRICT, keyPrefix: 'avatars_post' })(c, next);
+		if (isLocalRequest(c)) return next();
+		if (c.req.method === 'POST') {
+			if (isValidationRequest(c)) return rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'avatars_validate' })(c, next);
+			return rateLimit({ binding: c.env.RL_STRICT, keyPrefix: 'avatars_post' })(c, next);
+		}
 		return rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'avatars' })(c, next);
 	});
-	app.use('/api/avatars/*', async (c, next) => rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'avatars' })(c, next));
+	app.use('/api/avatars/*', async (c, next) => {
+		if (isLocalRequest(c)) return next();
+		return rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'avatars' })(c, next);
+	});
 	app.use('/api/assets', async (c, next) => {
-		if (c.req.method === 'POST') return rateLimit({ binding: c.env.RL_STRICT, keyPrefix: 'assets_post' })(c, next);
+		if (isLocalRequest(c)) return next();
+		if (c.req.method === 'POST') {
+			if (isValidationRequest(c)) return rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'assets_validate' })(c, next);
+			return rateLimit({ binding: c.env.RL_STRICT, keyPrefix: 'assets_post' })(c, next);
+		}
 		return rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'assets' })(c, next);
 	});
-	app.use('/api/assets/*', async (c, next) => rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'assets' })(c, next));
+	app.use('/api/assets/*', async (c, next) => {
+		if (isLocalRequest(c)) return next();
+		return rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'assets' })(c, next);
+	});
 	app.use('/api/clothes', async (c, next) => {
-		if (c.req.method === 'POST') return rateLimit({ binding: c.env.RL_STRICT, keyPrefix: 'clothes_post' })(c, next);
+		if (isLocalRequest(c)) return next();
+		if (c.req.method === 'POST') {
+			if (isValidationRequest(c)) return rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'clothes_validate' })(c, next);
+			return rateLimit({ binding: c.env.RL_STRICT, keyPrefix: 'clothes_post' })(c, next);
+		}
 		return rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'clothes' })(c, next);
 	});
-	app.use('/api/clothes/*', async (c, next) => rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'clothes' })(c, next));
-	app.use('/api/authors/*', async (c, next) => rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'authors' })(c, next));
-	app.use('/api/blog/*', async (c, next) => rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'blog' })(c, next));
-	app.use('/api/blog', async (c, next) => {
-		if (c.req.method === 'POST') return rateLimit({ binding: c.env.RL_STRICT, keyPrefix: 'blog_post' })(c, next);
+	app.use('/api/clothes/*', async (c, next) => {
+		if (isLocalRequest(c)) return next();
+		return rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'clothes' })(c, next);
+	});
+	app.use('/api/authors/*', async (c, next) => {
+		if (isLocalRequest(c)) return next();
+		return rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'authors' })(c, next);
+	});
+	app.use('/api/blog/*', async (c, next) => {
+		if (isLocalRequest(c)) return next();
 		return rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'blog' })(c, next);
 	});
-	app.use('/api/auth/me', async (c, next) => rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'user_update' })(c, next));
-	app.use('/api/admin/*', async (c, next) => rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'admin' })(c, next));
-	app.use('/api/favorites/*', async (c, next) => rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'favorites' })(c, next));
-	app.use('/api/2fa/*', async (c, next) => rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: '2fa' })(c, next));
+	app.use('/api/blog', async (c, next) => {
+		if (isLocalRequest(c)) return next();
+		if (c.req.method === 'POST') {
+			if (isValidationRequest(c)) return rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'blog_validate' })(c, next);
+			return rateLimit({ binding: c.env.RL_STRICT, keyPrefix: 'blog_post' })(c, next);
+		}
+		return rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'blog' })(c, next);
+	});
+	app.use('/api/auth/me', async (c, next) => {
+		if (isLocalRequest(c)) return next();
+		return rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'user_update' })(c, next);
+	});
+	app.use('/api/admin/*', async (c, next) => {
+		if (isLocalRequest(c)) return next();
+		return rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'admin' })(c, next);
+	});
+	app.use('/api/favorites/*', async (c, next) => {
+		if (isLocalRequest(c)) return next();
+		return rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'favorites' })(c, next);
+	});
+	app.use('/api/2fa/*', async (c, next) => {
+		if (isLocalRequest(c)) return next();
+		return rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: '2fa' })(c, next);
+	});
 
 	// Chat — the handshake caps socket churn; purging is strict (1/60s) because it is irreversible and
 	// destroys everyone's conversation, which bounds the damage if an admin session is compromised.
 	// Neither limit reaches messages sent over an already-open socket: that throttling lives in the DO.
-	app.use('/api/chat/live', async (c, next) => rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'chat_live' })(c, next));
-	app.use('/api/chat/purge', async (c, next) => rateLimit({ binding: c.env.RL_STRICT, keyPrefix: 'chat_purge' })(c, next));
+	app.use('/api/chat/live', async (c, next) => {
+		if (isLocalRequest(c)) return next();
+		return rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'chat_live' })(c, next);
+	});
+	app.use('/api/chat/purge', async (c, next) => {
+		if (isLocalRequest(c)) return next();
+		return rateLimit({ binding: c.env.RL_STRICT, keyPrefix: 'chat_purge' })(c, next);
+	});
 
 	// OAuth — medium rate limit (100/min). Callbacks are one-shot, not brute-forceable.
-	app.use('/api/auth/*', async (c, next) => rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'oauth' })(c, next));
+	app.use('/api/auth/*', async (c, next) => {
+		if (isLocalRequest(c)) return next();
+		return rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'oauth' })(c, next);
+	});
 
 	// OAuth registration completion — strict rate limit to prevent username enumeration
-	app.use('/api/auth/complete', async (c, next) => rateLimit({ binding: c.env.RL_STRICT, keyPrefix: 'oauth_complete' })(c, next));
+	app.use('/api/auth/complete', async (c, next) => {
+		if (isLocalRequest(c)) return next();
+		return rateLimit({ binding: c.env.RL_STRICT, keyPrefix: 'oauth_complete' })(c, next);
+	});
 
 	// Drive — medium for status/jobs, strict for transfer enqueue and auth
-	app.use('/api/drive/transfer', async (c, next) => rateLimit({ binding: c.env.RL_STRICT, keyPrefix: 'drive_transfer' })(c, next));
-	app.use('/api/drive/*', async (c, next) => rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'drive' })(c, next));
+	app.use('/api/drive/transfer', async (c, next) => {
+		if (isLocalRequest(c)) return next();
+		return rateLimit({ binding: c.env.RL_STRICT, keyPrefix: 'drive_transfer' })(c, next);
+	});
+	app.use('/api/drive/*', async (c, next) => {
+		if (isLocalRequest(c)) return next();
+		return rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'drive' })(c, next);
+	});
 }

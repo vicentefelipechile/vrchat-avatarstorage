@@ -1,7 +1,8 @@
 // =========================================================================================================
 // CLOTHES REPOSITORY
 // =========================================================================================================
-// The ONLY place clothes-specific SQL lives. Owns everything that touches `clothes_meta`.
+// The ONLY place clothes-specific SQL lives. Owns everything that touches `clothes_meta`
+// and the junction `clothes_clothing_types` (multi-type).
 // Resource-level rows (`resources`, `resource_links`, `resource_n_media`, `resource_history`)
 // still go through ResourceRepository — this repo composes those statements where a
 // create/edit spans both tables.
@@ -46,7 +47,7 @@ export interface ClothesListParams extends ClothesFilters {
 	sortOrder: 'ASC' | 'DESC';
 }
 
-/** One row of the faceted list (resource card + flat clothes_meta columns). */
+/** One row of the faceted list (resource card + flat clothes_meta columns + aggregated types). */
 export interface ClothesListRow {
 	uuid: string;
 	title: string;
@@ -57,7 +58,7 @@ export interface ClothesListRow {
 	placeholder_blur: string | null;
 	processed: number;
 	gender_fit: string;
-	clothing_type: string;
+	clothing_types_json: string | null;
 	is_base: number;
 	is_nsfw: number;
 	has_physbones: number;
@@ -100,7 +101,18 @@ export class ClothesRepository {
 		};
 
 		eq('gender_fit', f.gender_fit);
-		eq('clothing_type', f.clothing_type);
+		// clothing_type is now junction — EXISTS subquery (OR semantics: any selected type matches)
+		if (f.clothing_type !== undefined && f.clothing_type !== null) {
+			const vals = Array.isArray(f.clothing_type) ? f.clothing_type : [f.clothing_type];
+			const filtered = vals.filter((v) => typeof v === 'string' && v.length > 0);
+			if (filtered.length === 1) {
+				clauses.push(`EXISTS(SELECT 1 FROM clothes_clothing_types cct WHERE cct.resource_uuid = r.uuid AND cct.clothing_type = ?)`);
+				params.push(filtered[0]);
+			} else if (filtered.length > 1) {
+				clauses.push(`EXISTS(SELECT 1 FROM clothes_clothing_types cct WHERE cct.resource_uuid = r.uuid AND cct.clothing_type IN (${filtered.map(() => '?').join(', ')}))`);
+				params.push(...filtered);
+			}
+		}
 		eq('platform', f.platform);
 		eq('is_base', f.is_base);
 		eq('is_nsfw', f.is_nsfw);
@@ -165,7 +177,7 @@ export class ClothesRepository {
 				m.placeholder_blur,
 				${processedExpr('m')},
 				cm.gender_fit,
-				cm.clothing_type,
+				(SELECT json_group_array(cct.clothing_type) FROM clothes_clothing_types cct WHERE cct.resource_uuid = r.uuid) AS clothing_types_json,
 				cm.is_base,
 				cm.is_nsfw,
 				cm.has_physbones,
@@ -190,7 +202,7 @@ export class ClothesRepository {
 		}
 	}
 
-	/** Single clothes item (resource core + flat clothes_meta). */
+	/** Single clothes item (resource core + flat clothes_meta + aggregated types). */
 	findByUuid(uuid: string): Promise<Record<string, unknown> | null> {
 		return queryOne<Record<string, unknown>>(
 			this.db,
@@ -199,7 +211,7 @@ export class ClothesRepository {
 				r.title,
 				r.is_active,
 				cm.gender_fit,
-				cm.clothing_type,
+				(SELECT json_group_array(cct.clothing_type) FROM clothes_clothing_types cct WHERE cct.resource_uuid = r.uuid) AS clothing_types_json,
 				cm.is_base,
 				cm.is_nsfw,
 				cm.has_physbones,
@@ -218,6 +230,16 @@ export class ClothesRepository {
 		return queryOne<ClothesMetaRow>(this.db, 'SELECT * FROM clothes_meta WHERE resource_uuid = ?', [uuid]);
 	}
 
+	/** Clothing types for a resource (junction). Used for history snapshot and detail enrichment. */
+	async findClothingTypes(uuid: string): Promise<string[]> {
+		const rows = await queryAll<{ clothing_type: string }>(
+			this.db,
+			'SELECT clothing_type FROM clothes_clothing_types WHERE resource_uuid = ? ORDER BY clothing_type ASC',
+			[uuid],
+		);
+		return rows.map((r) => r.clothing_type);
+	}
+
 	// -------------------------------------------------------------------------
 	// Write statement factories (composed into a single db.batch by the service)
 	// -------------------------------------------------------------------------
@@ -225,7 +247,6 @@ export class ClothesRepository {
 	buildInsertMeta(m: {
 		resource_uuid: string;
 		gender_fit: string;
-		clothing_type: string;
 		is_base: number;
 		base_avatar_uuid: string | null;
 		base_avatar_name_raw: string | null;
@@ -235,13 +256,12 @@ export class ClothesRepository {
 	}): D1PreparedStatement {
 		return this.db
 			.prepare(
-				`INSERT INTO clothes_meta (resource_uuid, gender_fit, clothing_type, is_base, base_avatar_uuid, base_avatar_name_raw, is_nsfw, has_physbones, platform)
-				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+				`INSERT INTO clothes_meta (resource_uuid, gender_fit, is_base, base_avatar_uuid, base_avatar_name_raw, is_nsfw, has_physbones, platform)
+				VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
 			)
 			.bind(
 				m.resource_uuid,
 				m.gender_fit,
-				m.clothing_type,
 				m.is_base,
 				m.base_avatar_uuid,
 				m.base_avatar_name_raw,
@@ -251,10 +271,19 @@ export class ClothesRepository {
 			);
 	}
 
-	/** Columns that a meta edit is allowed to touch (whitelist — never interpolate keys). */
+	buildInsertClothingType(resourceUuid: string, clothingType: string): D1PreparedStatement {
+		return this.db
+			.prepare('INSERT OR IGNORE INTO clothes_clothing_types (resource_uuid, clothing_type) VALUES (?, ?)')
+			.bind(resourceUuid, clothingType);
+	}
+
+	buildDeleteClothingTypes(resourceUuid: string): D1PreparedStatement {
+		return this.db.prepare('DELETE FROM clothes_clothing_types WHERE resource_uuid = ?').bind(resourceUuid);
+	}
+
+	/** Columns that a meta edit is allowed to touch (whitelist — never interpolate keys). Junction column excluded. */
 	static readonly EDITABLE_META_COLUMNS = [
 		'gender_fit',
-		'clothing_type',
 		'is_base',
 		'base_avatar_uuid',
 		'base_avatar_name_raw',

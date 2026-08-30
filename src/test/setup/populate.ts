@@ -32,6 +32,8 @@ const SEED_DIR = resolve('.wrangler/img-seed');
 const FALLBACK_DIR = resolve('public/test');
 const ALLOWED_EXTS = new Set(['.png', '.jpg', '.jpeg', '.webp', '.avif', '.gif', '.zip', '.rar', '.7z']);
 
+const DEFAULT_COUNT = 400;
+
 // ---------------------------------------------------------------------------
 // Args
 // ---------------------------------------------------------------------------
@@ -333,6 +335,10 @@ async function main(): Promise<void> {
 		// Use foreign_keys=OFF to avoid ordering issues during bulk clear
 		let clearSql = 'PRAGMA foreign_keys=OFF;\n';
 		const tablesInOrder = [
+			'clothes_clothing_types',
+			'avatar_meta',
+			'asset_meta',
+			'clothes_meta',
 			'resource_n_media',
 			'resource_links',
 			'resource_history',
@@ -399,7 +405,6 @@ async function main(): Promise<void> {
 	// 2) Seed resources with variety — production-like volume so pagination + filters are testable
 	// Default 200 gives ~36 avatars / 36 assets / 48 clothes (clothes weighted larger, mirrors 50/100/150 example).
 	// Override with --count=N (e.g. --count=30 for fast run, --count=200 for full prod scale). Files are reused via modulo.
-	const DEFAULT_COUNT = 200;
 	const requestedCount = Number.isFinite(countOverride) && countOverride > 0 ? countOverride : DEFAULT_COUNT;
 	const RESOURCE_COUNT = Math.min(requestedCount, 400);
 	if (seedFiles.length > 0 && RESOURCE_COUNT > seedFiles.length * 4) {
@@ -503,9 +508,21 @@ async function main(): Promise<void> {
 			resourceSql += `INSERT INTO asset_meta (resource_uuid, asset_type, is_nsfw, unity_version, platform, sdk_version) VALUES (${sqlQuote(resUuid)}, ${sqlQuote(atype)}, ${coin(0.12)}, ${sqlQuote(unity)}, ${sqlQuote(platform)}, ${sqlQuote(sdk)});\n`;
 		} else if (cat === 'clothes') {
 			const gfit = pick(CLOTHES_GENDERS);
-			const ctype = pick(CLOTHES_TYPES);
 			const platform = pick(PLATFORMS);
-			resourceSql += `INSERT INTO clothes_meta (resource_uuid, gender_fit, clothing_type, is_base, is_nsfw, has_physbones, platform) VALUES (${sqlQuote(resUuid)}, ${sqlQuote(gfit)}, ${sqlQuote(ctype)}, ${coin(0.1)}, ${coin(0.15)}, ${coin(0.35)}, ${sqlQuote(platform)});\n`;
+			resourceSql += `INSERT INTO clothes_meta (resource_uuid, gender_fit, is_base, is_nsfw, has_physbones, platform) VALUES (${sqlQuote(resUuid)}, ${sqlQuote(gfit)}, ${coin(0.1)}, ${coin(0.15)}, ${coin(0.35)}, ${sqlQuote(platform)});\n`;
+			// 1-8 types per clothes item (weighted to 1-2, occasional 3-4, rare 5-8 to test max)
+			const rr = Math.random();
+			let nTypes: number;
+			if (rr < 0.6) nTypes = 1;
+			else if (rr < 0.8) nTypes = 2;
+			else if (rr < 0.9) nTypes = 3;
+			else if (rr < 0.95) nTypes = 4;
+			else nTypes = 5 + Math.floor(Math.random() * 4); // 5-8
+			const shuffled = [...CLOTHES_TYPES].sort(() => Math.random() - 0.5);
+			const chosen = shuffled.slice(0, Math.min(nTypes, CLOTHES_TYPES.length));
+			for (const ct of chosen) {
+				resourceSql += `INSERT OR IGNORE INTO clothes_clothing_types (resource_uuid, clothing_type) VALUES (${sqlQuote(resUuid)}, ${sqlQuote(ct)});\n`;
+			}
 		}
 
 		// Link gallery via resource_n_media

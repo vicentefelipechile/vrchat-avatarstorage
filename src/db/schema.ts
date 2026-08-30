@@ -170,13 +170,21 @@ export interface AssetMetaRow {
 export interface ClothesMetaRow {
 	resource_uuid: string;
 	gender_fit: string;
-	clothing_type: string;
 	is_base: number;
 	base_avatar_uuid: string | null;
 	base_avatar_name_raw: string | null;
 	is_nsfw: number;
 	has_physbones: number;
 	platform: string;
+}
+
+// =========================================================================================================
+// clothes_clothing_types (junction: N types per clothes resource)
+// =========================================================================================================
+
+export interface ClothesClothingTypeRow {
+	resource_uuid: string;
+	clothing_type: string;
 }
 
 // =========================================================================================================

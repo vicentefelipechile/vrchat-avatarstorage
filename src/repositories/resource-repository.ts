@@ -339,7 +339,7 @@ const DETAIL_SQL = `
 		asm.platform         AS as_platform,
 		asm.sdk_version      AS as_sdk_version,
 		cm.gender_fit           AS cl_gender_fit,
-		cm.clothing_type        AS cl_clothing_type,
+		(SELECT json_group_array(cct.clothing_type) FROM clothes_clothing_types cct WHERE cct.resource_uuid = r.uuid) AS cl_clothing_types_json,
 		cm.is_base              AS cl_is_base,
 		cm.is_nsfw              AS cl_is_nsfw,
 		cm.has_physbones        AS cl_has_physbones,

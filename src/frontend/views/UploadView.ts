@@ -277,28 +277,27 @@ function buildClothesMetaFields(): string {
 					<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="cl-gender" value="kemono"> ${t('meta.avatar_gender.kemono')}</label>
 				</div>
 			</div>
-			<div class="form-group">
-				<label><strong>${t('meta.clothes.type')}</strong></label>
-				<select id="clothes-type" class="form-control">
-					<option value="">${t('meta.select')}</option>
-					<option value="top">${t('meta.clothing_type.top')}</option>
-					<option value="jacket">${t('meta.clothing_type.jacket')}</option>
-					<option value="bottom">${t('meta.clothing_type.bottom')}</option>
-					<option value="dress">${t('meta.clothing_type.dress')}</option>
-					<option value="fullbody">${t('meta.clothing_type.fullbody')}</option>
-					<option value="swimwear">${t('meta.clothing_type.swimwear')}</option>
-					<option value="shoes">${t('meta.clothing_type.shoes')}</option>
-					<option value="legwear">${t('meta.clothing_type.legwear')}</option>
-					<option value="hat">${t('meta.clothing_type.hat')}</option>
-					<option value="hair">${t('meta.clothing_type.hair')}</option>
-					<option value="accessory">${t('meta.clothing_type.accessory')}</option>
-					<option value="tail">${t('meta.clothing_type.tail')}</option>
-					<option value="ears">${t('meta.clothing_type.ears')}</option>
-					<option value="wings">${t('meta.clothing_type.wings')}</option>
-					<option value="body-part">${t('meta.clothing_type.bodyPart')}</option>
-					<option value="underwear">${t('meta.clothing_type.underwear')}</option>
-					<option value="other">${t('meta.clothing_type.other')}</option>
-				</select>
+			<div class="form-group" style="grid-column:1/-1">
+				<label><strong>${t('meta.clothes.type')}</strong> <small style="color:var(--text-muted)">(1-8)</small></label>
+				<div class="chip-toggle-grid" id="clothes-types">
+					<label class="chip-toggle"><input type="checkbox" name="clothes-type" value="top"><span>${t('meta.clothing_type.top')}</span></label>
+					<label class="chip-toggle"><input type="checkbox" name="clothes-type" value="jacket"><span>${t('meta.clothing_type.jacket')}</span></label>
+					<label class="chip-toggle"><input type="checkbox" name="clothes-type" value="bottom"><span>${t('meta.clothing_type.bottom')}</span></label>
+					<label class="chip-toggle"><input type="checkbox" name="clothes-type" value="dress"><span>${t('meta.clothing_type.dress')}</span></label>
+					<label class="chip-toggle"><input type="checkbox" name="clothes-type" value="fullbody"><span>${t('meta.clothing_type.fullbody')}</span></label>
+					<label class="chip-toggle"><input type="checkbox" name="clothes-type" value="swimwear"><span>${t('meta.clothing_type.swimwear')}</span></label>
+					<label class="chip-toggle"><input type="checkbox" name="clothes-type" value="shoes"><span>${t('meta.clothing_type.shoes')}</span></label>
+					<label class="chip-toggle"><input type="checkbox" name="clothes-type" value="legwear"><span>${t('meta.clothing_type.legwear')}</span></label>
+					<label class="chip-toggle"><input type="checkbox" name="clothes-type" value="hat"><span>${t('meta.clothing_type.hat')}</span></label>
+					<label class="chip-toggle"><input type="checkbox" name="clothes-type" value="hair"><span>${t('meta.clothing_type.hair')}</span></label>
+					<label class="chip-toggle"><input type="checkbox" name="clothes-type" value="accessory"><span>${t('meta.clothing_type.accessory')}</span></label>
+					<label class="chip-toggle"><input type="checkbox" name="clothes-type" value="tail"><span>${t('meta.clothing_type.tail')}</span></label>
+					<label class="chip-toggle"><input type="checkbox" name="clothes-type" value="ears"><span>${t('meta.clothing_type.ears')}</span></label>
+					<label class="chip-toggle"><input type="checkbox" name="clothes-type" value="wings"><span>${t('meta.clothing_type.wings')}</span></label>
+					<label class="chip-toggle"><input type="checkbox" name="clothes-type" value="body-part"><span>${t('meta.clothing_type.bodyPart')}</span></label>
+					<label class="chip-toggle"><input type="checkbox" name="clothes-type" value="underwear"><span>${t('meta.clothing_type.underwear')}</span></label>
+					<label class="chip-toggle"><input type="checkbox" name="clothes-type" value="other"><span>${t('meta.clothing_type.other')}</span></label>
+				</div>
 			</div>
 		</div>
 
@@ -871,10 +870,11 @@ export async function uploadAfter(_ctx: RouteContext): Promise<void> {
 		}
 		if (category === 'clothes') {
 			const genderFit = (document.querySelector('input[name="cl-gender"]:checked') as HTMLInputElement | null)?.value;
-			const clothingType = (document.getElementById('clothes-type') as HTMLSelectElement).value;
+			const clothingTypes = Array.from(document.querySelectorAll<HTMLInputElement>('input[name="clothes-type"]:checked')).map((el) => el.value);
 			const platform = (document.getElementById('clothes-platform') as HTMLSelectElement).value;
 			if (!genderFit) return t('upload.val.clothesGender');
-			if (!clothingType) return t('upload.val.clothesType');
+			if (clothingTypes.length === 0) return t('upload.val.clothesType');
+			if (clothingTypes.length > 8) return 'Max 8 clothing types';
 			if (!platform) return t('upload.val.platform');
 			return null;
 		}
@@ -925,7 +925,7 @@ export async function uploadAfter(_ctx: RouteContext): Promise<void> {
 		}
 		if (category === 'clothes') {
 			const gender_fit = (document.querySelector('input[name="cl-gender"]:checked') as HTMLInputElement).value;
-			const clothing_type = (document.getElementById('clothes-type') as HTMLSelectElement).value;
+			const clothing_type = Array.from(document.querySelectorAll<HTMLInputElement>('input[name="clothes-type"]:checked')).map((el) => el.value);
 			const platform = (document.getElementById('clothes-platform') as HTMLSelectElement).value;
 			const is_nsfw = (document.getElementById('clothes-nsfw') as HTMLInputElement).checked ? 1 : 0;
 			const has_physbones = (document.getElementById('clothes-physbones') as HTMLInputElement).checked ? 1 : 0;

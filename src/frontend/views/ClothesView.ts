@@ -13,7 +13,7 @@ import { metaLabel } from '../lib/utils';
 
 interface ClothesMeta {
 	gender_fit: string;
-	clothing_type: string;
+	clothing_type: string[];
 	is_base: number;
 	is_nsfw: number;
 	has_physbones: number;
@@ -86,5 +86,10 @@ export const { view: clothesView, after: clothesAfter } = createFilteredListView
 	emptyKey: 'filterPanel.noClothes',
 	cacheTtl: TimeUnit.Hour,
 	filters: FILTERS,
-	badge: (meta) => metaLabel('clothing_type', meta.clothing_type),
+	badge: (meta) => {
+		const types = Array.isArray(meta.clothing_type) ? meta.clothing_type : [];
+		if (!types.length) return '';
+		const first = metaLabel('clothing_type', types[0]);
+		return types.length > 1 ? `${first} +${types.length - 1}` : first;
+	},
 });

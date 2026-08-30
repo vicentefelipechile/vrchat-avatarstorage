@@ -102,7 +102,7 @@ export interface AssetMeta {
 
 export interface ClothesMeta {
 	gender_fit?: string | null;
-	clothing_type?: string | null;
+	clothing_type?: string[] | null;
 	is_base?: number | null;
 	is_nsfw?: number | null;
 	has_physbones?: number | null;

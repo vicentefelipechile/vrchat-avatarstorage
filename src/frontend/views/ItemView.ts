@@ -91,11 +91,12 @@ function renderCategoryMeta(res: Resource): string {
 		flagChips.push(flagChip('NSFW', m.is_nsfw));
 	} else if (res.category === 'clothes') {
 		const m = res.meta as ClothesMeta;
-		if (m.clothing_type)
+		const cTypes = Array.isArray(m.clothing_type) ? m.clothing_type : m.clothing_type ? [m.clothing_type as unknown as string] : [];
+		if (cTypes.length)
 			textRows.push(
 				metaRow(
 					t('meta.clothes.type').replace(/\s*\*/g, ''),
-					chip(metaLabel('clothing_type', m.clothing_type)),
+					cTypes.map((ct) => chip(metaLabel('clothing_type', ct))).join(' '),
 				),
 			);
 		if (m.gender_fit)

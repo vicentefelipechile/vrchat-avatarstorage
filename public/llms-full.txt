@@ -196,7 +196,7 @@ Base API URL: `https://vrcstorage.lat/api`. CDN: `https://cdn.vrcstorage.lat/{uu
 
 ### `GET /api/clothes`
 
-**List clothing items with faceted filtering** - Paginated clothes listing filtered by title substring (q) plus gender_fit, clothing_type, platform, is_base, is_nsfw, and has_physbones. q is substring on resources.title via FTS5 resources_fts. Multi-value filters use repeated keys.
+**List clothing items with faceted filtering** - Paginated clothes listing filtered by title substring (q) plus gender_fit, clothing_type (multi-type, OR via junction clothes_clothing_types), platform, is_base, is_nsfw, and has_physbones. q is substring on resources.title via FTS5 resources_fts. Multi-value filters use repeated keys; a resource matches if it has ANY selected clothing_type.
 
 - Auth: No auth | Rate limit: global | Visibility: public
 
@@ -210,18 +210,18 @@ Base API URL: `https://vrcstorage.lat/api`. CDN: `https://cdn.vrcstorage.lat/{uu
 | query | `sort_order` | enum (asc, desc) | No | Sort direction Default: `desc`. |
 | query | `q` | string | No | Filter by title substring (1..100 chars) |
 | query | `gender_fit` | enum (male, female, unisex, kemono) | No | Filter by gender fit (repeat for OR) |
-| query | `clothing_type` | enum (top, jacket, bottom, dress, fullbody, swimwear, shoes, legwear, hat, hair, accessory, tail, ears, wings, body-part, underwear, other) | No | Filter by clothing type (repeat for OR) |
+| query | `clothing_type` | enum (top, jacket, bottom, dress, fullbody, swimwear, shoes, legwear, hat, hair, accessory, tail, ears, wings, body-part, underwear, other) | No | Filter by clothing type - multi-type OR (repeat for OR; match if resource has ANY) |
 | query | `platform` | enum (pc, quest, cross) | No | Filter by platform (repeat for OR) |
 | query | `is_base` | enum (0, 1) | No | Base avatar flag |
 | query | `is_nsfw` | enum (0, 1) | No | NSFW filter |
 | query | `has_physbones` | enum (0, 1) | No | Has PhysBones |
 | query | `compatible_avatar` | string (uuid v4) | No | Filter by compatible avatar UUID |
 
-**Response** - JSON - { resources: ClothesWithMeta[], pagination }
+**Response** - JSON - { resources: ClothesWithMeta[] (meta.clothing_type is string[]), pagination }
 
 ### `GET /api/clothes/:uuid`
 
-**Get a single clothing item with metadata** - Full clothing detail including clothes_meta row.
+**Get a single clothing item with metadata** - Full clothing detail including clothes_meta + clothes_clothing_types (clothing_type is string[]).
 
 - Auth: No auth | Rate limit: global | Visibility: public
 
@@ -231,11 +231,11 @@ Base API URL: `https://vrcstorage.lat/api`. CDN: `https://cdn.vrcstorage.lat/{uu
 | :------- | :--- | :--- | :------- | :---------- |
 | path | `uuid` | string (uuid v4) | Yes | Clothes resource UUID |
 
-**Response** - JSON - ClothesWithMeta
+**Response** - JSON - ClothesWithMeta (clothing_type: string[] 1..8)
 
 ### `POST /api/clothes`
 
-**Create a clothing resource** - Creates a resource + clothes_meta + links + media in one batch (inactive, pending approval). Turnstile required.
+**Create a clothing resource** - Creates a resource + clothes_meta + clothes_clothing_types (1..8 clothing_type values) + links + media in one batch (inactive, pending approval). Turnstile required.
 
 - Auth: Auth required | Rate limit: strict | Visibility: private
 
@@ -245,13 +245,13 @@ Base API URL: `https://vrcstorage.lat/api`. CDN: `https://cdn.vrcstorage.lat/{uu
 | :------- | :--- | :--- | :------- | :---------- |
 | body | `title` | string | Yes | Clothing title |
 | body | `thumbnail_uuid` | string | Yes | Media UUID for thumbnail |
-| body | `meta` | object | Yes | ClothesMetaSchema payload |
+| body | `meta` | object | Yes | ClothesMetaSchema payload (clothing_type: string[] 1..8) |
 
 **Response** - 201 - { uuid }
 
 ### `PUT /api/clothes/:uuid`
 
-**Edit clothing metadata (admin only)** - Snapshots previous state, records meta_edit, then updates. Requires admin.
+**Edit clothing metadata (admin only)** - Snapshots previous clothes_meta + junction, records meta_edit, then updates. clothing_type is array 1..8 (junction replaced). Requires admin.
 
 - Auth: Admin only | Rate limit: medium | Visibility: private
 

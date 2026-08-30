@@ -67,6 +67,7 @@ const META_FIELD_LABELS: Record<string, string> = {
 
 function formatMetaValue(key: string, value: unknown): string {
 	if (value === null || value === undefined) return '—';
+	if (Array.isArray(value)) return value.length ? value.join(', ') : '—';
 	if (typeof value === 'number' && (key.startsWith('has_') || key.startsWith('is_'))) return value === 1 ? '✓ Sí' : '✗ No';
 	return String(value);
 }

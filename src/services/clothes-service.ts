@@ -2,11 +2,10 @@
 // CLOTHES SERVICE
 // =========================================================================================================
 // Business logic for the clothes category: faceted listing, single fetch, creation
-// (resources + clothes_meta + links + media in one batch) and admin metadata edits
-// (history snapshot + partial meta update in one batch).
+// (resources + clothes_meta + clothes_clothing_types + links + media in one batch) and admin metadata edits
+// (history snapshot + partial meta update + junction replace in one batch).
 //
-// Owns authorization and the mapping from DB rows to the exact legacy API shape so the
-// existing frontend keeps working unchanged. All SQL lives in the repositories.
+// Owns authorization and the mapping from DB rows to the API shape. All SQL lives in the repositories.
 // =========================================================================================================
 
 // =========================================================================================================
@@ -24,7 +23,7 @@ import type { ClothesFilter } from '../validators';
 // Types
 // =========================================================================================================
 
-/** Validated create payload (resource core + clothes_meta + optional links/media). */
+/** Validated create payload (resource core + clothes_meta + junction + optional links/media). */
 export interface CreateClothesInput {
 	title: string;
 	description?: string | null;
@@ -34,7 +33,7 @@ export interface CreateClothesInput {
 	media_files?: string[];
 	meta: {
 		gender_fit: string;
-		clothing_type: string;
+		clothing_type: string[];
 		is_base: number;
 		base_avatar_uuid?: string | null;
 		base_avatar_name_raw?: string | null;
@@ -91,18 +90,22 @@ export class ClothesService {
 		};
 	}
 
-	/** Single clothes item (resource core + flat meta). Throws NotFoundError if missing. */
+	/** Single clothes item (resource core + flat meta + clothing_types). Throws NotFoundError if missing. */
 	async detail(uuid: string): Promise<Record<string, unknown>> {
 		const row = await this.repo.findByUuid(uuid);
 		if (!row) throw new NotFoundError('Not found');
-		return row;
+		const clothing_types = parseClothingTypes(row.clothing_types_json as string | null);
+		const out: Record<string, unknown> = { ...row };
+		delete out.clothing_types_json;
+		out.clothing_type = clothing_types;
+		return out;
 	}
 
 	// -------------------------------------------------------------------------
 	// Writes
 	// -------------------------------------------------------------------------
 
-	/** Creates a resource + clothes_meta (+ links + media) in a single batch. Returns the new uuid. */
+	/** Creates a resource + clothes_meta + junction (+ links + media) in a single batch. Returns the new uuid. */
 	async create(user: AuthUser, input: CreateClothesInput): Promise<{ uuid: string }> {
 		const uuid = crypto.randomUUID();
 		const m = input.meta;
@@ -120,7 +123,6 @@ export class ClothesService {
 			this.repo.buildInsertMeta({
 				resource_uuid: uuid,
 				gender_fit: m.gender_fit,
-				clothing_type: m.clothing_type,
 				is_base: m.is_base,
 				base_avatar_uuid: m.base_avatar_uuid ?? null,
 				base_avatar_name_raw: m.base_avatar_name_raw ?? null,
@@ -129,6 +131,10 @@ export class ClothesService {
 				platform: m.platform,
 			}),
 		];
+
+		for (const ct of m.clothing_type) {
+			statements.push(this.repo.buildInsertClothingType(uuid, ct));
+		}
 
 		(input.links ?? []).forEach((link, i) => {
 			statements.push(
@@ -152,14 +158,18 @@ export class ClothesService {
 	}
 
 	/**
-	 * Admin-only metadata edit. Snapshots the previous clothes_meta as a `meta_edit`
-	 * history entry, then applies a partial update — both atomically in one batch.
+	 * Admin-only metadata edit. Snapshots the previous clothes_meta + junction as a `meta_edit`
+	 * history entry, then applies a partial update + junction replace — both atomically in one batch.
 	 */
 	async update(user: AuthUser, uuid: string, patch: Partial<Record<string, unknown>>): Promise<void> {
 		if (!user.is_admin) throw new ForbiddenError();
 
 		const existing = await this.repo.findMeta(uuid);
 		if (!existing) throw new NotFoundError('Clothes metadata not found');
+		const existingTypes = await this.repo.findClothingTypes(uuid);
+
+		const hasClothingType = patch.clothing_type !== undefined;
+		const clothingTypeVal = patch.clothing_type as string[] | undefined;
 
 		// Whitelisted partial update — only editable columns, only keys actually present.
 		const setClauses: string[] = [];
@@ -170,11 +180,20 @@ export class ClothesService {
 				setBindings.push(patch[col] ?? null);
 			}
 		}
-		if (setClauses.length === 0) throw new ValidationError('No fields to update');
+		if (setClauses.length === 0 && !hasClothingType) throw new ValidationError('No fields to update');
 
-		const previousData = JSON.stringify({ meta_type: 'clothes_meta', fields: existing });
+		if (hasClothingType) {
+			if (!Array.isArray(clothingTypeVal) || clothingTypeVal.length === 0 || clothingTypeVal.length > 8) {
+				throw new ValidationError('clothing_type must be an array of 1..8 types');
+			}
+		}
 
-		await batch(this.db, [
+		const previousData = JSON.stringify({
+			meta_type: 'clothes_meta',
+			fields: { ...existing, clothing_type: existingTypes },
+		});
+
+		const statements: D1PreparedStatement[] = [
 			this.resources.buildInsertHistory({
 				uuid: crypto.randomUUID(),
 				resource_uuid: uuid,
@@ -182,8 +201,14 @@ export class ClothesService {
 				change_type: 'meta_edit',
 				previous_data: previousData,
 			}),
-			this.repo.buildUpdateMeta(uuid, setClauses, setBindings),
-		]);
+		];
+		if (setClauses.length) statements.push(this.repo.buildUpdateMeta(uuid, setClauses, setBindings));
+		if (hasClothingType) {
+			statements.push(this.repo.buildDeleteClothingTypes(uuid));
+			for (const ct of clothingTypeVal!) statements.push(this.repo.buildInsertClothingType(uuid, ct));
+		}
+
+		await batch(this.db, statements);
 	}
 
 	// -------------------------------------------------------------------------
@@ -206,10 +231,21 @@ export class ClothesService {
 }
 
 // =========================================================================================================
-// Row → API mapping (exact legacy shape)
+// Row → API mapping
 // =========================================================================================================
 
+function parseClothingTypes(json: string | null): string[] {
+	if (!json) return [];
+	try {
+		const arr = JSON.parse(json);
+		return Array.isArray(arr) ? (arr.filter((v) => typeof v === 'string') as string[]) : [];
+	} catch {
+		return [];
+	}
+}
+
 function mapListRow(row: ClothesListRow) {
+	const clothing_type = parseClothingTypes(row.clothing_types_json);
 	return {
 		uuid: row.uuid,
 		title: row.title,
@@ -221,7 +257,7 @@ function mapListRow(row: ClothesListRow) {
 		created_at: row.created_at,
 		meta: {
 			gender_fit: row.gender_fit,
-			clothing_type: row.clothing_type,
+			clothing_type,
 			is_base: row.is_base,
 			is_nsfw: row.is_nsfw,
 			has_physbones: row.has_physbones,

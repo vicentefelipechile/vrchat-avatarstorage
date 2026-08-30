@@ -114,12 +114,11 @@ export class AdminRepository {
 			subType = m?.asset_type ?? null;
 			isNsfw = m?.is_nsfw === 1;
 		} else if (row.category === 'clothes') {
-			const m = await queryOne<{ clothing_type: string; is_nsfw: number }>(
-				this.db,
-				'SELECT clothing_type, is_nsfw FROM clothes_meta WHERE resource_uuid = ?',
-				[uuid],
-			);
-			subType = m?.clothing_type ?? null;
+			const [m, types] = await Promise.all([
+				queryOne<{ is_nsfw: number }>(this.db, 'SELECT is_nsfw FROM clothes_meta WHERE resource_uuid = ?', [uuid]),
+				queryAll<{ clothing_type: string }>(this.db, 'SELECT clothing_type FROM clothes_clothing_types WHERE resource_uuid = ? ORDER BY clothing_type ASC', [uuid]),
+			]);
+			subType = types[0]?.clothing_type ?? null;
 			isNsfw = m?.is_nsfw === 1;
 		}
 		return { title: row.title, category: row.category, thumbnail_uuid: row.thumbnail_uuid, subType, isNsfw };

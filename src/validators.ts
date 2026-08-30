@@ -425,7 +425,7 @@ export type AvatarFilter = z.infer<typeof AvatarFilterSchema>;
 
 export const ClothesMetaSchema = z.object({
 	gender_fit: 		z.enum(CLOTHES_GENDER),
-	clothing_type: 		z.enum(CLOTHES_TYPES),
+	clothing_type: 		z.array(z.enum(CLOTHES_TYPES)).min(1, 'Select at least one clothing type').max(8, 'Max 8 clothing types').refine((arr) => new Set(arr).size === arr.length, { message: 'Duplicate clothing types' }),
 	is_base: 			z.number().int().min(0).max(1).default(0),
 	base_avatar_uuid: 	z.uuid().optional().nullable(),
 	base_avatar_name_raw: z
@@ -444,8 +444,10 @@ export const ClothesMetaSchema = z.object({
  * unrecognized facet values are dropped and malformed pagination/sort falls back to defaults,
  * mirroring the legacy handler which silently ignored unsupported filters.
  */
-const clothesGenderMulti = z.union([ClothesMetaSchema.shape.gender_fit, z.array(ClothesMetaSchema.shape.gender_fit)]).optional().catch(undefined);
-const clothesTypeMulti = z.union([ClothesMetaSchema.shape.clothing_type, z.array(ClothesMetaSchema.shape.clothing_type)]).optional().catch(undefined);
+const _clothesGenderEnum = z.enum(CLOTHES_GENDER);
+const _clothesTypeEnum = z.enum(CLOTHES_TYPES);
+const clothesGenderMulti = z.union([_clothesGenderEnum, z.array(_clothesGenderEnum)]).optional().catch(undefined);
+const clothesTypeMulti = z.union([_clothesTypeEnum, z.array(_clothesTypeEnum)]).optional().catch(undefined);
 const clothesPlatformMulti = z.union([ClothesMetaSchema.shape.platform.unwrap(), z.array(ClothesMetaSchema.shape.platform.unwrap())]).optional().catch(undefined);
 
 export const ClothesFilterSchema = z.object({
