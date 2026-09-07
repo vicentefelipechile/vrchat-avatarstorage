@@ -46,6 +46,7 @@ import chatRoutes from './http/routes/chat';
 import collectionsRoutes from './http/routes/collections';
 import notificationsRoutes from './http/routes/notifications';
 import driveRoutes from './http/routes/drive';
+import shareRoutes, { sharePublic } from './http/routes/share';
 import { apiDocs } from './http/routes/docs';
 
 // =========================================================================================================
@@ -138,6 +139,8 @@ app.route('/api/feed', feedRoutes);
 app.route('/api/chat', chatRoutes);
 app.route('/api/notifications', notificationsRoutes);
 app.route('/api/drive', driveRoutes);
+app.route('/api/share', shareRoutes);
+app.route('/share', sharePublic);
 
 // API docs — machine-readable JSON manifest at /api/docs (?tag=avatars to filter).
 // The markdown artefacts /llms.txt and /llms-full.txt are static files in public/

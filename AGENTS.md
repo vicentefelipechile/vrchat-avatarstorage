@@ -256,8 +256,8 @@ src/
       blog.ts             clothes.ts    collections.ts comments.ts
       chat.ts             downloads.ts  favorites.ts  feed.ts
       llms.ts             media.ts      oauth.ts      resources.ts
-      system.ts           two-factor.ts updates.ts    uploads.ts
-      users.ts            wiki.ts
+      share.ts            system.ts     two-factor.ts updates.ts
+      uploads.ts          users.ts      wiki.ts
   durable-objects/        # Durable Object classes (transport layer — no domain logic, no D1 access)
     feed-room.ts          # FeedRoom — global WebSocket-hibernation fan-out for live feed events
     chat-room.ts          # ChatRoom — global chat: fan-out + its own SQLite backlog (not D1)
@@ -266,14 +266,15 @@ src/
     blog-service.ts       change-feed-service.ts                  clothes-service.ts
     collection-service.ts comment-service.ts  download-service.ts favorite-service.ts
     feed-publisher.ts     media-processing-service.ts             media-service.ts
-    oauth-service.ts      resource-service.ts two-factor-service.ts
-    upload-service.ts     user-service.ts     wiki-comment-service.ts
+    oauth-service.ts      resource-service.ts share-link-service.ts
+    two-factor-service.ts upload-service.ts     user-service.ts
+    wiki-comment-service.ts
   repositories/           # ALL SQL (repository layer) — one file per table
     admin-repository.ts       asset-repository.ts       author-repository.ts
     avatar-repository.ts      blog-comment-repository.ts blog-post-repository.ts
     change-feed-repository.ts clothes-repository.ts     collection-repository.ts
     comment-repository.ts     favorite-repository.ts    media-repository.ts
-    media-variant-repository.ts
+    media-variant-repository.ts    share-link-repository.ts
     oauth-repository.ts       resource-repository.ts    user-repository.ts
     wiki-comment-repository.ts
   tools/
@@ -395,6 +396,7 @@ migrations/               # D1 schema & migration files
   0022_drive_progress.sql     # total_bytes/bytes_uploaded on drive_transfer_jobs (Drive progress toast)
   0023_resources_fts.sql      # FTS5 resources_fts (title/description) for q search, trigram-optimized, with triggers
   0024_clothes_multi_type.sql # Junction clothes_clothing_types (multi-type 1..8 per clothes, OR filter via EXISTS) + migration from legacy clothes_meta.clothing_type (fixes DROP INDEX before DROP COLUMN)
+  0025_share_links.sql       # share_links table (temporary bearer-token download links, token UNIQUE + idx on token/owner, FK cascade to media/users)
                               # New migrations follow the pattern: NNNN_description.sql
 
 wrangler.jsonc            # Main Worker configuration & bindings
@@ -671,6 +673,12 @@ A media record is considered **in use** if its `uuid` or `r2_key` appears in any
 - **Adding a new FK reference to `media`** (e.g. a new table with a `media_uuid` column): add it to the `AND m.uuid NOT IN (...)` subquery in the same two places.
 - **Deleting a record that owns a media file** (e.g. a blog post with a cover image): always explicitly delete the variant objects from `MEDIA_BUCKET`, the original from `BUCKET`, and the `media` row **before** deleting the parent record. Do not rely on the orphan cron for immediate cleanup of explicitly owned assets.
 - **Never delete a `media` row** without also deleting its variants from `MEDIA_BUCKET`. The `media_variants` rows cascade automatically on `DELETE FROM media`, but the R2 objects in `MEDIA_BUCKET` do not — they must be deleted manually first.
+
+#### Temporary Share Links
+
+One link = one local (private) file: `POST /api/share { r2_key, expires_in, max_uses }` (auth) returns an opaque token URL `GET /share/:token` (anonymous — the token IS the authorization). Expiry ladder `300s..604800s` (`SHARE_EXPIRY_OPTIONS`) and uses ladder `1,5,10,25,100,null=∞` (`SHARE_USES_OPTIONS`) live in `src/validators.ts`; `CreateShareLinkSchema` rejects anything off-ladder. `ShareLinkRepository.consume` folds check+increment into one atomic `UPDATE` (`revoked=0 AND expires_at>? AND (max_uses IS NULL OR uses<max_uses)`), so concurrent GETs with `max_uses=1` cannot both succeed. Dead links (unknown/expired/exhausted/revoked) all throw `NotFoundError` → 404, indistinguishable by design. Only private files are shareable — image/video resolve to 404 via the same `DownloadService` hard cut. Owner management: `GET /api/share/mine` + `DELETE /api/share/:uuid` (revoke = force-expire, 403 for other owners), surfaced in Settings (`#panel-shares`) and created from `ItemView`'s `.download-share-btn` modal next to Save-to-Drive. Rate limits: creation `RL_STRICT`, consumption `RL_MEDIUM` (`src/http/rate-limits.ts`).
+
+Link-preview fetchers (Discord/Telegram/…) `GET` every shared URL within seconds and would burn a use: `GET /share/:token` short-circuits them via `isCrawler()` (`CRAWLER_PATTERN` in `src/services/share-link-service.ts` — tokens verified against vendor docs) and serves a small OG HTML page (`og:title` = escaped file name, `og:description` = UTC expiry, no `og:image`) without touching the counter. `HEAD` never consumes either. Spoofing the UA is safe — the crawler branch never serves file bytes. Discord caches the card past expiry (card only, the file still 404s).
 
 ### Change Feed (Real-Time Updates)
 

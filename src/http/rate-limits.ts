@@ -208,4 +208,22 @@ export function registerRateLimits(app: Hono<{ Bindings: Env }>): void {
 		if (isLocalRequest(c)) return next();
 		return rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'drive' })(c, next);
 	});
+
+	// Share links — creation is strict (like drive transfer enqueue); anonymous
+	// consumption is medium (token brute-force brake that never punishes legit downloads).
+	app.use('/api/share', async (c, next) => {
+		if (isLocalRequest(c)) return next();
+		if (c.req.method === 'POST') {
+			return rateLimit({ binding: c.env.RL_STRICT, keyPrefix: 'share_create' })(c, next);
+		}
+		return rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'share' })(c, next);
+	});
+	app.use('/api/share/*', async (c, next) => {
+		if (isLocalRequest(c)) return next();
+		return rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'share' })(c, next);
+	});
+	app.use('/share/*', async (c, next) => {
+		if (isLocalRequest(c)) return next();
+		return rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'share_consume' })(c, next);
+	});
 }

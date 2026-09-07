@@ -186,7 +186,7 @@ function downloadRow(url: string, title: string | null | undefined, fallbackInde
 	if (host.kind !== 'local') return btn;
 	const r2Key = extractR2Key(url);
 	if (!r2Key) return btn;
-	return `<div class="download-row">${btn}<button type="button" class="download-drive-btn" data-r2="${r2Key}" title="${t('item.saveToDrive')}" aria-label="${t('item.saveToDrive')}">${getIcon('googledrive', 18)}</button></div>`;
+	return `<div class="download-row">${btn}<button type="button" class="download-drive-btn" data-r2="${r2Key}" title="${t('item.saveToDrive')}" aria-label="${t('item.saveToDrive')}">${getIcon('googledrive', 18)}</button><button type="button" class="download-drive-btn download-share-btn" data-r2="${r2Key}" title="${t('item.shareLink')}" aria-label="${t('item.shareLink')}">${getIcon('link', 18)}</button></div>`;
 }
 
 function downloadSection(res: Resource): string {
@@ -662,6 +662,137 @@ export async function itemView(ctx: RouteContext): Promise<string> {
 // After
 // =========================================================================
 
+// =========================================================================
+// Share-link modal (temporary links for local files)
+// =========================================================================
+
+/** Expiry ladder (seconds) — mirrors SHARE_EXPIRY_OPTIONS in validators.ts. */
+const SHARE_EXPIRY = [300, 600, 1800, 3600, 10800, 21600, 43200, 86400, 259200, 604800];
+const SHARE_EXPIRY_KEYS = ['exp5m', 'exp10m', 'exp30m', 'exp1h', 'exp3h', 'exp6h', 'exp12h', 'exp24h', 'exp3d', 'exp7d'];
+/** Max-uses ladder — mirrors SHARE_USES_OPTIONS; last index = unlimited (null). */
+const SHARE_USES = [1, 5, 10, 25, 100, null] as const;
+
+/** Opens the share modal for one local file: two sliders → create → copyable URL. */
+function openShareModal(r2Key: string): void {
+	const overlay = document.createElement('div');
+	overlay.className = 'confirm-overlay active';
+	overlay.setAttribute('role', 'dialog');
+	overlay.setAttribute('aria-modal', 'true');
+	overlay.innerHTML = `
+		<div class="confirm-modal">
+			<h3 class="confirm-title">${t('item.shareTitle')}</h3>
+			<div class="share-form">
+				<div class="form-group">
+					<label for="share-expiry">${t('item.shareExpiry')}: <strong id="share-expiry-label"></strong></label>
+					<input type="range" id="share-expiry" min="0" max="9" step="1" value="3" style="width:100%">
+				</div>
+				<div class="form-group">
+					<label for="share-uses">${t('item.shareUses')}: <strong id="share-uses-label"></strong></label>
+					<input type="range" id="share-uses" min="0" max="5" step="1" value="0" style="width:100%">
+				</div>
+			</div>
+			<div class="share-result" hidden>
+				<div class="form-group">
+					<label for="share-url">${t('item.shareResult')}</label>
+					<input type="text" id="share-url" readonly style="width:100%">
+				</div>
+			</div>
+			<div class="confirm-actions">
+				<button type="button" class="btn btn-outline share-cancel">${t('confirm.cancel')}</button>
+				<button type="button" class="btn btn-outline share-copy" hidden>${t('item.shareCopy')}</button>
+				<button type="button" class="btn share-create">${t('item.shareCreate')}</button>
+			</div>
+		</div>`;
+	document.body.appendChild(overlay);
+	document.body.style.overflow = 'hidden';
+
+	const expiryInput = overlay.querySelector<HTMLInputElement>('#share-expiry')!;
+	const usesInput = overlay.querySelector<HTMLInputElement>('#share-uses')!;
+	const expiryLabel = overlay.querySelector<HTMLElement>('#share-expiry-label')!;
+	const usesLabel = overlay.querySelector<HTMLElement>('#share-uses-label')!;
+	const form = overlay.querySelector<HTMLElement>('.share-form')!;
+	const result = overlay.querySelector<HTMLElement>('.share-result')!;
+	const urlInput = overlay.querySelector<HTMLInputElement>('#share-url')!;
+	const cancelBtn = overlay.querySelector<HTMLButtonElement>('.share-cancel')!;
+	const copyBtn = overlay.querySelector<HTMLButtonElement>('.share-copy')!;
+	const createBtn = overlay.querySelector<HTMLButtonElement>('.share-create')!;
+
+	const renderLabels = () => {
+		expiryLabel.textContent = t(`item.${SHARE_EXPIRY_KEYS[Number(expiryInput.value)]}`);
+		const uses = SHARE_USES[Number(usesInput.value)];
+		usesLabel.textContent = uses === null ? t('item.shareUnlimited') : String(uses);
+	};
+	expiryInput.addEventListener('input', renderLabels);
+	usesInput.addEventListener('input', renderLabels);
+	renderLabels();
+
+	const close = () => {
+		overlay.remove();
+		document.body.style.overflow = '';
+	};
+	cancelBtn.addEventListener('click', close);
+	overlay.addEventListener('click', (e) => {
+		if (e.target === overlay) close();
+	});
+	document.addEventListener(
+		'keydown',
+		function onKey(e) {
+			if (e.key === 'Escape') {
+				close();
+				document.removeEventListener('keydown', onKey);
+			}
+		},
+	);
+
+	copyBtn.addEventListener('click', async () => {
+		try {
+			await navigator.clipboard.writeText(urlInput.value);
+			showToast(t('item.shareCopied'), 'success');
+		} catch {
+			urlInput.select();
+			showToast(t('item.shareCopyManual'), 'info');
+		}
+	});
+
+	createBtn.addEventListener('click', async () => {
+		createBtn.disabled = true;
+		try {
+			const res = await fetch('/api/share', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					r2_key: r2Key,
+					expires_in: SHARE_EXPIRY[Number(expiryInput.value)],
+					max_uses: SHARE_USES[Number(usesInput.value)],
+				}),
+			});
+			if (!res.ok) {
+				const data = (await res.json().catch(() => ({}))) as { error?: string };
+				throw new Error(data.error ?? t('item.shareFailed'));
+			}
+			const data = (await res.json()) as { url: string };
+			urlInput.value = data.url;
+			form.hidden = true;
+			result.hidden = false;
+			copyBtn.hidden = false;
+			createBtn.hidden = true;
+			cancelBtn.textContent = t('item.shareClose');
+		} catch (e) {
+			showToast((e as Error).message || t('item.shareFailed'), 'error');
+			createBtn.disabled = false;
+		}
+	});
+}
+
+/** Share-link icon buttons (right side of local downloads, next to Save-to-Drive). */
+function setupShareButtons(): void {
+	for (const btn of Array.from(document.querySelectorAll<HTMLButtonElement>('.download-share-btn'))) {
+		btn.addEventListener('click', () => {
+			if (btn.dataset.r2) openShareModal(btn.dataset.r2);
+		});
+	}
+}
+
 export async function itemAfter(ctx: RouteContext): Promise<void> {
 	const uuid = ctx.params.id;
 	const commentsContainer = document.getElementById('comments-container')!;
@@ -935,6 +1066,9 @@ export async function itemAfter(ctx: RouteContext): Promise<void> {
 			}
 		});
 	}
+
+	// Share-link icon buttons (temporary links for local files)
+	setupShareButtons();
 
 	// Comment form
 	initCommentEditor({

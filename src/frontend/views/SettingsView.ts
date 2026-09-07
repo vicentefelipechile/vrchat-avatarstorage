@@ -6,6 +6,7 @@ import QRCode from 'qrcode';
 import { t } from '../core/i18n';
 import { icons } from '../lib/icons';
 import { renderTurnstile, resizeImage, showToast, loadingBtn, mediaUrl, metaLabel } from '../lib/utils';
+import { showConfirm } from '../lib/confirm';
 import { isNotificationSupported, getNotificationPermission, requestNotificationPermission, setCachedPrefs, type NotificationPrefsDTO } from '../features/notifications';
 import type { RouteContext } from '../types';
 
@@ -46,6 +47,9 @@ export async function settingsView(_ctx: RouteContext): Promise<string> {
 					</button>
 					<button type="button" class="settings-nav-item" data-panel="drive" role="tab" aria-selected="false">
 						${icons['hard-drive'](18)}<span>${t('settings.section_drive')}</span>
+					</button>
+					<button type="button" class="settings-nav-item" data-panel="shares" role="tab" aria-selected="false">
+						${icons.link(18)}<span>${t('settings.section_shares')}</span>
 					</button>
 				</nav>
 
@@ -222,6 +226,15 @@ export async function settingsView(_ctx: RouteContext): Promise<string> {
 						</div>
 					</section>
 
+					<!-- Shares -->
+					<section class="settings-panel" id="panel-shares" role="tabpanel" hidden>
+						<h2 class="settings-panel-title">${t('settings.section_shares')}</h2>
+						<p class="settings-panel-desc">${t('settings.section_shares_desc')}</p>
+
+						<div id="shares-status" class="settings-panel-desc">${t('common.loading')}</div>
+						<div id="shares-list"></div>
+					</section>
+
 					<!-- Notifications -->
 					<section class="settings-panel" id="panel-notifications" role="tabpanel" hidden>
 						<h2 class="settings-panel-title">${t('settings.section_notifications')}</h2>
@@ -383,6 +396,9 @@ export async function settingsAfter(_ctx: RouteContext): Promise<void> {
 	// Drive
 	await loadDrivePanel();
 
+	// Shares
+	await loadSharesPanel();
+
 	// Notifications
 	await loadNotificationsPanel();
 
@@ -413,6 +429,7 @@ function setupSectionNav(): void {
 		twofactor: document.getElementById('panel-twofactor'),
 		notifications: document.getElementById('panel-notifications'),
 		drive: document.getElementById('panel-drive'),
+		shares: document.getElementById('panel-shares'),
 	};
 
 	items.forEach((item) => {
@@ -831,6 +848,77 @@ async function loadDrivePanel(): Promise<void> {
 	// 	const picked = await showDrivePicker(currentId); if (picked === null) return;
 	// 	await fetch('/api/drive/folder', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ folder_id: picked.id, folder_name: picked.name }) }); await refresh();
 	// });
+}
+
+// =========================================================================
+// Shares panel — manage temporary links (revoke = force-expire)
+// =========================================================================
+
+interface ShareLinkDTO {
+	uuid: string;
+	file_name: string;
+	uses: number;
+	max_uses: number | null;
+	expires_at: number;
+	revoked: number;
+	created_at: number;
+}
+
+async function loadSharesPanel(): Promise<void> {
+	const statusEl = document.getElementById('shares-status') as HTMLElement;
+	const listEl = document.getElementById('shares-list') as HTMLElement;
+	if (!statusEl || !listEl) return;
+
+	const render = async () => {
+		try {
+			const res = await fetch('/api/share/mine');
+			if (!res.ok) throw new Error();
+			const data = (await res.json()) as { links: ShareLinkDTO[] };
+			const now = Math.floor(Date.now() / 1000);
+			if (data.links.length === 0) {
+				statusEl.textContent = t('settings.sharesEmpty');
+				listEl.innerHTML = '';
+				return;
+			}
+			statusEl.hidden = true;
+			listEl.innerHTML = data.links
+				.map((l) => {
+					const state = l.revoked !== 0 ? 'revoked' : l.expires_at <= now ? 'expired' : l.max_uses !== null && l.uses >= l.max_uses ? 'exhausted' : 'active';
+					const uses = l.max_uses === null ? `${l.uses}/${t('item.shareUnlimited')}` : `${l.uses}/${l.max_uses}`;
+					const expiry = new Date(l.expires_at * 1000).toLocaleString();
+					return `<div style="margin:10px 0;padding:10px;border:1px solid var(--border-color);background:var(--bg-code);">
+						<div style="font-weight:bold;word-break:break-all">${l.file_name}</div>
+						<div style="margin-top:4px;color:var(--text-muted);font-size:0.8rem;">${t('settings.sharesUses')}: ${uses} · ${t('settings.sharesExpires')}: ${expiry} · ${t(`settings.sharesState_${state}`)}</div>
+						${
+							state === 'active'
+								? `<div style="margin-top:8px;"><button type="button" class="btn btn-outline btn-sm share-revoke-btn" data-uuid="${l.uuid}">${t('settings.sharesRevoke')}</button></div>`
+								: ''
+						}
+					</div>`;
+				})
+				.join('');
+		} catch {
+			statusEl.textContent = t('common.networkError');
+		}
+	};
+
+	await render();
+
+	// Delegated so the list survives re-renders.
+	listEl.addEventListener('click', async (e) => {
+		const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('.share-revoke-btn');
+		if (!btn?.dataset.uuid) return;
+		const ok = await showConfirm({ title: t('settings.sharesRevokeTitle'), message: t('settings.sharesRevokeConfirm'), confirmText: t('confirm.confirm'), cancelText: t('confirm.cancel'), danger: true });
+		if (!ok) return;
+		try {
+			const res = await fetch(`/api/share/${btn.dataset.uuid}`, { method: 'DELETE' });
+			if (!res.ok) throw new Error();
+			showToast(t('settings.sharesRevoked'), 'success');
+			await render();
+		} catch {
+			showToast(t('common.networkError'), 'error');
+		}
+	});
 }
 
 // =========================================================================

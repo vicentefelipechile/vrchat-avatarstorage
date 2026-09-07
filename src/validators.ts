@@ -491,4 +491,22 @@ export const ChatSendSchema = z
 
 export type ChatSend = z.infer<typeof ChatSendSchema>;
 
+// ============================================================================
+// Share Link Schemas
+// ============================================================================
+
+/** Fixed expiry ladder (seconds): 5m → 7d. The frontend sliders pick from this list. */
+export const SHARE_EXPIRY_OPTIONS = [300, 600, 1800, 3600, 10800, 21600, 43200, 86400, 259200, 604800] as const;
+
+/** Fixed max-uses ladder; null = unlimited. */
+export const SHARE_USES_OPTIONS = [1, 5, 10, 25, 100] as const;
+
+export const CreateShareLinkSchema = z.object({
+	r2_key: z.string().min(1).max(256),
+	expires_in: z.union(SHARE_EXPIRY_OPTIONS.map((v) => z.literal(v)) as unknown as [z.ZodLiteral<number>, ...z.ZodLiteral<number>[]]),
+	max_uses: z.union([z.literal(null), ...SHARE_USES_OPTIONS.map((v) => z.literal(v))]).default(null),
+});
+
+export type CreateShareLink = z.infer<typeof CreateShareLinkSchema>;
+
 
