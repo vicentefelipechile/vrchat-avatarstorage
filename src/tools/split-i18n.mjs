@@ -2,7 +2,8 @@
 // =============================================================================
 // split-i18n.mjs — ONE-SHOT splitter (Phase 3.1 of PLAN.md)
 // Reads each public/i18n/{locale}.json monolit and writes one fragment per
-// top-level section to public/i18n/_src/{locale}/{section}.json.
+// top-level section to i18n/_src/{locale}/{section}.json (outside public/ so
+// `wrangler deploy` never uploads the fragments).
 // Content-identical relocation: no key is added, removed, or reordered.
 // Run once, verify round-trip with build-i18n.mjs, then leave this file alone.
 // =============================================================================
@@ -13,7 +14,7 @@ import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const I18N_DIR = join(__dirname, '../../public/i18n');
-const SRC_DIR = join(I18N_DIR, '_src');
+const SRC_DIR = join(__dirname, '../../i18n/_src');
 
 const locales = readdirSync(I18N_DIR).filter((f) => f.endsWith('.json') && !f.startsWith('_'));
 
@@ -30,4 +31,4 @@ for (const file of locales) {
 	console.log(`[${locale}] ${Object.keys(data).length} sections`);
 }
 
-console.log(`\nSplit ${locales.length} monolits into ${files} fragments under public/i18n/_src/`);
+console.log(`\nSplit ${locales.length} monolits into ${files} fragments under i18n/_src/`);

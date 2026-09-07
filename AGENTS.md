@@ -5,7 +5,7 @@ This guide is for agentic coding agents (like yourself) operating in the VRCStor
 
 ## Communication Style
 
-**EXPLICITLY PROHIBITED:** Manipulating files using git without explicit user permission. Any git operations must be announced in advance and explicitly approved.
+**EXPLICITLY PROHIBITED:** Manipulating files using git without explicit user permission. Any git operations must be announced in advance and explicitly approved. **Exception:** `git mv` (staged rename of tracked files, no history rewriting, no commits, no pushes) is always allowed without asking.
 
 - **No sycophancy.** Never say "you're right", "great point", "absolutely", "of course", "tienes razón", "good catch", or any similar filler phrase. Just do the work.
 - **Be direct.** If something is wrong, say what it is and fix it. Skip the preamble.
@@ -363,16 +363,21 @@ public/
   js/
     bundle.js             # Compiled frontend bundle (output of esbuild, DO NOT EDIT)
                           # Locale JSON is imported by src/frontend/core/i18n.ts and bundled in here
-  i18n/                   # Locale files — plain JSON (`{ "key": "value" }`, NOT ES modules)
-                            # _src/{locale}/{section}.json = SOURCE OF TRUTH (hand-edited, one file per section)
-                            # {locale}.json monolits = generated artifacts (npm run i18n:build, committed, never hand-edited)
-    _src/cn/ _src/de/ _src/en/ _src/es/ _src/fr/ _src/it/
-    _src/jp/ _src/nl/ _src/pl/ _src/pt/ _src/ru/ _src/tr/
+  i18n/                   # Locale monolits — plain JSON (`{ "key": "value" }`, NOT ES modules)
+                            # {locale}.json = generated artifacts (npm run i18n:build, committed, never hand-edited)
     cn.json  de.json  en.json  es.json  fr.json  it.json
     jp.json  nl.json  pl.json  pt.json  ru.json  tr.json
   wiki/                   # Markdown wiki articles (multi-language)
     cn/ de/ en/ es/ fr/ it/ jp/ nl/ pl/ pt/ ru/ tr/
     └── <topic>.md        # 25 articles per language (home, faq, setup, poiyomi, ...)
+
+i18n/                   # Locale fragments — SOURCE OF TRUTH (hand-edited, one file per section).
+                        # Lives OUTSIDE public/ on purpose: Workers Static Assets has no `exclude`
+                        # option, so anything under public/ (like the old public/i18n/_src/) gets
+                        # uploaded to production. Never move this back under public/.
+  _src/cn/ _src/de/ _src/en/ _src/es/ _src/fr/ _src/it/
+  _src/jp/ _src/nl/ _src/pl/ _src/pt/ _src/ru/ _src/tr/
+  └── {locale}/{section}.json
 
 migrations/               # D1 schema & migration files
   0001_initial.sql        # Initial schema
@@ -524,7 +529,7 @@ All visual feedback or ephemeral messages to the user (success, error, loading s
 
 Locale files live in `public/i18n/` as **plain JSON files** (e.g. `en.json`, `es.json`). They are NOT ES modules — do not use `export default`.
 
-- **Source of truth:** `public/i18n/_src/{locale}/{section}.json` (one small file per section, hand-edited). The monolits `public/i18n/{locale}.json` are **generated artifacts** (committed, but never hand-edited — regenerate with `npm run i18n:build`; any manual edit is overwritten by the next build).
+- **Source of truth:** `i18n/_src/{locale}/{section}.json` (one small file per section, hand-edited — kept outside `public/` so fragments are never deployed as static assets). The monolits `public/i18n/{locale}.json` are **generated artifacts** (committed, but never hand-edited — regenerate with `npm run i18n:build`; any manual edit is overwritten by the next build).
 - **Supported locales:** `cn`, `de`, `en`, `es`, `fr`, `it`, `jp`, `nl`, `pl`, `pt`, `ru`, `tr`.
 - **Loader:** `src/frontend/core/i18n.ts` imports every locale JSON statically and holds them in the `translations` map; esbuild bundles them into `public/js/bundle.js` (no runtime `fetch()`). `t(path)` resolves the dot-path in the current locale, falling back to `en`, then to the raw `path` string.
 - **No Fallbacks:** NEVER use fallback strings with the `t()` function (e.g., avoid `t('key') || 'Fallback'`). Just use `t('key')`. Fallbacks make it harder to detect missing translations.
@@ -1108,9 +1113,9 @@ Use bold for UI label names and inline code for values and field identifiers.
 
 When adding a new language to the project, follow **ALL** of these steps in order:
 
-#### Step 1: Create the locale fragments (`public/i18n/_src/<code>/`)
+#### Step 1: Create the locale fragments (`i18n/_src/<code>/`)
 
-1. Copy every file from `public/i18n/_src/en/` to `public/i18n/_src/<code>/` (`en` is the reference locale and always has the complete set of keys).
+1. Copy every file from `i18n/_src/en/` to `i18n/_src/<code>/` (`en` is the reference locale and always has the complete set of keys).
 2. Translate **every** value to the target language. Keep all keys in English.
 3. Add the code to `KNOWN_LOCALES` in `src/tools/build-i18n.mjs` so the generator emits the new monolit.
 4. Run `npm run i18n:build` to generate `public/i18n/<code>.json` from the fragments.
@@ -1165,6 +1170,6 @@ This bundles the new locale import into `public/js/bundle.js`.
 - **Binding Errors:** Check `wrangler.jsonc` and ensure the variable name in code matches the binding name.
 - **D1 Deadlocks:** SQLite in D1 is single-writer. Keep transactions short.
 - **i18n out of sync:** Run `npm run i18n-manager CHECK` to identify which keys or locales are missing.
-- **Bundle not updating:** Remember to run `npm run build-frontend` after editing files in `src/frontend/`. In dev mode, use `npm run dev` which runs esbuild in watch mode automatically. esbuild `--watch` observes the generated monolits, not the fragments — after editing a file under `public/i18n/_src/`, re-run `npm run i18n:build` to refresh the monolits the bundle imports.
+- **Bundle not updating:** Remember to run `npm run build-frontend` after editing files in `src/frontend/`. In dev mode, use `npm run dev` which runs esbuild in watch mode automatically. esbuild `--watch` observes the generated monolits, not the fragments — after editing a file under `i18n/_src/`, re-run `npm run i18n:build` to refresh the monolits the bundle imports.
 - **Source maps in production:** The `src/tools/build-frontend.mjs` only emits source maps when the `--dev` flag is passed. Production deploys via `npm run deploy` never include `.map` files.
 - **Orphaned media not cleaned up:** The cron only deletes media inside the 24h–48h age window (see "Orphan Cleanup"); anything older than 48h is out of scope by design and must be removed manually. If the media is inside the window, check that the new reference type is covered in the `ORPHANED_MEDIA_PREDICATE` in `src/repositories/admin-repository.ts` (the single predicate shared by the stats, listing, cleanup, and cron queries). If a new text column embeds images, add `AND NOT EXISTS (SELECT 1 FROM <table> WHERE INSTR(<table>.<column>, m.r2_key) > 0)`.

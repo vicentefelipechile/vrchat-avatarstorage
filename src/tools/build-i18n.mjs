@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 // =============================================================================
 // build-i18n.mjs — Permanent i18n generator (Phase 3.2 of PLAN.md)
-// Source of truth: public/i18n/_src/{locale}/{section}.json (hand-edited).
+// Source of truth: i18n/_src/{locale}/{section}.json (hand-edited, kept out
+// of public/ so `wrangler deploy` never uploads the fragments — Workers
+// Static Assets has no `exclude` option, everything under public/ is synced).
 // Artifacts: public/i18n/{locale}.json (generated, committed, never hand-edited).
 // Output is deterministic: layered section order + alphabetical leaves with
 // nested sub-groups last, tabs, trailing newline — so regeneration diffs are
@@ -16,7 +18,7 @@ import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const I18N_DIR = join(__dirname, '../../public/i18n');
-const SRC_DIR = join(I18N_DIR, '_src');
+const SRC_DIR = join(__dirname, '../../i18n/_src');
 
 // Layered layout: global → discovery → resource → identity → content (§4.1).
 export const SECTION_ORDER = [
@@ -76,9 +78,9 @@ export function buildI18n(locales = KNOWN_LOCALES) {
 const isMain = process.argv[1] === fileURLToPath(import.meta.url);
 if (isMain) {
 	if (!existsSync(SRC_DIR)) {
-		console.error('✘ public/i18n/_src/ not found. Run node src/tools/split-i18n.mjs first.');
+		console.error('✘ i18n/_src/ not found. Run node src/tools/split-i18n.mjs first.');
 		process.exit(1);
 	}
 	const n = buildI18n();
-	console.log(`✔ Rebuilt ${n} monolits from public/i18n/_src/`);
+	console.log(`✔ Rebuilt ${n} monolits from i18n/_src/`);
 }
