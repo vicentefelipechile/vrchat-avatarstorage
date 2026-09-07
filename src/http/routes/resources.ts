@@ -52,7 +52,7 @@ resources.get('/latest', async (c) => {
 	const cached = await c.env.VRCSTORAGE_KV.get('resource:latest', 'json');
 	if (cached) return c.json(cached);
 
-	const results = await new ResourceService(c.env.DB).latest(10);
+	const results = await new ResourceService(c.env.DB).latest(12);
 
 	await c.env.VRCSTORAGE_KV.put('resource:latest', JSON.stringify(results), { expirationTtl: 60 });
 	return c.json(results);

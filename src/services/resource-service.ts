@@ -62,7 +62,7 @@ export class ResourceService {
 	// Reads
 	// -------------------------------------------------------------------------
 
-	async latest(limit = 10) {
+	async latest(limit = 12) {
 		return this.repo.findLatest(limit);
 	}
 
