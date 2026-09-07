@@ -186,7 +186,7 @@ function downloadRow(url: string, title: string | null | undefined, fallbackInde
 	if (host.kind !== 'local') return btn;
 	const r2Key = extractR2Key(url);
 	if (!r2Key) return btn;
-	return `<div class="download-row">${btn}<button type="button" class="download-drive-btn" data-r2="${r2Key}" title="${t('item.saveToDrive')}" aria-label="${t('item.saveToDrive')}">${getIcon('googledrive', 18)}</button><button type="button" class="download-drive-btn download-share-btn" data-r2="${r2Key}" title="${t('item.shareLink')}" aria-label="${t('item.shareLink')}">${getIcon('link', 18)}</button></div>`;
+	return `<div class="download-row">${btn}<button type="button" class="download-drive-btn" data-r2="${r2Key}" title="${t('item.saveToDrive')}" aria-label="${t('item.saveToDrive')}">${getIcon('googledrive', 18)}</button><button type="button" class="download-share-btn" data-r2="${r2Key}" title="${t('item.shareLink')}" aria-label="${t('item.shareLink')}">${getIcon('link', 18)}</button></div>`;
 }
 
 function downloadSection(res: Resource): string {
@@ -699,7 +699,7 @@ function openShareModal(r2Key: string): void {
 			</div>
 			<div class="confirm-actions">
 				<button type="button" class="btn btn-outline share-cancel">${t('confirm.cancel')}</button>
-				<button type="button" class="btn btn-outline share-copy" hidden>${t('item.shareCopy')}</button>
+				<button type="button" class="btn btn-outline share-copy" style="display:none">${t('item.shareCopy')}</button>
 				<button type="button" class="btn share-create">${t('item.shareCreate')}</button>
 			</div>
 		</div>`;
@@ -774,8 +774,8 @@ function openShareModal(r2Key: string): void {
 			urlInput.value = data.url;
 			form.hidden = true;
 			result.hidden = false;
-			copyBtn.hidden = false;
-			createBtn.hidden = true;
+			copyBtn.style.display = '';
+			createBtn.style.display = 'none';
 			cancelBtn.textContent = t('item.shareClose');
 		} catch (e) {
 			showToast((e as Error).message || t('item.shareFailed'), 'error');

@@ -223,8 +223,9 @@
 	min-width: 0;
 }
 
-/* Drive icon — square, same border/height as .download-btn, no radius, attached on the right */
-.download-drive-btn {
+/* Drive/share icon buttons — square, same border/height as .download-btn, no radius, attached on the right */
+.download-drive-btn,
+.download-share-btn {
 	position: relative;
 	display: inline-flex;
 	align-items: center;
@@ -240,17 +241,20 @@
 	transition: background 0.2s ease;
 }
 
-.download-drive-btn:hover {
+.download-drive-btn:hover,
+.download-share-btn:hover {
 	background: var(--bg-hover);
 }
 
-.download-drive-btn:disabled {
+.download-drive-btn:disabled,
+.download-share-btn:disabled {
 	opacity: 0.5;
 	cursor: not-allowed;
 }
 
-/* Tooltip — tells the user this icon saves to Drive, appears on hover/focus */
-.download-drive-btn::after {
+/* Tooltip — names the icon button's action, appears on hover/focus */
+.download-drive-btn::after,
+.download-share-btn::after {
 	content: attr(title);
 	position: absolute;
 	bottom: calc(100% + 8px);
@@ -271,7 +275,9 @@
 }
 
 .download-drive-btn:hover::after,
-.download-drive-btn:focus-visible::after {
+.download-drive-btn:focus-visible::after,
+.download-share-btn:hover::after,
+.download-share-btn:focus-visible::after {
 	opacity: 1;
 	transform: translateY(0);
 }
