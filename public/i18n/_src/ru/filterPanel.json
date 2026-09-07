@@ -1,0 +1,19 @@
+{
+	"assetCountStr": "ассет(ов)",
+	"avatarCountStr": "аватар(ов)",
+	"clothesCountStr": "предмет(ов) одежды",
+	"filterTitle": "Фильтры",
+	"next": "Далее",
+	"noAssets": "Ассеты с такими фильтрами не найдены.",
+	"noAvatars": "Аватары с такими фильтрами не найдены.",
+	"noClothes": "Одежда по заданным фильтрам не найдена.",
+	"pagePrefix": "Страница",
+	"prev": "Назад",
+	"reset": "Сбросить фильтры",
+	"searchLabel": "Поиск",
+	"searchPlaceholder": "Поиск по имени...",
+	"sortLabel": "Сортировать по",
+	"titleAssets": "VRCStorage — Ассеты",
+	"titleAvatars": "VRCStorage — Аватары",
+	"titleClothes": "VRCStorage — Одежда"
+}

@@ -1,0 +1,8 @@
+{
+	"btn": "Registrar",
+	"confirmPassword": "Confirmar Senha",
+	"error": "Falha no registro. Por favor, tente novamente.",
+	"hasAccount": "Já tem uma conta?",
+	"success": "Bem-vindo! Sua conta foi criada.",
+	"title": "Registro"
+}

@@ -1,0 +1,9 @@
+{
+	"btn": "创建账户",
+	"errorExpired": "注册会话已过期, 请重新使用Google登录。",
+	"errorTaken": "该用户名已被使用。",
+	"loading": "创建账户中...",
+	"subtitle": "您即将创建账户, 请选择一个唯一的用户名。",
+	"title": "选择用户名",
+	"usernamePlaceholder": "用户名"
+}

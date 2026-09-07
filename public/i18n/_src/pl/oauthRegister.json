@@ -1,0 +1,9 @@
+{
+	"btn": "Utwórz konto",
+	"errorExpired": "Sesja rejestracji wygasła. Zaloguj się ponownie przez Google.",
+	"errorTaken": "Nazwa użytkownika jest już zajęta.",
+	"loading": "Tworzenie konta...",
+	"subtitle": "Właśnie tworzysz swoje konto. Wybierz unikalną nazwę użytkownika.",
+	"title": "Wybierz nazwę użytkownika",
+	"usernamePlaceholder": "nazwa_uzytkownika"
+}

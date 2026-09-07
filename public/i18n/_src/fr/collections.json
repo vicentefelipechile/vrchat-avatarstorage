@@ -1,0 +1,8 @@
+{
+	"confirmDelete": "Les favoris de cette collection seront déplacés vers Sans collection. Continuer ?",
+	"create": "Nouvelle collection",
+	"created": "Collection « {name} » créée",
+	"delete": "Supprimer la collection",
+	"namePlaceholder": "Nom de la collection",
+	"rename": "Renommer"
+}

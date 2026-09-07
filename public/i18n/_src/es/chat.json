@@ -1,0 +1,15 @@
+{
+	"disconnected": "Reconectando...",
+	"empty": "Aún no hay mensajes. Sé el primero en decir algo.",
+	"invalid": "No se pudo enviar ese mensaje.",
+	"loginToChat": "Inicia sesión para unirte a la conversación",
+	"placeholder": "Escribe un mensaje...",
+	"purge": "Vaciar chat",
+	"purgeConfirm": "¿Borrar todos los mensajes del chat? Esto no se puede deshacer.",
+	"purgeFailed": "No se pudo vaciar el chat.",
+	"purged": "Un administrador vació el chat.",
+	"rateLimited": "Espera un poco antes de volver a enviar.",
+	"send": "Enviar",
+	"title": "Chat global",
+	"tooLong": "Los mensajes pueden tener hasta 50 caracteres."
+}

@@ -1,0 +1,24 @@
+{
+	"backToResource": "Powrót do zasobu",
+	"noHistory": "Brak zapisanych zmian dla tego zasobu.",
+	"noVisibleChanges": "Brak widocznych zmian treści.",
+	"title": "Historia zmian",
+	"field": {
+		"cat": "Kategoria",
+		"desc": "Opis",
+		"title": "Tytuł"
+	},
+	"meta": {
+		"after": "Po",
+		"before": "Przed",
+		"field": "Zmienione pole",
+		"noChanges": "Brak zmian.",
+		"noFields": "Brak pól."
+	},
+	"types": {
+		"approval": "Zatwierdzenie",
+		"content_edit": "Edycja treści",
+		"create": "Utworzono",
+		"meta_edit": "Metadane Edytowane"
+	}
+}

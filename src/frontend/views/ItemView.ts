@@ -348,7 +348,7 @@ function adminActionsHtml(res: Resource): string {
 }
 
 function renderCommentsList(comments: Comment[], isAdmin: boolean): string {
-	if (!comments?.length) return `<p class="comments-empty">${t('item.noComments')}</p>`;
+	if (!comments?.length) return `<p class="comments-empty">${t('comment.noComments')}</p>`;
 
 	return comments
 		.map((c) => {
@@ -637,12 +637,12 @@ export async function itemView(ctx: RouteContext): Promise<string> {
 			${adminActionsHtml(res)}
 			<hr>
 			<div id="comments-section" style="margin-top:40px">
-				<h2>${t('item.comments')}</h2>
+				<h2>${t('comment.comments')}</h2>
 				<div id="comments-container"><p>${t('common.loadingComments')}</p></div>
 				${
 					user
 						? commentEditorHtml({ formId: 'comment-form', textareaId: 'comment-text', turnstileId: 'turnstile-comment' })
-						: `<hr><h3>${t('item.loginToComment')}</h3>`
+						: `<hr><h3>${t('comment.loginToComment')}</h3>`
 				}
 			</div>
 		</div>
@@ -698,7 +698,7 @@ function openShareModal(r2Key: string): void {
 				</div>
 			</div>
 			<div class="confirm-actions">
-				<button type="button" class="btn btn-outline share-cancel">${t('confirm.cancel')}</button>
+				<button type="button" class="btn btn-outline share-cancel">${t('common.cancel')}</button>
 				<button type="button" class="btn btn-outline share-copy" style="display:none">${t('item.shareCopy')}</button>
 				<button type="button" class="btn share-create">${t('item.shareCreate')}</button>
 			</div>
@@ -1037,7 +1037,7 @@ export async function itemAfter(ctx: RouteContext): Promise<void> {
 						title: t('item.driveConsentTitle'),
 						message: t('item.driveConsentExplain'),
 						confirmText: t('item.driveConnect'),
-						cancelText: t('confirm.cancel'),
+						cancelText: t('common.cancel'),
 					});
 					if (ok) location.href = '/api/drive/auth';
 					btn.disabled = false;

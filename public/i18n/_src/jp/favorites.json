@@ -1,0 +1,12 @@
+{
+	"all": "すべて",
+	"dragToReorder": "ドラッグして並べ替え",
+	"itemMany": "お気に入り",
+	"itemOne": "お気に入り",
+	"moveDown": "下へ移動",
+	"moveToCollection": "コレクションに移動",
+	"moveUp": "上へ移動",
+	"movedTo": "{item} を {collection} に移動しました",
+	"noCollection": "コレクションなし",
+	"noOtherCollections": "他のコレクションはありません"
+}

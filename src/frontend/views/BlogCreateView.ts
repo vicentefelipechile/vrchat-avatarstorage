@@ -182,7 +182,7 @@ export async function blogCreateAfter(ctx: RouteContext): Promise<void> {
 		const file = (e.target as HTMLInputElement).files?.[0];
 		if (!file) return;
 		uploadingCover = true;
-		const dismissToast = showToast('Subiendo imagen…', 'info', 0);
+		const dismissToast = showToast(t('upload.toast.uploadingImage'), 'info', 0);
 		try {
 			const fd = new FormData();
 			fd.append('file', file);
@@ -193,10 +193,10 @@ export async function blogCreateAfter(ctx: RouteContext): Promise<void> {
 			(document.getElementById('blog-cover-uuid') as HTMLInputElement).value = newUuid;
 			console.log('[blog] cover uploaded, media_uuid =', newUuid);
 			dismissToast();
-			showToast('Imagen subida correctamente', 'success');
+			showToast(t('upload.toast.uploadedImage'), 'success');
 		} catch {
 			dismissToast();
-			showToast(t('upload.error'), 'error');
+			showToast(t('common.error'), 'error');
 		} finally {
 			uploadingCover = false;
 		}

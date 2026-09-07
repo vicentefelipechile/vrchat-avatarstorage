@@ -1,0 +1,15 @@
+{
+	"disconnected": "Yeniden bağlanılıyor...",
+	"empty": "Henüz mesaj yok. İlk konuşan sen ol.",
+	"invalid": "Bu mesaj gönderilemedi.",
+	"loginToChat": "Sohbete katılmak için giriş yap",
+	"placeholder": "Bir mesaj yaz...",
+	"purge": "Sohbeti temizle",
+	"purgeConfirm": "Sohbetteki tüm mesajlar silinsin mi? Bu işlem geri alınamaz.",
+	"purgeFailed": "Sohbet temizlenemedi.",
+	"purged": "Bir yönetici sohbeti temizledi.",
+	"rateLimited": "Tekrar göndermeden önce biraz bekle.",
+	"send": "Gönder",
+	"title": "Genel sohbet",
+	"tooLong": "Mesajlar en fazla 50 karakter olabilir."
+}

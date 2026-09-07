@@ -1,0 +1,20 @@
+{
+	"authorDisplayLabel": "发布为",
+	"authorPersonal": "我的用户名",
+	"authorTeam": "VRCStorage 团队",
+	"contentLabel": "内容 (Markdown)",
+	"coverImageLabel": "封面图片 (可选)",
+	"createPost": "新文章",
+	"deleteConfirm": "您确定要删除这篇文章吗?",
+	"deletePost": "删除文章",
+	"editPost": "编辑文章",
+	"excerptLabel": "摘要 (可选)",
+	"loading": "加载文章中...",
+	"noPostsYet": "暂无文章。",
+	"notFound": "未找到文章。",
+	"savePost": "保存文章",
+	"subtitle": "VRCStorage 文章与新闻",
+	"team": "VRCStorage 团队",
+	"title": "博客",
+	"titleLabel": "标题"
+}

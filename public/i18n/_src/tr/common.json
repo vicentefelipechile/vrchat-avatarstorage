@@ -1,0 +1,14 @@
+{
+	"accessDenied": "Erişim Reddedildi",
+	"cancel": "İptal",
+	"error": "Hata",
+	"loadError": "Yüklenirken hata.",
+	"loading": "Yükleniyor...",
+	"loadingComments": "Yorumlar yükleniyor...",
+	"networkError": "Ağ hatası. Lütfen tekrar deneyin.",
+	"noFavorites": "Henüz favoriniz yok.",
+	"noResourcesFound": "Bu kategoride kaynak bulunamadı.",
+	"notFound": "Sayfa bulunamadı",
+	"removeFavorite": "Favorilerden kaldır",
+	"unknown": "Bilinmeyen"
+}

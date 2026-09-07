@@ -1,0 +1,19 @@
+{
+	"assetCountStr": "asset(s)",
+	"avatarCountStr": "avatar(s)",
+	"clothesCountStr": "kledingstuk(ken)",
+	"filterTitle": "Filters",
+	"next": "Volgende",
+	"noAssets": "Geen assets gevonden met deze filters.",
+	"noAvatars": "Geen avatars gevonden met deze filters.",
+	"noClothes": "Geen kleding gevonden met deze filters.",
+	"pagePrefix": "Pagina",
+	"prev": "Vorige",
+	"reset": "Filters resetten",
+	"searchLabel": "Zoeken",
+	"searchPlaceholder": "Zoeken op naam...",
+	"sortLabel": "Sorteren op",
+	"titleAssets": "VRCStorage — Assets",
+	"titleAvatars": "VRCStorage — Avatars",
+	"titleClothes": "VRCStorage — Kleding"
+}

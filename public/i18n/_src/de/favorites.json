@@ -1,0 +1,12 @@
+{
+	"all": "Alle",
+	"dragToReorder": "Ziehen zum Sortieren",
+	"itemMany": "Favoriten",
+	"itemOne": "Favorit",
+	"moveDown": "Nach unten",
+	"moveToCollection": "In Sammlung verschieben",
+	"moveUp": "Nach oben",
+	"movedTo": "{item} nach {collection} verschoben",
+	"noCollection": "Keine Sammlung",
+	"noOtherCollections": "Keine weiteren Sammlungen"
+}

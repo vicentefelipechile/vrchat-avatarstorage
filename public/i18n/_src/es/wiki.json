@@ -1,0 +1,88 @@
+{
+	"title": "Wiki - Guía de Dependencias",
+	"actionMenu": {
+		"title": "Menú de Acciones"
+	},
+	"avatarCategories": {
+		"title": "Categorías de Avatares"
+	},
+	"categories": {
+		"dependencies": "Dependencias",
+		"erp": "ERP",
+		"informative": "Informativo",
+		"vrchat": "VRChat"
+	},
+	"comments": {
+		"title": "Comentarios"
+	},
+	"desktopPuppeteer": {
+		"title": "Desktop Puppeteer"
+	},
+	"dps": {
+		"title": "DPS (Dynamic Penetration System)"
+	},
+	"faq": {
+		"title": "Preguntas Frecuentes"
+	},
+	"gestureManager": {
+		"title": "Gesture Manager Emulator"
+	},
+	"gogoloco": {
+		"title": "GoGo Loco"
+	},
+	"gogolocoNsfw": {
+		"title": "NSFW Locomotion"
+	},
+	"gogolocoRemove": {
+		"title": "Eliminar GoGo Loco"
+	},
+	"haptics": {
+		"title": "Guía de Hápticos"
+	},
+	"insideView": {
+		"title": "Inside View"
+	},
+	"justkisssfx": {
+		"title": "JustKissSFX"
+	},
+	"modularAvatar": {
+		"title": "Modular Avatar"
+	},
+	"nsfwEssentials": {
+		"title": "Guía Esencial NSFW"
+	},
+	"parameter": {
+		"title": "Parámetros del Avatar"
+	},
+	"pcs": {
+		"title": "PCS (Penetration Contact System)"
+	},
+	"physbones": {
+		"title": "PhysBones"
+	},
+	"poiyomi": {
+		"title": "Poiyomi Toon Shader"
+	},
+	"setup": {
+		"title": "Guía de Instalación"
+	},
+	"sps": {
+		"title": "SPS (Super Plug Shader)"
+	},
+	"syncdances": {
+		"title": "SyncDances"
+	},
+	"toast": {
+		"submitError": "Error al enviar el comentario",
+		"unknownError": "Desconocido"
+	},
+	"unityhubError": {
+		"title": "Error Unity Hub"
+	},
+	"vrcfury": {
+		"title": "VRCFury"
+	},
+	"vrcquesttools": {
+		"title": "VRCQuestTools"
+	}
+}

@@ -1,0 +1,24 @@
+{
+	"backToResource": "リソースに戻る",
+	"noHistory": "このリソースの変更履歴はありません。",
+	"noVisibleChanges": "コンテンツに目に見える変更はありません。",
+	"title": "変更履歴",
+	"field": {
+		"cat": "カテゴリー",
+		"desc": "説明",
+		"title": "タイトル"
+	},
+	"meta": {
+		"after": "後",
+		"before": "前",
+		"field": "変更されたフィールド",
+		"noChanges": "変更なし。",
+		"noFields": "フィールドなし。"
+	},
+	"types": {
+		"approval": "承認",
+		"content_edit": "コンテンツ編集",
+		"create": "作成",
+		"meta_edit": "メタデータ編集"
+	}
+}

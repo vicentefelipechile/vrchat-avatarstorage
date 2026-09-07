@@ -1,0 +1,24 @@
+{
+	"backToResource": "Terug naar bron",
+	"noHistory": "Geen wijzigingen geregistreerd voor deze bron.",
+	"noVisibleChanges": "Geen zichtbare inhoudswijzigingen.",
+	"title": "Wijzigingsgeschiedenis",
+	"field": {
+		"cat": "Categorie",
+		"desc": "Beschrijving",
+		"title": "Titel"
+	},
+	"meta": {
+		"after": "Na",
+		"before": "Voor",
+		"field": "Gewijzigd veld",
+		"noChanges": "Geen wijzigingen.",
+		"noFields": "Geen velden."
+	},
+	"types": {
+		"approval": "Goedkeuring",
+		"content_edit": "Inhoud bewerkt",
+		"create": "Aangemaakt",
+		"meta_edit": "Metadata Bewerkt"
+	}
+}

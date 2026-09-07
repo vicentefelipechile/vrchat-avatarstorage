@@ -1,0 +1,128 @@
+{
+	"adminOnly": "* solo admin",
+	"required": "* obligatorio",
+	"select": "-- Seleccionar --",
+	"asset": {
+		"title": "Detalles del Asset",
+		"titleAdmin": "Asset Meta",
+		"type": "Tipo de asset *"
+	},
+	"asset_type": {
+		"animation": "Animación",
+		"avatarBase": "Base de Avatar",
+		"hud": "HUD",
+		"other": "Otro",
+		"particle": "Particle FX",
+		"prefab": "Prefab",
+		"prop": "Prop",
+		"script": "Script",
+		"shader": "Shader",
+		"sound": "Sonido",
+		"texturePack": "Paquete de Texturas",
+		"title": "Tipo de Asset",
+		"tool": "Herramienta",
+		"vfx": "VFX"
+	},
+	"avatar": {
+		"author": "Autor original",
+		"authorHint": "(nombre del creador del avatar)",
+		"authorLinked": "Autor vinculado",
+		"authorPlaceholder": "Buscar autor o colocar cualquier nombre",
+		"extras": "Extras del avatar",
+		"gender": "Género del avatar *",
+		"size": "Tamaño del avatar *",
+		"title": "Detalles del Avatar",
+		"titleAdmin": "Avatar Meta",
+		"type": "Tipo de avatar *"
+	},
+	"avatar_gender": {
+		"androgynous": "Andrógino",
+		"both": "Ambos (Paquete)",
+		"female": "Femenino",
+		"kemono": "Kemono",
+		"male": "Masculino",
+		"title": "Género",
+		"undefined": "Indefinido",
+		"unisex": "Unisex"
+	},
+	"avatar_size": {
+		"giant": "Gigante",
+		"medium": "Mediano",
+		"small": "Pequeño",
+		"tall": "Alto",
+		"tiny": "Diminuto",
+		"title": "Tamaño"
+	},
+	"avatar_type": {
+		"anime": "Anime",
+		"cartoon": "Caricatura",
+		"chibi": "Chibi",
+		"fantasy": "Fantasía",
+		"furry": "Furry",
+		"human": "Humano",
+		"kemono": "Kemono",
+		"mecha": "Mecha",
+		"monster": "Monstruo",
+		"other": "Otro",
+		"sciFi": "Ciencia Ficción",
+		"semiRealistic": "Semi-Realista",
+		"title": "Tipo",
+		"vtuber": "VTuber"
+	},
+	"clothes": {
+		"baseAvatar": "¿Para qué avatar base?",
+		"baseAvatarHint": "(autocompleta o coloca cualquier nombre)",
+		"baseAvatarPlaceholder": "Buscar avatar base…",
+		"gender": "Género de la ropa *",
+		"isBase": "Es base (incluye avatar base)",
+		"title": "Detalles de la Prenda",
+		"titleAdmin": "Clothes Meta",
+		"type": "Tipo de prenda *"
+	},
+	"clothing_type": {
+		"accessory": "Accesorio",
+		"bodyPart": "Parte del Cuerpo",
+		"bottom": "Parte Inferior (Bottom)",
+		"dress": "Vestido",
+		"ears": "Orejas",
+		"fullbody": "Cuerpo Completo",
+		"hair": "Cabello",
+		"hat": "Sombrero",
+		"jacket": "Chaqueta",
+		"legwear": "Calcetería/Pantalones",
+		"other": "Otro",
+		"shoes": "Zapatos",
+		"swimwear": "Traje de Baño",
+		"tail": "Cola",
+		"title": "Tipo de Prenda",
+		"top": "Parte Superior (Top)",
+		"underwear": "Ropa Interior",
+		"wings": "Alas"
+	},
+	"features": {
+		"dps": "DPS",
+		"facetracking": "Face Tracking",
+		"gogoloco": "GoGo Loco",
+		"nsfw": "NSFW",
+		"physbones": "PhysBones",
+		"questOptimized": "Optimizado para Quest",
+		"title": "Características",
+		"toggles": "Toggles"
+	},
+	"platform": {
+		"cross": "Multiplataforma (PC + Quest)",
+		"crossSimple": "Multiplataforma",
+		"pc": "Solo PC",
+		"quest": "Solo Quest",
+		"sdk": "SDK",
+		"title": "Plataforma"
+	},
+	"sdk_version": {
+		"extras": "Extras",
+		"title": "SDK",
+		"unityVersion": "Versión de Unity",
+		"v2": "SDK 2.0",
+		"v3": "SDK 3.0",
+		"v3Default": "SDK 3.0 (por defecto)"
+	}
+}

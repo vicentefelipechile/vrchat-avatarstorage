@@ -1,0 +1,15 @@
+{
+	"disconnected": "Riconnessione in corso...",
+	"empty": "Ancora nessun messaggio. Sii il primo a scrivere.",
+	"invalid": "Non è stato possibile inviare questo messaggio.",
+	"loginToChat": "Accedi per partecipare alla conversazione",
+	"placeholder": "Scrivi un messaggio...",
+	"purge": "Svuota chat",
+	"purgeConfirm": "Eliminare tutti i messaggi della chat? L'operazione è irreversibile.",
+	"purgeFailed": "Non è stato possibile svuotare la chat.",
+	"purged": "Un amministratore ha svuotato la chat.",
+	"rateLimited": "Aspetta un attimo prima di inviare di nuovo.",
+	"send": "Invia",
+	"title": "Chat globale",
+	"tooLong": "I messaggi possono contenere al massimo 50 caratteri."
+}

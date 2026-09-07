@@ -1,0 +1,12 @@
+{
+	"all": "Все",
+	"dragToReorder": "Перетащите для сортировки",
+	"itemMany": "избранное",
+	"itemOne": "избранное",
+	"moveDown": "Переместить вниз",
+	"moveToCollection": "Переместить в коллекцию",
+	"moveUp": "Переместить вверх",
+	"movedTo": "{item} перемещён в {collection}",
+	"noCollection": "Без коллекции",
+	"noOtherCollections": "Других коллекций нет"
+}

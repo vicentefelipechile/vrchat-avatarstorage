@@ -1,0 +1,19 @@
+{
+	"assetCountStr": "个资产",
+	"avatarCountStr": "个 Avatar",
+	"clothesCountStr": "件服装",
+	"filterTitle": "筛选",
+	"next": "下一页",
+	"noAssets": "没有找到符合此筛选条件的资产。",
+	"noAvatars": "没有找到符合此筛选条件的 Avatar。",
+	"noClothes": "未找到符合条件的服装。",
+	"pagePrefix": "页",
+	"prev": "上一页",
+	"reset": "重置筛选",
+	"searchLabel": "搜索",
+	"searchPlaceholder": "按名称搜索...",
+	"sortLabel": "排序方式",
+	"titleAssets": "VRCStorage — 资产",
+	"titleAvatars": "VRCStorage — Avatar",
+	"titleClothes": "VRCStorage — 服装"
+}

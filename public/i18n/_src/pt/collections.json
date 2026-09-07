@@ -1,0 +1,8 @@
+{
+	"confirmDelete": "Os favoritos desta coleção serão movidos para Sem coleção. Continuar?",
+	"create": "Nova coleção",
+	"created": "Coleção «{name}» criada",
+	"delete": "Excluir coleção",
+	"namePlaceholder": "Nome da coleção",
+	"rename": "Renomear"
+}

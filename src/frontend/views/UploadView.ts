@@ -615,7 +615,7 @@ export async function uploadAfter(_ctx: RouteContext): Promise<void> {
 		const isVideo = file.type.startsWith('video/');
 		const maxSize = isVideo ? SIZE_LIMITS.video : SIZE_LIMITS.image;
 		if (file.size > maxSize) {
-			showToast(`File too large. Max: ${(maxSize / 1024 / 1024).toFixed(0)}MB`, 'warning');
+			showToast(`${t('upload.toast.fileTooLarge')} ${(maxSize / 1024 / 1024).toFixed(0)}MB`, 'warning');
 			thumbnailInput.value = '';
 			thumbnailPreview.innerHTML = '';
 			return;
@@ -623,7 +623,7 @@ export async function uploadAfter(_ctx: RouteContext): Promise<void> {
 		if (!isVideo) {
 			const c = await validateImageDimensions(file);
 			if (!c.valid) {
-				showToast(c.error || 'Invalid dimensions', 'error');
+				showToast(c.error || t('upload.toast.invalidDimensions'), 'error');
 				thumbnailInput.value = '';
 				thumbnailPreview.innerHTML = '';
 				return;
@@ -1012,7 +1012,7 @@ export async function uploadAfter(_ctx: RouteContext): Promise<void> {
 		const referenceFiles = referenceInput.files;
 
 		if (mainFiles.length === 0) {
-			uploadError.textContent = `${t('upload.error')}: No file selected`;
+			uploadError.textContent = `${t('common.error')}: No file selected`;
 			resetState();
 			window.removeEventListener('beforeunload', preventNav);
 			return;
@@ -1024,13 +1024,13 @@ export async function uploadAfter(_ctx: RouteContext): Promise<void> {
 			return;
 		}
 		if (mainFiles.some((f) => !VALID_EXTENSIONS.some((ext) => f.name.toLowerCase().endsWith(ext)))) {
-			uploadError.textContent = `${t('upload.error')}: ${t('upload.errorMainFile')}`;
+			uploadError.textContent = `${t('common.error')}: ${t('upload.errorMainFile')}`;
 			resetState();
 			window.removeEventListener('beforeunload', preventNav);
 			return;
 		}
 		if (!thumbnail) {
-			uploadError.textContent = `${t('upload.error')}: ${t('upload.errorThumbnail')}`;
+			uploadError.textContent = `${t('common.error')}: ${t('upload.errorThumbnail')}`;
 			resetState();
 			window.removeEventListener('beforeunload', preventNav);
 			return;
@@ -1153,7 +1153,7 @@ export async function uploadAfter(_ctx: RouteContext): Promise<void> {
 				throw new Error(err.error ?? t('upload.errorCreateResource'));
 			}
 		} catch (err) {
-			uploadError.textContent = `${t('upload.error')}: ${(err as Error).message}`;
+			uploadError.textContent = `${t('common.error')}: ${(err as Error).message}`;
 			progressContainer.style.display = 'none';
 			window.turnstile?.reset(turnstileWidgetId ?? undefined);
 			turnstileToken = null;

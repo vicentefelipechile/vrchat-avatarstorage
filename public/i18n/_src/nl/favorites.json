@@ -1,0 +1,12 @@
+{
+	"all": "Alles",
+	"dragToReorder": "Sleep om te sorteren",
+	"itemMany": "favorieten",
+	"itemOne": "favoriet",
+	"moveDown": "Omlaag",
+	"moveToCollection": "Verplaats naar collectie",
+	"moveUp": "Omhoog",
+	"movedTo": "{item} verplaatst naar {collection}",
+	"noCollection": "Geen verzameling",
+	"noOtherCollections": "Geen andere verzamelingen"
+}

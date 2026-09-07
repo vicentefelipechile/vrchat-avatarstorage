@@ -1,0 +1,19 @@
+{
+	"assetCountStr": "アセット",
+	"avatarCountStr": "アバター",
+	"clothesCountStr": "衣装",
+	"filterTitle": "フィルター",
+	"next": "次へ",
+	"noAssets": "このフィルターではアセットが見つかりません。",
+	"noAvatars": "このフィルターではアバターが見つかりません。",
+	"noClothes": "このフィルターに一致する服が見つかりませんでした。",
+	"pagePrefix": "ページ",
+	"prev": "前へ",
+	"reset": "フィルターをリセット",
+	"searchLabel": "検索",
+	"searchPlaceholder": "名前で検索...",
+	"sortLabel": "並び替え",
+	"titleAssets": "VRCStorage — アセット",
+	"titleAvatars": "VRCStorage — アバター",
+	"titleClothes": "VRCStorage — 衣装"
+}

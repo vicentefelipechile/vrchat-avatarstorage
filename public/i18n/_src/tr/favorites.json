@@ -1,0 +1,12 @@
+{
+	"all": "Tümü",
+	"dragToReorder": "Sıralamak için sürükle",
+	"itemMany": "favori",
+	"itemOne": "favori",
+	"moveDown": "Aşağı taşı",
+	"moveToCollection": "Koleksiyona taşı",
+	"moveUp": "Yukarı taşı",
+	"movedTo": "{item}, {collection} koleksiyonuna taşındı",
+	"noCollection": "Koleksiyonsuz",
+	"noOtherCollections": "Başka koleksiyon yok"
+}

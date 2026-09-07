@@ -1,0 +1,128 @@
+{
+	"adminOnly": "* 仅管理员",
+	"required": "* 必填",
+	"select": "-- 选择 --",
+	"asset": {
+		"title": "资源详情",
+		"titleAdmin": "资源元数据",
+		"type": "资源类型 *"
+	},
+	"asset_type": {
+		"animation": "动画",
+		"avatarBase": "模型基础",
+		"hud": "HUD",
+		"other": "其他",
+		"particle": "粒子特效",
+		"prefab": "预制件",
+		"prop": "道具",
+		"script": "脚本",
+		"shader": "着色器",
+		"sound": "音效",
+		"texturePack": "纹理包",
+		"title": "资产类型",
+		"tool": "工具",
+		"vfx": "视觉特效"
+	},
+	"avatar": {
+		"author": "原作者",
+		"authorHint": "(虚拟形象创作者名称)",
+		"authorLinked": "已关联作者 UUID",
+		"authorPlaceholder": "搜索作者... 或输入名称",
+		"extras": "虚拟形象额外功能",
+		"gender": "虚拟形象性别 *",
+		"size": "虚拟形象尺寸 *",
+		"title": "虚拟形象详情",
+		"titleAdmin": "虚拟形象元数据",
+		"type": "虚拟形象类型 *"
+	},
+	"avatar_gender": {
+		"androgynous": "中性",
+		"both": "两者 (合集) ",
+		"female": "女性",
+		"kemono": "Kemono",
+		"male": "男性",
+		"title": "性别",
+		"undefined": "未定义",
+		"unisex": "中性"
+	},
+	"avatar_size": {
+		"giant": "巨大",
+		"medium": "中",
+		"small": "小",
+		"tall": "高",
+		"tiny": "极小",
+		"title": "尺寸"
+	},
+	"avatar_type": {
+		"anime": "动漫",
+		"cartoon": "卡通",
+		"chibi": "Q版",
+		"fantasy": "奇幻",
+		"furry": "兽人",
+		"human": "人类",
+		"kemono": "兽娘",
+		"mecha": "机甲",
+		"monster": "怪物",
+		"other": "其他",
+		"sciFi": "科幻",
+		"semiRealistic": "半写实",
+		"title": "类型",
+		"vtuber": "VTuber"
+	},
+	"clothes": {
+		"baseAvatar": "用于哪个基础虚拟形象?",
+		"baseAvatarHint": "(自动完成或自由输入)",
+		"baseAvatarPlaceholder": "搜索基础虚拟形象...",
+		"gender": "设计性别 *",
+		"isBase": "是基础 (包含基础虚拟形象) ",
+		"title": "服装详情",
+		"titleAdmin": "服装元数据",
+		"type": "服装类型 *"
+	},
+	"clothing_type": {
+		"accessory": "配饰",
+		"bodyPart": "身体部位",
+		"bottom": "下装",
+		"dress": "连衣裙",
+		"ears": "耳朵",
+		"fullbody": "全身套装",
+		"hair": "头发",
+		"hat": "帽子",
+		"jacket": "外套",
+		"legwear": "腿部服饰",
+		"other": "其他",
+		"shoes": "鞋子",
+		"swimwear": "泳装",
+		"tail": "尾巴",
+		"title": "服装类型",
+		"top": "上衣",
+		"underwear": "内衣",
+		"wings": "翅膀"
+	},
+	"features": {
+		"dps": "DPS",
+		"facetracking": "面部追踪",
+		"gogoloco": "GoGo Loco",
+		"nsfw": "NSFW",
+		"physbones": "PhysBones",
+		"questOptimized": "Quest优化",
+		"title": "功能",
+		"toggles": "开关"
+	},
+	"platform": {
+		"cross": "跨平台 (PC + Quest)",
+		"crossSimple": "跨平台",
+		"pc": "仅PC",
+		"quest": "仅Quest",
+		"sdk": "SDK",
+		"title": "平台"
+	},
+	"sdk_version": {
+		"extras": "额外功能",
+		"title": "SDK 版本",
+		"unityVersion": "Unity版本",
+		"v2": "SDK 2.0",
+		"v3": "SDK 3.0",
+		"v3Default": "SDK 3.0 (默认)"
+	}
+}

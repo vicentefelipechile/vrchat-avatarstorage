@@ -1,0 +1,15 @@
+{
+	"disconnected": "Reconnexion...",
+	"empty": "Aucun message pour l'instant. Sois le premier à parler.",
+	"invalid": "Ce message n'a pas pu être envoyé.",
+	"loginToChat": "Connecte-toi pour rejoindre la conversation",
+	"placeholder": "Écris un message...",
+	"purge": "Vider le chat",
+	"purgeConfirm": "Supprimer tous les messages du chat ? Cette action est irréversible.",
+	"purgeFailed": "Impossible de vider le chat.",
+	"purged": "Un administrateur a vidé le chat.",
+	"rateLimited": "Attends un peu avant d'envoyer à nouveau.",
+	"send": "Envoyer",
+	"title": "Chat global",
+	"tooLong": "Les messages ne peuvent pas dépasser 50 caractères."
+}

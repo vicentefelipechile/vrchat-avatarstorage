@@ -1,0 +1,128 @@
+{
+	"adminOnly": "* только для администратора",
+	"required": "* обязательно",
+	"select": "-- Выбрать --",
+	"asset": {
+		"title": "Детали ресурса",
+		"titleAdmin": "Метаданные ресурса",
+		"type": "Тип ресурса *"
+	},
+	"asset_type": {
+		"animation": "Анимация",
+		"avatarBase": "База аватара",
+		"hud": "HUD",
+		"other": "Другое",
+		"particle": "Эффект частиц",
+		"prefab": "Префаб",
+		"prop": "Пропп",
+		"script": "Скрипт",
+		"shader": "Шейдер",
+		"sound": "Звук",
+		"texturePack": "Пакет текстур",
+		"title": "Тип ассета",
+		"tool": "Инструмент",
+		"vfx": "VFX"
+	},
+	"avatar": {
+		"author": "Оригинальный автор",
+		"authorHint": "(имя создателя аватара)",
+		"authorLinked": "UUID связанного автора",
+		"authorPlaceholder": "Поиск автора... или введите имя",
+		"extras": "Дополнительные функции аватара",
+		"gender": "Пол аватара *",
+		"size": "Размер аватара *",
+		"title": "Детали аватара",
+		"titleAdmin": "Метаданные аватара",
+		"type": "Тип аватара *"
+	},
+	"avatar_gender": {
+		"androgynous": "Андрогинный",
+		"both": "Оба (набор)",
+		"female": "Женский",
+		"kemono": "Kemono",
+		"male": "Мужской",
+		"title": "Пол",
+		"undefined": "Не определен",
+		"unisex": "Унисекс"
+	},
+	"avatar_size": {
+		"giant": "Гигантский",
+		"medium": "Средний",
+		"small": "Маленький",
+		"tall": "Высокий",
+		"tiny": "Крошечный",
+		"title": "Размер"
+	},
+	"avatar_type": {
+		"anime": "Аниме",
+		"cartoon": "Мультяшный",
+		"chibi": "Чиби",
+		"fantasy": "Фэнтези",
+		"furry": "Фурри",
+		"human": "Человек",
+		"kemono": "Кэмоно",
+		"mecha": "Меха",
+		"monster": "Монстр",
+		"other": "Другое",
+		"sciFi": "Научная фантастика",
+		"semiRealistic": "Полуреалистичный",
+		"title": "Тип",
+		"vtuber": "VTuber"
+	},
+	"clothes": {
+		"baseAvatar": "Для какого базового аватара?",
+		"baseAvatarHint": "(автозаполнение или свободный ввод)",
+		"baseAvatarPlaceholder": "Поиск базового аватара...",
+		"gender": "Пол дизайна *",
+		"isBase": "Является базой (включает базовый аватар)",
+		"title": "Детали одежды",
+		"titleAdmin": "Метаданные одежды",
+		"type": "Тип одежды *"
+	},
+	"clothing_type": {
+		"accessory": "Аксессуар",
+		"bodyPart": "Часть тела",
+		"bottom": "Низ",
+		"dress": "Платье",
+		"ears": "Уши",
+		"fullbody": "Полный костюм",
+		"hair": "Волосы",
+		"hat": "Шляпа",
+		"jacket": "Куртка",
+		"legwear": "Леггинсы",
+		"other": "Другое",
+		"shoes": "Обувь",
+		"swimwear": "Купальник",
+		"tail": "Хвост",
+		"title": "Тип одежды",
+		"top": "Верх",
+		"underwear": "Нижнее бельё",
+		"wings": "Крылья"
+	},
+	"features": {
+		"dps": "DPS",
+		"facetracking": "Отслеживание лица",
+		"gogoloco": "GoGo Loco",
+		"nsfw": "NSFW",
+		"physbones": "PhysBones",
+		"questOptimized": "Оптимизировано для Quest",
+		"title": "Функции",
+		"toggles": "Переключатели"
+	},
+	"platform": {
+		"cross": "Кросс-платформенный (PC + Quest)",
+		"crossSimple": "Кросс-платформенный",
+		"pc": "Только PC",
+		"quest": "Только Quest",
+		"sdk": "SDK",
+		"title": "Платформа"
+	},
+	"sdk_version": {
+		"extras": "Дополнительно",
+		"title": "Версия SDK",
+		"unityVersion": "Версия Unity",
+		"v2": "SDK 2.0",
+		"v3": "SDK 3.0",
+		"v3Default": "SDK 3.0 (по умолчанию)"
+	}
+}

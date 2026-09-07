@@ -350,7 +350,7 @@ function buildLinkRow(link: ResourceLink, _index: number): string {
 			</div>
 			<div style="display:flex;gap:6px;align-items:flex-end">
 				${isR2File ? '' : `<button type="button" class="btn-link-save btn btn-sm" style="font-family:inherit">${t('edit.linkSave')}</button>`}
-				<button type="button" class="btn-link-delete btn btn-sm btn-danger" style="font-family:inherit">${t('edit.linkDelete')}</button>
+				<button type="button" class="btn-link-delete btn btn-sm btn-danger" style="font-family:inherit">${t('admin.delete')}</button>
 			</div>
 		</div>
 	</div>`;
@@ -381,7 +381,7 @@ function createLinkRow(link: ResourceLink): HTMLElement {
 			</div>
 			<div style="display:flex;gap:6px;align-items:flex-end">
 				${isR2File ? '' : `<button type="button" class="btn-link-save btn btn-sm" style="font-family:inherit">${t('edit.linkSave')}</button>`}
-				<button type="button" class="btn-link-delete btn btn-sm btn-danger" style="font-family:inherit">${t('edit.linkDelete')}</button>
+				<button type="button" class="btn-link-delete btn btn-sm btn-danger" style="font-family:inherit">${t('admin.delete')}</button>
 			</div>
 		</div>`;
 	const titleInput = row.querySelector<HTMLInputElement>('.link-title-input')!;
@@ -1237,7 +1237,7 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 					});
 					if (!reorderRes.ok) {
 						const data = (await reorderRes.json()) as { error?: string };
-						showToast(data.error ?? t('edit.reorderError') ?? 'Reorder failed', 'warning');
+						showToast(data.error ?? t('edit.reorderError'), 'warning');
 					} else {
 						DataCache.clear(`/api/resources/${id}`);
 					}

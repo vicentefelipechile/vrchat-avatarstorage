@@ -1,0 +1,9 @@
+{
+	"btn": "Account aanmaken",
+	"errorExpired": "Registratiesessie verlopen. Log opnieuw in met Google.",
+	"errorTaken": "Gebruikersnaam is al in gebruik.",
+	"loading": "Account aanmaken...",
+	"subtitle": "Je gaat je account aanmaken. Kies een unieke gebruikersnaam.",
+	"title": "Kies je gebruikersnaam",
+	"usernamePlaceholder": "gebruikersnaam"
+}

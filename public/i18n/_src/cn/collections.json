@@ -1,0 +1,8 @@
+{
+	"confirmDelete": "此收藏夹中的收藏将移至未分类。是否继续？",
+	"create": "新建收藏夹",
+	"created": "已创建收藏集「{name}」",
+	"delete": "删除收藏夹",
+	"namePlaceholder": "收藏夹名称",
+	"rename": "重命名"
+}

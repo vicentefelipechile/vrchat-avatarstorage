@@ -1,0 +1,128 @@
+{
+	"adminOnly": "* 管理者のみ",
+	"required": "* 必須",
+	"select": "-- 選択 --",
+	"asset": {
+		"title": "アセット詳細",
+		"titleAdmin": "アセットメタデータ",
+		"type": "アセットタイプ *"
+	},
+	"asset_type": {
+		"animation": "アニメーション",
+		"avatarBase": "アバターベース",
+		"hud": "HUD",
+		"other": "その他",
+		"particle": "パーティクルFX",
+		"prefab": "プレハブ",
+		"prop": "プロップ",
+		"script": "スクリプト",
+		"shader": "シェーダー",
+		"sound": "サウンド",
+		"texturePack": "テクスチャパック",
+		"title": "アセットタイプ",
+		"tool": "ツール",
+		"vfx": "VFX"
+	},
+	"avatar": {
+		"author": "原作者",
+		"authorHint": "(アバター作成者名)",
+		"authorLinked": "リンクされた作者UUID",
+		"authorPlaceholder": "作者を検索... または名前を入力",
+		"extras": "アバター追加機能",
+		"gender": "アバター性別 *",
+		"size": "アバターサイズ *",
+		"title": "アバター詳細",
+		"titleAdmin": "アバターメタデータ",
+		"type": "アバタータイプ *"
+	},
+	"avatar_gender": {
+		"androgynous": "中性",
+		"both": "両方 (パック)",
+		"female": "女性",
+		"kemono": "Kemono",
+		"male": "男性",
+		"title": "性別",
+		"undefined": "未定義",
+		"unisex": "ユニセックス"
+	},
+	"avatar_size": {
+		"giant": "巨大",
+		"medium": "中",
+		"small": "小",
+		"tall": "高",
+		"tiny": "極小",
+		"title": "サイズ"
+	},
+	"avatar_type": {
+		"anime": "アニメ",
+		"cartoon": "カートゥーン",
+		"chibi": "ちび",
+		"fantasy": "ファンタジー",
+		"furry": "ファーリー",
+		"human": "人間",
+		"kemono": "ケモノ",
+		"mecha": "メカ",
+		"monster": "モンスター",
+		"other": "その他",
+		"sciFi": "SF",
+		"semiRealistic": "セミリアル",
+		"title": "タイプ",
+		"vtuber": "VTuber"
+	},
+	"clothes": {
+		"baseAvatar": "どのベースアバター用？",
+		"baseAvatarHint": "(オートコンプリートまたは自由入力)",
+		"baseAvatarPlaceholder": "ベースアバターを検索...",
+		"gender": "デザイン性別 *",
+		"isBase": "ベース（ベースアバターを含む）",
+		"title": "服装詳細",
+		"titleAdmin": "服装メタデータ",
+		"type": "服装タイプ *"
+	},
+	"clothing_type": {
+		"accessory": "アクセサリー",
+		"bodyPart": "体の部位",
+		"bottom": "ボトムス",
+		"dress": "ドレス",
+		"ears": "耳",
+		"fullbody": "全身",
+		"hair": "髪",
+		"hat": "帽子",
+		"jacket": "ジャケット",
+		"legwear": "レッグウェア",
+		"other": "その他",
+		"shoes": "靴",
+		"swimwear": "水着",
+		"tail": "しっぽ",
+		"title": "衣装タイプ",
+		"top": "トップス",
+		"underwear": "下着",
+		"wings": "翼"
+	},
+	"features": {
+		"dps": "DPS",
+		"facetracking": "フェイストラッキング",
+		"gogoloco": "GoGo Loco",
+		"nsfw": "NSFW",
+		"physbones": "PhysBones",
+		"questOptimized": "Quest最適化",
+		"title": "機能",
+		"toggles": "トグル"
+	},
+	"platform": {
+		"cross": "クロスプラットフォーム (PC + Quest)",
+		"crossSimple": "クロスプラットフォーム",
+		"pc": "PCのみ",
+		"quest": "Questのみ",
+		"sdk": "SDK",
+		"title": "プラットフォーム"
+	},
+	"sdk_version": {
+		"extras": "追加機能",
+		"title": "SDKバージョン",
+		"unityVersion": "Unityバージョン",
+		"v2": "SDK 2.0",
+		"v3": "SDK 3.0",
+		"v3Default": "SDK 3.0 (デフォルト)"
+	}
+}

@@ -1,0 +1,14 @@
+{
+	"accessDenied": "Access Denied",
+	"cancel": "Cancel",
+	"error": "Error",
+	"loadError": "Error loading.",
+	"loading": "Loading...",
+	"loadingComments": "Loading comments...",
+	"networkError": "Network error. Please try again.",
+	"noFavorites": "You have no favorites yet.",
+	"noResourcesFound": "No resources found in this category.",
+	"notFound": "Page not found",
+	"removeFavorite": "Remove from favorites",
+	"unknown": "Unknown"
+}

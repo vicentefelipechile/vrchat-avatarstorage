@@ -1,0 +1,15 @@
+{
+	"disconnected": "Verbindung wird wiederhergestellt...",
+	"empty": "Noch keine Nachrichten. Sag als Erster etwas.",
+	"invalid": "Diese Nachricht konnte nicht gesendet werden.",
+	"loginToChat": "Melde dich an, um mitzureden",
+	"placeholder": "Nachricht schreiben...",
+	"purge": "Chat leeren",
+	"purgeConfirm": "Alle Nachrichten im Chat löschen? Das kann nicht rückgängig gemacht werden.",
+	"purgeFailed": "Der Chat konnte nicht geleert werden.",
+	"purged": "Ein Administrator hat den Chat geleert.",
+	"rateLimited": "Warte kurz, bevor du erneut sendest.",
+	"send": "Senden",
+	"title": "Globaler Chat",
+	"tooLong": "Nachrichten dürfen höchstens 50 Zeichen lang sein."
+}

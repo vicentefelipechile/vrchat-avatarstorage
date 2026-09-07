@@ -1,0 +1,8 @@
+{
+	"btn": "Registrieren",
+	"confirmPassword": "Passwort bestätigen",
+	"error": "Registrierung fehlgeschlagen. Bitte versuche es erneut.",
+	"hasAccount": "Hast du schon ein Konto?",
+	"success": "Willkommen! Dein Konto wurde erstellt.",
+	"title": "Registrieren"
+}

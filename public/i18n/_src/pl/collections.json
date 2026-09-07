@@ -1,0 +1,8 @@
+{
+	"confirmDelete": "Ulubione z tej kolekcji zostaną przeniesione do Bez kolekcji. Kontynuować?",
+	"create": "Nowa kolekcja",
+	"created": "Utworzono kolekcję „{name}”",
+	"delete": "Usuń kolekcję",
+	"namePlaceholder": "Nazwa kolekcji",
+	"rename": "Zmień nazwę"
+}

@@ -1,0 +1,8 @@
+{
+	"confirmDelete": "Bu koleksiyondaki favoriler Koleksiyonsuz'a taşınacak. Devam edilsin mi?",
+	"create": "Yeni koleksiyon",
+	"created": "«{name}» koleksiyonu oluşturuldu",
+	"delete": "Koleksiyonu sil",
+	"namePlaceholder": "Koleksiyon adı",
+	"rename": "Yeniden adlandır"
+}

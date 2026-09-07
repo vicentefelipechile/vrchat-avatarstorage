@@ -37,7 +37,7 @@ function buildOverlay(): HTMLElement {
 				</div>
 				<div class="drive-picker-actions">
 					<button type="button" class="btn drive-picker-select-current"></button>
-					<button type="button" class="btn btn-outline drive-picker-cancel">${t('confirm.cancel')}</button>
+					<button type="button" class="btn btn-outline drive-picker-cancel">${t('common.cancel')}</button>
 				</div>
 			</div>
 		</div>`;

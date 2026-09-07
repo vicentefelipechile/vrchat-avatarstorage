@@ -1,0 +1,128 @@
+{
+	"adminOnly": "* tylko admin",
+	"required": "* wymagane",
+	"select": "-- Wybierz --",
+	"asset": {
+		"title": "Szczegóły zasobu",
+		"titleAdmin": "Metadane zasobu",
+		"type": "Typ zasobu *"
+	},
+	"asset_type": {
+		"animation": "Animacja",
+		"avatarBase": "Baza Awatara",
+		"hud": "HUD",
+		"other": "Inne",
+		"particle": "Efekt Cząsteczkowy",
+		"prefab": "Prefab",
+		"prop": "Rekwizyt",
+		"script": "Skrypt",
+		"shader": "Shader",
+		"sound": "Dźwięk",
+		"texturePack": "Pakiet Tekstur",
+		"title": "Typ assetu",
+		"tool": "Narzędzie",
+		"vfx": "VFX"
+	},
+	"avatar": {
+		"author": "Oryginalny autor",
+		"authorHint": "(nazwa twórcy awatara)",
+		"authorLinked": "Powiązany UUID autora",
+		"authorPlaceholder": "Szukaj autora... lub wpisz nazwę",
+		"extras": "Dodatki awatara",
+		"gender": "Płeć awatara *",
+		"size": "Rozmiar awatara *",
+		"title": "Szczegóły awatara",
+		"titleAdmin": "Metadane awatara",
+		"type": "Typ awatara *"
+	},
+	"avatar_gender": {
+		"androgynous": "Androgyniczny",
+		"both": "Oboje (Pakiet)",
+		"female": "Żeński",
+		"kemono": "Kemono",
+		"male": "Męski",
+		"title": "Płeć",
+		"undefined": "Niezdefiniowany",
+		"unisex": "Unisex"
+	},
+	"avatar_size": {
+		"giant": "Olbrzymi",
+		"medium": "Średni",
+		"small": "Mały",
+		"tall": "Wysoki",
+		"tiny": "Malutki",
+		"title": "Rozmiar"
+	},
+	"avatar_type": {
+		"anime": "Anime",
+		"cartoon": "Kreskówkowy",
+		"chibi": "Chibi",
+		"fantasy": "Fantasy",
+		"furry": "Furry",
+		"human": "Człowiek",
+		"kemono": "Kemono",
+		"mecha": "Mecha",
+		"monster": "Potwór",
+		"other": "Inne",
+		"sciFi": "Sci-Fi",
+		"semiRealistic": "Semi-Realistyczny",
+		"title": "Typ",
+		"vtuber": "VTuber"
+	},
+	"clothes": {
+		"baseAvatar": "Dla którego bazowego awatara?",
+		"baseAvatarHint": "(autouzupełnianie lub dowolna nazwa)",
+		"baseAvatarPlaceholder": "Szukaj bazowego awatara...",
+		"gender": "Płeć projektu *",
+		"isBase": "Jest bazą (zawiera bazowego awatara)",
+		"title": "Szczegóły odzieży",
+		"titleAdmin": "Metadane odzieży",
+		"type": "Typ odzieży *"
+	},
+	"clothing_type": {
+		"accessory": "Akcesorium",
+		"bodyPart": "Część Ciała",
+		"bottom": "Dół",
+		"dress": "Sukienka",
+		"ears": "Uszy",
+		"fullbody": "Całe Ciało",
+		"hair": "Włosy",
+		"hat": "Czapka",
+		"jacket": "Kurtka",
+		"legwear": "Legwear",
+		"other": "Inne",
+		"shoes": "Buty",
+		"swimwear": "Strój Kąpielowy",
+		"tail": "Ogon",
+		"title": "Typ odzieży",
+		"top": "Góra",
+		"underwear": "Bielizna",
+		"wings": "Skrzydła"
+	},
+	"features": {
+		"dps": "DPS",
+		"facetracking": "Śledzenie Twarzy",
+		"gogoloco": "GoGo Loco",
+		"nsfw": "NSFW",
+		"physbones": "PhysBones",
+		"questOptimized": "Zoptymalizowany pod Quest",
+		"title": "Funkcje",
+		"toggles": "Przełączniki"
+	},
+	"platform": {
+		"cross": "Wieloplatformowe (PC + Quest)",
+		"crossSimple": "Wieloplatformowe",
+		"pc": "Tylko PC",
+		"quest": "Tylko Quest",
+		"sdk": "SDK",
+		"title": "Platforma"
+	},
+	"sdk_version": {
+		"extras": "Dodatki",
+		"title": "Wersja SDK",
+		"unityVersion": "Wersja Unity",
+		"v2": "SDK 2.0",
+		"v3": "SDK 3.0",
+		"v3Default": "SDK 3.0 (domyślnie)"
+	}
+}

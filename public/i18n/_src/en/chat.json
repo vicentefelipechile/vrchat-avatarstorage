@@ -1,0 +1,15 @@
+{
+	"disconnected": "Reconnecting...",
+	"empty": "No messages yet. Be the first to say something.",
+	"invalid": "That message could not be sent.",
+	"loginToChat": "Log in to join the conversation",
+	"placeholder": "Write a message...",
+	"purge": "Clear chat",
+	"purgeConfirm": "Delete every message in the chat? This cannot be undone.",
+	"purgeFailed": "The chat could not be cleared.",
+	"purged": "The chat was cleared by an admin.",
+	"rateLimited": "Slow down a little before sending again.",
+	"send": "Send",
+	"title": "Global chat",
+	"tooLong": "Messages can be up to 50 characters."
+}

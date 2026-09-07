@@ -67,7 +67,7 @@ export function registerAfter(_ctx: RouteContext): void {
 		const confirm = (document.getElementById('confirm-password') as HTMLInputElement).value;
 
 		if (password !== confirm) {
-			showToast(t('register.passwordMismatch'), 'error');
+			showToast(t('settings.password_mismatch'), 'error');
 			return;
 		}
 

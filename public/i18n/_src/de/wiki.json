@@ -1,0 +1,88 @@
+{
+	"title": "Wiki - Abhängigkeiten-Leitfaden",
+	"actionMenu": {
+		"title": "Aktionsmenü"
+	},
+	"avatarCategories": {
+		"title": "Avatar-Kategorien"
+	},
+	"categories": {
+		"dependencies": "Abhängigkeiten",
+		"erp": "ERP",
+		"informative": "Informativ",
+		"vrchat": "VRChat"
+	},
+	"comments": {
+		"title": "Wiki-Kommentare"
+	},
+	"desktopPuppeteer": {
+		"title": "Desktop Puppeteer"
+	},
+	"dps": {
+		"title": "DPS (Dynamic Penetration System)"
+	},
+	"faq": {
+		"title": "FAQ"
+	},
+	"gestureManager": {
+		"title": "Gesture Manager Emulator"
+	},
+	"gogoloco": {
+		"title": "GoGo Loco"
+	},
+	"gogolocoNsfw": {
+		"title": "NSFW Locomotion"
+	},
+	"gogolocoRemove": {
+		"title": "GoGo Loco entfernen"
+	},
+	"haptics": {
+		"title": "Haptik-Leitfaden"
+	},
+	"insideView": {
+		"title": "Inside View"
+	},
+	"justkisssfx": {
+		"title": "JustKissSFX"
+	},
+	"modularAvatar": {
+		"title": "Modular Avatar"
+	},
+	"nsfwEssentials": {
+		"title": "NSFW Grundlagen"
+	},
+	"parameter": {
+		"title": "Avatar-Parameter"
+	},
+	"pcs": {
+		"title": "PCS (Penetration Contact System)"
+	},
+	"physbones": {
+		"title": "PhysBones"
+	},
+	"poiyomi": {
+		"title": "Poiyomi Toon Shader"
+	},
+	"setup": {
+		"title": "Einrichtungsanleitung"
+	},
+	"sps": {
+		"title": "SPS (Super Plug Shader)"
+	},
+	"syncdances": {
+		"title": "SyncDances"
+	},
+	"toast": {
+		"submitError": "Fehler beim Senden des Kommentars",
+		"unknownError": "Unbekannt"
+	},
+	"unityhubError": {
+		"title": "Unity Hub Fehler"
+	},
+	"vrcfury": {
+		"title": "VRCFury"
+	},
+	"vrcquesttools": {
+		"title": "VRCQuestTools"
+	}
+}

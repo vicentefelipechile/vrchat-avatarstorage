@@ -1,0 +1,8 @@
+{
+	"btn": "注册",
+	"confirmPassword": "确认密码",
+	"error": "注册失败, 请重试。",
+	"hasAccount": "已有账号?",
+	"success": "欢迎！您的账号已创建。",
+	"title": "注册"
+}

@@ -1,0 +1,15 @@
+{
+	"disconnected": "Ponowne łączenie...",
+	"empty": "Nie ma jeszcze wiadomości. Napisz coś jako pierwszy.",
+	"invalid": "Nie udało się wysłać tej wiadomości.",
+	"loginToChat": "Zaloguj się, aby dołączyć do rozmowy",
+	"placeholder": "Napisz wiadomość...",
+	"purge": "Wyczyść czat",
+	"purgeConfirm": "Usunąć wszystkie wiadomości z czatu? Tej operacji nie można cofnąć.",
+	"purgeFailed": "Nie udało się wyczyścić czatu.",
+	"purged": "Administrator wyczyścił czat.",
+	"rateLimited": "Poczekaj chwilę przed wysłaniem kolejnej wiadomości.",
+	"send": "Wyślij",
+	"title": "Czat globalny",
+	"tooLong": "Wiadomość może mieć maksymalnie 50 znaków."
+}

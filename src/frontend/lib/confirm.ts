@@ -71,7 +71,7 @@ export function showConfirm(opts: ConfirmOptions): Promise<boolean> {
 	titleEl.style.display = opts.title === '' ? 'none' : '';
 	messageEl.textContent = opts.message;
 	okBtn.textContent = opts.confirmText ?? t('confirm.confirm');
-	cancelBtn.textContent = opts.cancelText ?? t('confirm.cancel');
+	cancelBtn.textContent = opts.cancelText ?? t('common.cancel');
 	okBtn.classList.toggle('btn-danger', !!opts.danger);
 
 	return new Promise<boolean>((resolve) => {

@@ -1,0 +1,24 @@
+{
+	"backToResource": "返回资源",
+	"noHistory": "此资源没有变更记录。",
+	"noVisibleChanges": "没有可见的内容变更。",
+	"title": "变更历史",
+	"field": {
+		"cat": "类别",
+		"desc": "描述",
+		"title": "标题"
+	},
+	"meta": {
+		"after": "之后",
+		"before": "之前",
+		"field": "更改的字段",
+		"noChanges": "无更改。",
+		"noFields": "无字段。"
+	},
+	"types": {
+		"approval": "批准",
+		"content_edit": "内容编辑",
+		"create": "创建",
+		"meta_edit": "元数据已编辑"
+	}
+}

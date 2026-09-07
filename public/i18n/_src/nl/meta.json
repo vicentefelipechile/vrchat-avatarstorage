@@ -1,0 +1,128 @@
+{
+	"adminOnly": "* alleen admin",
+	"required": "* verplicht",
+	"select": "-- Selecteer --",
+	"asset": {
+		"title": "Asset details",
+		"titleAdmin": "Asset metadata",
+		"type": "Asset type *"
+	},
+	"asset_type": {
+		"animation": "Animatie",
+		"avatarBase": "Avatarbasis",
+		"hud": "HUD",
+		"other": "Overig",
+		"particle": "Deeltjeseffect",
+		"prefab": "Prefab",
+		"prop": "Prop",
+		"script": "Script",
+		"shader": "Shader",
+		"sound": "Geluid",
+		"texturePack": "Texturepakket",
+		"title": "Asset-type",
+		"tool": "Hulpmiddel",
+		"vfx": "VFX"
+	},
+	"avatar": {
+		"author": "Originele auteur",
+		"authorHint": "(naam van avatar maker)",
+		"authorLinked": "Gekoppelde auteur-UUID",
+		"authorPlaceholder": "Zoek auteur... of typ naam",
+		"extras": "Avatar extra's",
+		"gender": "Avatar geslacht *",
+		"size": "Avatar grootte *",
+		"title": "Avatar details",
+		"titleAdmin": "Avatar metadata",
+		"type": "Avatar type *"
+	},
+	"avatar_gender": {
+		"androgynous": "Androgyn",
+		"both": "Beide (Pakket)",
+		"female": "Vrouwelijk",
+		"kemono": "Kemono",
+		"male": "Mannelijk",
+		"title": "Geslacht",
+		"undefined": "Ongedefinieerd",
+		"unisex": "Unisex"
+	},
+	"avatar_size": {
+		"giant": "Reusachtig",
+		"medium": "Middel",
+		"small": "Klein",
+		"tall": "Lang",
+		"tiny": "Minuscuul",
+		"title": "Grootte"
+	},
+	"avatar_type": {
+		"anime": "Anime",
+		"cartoon": "Cartoon",
+		"chibi": "Chibi",
+		"fantasy": "Fantasy",
+		"furry": "Furry",
+		"human": "Menselijk",
+		"kemono": "Kemono",
+		"mecha": "Mecha",
+		"monster": "Monster",
+		"other": "Overig",
+		"sciFi": "Sci-Fi",
+		"semiRealistic": "Semi-Realistisch",
+		"title": "Type",
+		"vtuber": "VTuber"
+	},
+	"clothes": {
+		"baseAvatar": "Voor welke basis avatar?",
+		"baseAvatarHint": "(autocomplete of vrije naam)",
+		"baseAvatarPlaceholder": "Zoek basis avatar...",
+		"gender": "Ontwerp geslacht *",
+		"isBase": "Is basis (inclusief basis avatar)",
+		"title": "Kleding details",
+		"titleAdmin": "Kleding metadata",
+		"type": "Kledingtype *"
+	},
+	"clothing_type": {
+		"accessory": "Accessoire",
+		"bodyPart": "Lichaamsdeel",
+		"bottom": "Broek",
+		"dress": "Jurk",
+		"ears": "Oren",
+		"fullbody": "Volledig Lichaam",
+		"hair": "Haar",
+		"hat": "Hoed",
+		"jacket": "Jas",
+		"legwear": "Beenkleding",
+		"other": "Overig",
+		"shoes": "Schoenen",
+		"swimwear": "Zwemkleding",
+		"tail": "Staart",
+		"title": "Kledingtype",
+		"top": "Top",
+		"underwear": "Ondergoed",
+		"wings": "Vleugels"
+	},
+	"features": {
+		"dps": "DPS",
+		"facetracking": "Gezichtsregistratie",
+		"gogoloco": "GoGo Loco",
+		"nsfw": "NSFW",
+		"physbones": "PhysBones",
+		"questOptimized": "Quest Geoptimaliseerd",
+		"title": "Functies",
+		"toggles": "Schakelaars"
+	},
+	"platform": {
+		"cross": "Cross-Platform (PC + Quest)",
+		"crossSimple": "Cross-Platform",
+		"pc": "Alleen PC",
+		"quest": "Alleen Quest",
+		"sdk": "SDK",
+		"title": "Platform"
+	},
+	"sdk_version": {
+		"extras": "Extra's",
+		"title": "SDK-versie",
+		"unityVersion": "Unity-versie",
+		"v2": "SDK 2.0",
+		"v3": "SDK 3.0",
+		"v3Default": "SDK 3.0 (standaard)"
+	}
+}

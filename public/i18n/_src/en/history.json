@@ -1,0 +1,24 @@
+{
+	"backToResource": "Back to Resource",
+	"noHistory": "No changes recorded for this resource.",
+	"noVisibleChanges": "No visible content changes.",
+	"title": "Change History",
+	"field": {
+		"cat": "Category",
+		"desc": "Description",
+		"title": "Title"
+	},
+	"meta": {
+		"after": "After",
+		"before": "Before",
+		"field": "Field Changed",
+		"noChanges": "No changes",
+		"noFields": "No fields"
+	},
+	"types": {
+		"approval": "Approval",
+		"content_edit": "Content Edited",
+		"create": "Created",
+		"meta_edit": "Metadata Edited"
+	}
+}

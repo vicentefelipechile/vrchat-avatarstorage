@@ -1,0 +1,17 @@
+{
+	"2fa_code": "Código de Autenticación",
+	"back": "Atrás",
+	"btn": "Entrar",
+	"enter2FA": "Ingresa el código de 6 dígitos de tu app autenticadora",
+	"error": "Credenciales inválidas",
+	"google": "Continuar con Google",
+	"invalid2FA": "El código debe ser de 6 dígitos numéricos",
+	"logoutConfirm": "¿Seguro que quieres cerrar sesión?",
+	"logout_success": "Sesión cerrada correctamente",
+	"or": "o",
+	"password": "Password",
+	"register": "¿No tienes cuenta? Regístrate",
+	"success": "¡Sesión iniciada correctamente!",
+	"title": "Login",
+	"username": "Usuario"
+}

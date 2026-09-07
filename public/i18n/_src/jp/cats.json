@@ -1,0 +1,14 @@
+{
+	"assets": "アセット",
+	"avatars": "アバター",
+	"clothes": "服",
+	"others": "その他",
+	"worlds": "ワールド",
+	"desc": {
+		"assets": "リソースとツール",
+		"avatars": "VRChat用の3Dアバター",
+		"clothes": "衣服とアクセサリー",
+		"others": "その他のリソース",
+		"worlds": "探索するための仮想ワールド"
+	}
+}

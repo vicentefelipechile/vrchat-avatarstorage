@@ -45,7 +45,7 @@ export interface CommentEditorHtmlOptions {
 	textareaId: string;
 	/** `id` attribute for the Turnstile container `<div>`. */
 	turnstileId: string;
-	/** Placeholder text for the textarea. Defaults to `item.commentPlaceholder`. */
+	/** Placeholder text for the textarea. Defaults to `comment.commentPlaceholder`. */
 	placeholder?: string;
 	/** Extra HTML inserted after the submit button inside the form. */
 	extraHtml?: string;
@@ -56,7 +56,7 @@ export interface CommentEditorHtmlOptions {
  * Call `initCommentEditor()` in your view's `afterFn` to activate it.
  */
 export function commentEditorHtml(opts: CommentEditorHtmlOptions): string {
-	const placeholder = opts.placeholder ?? t('item.commentPlaceholder');
+	const placeholder = opts.placeholder ?? t('comment.commentPlaceholder');
 	return `
 		<form id="${opts.formId}" class="comment-form" style="margin-top:20px">
 			<div class="comment-editor">

@@ -1,0 +1,17 @@
+{
+	"2fa_code": "Codice di autenticazione",
+	"back": "Indietro",
+	"btn": "Accedi",
+	"enter2FA": "Inserisci il codice a 6 cifre dalla tua app di autenticazione",
+	"error": "Credenziali non valide",
+	"google": "Continua con Google",
+	"invalid2FA": "Il codice deve essere di 6 cifre numeriche",
+	"logoutConfirm": "Sei sicuro di voler uscire?",
+	"logout_success": "Disconnessione effettuata",
+	"or": "o",
+	"password": "Password",
+	"register": "Non hai un account? Registrati",
+	"success": "Accesso effettuato con successo!",
+	"title": "Accedi",
+	"username": "Nome utente"
+}

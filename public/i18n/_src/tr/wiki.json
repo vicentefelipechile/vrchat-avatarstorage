@@ -1,0 +1,88 @@
+{
+	"title": "Wiki - Bağımlılık Kılavuzu",
+	"actionMenu": {
+		"title": "Eylem Menüsü"
+	},
+	"avatarCategories": {
+		"title": "Avatar Kategorileri"
+	},
+	"categories": {
+		"dependencies": "Bağımlılıklar",
+		"erp": "ERP",
+		"informative": "Bilgilendirici",
+		"vrchat": "VRChat"
+	},
+	"comments": {
+		"title": "Wiki Yorumları"
+	},
+	"desktopPuppeteer": {
+		"title": "Desktop Puppeteer"
+	},
+	"dps": {
+		"title": "DPS (Dynamic Penetration System)"
+	},
+	"faq": {
+		"title": "FAQ"
+	},
+	"gestureManager": {
+		"title": "Gesture Manager Emülatörü"
+	},
+	"gogoloco": {
+		"title": "GoGo Loco"
+	},
+	"gogolocoNsfw": {
+		"title": "NSFW Locomotion"
+	},
+	"gogolocoRemove": {
+		"title": "GoGo Loco Kaldır"
+	},
+	"haptics": {
+		"title": "Dokunsal Kılavuz"
+	},
+	"insideView": {
+		"title": "Inside View"
+	},
+	"justkisssfx": {
+		"title": "JustKissSFX"
+	},
+	"modularAvatar": {
+		"title": "Modular Avatar"
+	},
+	"nsfwEssentials": {
+		"title": "NSFW Temelleri"
+	},
+	"parameter": {
+		"title": "Avatar Parametreleri"
+	},
+	"pcs": {
+		"title": "PCS (Penetration Contact System)"
+	},
+	"physbones": {
+		"title": "PhysBones"
+	},
+	"poiyomi": {
+		"title": "Poiyomi Toon Shader"
+	},
+	"setup": {
+		"title": "Kurulum Kılavuzu"
+	},
+	"sps": {
+		"title": "SPS (Super Plug Shader)"
+	},
+	"syncdances": {
+		"title": "SyncDances"
+	},
+	"toast": {
+		"submitError": "Yorum gönderilirken hata",
+		"unknownError": "Bilinmiyor"
+	},
+	"unityhubError": {
+		"title": "Unity Hub Hatası"
+	},
+	"vrcfury": {
+		"title": "VRCFury"
+	},
+	"vrcquesttools": {
+		"title": "VRCQuestTools"
+	}
+}

@@ -1,0 +1,17 @@
+{
+	"2fa_code": "Code d'authentification",
+	"back": "Retour",
+	"btn": "Se connecter",
+	"enter2FA": "Entrez le code à 6 chiffres de votre application d'authentification",
+	"error": "Identifiants invalides",
+	"google": "Continuer avec Google",
+	"invalid2FA": "Le code doit être composé de 6 chiffres",
+	"logoutConfirm": "Voulez-vous vraiment vous déconnecter ?",
+	"logout_success": "Déconnexion réussie",
+	"or": "ou",
+	"password": "Mot de passe",
+	"register": "Pas encore de compte ? S'inscrire",
+	"success": "Connexion réussie !",
+	"title": "Connexion",
+	"username": "Nom d'utilisateur"
+}

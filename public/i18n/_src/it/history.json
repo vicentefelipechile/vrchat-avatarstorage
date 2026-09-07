@@ -1,0 +1,24 @@
+{
+	"backToResource": "Torna alla risorsa",
+	"noHistory": "Nessuna modifica registrata per questa risorsa.",
+	"noVisibleChanges": "Nessuna modifica visibile al contenuto.",
+	"title": "Cronologia modifiche",
+	"field": {
+		"cat": "Categoria",
+		"desc": "Descrizione",
+		"title": "Titolo"
+	},
+	"meta": {
+		"after": "Dopo",
+		"before": "Prima",
+		"field": "Campo modificato",
+		"noChanges": "Nessuna modifica.",
+		"noFields": "Nessun campo."
+	},
+	"types": {
+		"approval": "Approvazione",
+		"content_edit": "Contenuto modificato",
+		"create": "Creato",
+		"meta_edit": "Metadati Modificati"
+	}
+}

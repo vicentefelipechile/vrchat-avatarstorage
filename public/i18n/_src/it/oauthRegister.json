@@ -1,0 +1,9 @@
+{
+	"btn": "Crea account",
+	"errorExpired": "Sessione di registrazione scaduta. Accedi di nuovo con Google.",
+	"errorTaken": "Il nome utente è già in uso.",
+	"loading": "Creazione account...",
+	"subtitle": "Stai per creare il tuo account. Scegli un nome utente unico.",
+	"title": "Scegli il tuo nome utente",
+	"usernamePlaceholder": "nome_utente"
+}

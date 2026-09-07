@@ -1,0 +1,19 @@
+{
+	"assetCountStr": "asset(y)",
+	"avatarCountStr": "awatar(y)",
+	"clothesCountStr": "ubranie/ubrania",
+	"filterTitle": "Filtry",
+	"next": "Następny",
+	"noAssets": "Nie znaleziono assetów spełniających te filtry.",
+	"noAvatars": "Nie znaleziono awatarów spełniających te filtry.",
+	"noClothes": "Nie znaleziono ubrań z tymi filtrami.",
+	"pagePrefix": "Strona",
+	"prev": "Poprzedni",
+	"reset": "Zresetuj filtry",
+	"searchLabel": "Szukaj",
+	"searchPlaceholder": "Szukaj według nazwy...",
+	"sortLabel": "Sortuj według",
+	"titleAssets": "VRCStorage — Assety",
+	"titleAvatars": "VRCStorage — Awatary",
+	"titleClothes": "VRCStorage — Ubrania"
+}

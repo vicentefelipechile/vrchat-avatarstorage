@@ -1,0 +1,14 @@
+{
+	"assets": "资产",
+	"avatars": "虚拟形象",
+	"clothes": "服装",
+	"others": "其他",
+	"worlds": "世界",
+	"desc": {
+		"assets": "资源和工具",
+		"avatars": "VRChat的3D虚拟形象",
+		"clothes": "服装和配饰",
+		"others": "其他各种资源",
+		"worlds": "可探索的虚拟世界"
+	}
+}

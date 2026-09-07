@@ -1,0 +1,9 @@
+{
+	"btn": "Konto erstellen",
+	"errorExpired": "Registrierungssitzung abgelaufen. Bitte melde dich erneut mit Google an.",
+	"errorTaken": "Benutzername ist bereits vergeben.",
+	"loading": "Konto wird erstellt...",
+	"subtitle": "Du erstellst dein Konto. Wähle einen einzigartigen Benutzernamen.",
+	"title": "Wähle deinen Benutzernamen",
+	"usernamePlaceholder": "benutzername"
+}

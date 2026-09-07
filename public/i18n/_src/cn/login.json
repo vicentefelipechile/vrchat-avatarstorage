@@ -1,0 +1,17 @@
+{
+	"2fa_code": "验证码",
+	"back": "返回",
+	"btn": "登录",
+	"enter2FA": "请输入您验证器应用中的6位数代码",
+	"error": "凭据无效",
+	"google": "通过Google登录",
+	"invalid2FA": "代码必须是6位数字",
+	"logoutConfirm": "确定要退出吗?",
+	"logout_success": "已成功退出登录",
+	"or": "或",
+	"password": "密码",
+	"register": "没有账号?注册",
+	"success": "登录成功!",
+	"title": "登录",
+	"username": "用户名"
+}

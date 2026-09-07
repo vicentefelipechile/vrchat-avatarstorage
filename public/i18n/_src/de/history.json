@@ -1,0 +1,24 @@
+{
+	"backToResource": "Zurück zur Ressource",
+	"noHistory": "Keine Änderungen für diese Ressource aufgezeichnet.",
+	"noVisibleChanges": "Keine sichtbaren Inhaltsänderungen.",
+	"title": "Änderungsverlauf",
+	"field": {
+		"cat": "Kategorie",
+		"desc": "Beschreibung",
+		"title": "Titel"
+	},
+	"meta": {
+		"after": "Nachher",
+		"before": "Vorher",
+		"field": "Geändertes Feld",
+		"noChanges": "Keine Änderungen.",
+		"noFields": "Keine Felder."
+	},
+	"types": {
+		"approval": "Genehmigung",
+		"content_edit": "Inhalt bearbeitet",
+		"create": "Erstellt",
+		"meta_edit": "Metadaten Bearbeitet"
+	}
+}

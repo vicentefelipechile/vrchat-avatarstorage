@@ -1,0 +1,14 @@
+{
+	"assets": "Assets",
+	"avatars": "Avatare",
+	"clothes": "Kleidung",
+	"others": "Sonstiges",
+	"worlds": "Welten",
+	"desc": {
+		"assets": "Ressourcen und Werkzeuge",
+		"avatars": "3D-Avatare für VRChat",
+		"clothes": "Kleidung und Accessoires",
+		"others": "Verschiedene andere Ressourcen",
+		"worlds": "Virtuelle Welten zum Erkunden"
+	}
+}

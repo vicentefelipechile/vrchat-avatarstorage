@@ -1,0 +1,20 @@
+{
+	"authorDisplayLabel": "Publiceren als",
+	"authorPersonal": "Mijn gebruikersnaam",
+	"authorTeam": "VRCStorage-team",
+	"contentLabel": "Inhoud (Markdown)",
+	"coverImageLabel": "Omslagafbeelding (Optioneel)",
+	"createPost": "Nieuw artikel",
+	"deleteConfirm": "Weet je zeker dat je dit artikel wilt verwijderen?",
+	"deletePost": "Artikel verwijderen",
+	"editPost": "Artikel bewerken",
+	"excerptLabel": "Uittreksel (Optioneel)",
+	"loading": "Artikelen laden...",
+	"noPostsYet": "Nog geen artikelen.",
+	"notFound": "Artikel niet gevonden.",
+	"savePost": "Artikel opslaan",
+	"subtitle": "VRCStorage-artikelen en nieuws",
+	"team": "VRCStorage-team",
+	"title": "Blog",
+	"titleLabel": "Titel"
+}

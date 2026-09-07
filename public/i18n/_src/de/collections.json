@@ -1,0 +1,8 @@
+{
+	"confirmDelete": "Favoriten in dieser Sammlung werden zu Ohne Sammlung verschoben. Fortfahren?",
+	"create": "Neue Sammlung",
+	"created": "Sammlung «{name}» erstellt",
+	"delete": "Sammlung löschen",
+	"namePlaceholder": "Sammlungsname",
+	"rename": "Umbenennen"
+}

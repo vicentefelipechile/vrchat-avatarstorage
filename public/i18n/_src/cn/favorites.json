@@ -1,0 +1,12 @@
+{
+	"all": "全部",
+	"dragToReorder": "拖动排序",
+	"itemMany": "收藏",
+	"itemOne": "收藏",
+	"moveDown": "下移",
+	"moveToCollection": "移至收藏夹",
+	"moveUp": "上移",
+	"movedTo": "已将 {item} 移动到 {collection}",
+	"noCollection": "无收藏集",
+	"noOtherCollections": "没有其他收藏集"
+}

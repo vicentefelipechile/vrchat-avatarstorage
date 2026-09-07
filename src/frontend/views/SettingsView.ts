@@ -138,7 +138,7 @@ export async function settingsView(_ctx: RouteContext): Promise<string> {
 								</div>
 								<div class="settings-actions">
 									<button id="2fa-confirm-password-btn" class="btn">${t('settings.2fa_continue')}</button>
-									<button type="button" id="2fa-cancel-password-btn" class="btn-outline">${t('settings.2fa_cancel')}</button>
+									<button type="button" id="2fa-cancel-password-btn" class="btn-outline">${t('common.cancel')}</button>
 								</div>
 							</div>
 
@@ -155,7 +155,7 @@ export async function settingsView(_ctx: RouteContext): Promise<string> {
 								</div>
 								<div class="settings-actions">
 									<button id="2fa-verify-btn" class="btn">${icons.check(16)} ${t('settings.2fa_enable')}</button>
-									<button type="button" id="2fa-cancel-setup-btn" class="btn-outline">${t('settings.2fa_cancel')}</button>
+									<button type="button" id="2fa-cancel-setup-btn" class="btn-outline">${t('common.cancel')}</button>
 								</div>
 							</div>
 
@@ -181,7 +181,7 @@ export async function settingsView(_ctx: RouteContext): Promise<string> {
 								</div>
 								<div class="settings-actions">
 									<button id="2fa-confirm-disable-btn" class="btn-danger">${t('settings.2fa_confirm_disable')}</button>
-									<button type="button" id="2fa-disable-cancel-btn" class="btn-outline">${t('settings.2fa_cancel')}</button>
+									<button type="button" id="2fa-disable-cancel-btn" class="btn-outline">${t('common.cancel')}</button>
 								</div>
 							</div>
 						</div>
@@ -515,7 +515,7 @@ async function loadPasswordSection(): Promise<void> {
 					window.location.href = '/';
 				}, 2500);
 			} else {
-				showToast(data.error ?? 'Failed to change password', 'error');
+				showToast(data.error ?? t('settings.toast.passwordChangeFailed'), 'error');
 			}
 		} catch {
 			showToast(t('common.networkError'), 'error');
@@ -586,7 +586,7 @@ function setup2FAHandlers(els: TwoFAEls): void {
 			});
 			const data = (await res.json()) as { otpauthUrl?: string; secret?: string; error?: string };
 			if (!res.ok) {
-				showToast(data.error ?? 'Error setting up 2FA', 'error');
+				showToast(data.error ?? t('settings.toast.twoFactorSetupFailed'), 'error');
 				if (restore) restore();
 				return;
 			}
@@ -663,7 +663,7 @@ function setup2FAHandlers(els: TwoFAEls): void {
 				backupCodesList.textContent = data.backupCodes?.join('\n') ?? '';
 				showToast(t('settings.2fa_enabled_success'), 'success');
 			} else {
-				showToast(data.error ?? 'Invalid code', 'error');
+				showToast(data.error ?? t('settings.toast.invalidCode'), 'error');
 			}
 		} catch {
 			showToast(t('common.networkError'), 'error');
@@ -715,7 +715,7 @@ function setup2FAHandlers(els: TwoFAEls): void {
 				const pw2faSection = document.getElementById('pw-2fa-section') as HTMLElement;
 				if (pw2faSection) pw2faSection.style.display = 'none';
 			} else {
-				showToast(data.error ?? 'Error disabling 2FA', 'error');
+				showToast(data.error ?? t('settings.toast.twoFactorDisableFailed'), 'error');
 			}
 		} catch {
 			showToast(t('common.networkError'), 'error');
@@ -791,7 +791,7 @@ async function loadDrivePanel(): Promise<void> {
 
 	document.getElementById('drive-disconnect-btn')?.addEventListener('click', async () => {
 		const { showConfirm } = await import('../lib/confirm');
-		const ok = await showConfirm({ title: t('confirm.title'), message: t('settings.driveDisconnectConfirm'), confirmText: t('confirm.confirm'), cancelText: t('confirm.cancel'), danger: true });
+		const ok = await showConfirm({ title: t('confirm.title'), message: t('settings.driveDisconnectConfirm'), confirmText: t('confirm.confirm'), cancelText: t('common.cancel'), danger: true });
 		if (!ok) return;
 		try {
 			const res = await fetch('/api/drive/link', { method: 'DELETE' });
@@ -908,7 +908,7 @@ async function loadSharesPanel(): Promise<void> {
 	listEl.addEventListener('click', async (e) => {
 		const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('.share-revoke-btn');
 		if (!btn?.dataset.uuid) return;
-		const ok = await showConfirm({ title: t('settings.sharesRevokeTitle'), message: t('settings.sharesRevokeConfirm'), confirmText: t('confirm.confirm'), cancelText: t('confirm.cancel'), danger: true });
+		const ok = await showConfirm({ title: t('settings.sharesRevokeTitle'), message: t('settings.sharesRevokeConfirm'), confirmText: t('confirm.confirm'), cancelText: t('common.cancel'), danger: true });
 		if (!ok) return;
 		try {
 			const res = await fetch(`/api/share/${btn.dataset.uuid}`, { method: 'DELETE' });

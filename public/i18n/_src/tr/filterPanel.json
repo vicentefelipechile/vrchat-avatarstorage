@@ -1,0 +1,19 @@
+{
+	"assetCountStr": "varlık",
+	"avatarCountStr": "avatar",
+	"clothesCountStr": "kıyafet",
+	"filterTitle": "Filtreler",
+	"next": "Sonraki",
+	"noAssets": "Bu filtrelerle varlık bulunamadı.",
+	"noAvatars": "Bu filtrelerle avatar bulunamadı.",
+	"noClothes": "Bu filtrelerle kıyafet bulunamadı.",
+	"pagePrefix": "Sayfa",
+	"prev": "Önceki",
+	"reset": "Filtreleri Sıfırla",
+	"searchLabel": "Ara",
+	"searchPlaceholder": "Ada göre ara...",
+	"sortLabel": "Sırala",
+	"titleAssets": "VRCStorage — Varlıklar",
+	"titleAvatars": "VRCStorage — Avatarlar",
+	"titleClothes": "VRCStorage — Kıyafetler"
+}

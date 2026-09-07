@@ -1,0 +1,9 @@
+{
+	"btn": "Hesap Oluştur",
+	"errorExpired": "Kayıt oturumu sona erdi. Lütfen Google ile tekrar giriş yapın.",
+	"errorTaken": "Kullanıcı adı zaten alınmış.",
+	"loading": "Hesap oluşturuluyor...",
+	"subtitle": "Hesabınızı oluşturmak üzeresiniz. Benzersiz bir kullanıcı adı seçin.",
+	"title": "Kullanıcı Adınızı Seçin",
+	"usernamePlaceholder": "kullanici_adi"
+}

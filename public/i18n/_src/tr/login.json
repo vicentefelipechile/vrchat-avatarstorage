@@ -1,0 +1,17 @@
+{
+	"2fa_code": "Doğrulama Kodu",
+	"back": "Geri",
+	"btn": "Giriş Yap",
+	"enter2FA": "Kimlik doğrulama uygulamanızdaki 6 haneli kodu girin",
+	"error": "Geçersiz kimlik bilgileri",
+	"google": "Google ile devam et",
+	"invalid2FA": "Kod 6 rakamdan oluşmalıdır",
+	"logoutConfirm": "Çıkış yapmak istediğinizden emin misiniz?",
+	"logout_success": "Başarıyla çıkış yapıldı",
+	"or": "veya",
+	"password": "Şifre",
+	"register": "Hesabınız yok mu? Kaydolun",
+	"success": "Başarıyla giriş yapıldı!",
+	"title": "Giriş Yap",
+	"username": "Kullanıcı Adı"
+}

@@ -1,0 +1,20 @@
+{
+	"authorDisplayLabel": "Publicar como",
+	"authorPersonal": "Meu nome de usuário",
+	"authorTeam": "Equipe VRCStorage",
+	"contentLabel": "Conteúdo (Markdown)",
+	"coverImageLabel": "Imagem de Capa (Opcional)",
+	"createPost": "Novo Artigo",
+	"deleteConfirm": "Tem certeza de que deseja excluir este artigo?",
+	"deletePost": "Excluir Artigo",
+	"editPost": "Editar Artigo",
+	"excerptLabel": "Resumo (Opcional)",
+	"loading": "Carregando artigos...",
+	"noPostsYet": "Nenhum artigo ainda.",
+	"notFound": "Artigo não encontrado.",
+	"savePost": "Salvar Artigo",
+	"subtitle": "Artigos e notícias do VRCStorage",
+	"team": "Equipe VRCStorage",
+	"title": "Blog",
+	"titleLabel": "Título"
+}

@@ -1,0 +1,88 @@
+{
+	"title": "维基 - 依赖指南",
+	"actionMenu": {
+		"title": "操作菜单"
+	},
+	"avatarCategories": {
+		"title": "Avatar 分类"
+	},
+	"categories": {
+		"dependencies": "依赖项",
+		"erp": "ERP",
+		"informative": "信息",
+		"vrchat": "VRChat"
+	},
+	"comments": {
+		"title": "Wiki 评论"
+	},
+	"desktopPuppeteer": {
+		"title": "Desktop Puppeteer"
+	},
+	"dps": {
+		"title": "DPS (Dynamic Penetration System)"
+	},
+	"faq": {
+		"title": "常见问题"
+	},
+	"gestureManager": {
+		"title": "Gesture Manager 模拟器"
+	},
+	"gogoloco": {
+		"title": "GoGo Loco"
+	},
+	"gogolocoNsfw": {
+		"title": "NSFW Locomotion"
+	},
+	"gogolocoRemove": {
+		"title": "移除GoGo Loco"
+	},
+	"haptics": {
+		"title": "触觉指南"
+	},
+	"insideView": {
+		"title": "Inside View"
+	},
+	"justkisssfx": {
+		"title": "JustKissSFX"
+	},
+	"modularAvatar": {
+		"title": "Modular Avatar"
+	},
+	"nsfwEssentials": {
+		"title": "NSFW 基础指南"
+	},
+	"parameter": {
+		"title": "虚拟形象参数"
+	},
+	"pcs": {
+		"title": "PCS (Penetration Contact System)"
+	},
+	"physbones": {
+		"title": "PhysBones"
+	},
+	"poiyomi": {
+		"title": "Poiyomi Toon Shader"
+	},
+	"setup": {
+		"title": "安装指南"
+	},
+	"sps": {
+		"title": "SPS (Super Plug Shader)"
+	},
+	"syncdances": {
+		"title": "SyncDances"
+	},
+	"toast": {
+		"submitError": "提交评论时出错",
+		"unknownError": "未知"
+	},
+	"unityhubError": {
+		"title": "Unity Hub 错误"
+	},
+	"vrcfury": {
+		"title": "VRCFury"
+	},
+	"vrcquesttools": {
+		"title": "VRCQuestTools"
+	}
+}

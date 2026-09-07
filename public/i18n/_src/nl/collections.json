@@ -1,0 +1,8 @@
+{
+	"confirmDelete": "Favorieten in deze collectie worden verplaatst naar Zonder collectie. Doorgaan?",
+	"create": "Nieuwe collectie",
+	"created": "Verzameling «{name}» aangemaakt",
+	"delete": "Collectie verwijderen",
+	"namePlaceholder": "Collectienaam",
+	"rename": "Hernoemen"
+}

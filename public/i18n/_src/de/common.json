@@ -1,0 +1,14 @@
+{
+	"accessDenied": "Zugriff verweigert",
+	"cancel": "Abbrechen",
+	"error": "Fehler",
+	"loadError": "Fehler beim Laden.",
+	"loading": "Laden...",
+	"loadingComments": "Kommentare werden geladen...",
+	"networkError": "Netzwerkfehler. Bitte versuche es erneut.",
+	"noFavorites": "Du hast noch keine Favoriten.",
+	"noResourcesFound": "Keine Ressourcen in dieser Kategorie gefunden.",
+	"notFound": "Seite nicht gefunden",
+	"removeFavorite": "Aus Favoriten entfernen",
+	"unknown": "Unbekannt"
+}

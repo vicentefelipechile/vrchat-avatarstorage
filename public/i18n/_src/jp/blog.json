@@ -1,0 +1,20 @@
+{
+	"authorDisplayLabel": "投稿者として",
+	"authorPersonal": "自分のユーザー名",
+	"authorTeam": "VRCStorage チーム",
+	"contentLabel": "コンテンツ (Markdown)",
+	"coverImageLabel": "カバー画像 (オプション)",
+	"createPost": "新しい記事",
+	"deleteConfirm": "この記事を削除してもよろしいですか？",
+	"deletePost": "記事を削除",
+	"editPost": "記事を編集",
+	"excerptLabel": "抜粋 (オプション)",
+	"loading": "記事を読み込み中...",
+	"noPostsYet": "まだ記事はありません。",
+	"notFound": "記事が見つかりません。",
+	"savePost": "記事を保存",
+	"subtitle": "VRCStorageの記事とニュース",
+	"team": "VRCStorage チーム",
+	"title": "ブログ",
+	"titleLabel": "タイトル"
+}

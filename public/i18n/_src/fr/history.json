@@ -1,0 +1,24 @@
+{
+	"backToResource": "Retour à la ressource",
+	"noHistory": "Aucun changement enregistré pour cette ressource.",
+	"noVisibleChanges": "Aucun changement visible.",
+	"title": "Historique des modifications",
+	"field": {
+		"cat": "Catégorie",
+		"desc": "Description",
+		"title": "Titre"
+	},
+	"meta": {
+		"after": "Après",
+		"before": "Avant",
+		"field": "Champ modifié",
+		"noChanges": "Aucune modification.",
+		"noFields": "Aucun champ."
+	},
+	"types": {
+		"approval": "Approbation",
+		"content_edit": "Modification de contenu",
+		"create": "Création",
+		"meta_edit": "Métadonnées Modifiées"
+	}
+}

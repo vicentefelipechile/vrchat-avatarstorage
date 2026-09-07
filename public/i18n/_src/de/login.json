@@ -1,0 +1,17 @@
+{
+	"2fa_code": "Authentifizierungscode",
+	"back": "Zurück",
+	"btn": "Anmelden",
+	"enter2FA": "Gib den 6-stelligen Code aus deiner Authenticator-App ein",
+	"error": "Ungültige Anmeldedaten",
+	"google": "Weiter mit Google",
+	"invalid2FA": "Der Code muss aus 6 Ziffern bestehen",
+	"logoutConfirm": "Bist du sicher, dass du dich abmelden möchtest?",
+	"logout_success": "Erfolgreich abgemeldet",
+	"or": "oder",
+	"password": "Passwort",
+	"register": "Kein Konto? Registrieren",
+	"success": "Erfolgreich angemeldet!",
+	"title": "Anmelden",
+	"username": "Benutzername"
+}

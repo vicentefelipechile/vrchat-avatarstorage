@@ -1,0 +1,24 @@
+{
+	"backToResource": "Volver al Recurso",
+	"noHistory": "No hay cambios registrados para este recurso.",
+	"noVisibleChanges": "Sin cambios visibles en el contenido.",
+	"title": "Historial de Cambios",
+	"field": {
+		"cat": "Categoría",
+		"desc": "Descripción",
+		"title": "Título"
+	},
+	"meta": {
+		"after": "Después",
+		"before": "Antes",
+		"field": "Campo",
+		"noChanges": "Sin cambios.",
+		"noFields": "Sin campos."
+	},
+	"types": {
+		"approval": "Aprobación",
+		"content_edit": "Edición de Contenido",
+		"create": "Creación",
+		"meta_edit": "Metadatos Editados"
+	}
+}

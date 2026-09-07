@@ -1,0 +1,15 @@
+{
+	"disconnected": "正在重新连接...",
+	"empty": "还没有消息，来说第一句吧。",
+	"invalid": "该消息无法发送。",
+	"loginToChat": "登录后即可参与聊天",
+	"placeholder": "输入消息...",
+	"purge": "清空聊天",
+	"purgeConfirm": "确定删除聊天中的所有消息吗？此操作无法撤销。",
+	"purgeFailed": "无法清空聊天。",
+	"purged": "管理员已清空聊天。",
+	"rateLimited": "请稍等片刻再发送。",
+	"send": "发送",
+	"title": "全球聊天",
+	"tooLong": "消息最多 50 个字符。"
+}

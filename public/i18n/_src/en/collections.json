@@ -1,0 +1,8 @@
+{
+	"confirmDelete": "Favorites in this collection will be moved to Uncategorized. Continue?",
+	"create": "New collection",
+	"created": "Collection \"{name}\" created",
+	"delete": "Delete collection",
+	"namePlaceholder": "Collection name",
+	"rename": "Rename"
+}

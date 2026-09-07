@@ -1,0 +1,15 @@
+{
+	"disconnected": "Opnieuw verbinden...",
+	"empty": "Nog geen berichten. Zeg als eerste iets.",
+	"invalid": "Dit bericht kon niet worden verstuurd.",
+	"loginToChat": "Log in om mee te praten",
+	"placeholder": "Schrijf een bericht...",
+	"purge": "Chat legen",
+	"purgeConfirm": "Alle berichten in de chat verwijderen? Dit kan niet ongedaan worden gemaakt.",
+	"purgeFailed": "De chat kon niet worden geleegd.",
+	"purged": "Een beheerder heeft de chat geleegd.",
+	"rateLimited": "Wacht even voordat je opnieuw verstuurt.",
+	"send": "Versturen",
+	"title": "Globale chat",
+	"tooLong": "Berichten mogen maximaal 50 tekens bevatten."
+}

@@ -1,0 +1,14 @@
+{
+	"assets": "Varlıklar",
+	"avatars": "Avatarlar",
+	"clothes": "Kıyafetler",
+	"others": "Diğer",
+	"worlds": "Dünyalar",
+	"desc": {
+		"assets": "Kaynaklar ve araçlar",
+		"avatars": "VRChat için 3D avatarlar",
+		"clothes": "Kıyafetler ve aksesuarlar",
+		"others": "Çeşitli diğer kaynaklar",
+		"worlds": "Keşfedilecek sanal dünyalar"
+	}
+}

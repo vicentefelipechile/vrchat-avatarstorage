@@ -364,6 +364,10 @@ public/
     bundle.js             # Compiled frontend bundle (output of esbuild, DO NOT EDIT)
                           # Locale JSON is imported by src/frontend/core/i18n.ts and bundled in here
   i18n/                   # Locale files — plain JSON (`{ "key": "value" }`, NOT ES modules)
+                            # _src/{locale}/{section}.json = SOURCE OF TRUTH (hand-edited, one file per section)
+                            # {locale}.json monolits = generated artifacts (npm run i18n:build, committed, never hand-edited)
+    _src/cn/ _src/de/ _src/en/ _src/es/ _src/fr/ _src/it/
+    _src/jp/ _src/nl/ _src/pl/ _src/pt/ _src/ru/ _src/tr/
     cn.json  de.json  en.json  es.json  fr.json  it.json
     jp.json  nl.json  pl.json  pt.json  ru.json  tr.json
   wiki/                   # Markdown wiki articles (multi-language)
@@ -520,10 +524,12 @@ All visual feedback or ephemeral messages to the user (success, error, loading s
 
 Locale files live in `public/i18n/` as **plain JSON files** (e.g. `en.json`, `es.json`). They are NOT ES modules — do not use `export default`.
 
+- **Source of truth:** `public/i18n/_src/{locale}/{section}.json` (one small file per section, hand-edited). The monolits `public/i18n/{locale}.json` are **generated artifacts** (committed, but never hand-edited — regenerate with `npm run i18n:build`; any manual edit is overwritten by the next build).
 - **Supported locales:** `cn`, `de`, `en`, `es`, `fr`, `it`, `jp`, `nl`, `pl`, `pt`, `ru`, `tr`.
 - **Loader:** `src/frontend/core/i18n.ts` imports every locale JSON statically and holds them in the `translations` map; esbuild bundles them into `public/js/bundle.js` (no runtime `fetch()`). `t(path)` resolves the dot-path in the current locale, falling back to `en`, then to the raw `path` string.
 - **No Fallbacks:** NEVER use fallback strings with the `t()` function (e.g., avoid `t('key') || 'Fallback'`). Just use `t('key')`. Fallbacks make it harder to detect missing translations.
-- **Consistency check:** Run `npm run i18n-manager CHECK` to detect missing keys across all locale files (compact one-line-per-key output). Exits with code `1` if issues are found (CI-safe).
+- **Consistency check:** Run `npm run i18n-manager CHECK` to detect missing keys across all locale files (compact one-line-per-key output). Exits with code `1` if issues are found (CI-safe). `CHECK` enforces four dimensions: bidirectional sync (missing-in-others **and** present-elsewhere-but-missing-in-EN), no unreferenced keys, section/leaf ordering, and monolit↔fragment consistency.
+- **Key order:** top-level sections follow the layered order (`common, nav, pagination, confirm, notifications, updates, home, cats, category, card, sort, filterPanel, favorites, collections, item, comment, edit, history, upload, meta, authorProfile, register, oauthRegister, login, settings, admin, chat, blog, wiki, dmca`); leaf keys are alphabetical within each section with nested sub-groups last. Keep the order when adding keys — never append a new key at the end of a section.
 - **NO ENGLISH PLACEHOLDERS IN OTHER LANGUAGES:** It is **EXPLICITLY FORBIDDEN** to use English text as placeholder translations in non‑English locale files. The i18n system already falls back to English when a key is missing; writing English strings in other locale files defeats the purpose of translation and makes missing keys invisible. Agents MUST generate proper translations for all supported languages—use machine translation if necessary, but never copy English strings verbatim into `de.json`, `es.json`, etc.
 
 #### Adding a few keys (ADD mode — for 1–2 keys)
@@ -540,7 +546,7 @@ npm run i18n-manager ADD DRY ES register.confirmPassword="Confirmar contraseña"
 - Locale codes are case-insensitive: `EN`, `ES`, `DE`, `FR`, `IT`, `JP`, `CN`, `NL`, `PL`, `PT`, `RU`, `TR`.
 - Key format is dot-notation at any depth: `section.leaf` or `section.subsection.leaf`.
 - If the key already exists in the target locale, it is skipped silently.
-- After running, always verify with `npm run i18n-manager CHECK`.
+- After running, regenerate and verify with `npm run i18n:build && npm run i18n-manager CHECK`.
 - Run **one command per locale** — do not chain all locales in a single command.
 
 #### Batch-filling missing translations (FILL mode — for 3+ keys)
@@ -580,10 +586,10 @@ npm run i18n-manager FILL ./i18n-fill.json
 
 Add `DRY` before the path to preview without writing.
 
-**Step 4 — Verify**
+**Step 4 — Regenerate and verify**
 
 ```bash
-npm run i18n-manager CHECK
+npm run i18n:build && npm run i18n-manager CHECK
 ```
 
 Repeat until output is `✔ All keys present in all locales.`
@@ -1102,12 +1108,14 @@ Use bold for UI label names and inline code for values and field identifiers.
 
 When adding a new language to the project, follow **ALL** of these steps in order:
 
-#### Step 1: Create the locale file (`public/i18n/<code>.json`)
+#### Step 1: Create the locale fragments (`public/i18n/_src/<code>/`)
 
-1. Copy `public/i18n/en.json` as the template (it is the reference locale and always has the complete set of keys).
+1. Copy every file from `public/i18n/_src/en/` to `public/i18n/_src/<code>/` (`en` is the reference locale and always has the complete set of keys).
 2. Translate **every** value to the target language. Keep all keys in English.
-3. The file format is **plain JSON** — a single JSON object `{ "key": "value", ... }`. Do NOT use `export default` or any JS syntax.
-4. DO NOT add or remove keys — maintain exact structural parity with `en.json`.
+3. Add the code to `KNOWN_LOCALES` in `src/tools/build-i18n.mjs` so the generator emits the new monolit.
+4. Run `npm run i18n:build` to generate `public/i18n/<code>.json` from the fragments.
+5. The fragment format is **plain JSON** — a single JSON object `{ "key": "value", ... }`. Do NOT use `export default` or any JS syntax.
+6. DO NOT add or remove keys — maintain exact structural parity with `en`.
 
 #### Step 2: Register the locale in the frontend loader
 
@@ -1157,6 +1165,6 @@ This bundles the new locale import into `public/js/bundle.js`.
 - **Binding Errors:** Check `wrangler.jsonc` and ensure the variable name in code matches the binding name.
 - **D1 Deadlocks:** SQLite in D1 is single-writer. Keep transactions short.
 - **i18n out of sync:** Run `npm run i18n-manager CHECK` to identify which keys or locales are missing.
-- **Bundle not updating:** Remember to run `npm run build-frontend` after editing files in `src/frontend/`. In dev mode, use `npm run dev` which runs esbuild in watch mode automatically.
+- **Bundle not updating:** Remember to run `npm run build-frontend` after editing files in `src/frontend/`. In dev mode, use `npm run dev` which runs esbuild in watch mode automatically. esbuild `--watch` observes the generated monolits, not the fragments — after editing a file under `public/i18n/_src/`, re-run `npm run i18n:build` to refresh the monolits the bundle imports.
 - **Source maps in production:** The `src/tools/build-frontend.mjs` only emits source maps when the `--dev` flag is passed. Production deploys via `npm run deploy` never include `.map` files.
 - **Orphaned media not cleaned up:** The cron only deletes media inside the 24h–48h age window (see "Orphan Cleanup"); anything older than 48h is out of scope by design and must be removed manually. If the media is inside the window, check that the new reference type is covered in the `ORPHANED_MEDIA_PREDICATE` in `src/repositories/admin-repository.ts` (the single predicate shared by the stats, listing, cleanup, and cron queries). If a new text column embeds images, add `AND NOT EXISTS (SELECT 1 FROM <table> WHERE INSTR(<table>.<column>, m.r2_key) > 0)`.

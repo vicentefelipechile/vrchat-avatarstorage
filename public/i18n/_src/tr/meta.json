@@ -1,0 +1,128 @@
+{
+	"adminOnly": "* sadece admin",
+	"required": "* gerekli",
+	"select": "-- Seç --",
+	"asset": {
+		"title": "Varlık Detayları",
+		"titleAdmin": "Varlık Meta Verileri",
+		"type": "Varlık Türü *"
+	},
+	"asset_type": {
+		"animation": "Animasyon",
+		"avatarBase": "Avatar Tabanı",
+		"hud": "HUD",
+		"other": "Diğer",
+		"particle": "Parçacık FX",
+		"prefab": "Prefab",
+		"prop": "Sahne Nesnesi",
+		"script": "Betik",
+		"shader": "Shader",
+		"sound": "Ses",
+		"texturePack": "Doku Paketi",
+		"title": "Varlık Türü",
+		"tool": "Araç",
+		"vfx": "VFX"
+	},
+	"avatar": {
+		"author": "Orijinal Yazar",
+		"authorHint": "(avatar yaratıcısının adı)",
+		"authorLinked": "Bağlı Yazar UUID",
+		"authorPlaceholder": "Yazar ara... veya isim yaz",
+		"extras": "Avatar Ekstraları",
+		"gender": "Avatar Cinsiyeti *",
+		"size": "Avatar Boyutu *",
+		"title": "Avatar Detayları",
+		"titleAdmin": "Avatar Meta Verileri",
+		"type": "Avatar Türü *"
+	},
+	"avatar_gender": {
+		"androgynous": "Androjen",
+		"both": "Her İkisi (Paket)",
+		"female": "Kadın",
+		"kemono": "Kemono",
+		"male": "Erkek",
+		"title": "Cinsiyet",
+		"undefined": "Tanımsız",
+		"unisex": "Unisex"
+	},
+	"avatar_size": {
+		"giant": "Dev",
+		"medium": "Orta",
+		"small": "Küçük",
+		"tall": "Uzun",
+		"tiny": "Minik",
+		"title": "Boyut"
+	},
+	"avatar_type": {
+		"anime": "Anime",
+		"cartoon": "Çizgi film",
+		"chibi": "Chibi",
+		"fantasy": "Fantezi",
+		"furry": "Furry",
+		"human": "İnsan",
+		"kemono": "Kemono",
+		"mecha": "Mecha",
+		"monster": "Canavar",
+		"other": "Diğer",
+		"sciFi": "Bilim Kurgu",
+		"semiRealistic": "Yarı Gerçekçi",
+		"title": "Tür",
+		"vtuber": "VTuber"
+	},
+	"clothes": {
+		"baseAvatar": "Hangi temel avatar için?",
+		"baseAvatarHint": "(otomatik tamamlama veya serbest isim)",
+		"baseAvatarPlaceholder": "Temel avatar ara...",
+		"gender": "Tasarım Cinsiyeti *",
+		"isBase": "Temeldir (temel avatar içerir)",
+		"title": "Giyim Detayları",
+		"titleAdmin": "Giyim Meta Verileri",
+		"type": "Giyim Türü *"
+	},
+	"clothing_type": {
+		"accessory": "Aksesuar",
+		"bodyPart": "Vücut Parçası",
+		"bottom": "Alt",
+		"dress": "Elbise",
+		"ears": "Kulaklar",
+		"fullbody": "Tam Vücut",
+		"hair": "Saç",
+		"hat": "Şapka",
+		"jacket": "Ceket",
+		"legwear": "Bacak Giysisi",
+		"other": "Diğer",
+		"shoes": "Ayakkabı",
+		"swimwear": "Mayo",
+		"tail": "Kuyruk",
+		"title": "Kıyafet Türü",
+		"top": "Üst",
+		"underwear": "İç Çamaşırı",
+		"wings": "Kanatlar"
+	},
+	"features": {
+		"dps": "DPS",
+		"facetracking": "Yüz Takibi",
+		"gogoloco": "GoGo Loco",
+		"nsfw": "NSFW",
+		"physbones": "PhysBones",
+		"questOptimized": "Quest Optimize",
+		"title": "Özellikler",
+		"toggles": "Geçiş Düğmeleri"
+	},
+	"platform": {
+		"cross": "Çapraz Platform (PC + Quest)",
+		"crossSimple": "Çapraz Platform",
+		"pc": "Sadece PC",
+		"quest": "Sadece Quest",
+		"sdk": "SDK",
+		"title": "Platform"
+	},
+	"sdk_version": {
+		"extras": "Ekstralar",
+		"title": "SDK Sürümü",
+		"unityVersion": "Unity Sürümü",
+		"v2": "SDK 2.0",
+		"v3": "SDK 3.0",
+		"v3Default": "SDK 3.0 (varsayılan)"
+	}
+}

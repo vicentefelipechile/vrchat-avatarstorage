@@ -1,0 +1,9 @@
+{
+	"btn": "Create Account",
+	"errorExpired": "Registration session expired. Please sign in with Google again.",
+	"errorTaken": "Username is already taken.",
+	"loading": "Creating account...",
+	"subtitle": "You are about to create your account. Choose a unique username.",
+	"title": "Choose your username",
+	"usernamePlaceholder": "username"
+}

@@ -1,0 +1,14 @@
+{
+	"accessDenied": "Toegang geweigerd",
+	"cancel": "Annuleren",
+	"error": "Fout",
+	"loadError": "Fout bij het laden.",
+	"loading": "Laden...",
+	"loadingComments": "Reacties laden...",
+	"networkError": "Netwerkfout. Probeer het opnieuw.",
+	"noFavorites": "Je hebt nog geen favorieten.",
+	"noResourcesFound": "Geen bronnen gevonden in deze categorie.",
+	"notFound": "Pagina niet gevonden",
+	"removeFavorite": "Uit favorieten verwijderen",
+	"unknown": "Onbekend"
+}

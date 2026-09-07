@@ -1,0 +1,17 @@
+{
+	"2fa_code": "Authentication Code",
+	"back": "Back",
+	"btn": "Login",
+	"enter2FA": "Enter the 6-digit code from your authenticator app",
+	"error": "Invalid credentials",
+	"google": "Continue with Google",
+	"invalid2FA": "Code must be 6 numeric digits",
+	"logoutConfirm": "Are you sure you want to log out?",
+	"logout_success": "Logged out successfully",
+	"or": "or",
+	"password": "Password",
+	"register": "No account? Register",
+	"success": "Logged in successfully!",
+	"title": "Login",
+	"username": "Username"
+}

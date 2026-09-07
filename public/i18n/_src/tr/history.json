@@ -1,0 +1,24 @@
+{
+	"backToResource": "Kaynağa Dön",
+	"noHistory": "Bu kaynak için değişiklik kaydı yok.",
+	"noVisibleChanges": "Görünür içerik değişikliği yok.",
+	"title": "Değişiklik Geçmişi",
+	"field": {
+		"cat": "Kategori",
+		"desc": "Açıklama",
+		"title": "Başlık"
+	},
+	"meta": {
+		"after": "Sonra",
+		"before": "Önce",
+		"field": "Değiştirilen Alan",
+		"noChanges": "Değişiklik yok.",
+		"noFields": "Alan yok."
+	},
+	"types": {
+		"approval": "Onay",
+		"content_edit": "İçerik Düzenlendi",
+		"create": "Oluşturuldu",
+		"meta_edit": "Meta Veriler Düzenlendi"
+	}
+}

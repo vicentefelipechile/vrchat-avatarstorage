@@ -1,0 +1,14 @@
+{
+	"accessDenied": "访问被拒绝",
+	"cancel": "取消",
+	"error": "错误",
+	"loadError": "加载时出错。",
+	"loading": "加载中...",
+	"loadingComments": "加载评论中...",
+	"networkError": "网络错误, 请重试。",
+	"noFavorites": "您还没有收藏。",
+	"noResourcesFound": "此类别中未找到资源。",
+	"notFound": "页面未找到",
+	"removeFavorite": "取消收藏",
+	"unknown": "未知"
+}

@@ -1,0 +1,17 @@
+{
+	"2fa_code": "Kod uwierzytelniania",
+	"back": "Wstecz",
+	"btn": "Zaloguj się",
+	"enter2FA": "Wprowadź 6-cyfrowy kod z aplikacji uwierzytelniającej",
+	"error": "Nieprawidłowe dane logowania",
+	"google": "Kontynuuj z Google",
+	"invalid2FA": "Kod musi składać się z 6 cyfr",
+	"logoutConfirm": "Czy na pewno chcesz się wylogować?",
+	"logout_success": "Wylogowano pomyślnie",
+	"or": "lub",
+	"password": "Hasło",
+	"register": "Nie masz konta? Zarejestruj się",
+	"success": "Zalogowano pomyślnie!",
+	"title": "Logowanie",
+	"username": "Nazwa użytkownika"
+}

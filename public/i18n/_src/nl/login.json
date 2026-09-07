@@ -1,0 +1,17 @@
+{
+	"2fa_code": "Authenticatiecode",
+	"back": "Terug",
+	"btn": "Inloggen",
+	"enter2FA": "Voer de 6-cijferige code in van je authenticator-app",
+	"error": "Ongeldige inloggegevens",
+	"google": "Doorgaan met Google",
+	"invalid2FA": "Code moet uit 6 cijfers bestaan",
+	"logoutConfirm": "Weet je zeker dat je wilt uitloggen?",
+	"logout_success": "Succesvol uitgelogd",
+	"or": "of",
+	"password": "Wachtwoord",
+	"register": "Geen account? Registreren",
+	"success": "Succesvol ingelogd!",
+	"title": "Inloggen",
+	"username": "Gebruikersnaam"
+}

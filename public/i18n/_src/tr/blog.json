@@ -1,0 +1,20 @@
+{
+	"authorDisplayLabel": "Olarak yayınla",
+	"authorPersonal": "Kullanıcı adım",
+	"authorTeam": "VRCStorage Ekibi",
+	"contentLabel": "İçerik (Markdown)",
+	"coverImageLabel": "Kapak Görseli (İsteğe bağlı)",
+	"createPost": "Yeni Makale",
+	"deleteConfirm": "Bu makaleyi silmek istediğinizden emin misiniz?",
+	"deletePost": "Makaleyi Sil",
+	"editPost": "Makaleyi Düzenle",
+	"excerptLabel": "Özet (İsteğe bağlı)",
+	"loading": "Makaleler yükleniyor...",
+	"noPostsYet": "Henüz makale yok.",
+	"notFound": "Makale bulunamadı.",
+	"savePost": "Makaleyi Kaydet",
+	"subtitle": "VRCStorage makaleleri ve haberleri",
+	"team": "VRCStorage Ekibi",
+	"title": "Blog",
+	"titleLabel": "Başlık"
+}

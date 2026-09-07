@@ -1,0 +1,20 @@
+{
+	"authorDisplayLabel": "Опубликовать как",
+	"authorPersonal": "Мое имя пользователя",
+	"authorTeam": "Команда VRCStorage",
+	"contentLabel": "Содержание (Markdown)",
+	"coverImageLabel": "Обложка (Необязательно)",
+	"createPost": "Новая статья",
+	"deleteConfirm": "Вы уверены, что хотите удалить эту статью?",
+	"deletePost": "Удалить статью",
+	"editPost": "Редактировать статью",
+	"excerptLabel": "Краткое описание (Необязательно)",
+	"loading": "Загрузка статей...",
+	"noPostsYet": "Статей пока нет.",
+	"notFound": "Статья не найдена.",
+	"savePost": "Сохранить статью",
+	"subtitle": "Статьи и новости VRCStorage",
+	"team": "Команда VRCStorage",
+	"title": "Блог",
+	"titleLabel": "Заголовок"
+}

@@ -239,7 +239,7 @@ export async function wikiAfter(ctx: RouteContext): Promise<void> {
 		try {
 			const comments = (await fetch('/api/wiki/comments').then((r) => r.json())) as WikiComment[];
 			if (!comments?.length) {
-				container.innerHTML = `<p>${t('item.noComments')}</p>`;
+				container.innerHTML = `<p>${t('comment.noComments')}</p>`;
 				return;
 			}
 			const { isAdmin, user } = window.appState;
@@ -257,12 +257,12 @@ export async function wikiAfter(ctx: RouteContext): Promise<void> {
 			${user
 				? `<form id="wiki-comment-form" class="wiki-comment-form">
 					<div class="form-group">
-						<textarea id="comment-text" rows="3" placeholder="${t('item.commentPlaceholder')}" required class="comment-textarea"></textarea>
+						<textarea id="comment-text" rows="3" placeholder="${t('comment.commentPlaceholder')}" required class="comment-textarea"></textarea>
 					</div>
 					<div id="turnstile-wiki-comment" class="mb-10"></div>
 					<button type="submit" class="btn">${t('item.send')}</button>
 				</form>`
-				: `<hr><h3>${t('item.loginToComment')}</h3>`
+				: `<hr><h3>${t('comment.loginToComment')}</h3>`
 			}`;
 
 		await loadComments();
@@ -299,10 +299,10 @@ export async function wikiAfter(ctx: RouteContext): Promise<void> {
 						await loadComments();
 					} else {
 						const data = (await res.json()) as { error?: string };
-						showToast('Error: ' + (data.error ?? 'Unknown'), 'error');
+						showToast(`${t('common.error')}: ` + (data.error ?? t('wiki.toast.unknownError')), 'error');
 					}
 				} catch {
-					showToast('Error submitting comment', 'error');
+					showToast(t('wiki.toast.submitError'), 'error');
 				} finally {
 					restore();
 				}

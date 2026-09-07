@@ -1,0 +1,14 @@
+{
+	"assets": "Assets",
+	"avatars": "Avatars",
+	"clothes": "Kleding",
+	"others": "Overig",
+	"worlds": "Werelden",
+	"desc": {
+		"assets": "Bronnen en tools",
+		"avatars": "3D-avatars voor VRChat",
+		"clothes": "Kleding en accessoires",
+		"others": "Diverse andere bronnen",
+		"worlds": "Virtuele werelden om te verkennen"
+	}
+}

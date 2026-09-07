@@ -64,7 +64,7 @@ async function loadComments(postId: string): Promise<void> {
 		const comments = (await fetch(`/api/blog/${postId}/comments`).then((r) => r.json())) as BlogComment[];
 
 		if (!comments?.length) {
-			list.innerHTML = `<p class="empty-state">${t('blog.noComments')}</p>`;
+			list.innerHTML = `<p class="empty-state">${t('comment.noComments')}</p>`;
 			return;
 		}
 
@@ -122,9 +122,9 @@ export async function blogPostView(ctx: RouteContext): Promise<string> {
 			formId: 'blog-comment-form',
 			textareaId: 'blog-comment-text',
 			turnstileId: 'blog-turnstile-container',
-			placeholder: t('blog.commentPlaceholder'),
+			placeholder: t('comment.commentPlaceholder'),
 		})
-		: `<p class="login-prompt"><a href="/login" data-link>${t('blog.loginToComment')}</a></p>`;
+		: `<p class="login-prompt"><a href="/login" data-link>${t('comment.loginToComment')}</a></p>`;
 
 	return `
 		<div class="blog-post-page">
@@ -142,7 +142,7 @@ export async function blogPostView(ctx: RouteContext): Promise<string> {
 			</article>
 
 			<section class="blog-comments-section">
-				<h2>${t('blog.comments')}</h2>
+				<h2>${t('comment.comments')}</h2>
 				<div id="blog-comments-list"></div>
 				<div id="blog-comment-form-wrapper">${commentFormHtml}</div>
 			</section>
