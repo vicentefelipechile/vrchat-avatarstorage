@@ -6,6 +6,7 @@ import { route, notFound, navigateTo, initRouter } from './core/router';
 import { setLanguage, getCurrentLang, t } from './core/i18n';
 import { DataCache } from './core/cache';
 import { showToast, TimeUnit, initLazyImages, initMediaPolling } from './lib/utils';
+import { showConfirm } from './lib/confirm';
 import { initUpdatesPoller } from './features/updates';
 import { initFeedClient } from './features/feed';
 import { initNotifications } from './features/notifications';
@@ -342,7 +343,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 	// Logout
 	document.getElementById('logout-btn')?.addEventListener('click', async (e) => {
 		e.preventDefault();
-		if (!confirm(t('login.logoutConfirm'))) return;
+		if (!(await showConfirm({ message: t('login.logoutConfirm') }))) return;
 		try {
 			await fetch('/api/auth/logout', { method: 'POST' });
 			DataCache.clear('/api/auth/status');

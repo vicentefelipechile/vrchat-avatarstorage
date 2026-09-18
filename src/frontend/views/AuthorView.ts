@@ -10,7 +10,7 @@ import { getIcon } from '../lib/icons';
 import { t } from '../core/i18n';
 import type { RouteContext } from '../types';
 import { DataCache } from '../core/cache';
-import { TimeUnit, progressiveImg, htmlDecode, metaLabel } from '../lib/utils';
+import { TimeUnit, progressiveImg, htmlDecode, metaLabel, safeHttpUrl } from '../lib/utils';
 
 interface AvatarAuthor {
 	uuid: string;
@@ -61,8 +61,9 @@ interface AuthorProfileResponse {
 // =========================================================================
 
 function socialLink(url: string | null, label: string, iconName: string): string {
-	if (!url) return '';
-	return `<li><a href="${url}" target="_blank" rel="noopener noreferrer" class="author-social-link">
+	const safeUrl = safeHttpUrl(url);
+	if (!safeUrl) return '';
+	return `<li><a href="${safeUrl}" target="_blank" rel="noopener noreferrer" class="author-social-link">
 		${getIcon(iconName, 14)} ${label}
 	</a></li>`;
 }
@@ -117,8 +118,9 @@ export async function authorView(ctx: RouteContext): Promise<string> {
 	const { author, avatars, pagination } = data;
 	document.title = `${htmlDecode(author.name)} — VRCStorage`;
 
-	const avatarHtml = author.avatar_url
-		? `<img class="author-profile-avatar" src="${author.avatar_url}" alt="${author.name}" loading="lazy">`
+	const avatarUrl = safeHttpUrl(author.avatar_url);
+	const avatarHtml = avatarUrl
+		? `<img class="author-profile-avatar" src="${avatarUrl}" alt="${htmlDecode(author.name)}" loading="lazy">`
 		: `<div class="author-profile-avatar-placeholder">${getIcon('user', 32)}</div>`;
 
 	const socials = [

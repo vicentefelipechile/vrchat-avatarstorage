@@ -95,18 +95,19 @@ export function stripMarkdown(md: string): string {
 /** Renders Markdown into a container, sanitising the output and styling GitHub-style alert blockquotes. */
 export function renderMarkdown(container: HTMLElement, raw: string): void {
 	const html = parseMarkdownToHtml(raw);
-	container.innerHTML = html;
+	const fragment = DOMPurify.sanitize(html, { USE_PROFILES: { html: true }, RETURN_DOM_FRAGMENT: true });
+	container.replaceChildren(fragment);
 
 	// Post-process > [!NOTE / TIP / WARNING / …] blockquotes (also handles bare `[!NOTE]` without `>` for UX)
 	container.querySelectorAll<HTMLElement>('blockquote').forEach((bq) => {
 		const firstP = bq.querySelector('p');
 		if (!firstP) return;
-		const match = firstP.innerHTML.match(/^\s*\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]/i);
+		const match = firstP.textContent?.match(/^\s*\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]/i);
 		if (!match) return;
 
 		const type = match[1].toLowerCase();
 		bq.classList.add('markdown-alert', `markdown-alert-${type}`);
-		firstP.innerHTML = firstP.innerHTML.replace(match[0], '').trim();
+		firstP.textContent = firstP.textContent?.replace(match[0], '').trim() ?? '';
 		if (!firstP.textContent?.trim()) firstP.remove();
 
 		const title = document.createElement('p');
@@ -118,7 +119,7 @@ export function renderMarkdown(container: HTMLElement, raw: string): void {
 	// Handle bare `[!NOTE] text` paragraphs (user forgot `> `) — wrap them as alerts too
 	container.querySelectorAll<HTMLElement>('p').forEach((p) => {
 		if (p.closest('blockquote')) return; // already handled
-		const match = p.innerHTML.match(/^\s*\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]\s*(.*)/i);
+		const match = p.textContent?.match(/^\s*\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]\s*(.*)/i);
 		if (!match) return;
 		const type = match[1].toLowerCase();
 		const rest = match[2] ?? '';
@@ -128,7 +129,7 @@ export function renderMarkdown(container: HTMLElement, raw: string): void {
 		title.className = 'markdown-alert-title';
 		title.textContent = type.charAt(0).toUpperCase() + type.slice(1);
 		const body = document.createElement('p');
-		body.innerHTML = rest || '';
+		body.textContent = rest;
 		alert.append(title, body);
 		p.replaceWith(alert);
 	});

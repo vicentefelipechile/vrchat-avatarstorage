@@ -7,6 +7,7 @@ import { DataCache } from '../core/cache';
 import { t } from '../core/i18n';
 import { icons } from '../lib/icons';
 import { stripMarkdown, progressiveImg, showToast } from '../lib/utils';
+import { showConfirm, showPrompt } from '../lib/confirm';
 import type { RouteContext } from '../types';
 
 // =========================================================================
@@ -368,7 +369,7 @@ function wireCollectionMenu(): void {
 			menu.querySelector('.collection-ctx-rename')!.addEventListener('click', async (ev) => {
 				ev.stopPropagation();
 				menu.remove();
-				const newName = prompt(t('collections.namePlaceholder'));
+				const newName = await showPrompt({ message: t('collections.namePlaceholder') });
 				if (!newName?.trim()) return;
 				try {
 					await fetch(`/api/collections/${colUuid}`, {
@@ -386,7 +387,7 @@ function wireCollectionMenu(): void {
 			menu.querySelector('.collection-ctx-delete')!.addEventListener('click', async (ev) => {
 				ev.stopPropagation();
 				menu.remove();
-				if (!confirm(t('collections.confirmDelete'))) return;
+				if (!(await showConfirm({ message: t('collections.confirmDelete') }))) return;
 				try {
 					await fetch(`/api/collections/${colUuid}`, { method: 'DELETE' });
 					DataCache.clear('/api/collections');
@@ -453,7 +454,7 @@ function wireRemove(): void {
 			e.preventDefault();
 			e.stopPropagation();
 
-			if (!confirm(t('common.removeFavorite') + '?')) return;
+			if (!(await showConfirm({ message: t('common.removeFavorite') + '?' }))) return;
 
 			const uuid = btn.dataset.uuid!;
 			const card = btn.closest<HTMLElement>('.favorite-card');

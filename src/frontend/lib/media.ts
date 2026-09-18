@@ -10,41 +10,41 @@
 export function resizeImage(file: File, maxWidth: number, maxHeight: number): Promise<File> {
 	return new Promise((resolve, reject) => {
 		const img = document.createElement('img');
-		const reader = new FileReader();
+		const objectUrl = URL.createObjectURL(file);
+		const cleanup = () => URL.revokeObjectURL(objectUrl);
 
-		reader.onload = (e) => {
-			img.src = e.target!.result as string;
-			img.onload = () => {
-				let { width, height } = img;
+		img.onload = () => {
+			let { width, height } = img;
 
-				if (width > height) {
-					if (width > maxWidth) {
-						height = Math.round((height * maxWidth) / width);
-						width = maxWidth;
-					}
-				} else {
-					if (height > maxHeight) {
-						width = Math.round((width * maxHeight) / height);
-						height = maxHeight;
-					}
+			if (width > height) {
+				if (width > maxWidth) {
+					height = Math.round((height * maxWidth) / width);
+					width = maxWidth;
 				}
+			} else if (height > maxHeight) {
+				width = Math.round((width * maxHeight) / height);
+				height = maxHeight;
+			}
 
-				const canvas = document.createElement('canvas');
-				canvas.width = width;
-				canvas.height = height;
-				canvas.getContext('2d')!.drawImage(img, 0, 0, width, height);
+			const canvas = document.createElement('canvas');
+			canvas.width = width;
+			canvas.height = height;
+			canvas.getContext('2d')!.drawImage(img, 0, 0, width, height);
 
-				canvas.toBlob(
-					(blob) =>
-						blob
-							? resolve(new File([blob], file.name, { type: file.type, lastModified: Date.now() }))
-							: reject(new Error('Canvas to Blob failed')),
-					file.type,
-				);
-			};
+			canvas.toBlob(
+				(blob) =>
+					blob
+						? resolve(new File([blob], file.name, { type: file.type, lastModified: Date.now() }))
+						: reject(new Error('Canvas to Blob failed')),
+				file.type,
+			);
+			cleanup();
 		};
-		reader.onerror = reject;
-		reader.readAsDataURL(file);
+		img.onerror = () => {
+			cleanup();
+			reject(new Error('Could not load image'));
+		};
+		img.src = objectUrl;
 	});
 }
 
@@ -95,6 +95,10 @@ export function progressiveImg(opts: {
 }): string {
 	const { uuid, placeholder, res = 'med', alt = '', className = '', processed = true, format = 'webp' } = opts;
 	const dataSrc = mediaUrl(uuid, res, format);
+	const escapeAttr = (value: string): string => value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+	const safeDataSrc = escapeAttr(dataSrc);
+	const safeAlt = escapeAttr(alt);
+	const safeClassName = escapeAttr(className);
 
 	// Not processed yet: the queue is still generating variants, so the CDN serves the shared
 	// "processing" placeholder for this URL. Tag the image with its uuid so initMediaPolling can poll
@@ -106,16 +110,17 @@ export function progressiveImg(opts: {
 	// image. The browser serves it from memory cache, so it paints sharp on the first frame. Only for
 	// already-processed media — a still-processing URL would cache the placeholder, so never shortcut it.
 	if (processed && loadedUrls.has(dataSrc)) {
-		return `<img src="${dataSrc}" alt="${alt}" class="${className}" loading="lazy" />`;
+		return `<img src="${safeDataSrc}" alt="${safeAlt}" class="${safeClassName}" loading="lazy" />`;
 	}
 
 	const src = placeholder ?? dataSrc;
+	const safeSrc = escapeAttr(src);
 	const blurStyle = placeholder ? 'filter:blur(8px);transition:filter 0.4s ease' : '';
 	return `<img
-		src="${src}"
-		data-src="${dataSrc}"
-		alt="${alt}"
-		class="lazy-img${className ? ' ' + className : ''}"
+		src="${safeSrc}"
+		data-src="${safeDataSrc}"
+		alt="${safeAlt}"
+		class="lazy-img${safeClassName ? ' ' + safeClassName : ''}"
 		style="${blurStyle}"
 		loading="lazy"${processingAttr}
 	/>`;

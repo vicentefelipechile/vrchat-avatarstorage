@@ -74,8 +74,12 @@ function createPreviewItem(tag: 'img' | 'video', url: string, name: string, onDe
 	};
 
 	const media = document.createElement(tag) as HTMLImageElement | HTMLVideoElement;
-	// Only blob: URLs from URL.createObjectURL(File) — blocks javascript:/data: injection via tainted url
-	if (url.startsWith('blob:')) media.src = url;
+	try {
+		const parsedUrl = new URL(url);
+		if (parsedUrl.protocol === 'blob:') media.src = parsedUrl.href;
+	} catch {
+		// Ignore invalid preview URLs.
+	}
 	media.style.cssText = 'max-width:200px;max-height:200px;display:block';
 	if (tag === 'video') (media as HTMLVideoElement).controls = true;
 

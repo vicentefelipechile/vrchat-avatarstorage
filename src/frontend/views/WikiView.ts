@@ -7,6 +7,8 @@ import { DataCache } from '../core/cache';
 import { renderTurnstile, renderMarkdown, showToast, TimeUnit, parseMarkdownToHtml } from '../lib/utils';
 import DOMPurify from 'dompurify';
 import type { RouteContext } from '../types';
+import { safeHttpUrl } from '../lib/utils';
+import { showConfirm } from '../lib/confirm';
 
 // =========================================================================
 // Types
@@ -118,15 +120,17 @@ function sidebarHtml(currentTopic: string): string {
 
 function commentRow(c: WikiComment, canDelete: boolean): string {
 	const content = parseMarkdownToHtml(c.text);
+	const avatarUrl = safeHttpUrl(c.author_avatar) ?? '/assets/default_avatar.png';
+	const esc = (value: string): string => value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 	return `
 		<div id="comment-${c.uuid}" class="wiki-comment">
 			<div class="wiki-comment-avatar-container">
-				<img src="${c.author_avatar ?? '/assets/default_avatar.png'}" alt="${c.author}" class="wiki-comment-avatar">
+				<img src="${avatarUrl}" alt="${esc(c.author)}" class="wiki-comment-avatar">
 			</div>
 			<div class="wiki-comment-content">
 				<div class="wiki-comment-header">
-					<span>${c.author} <span class="wiki-comment-date">(${new Date(c.timestamp * 1000).toLocaleString()})</span></span>
+					<span>${esc(c.author)} <span class="wiki-comment-date">(${new Date(c.timestamp * 1000).toLocaleString()})</span></span>
 					${canDelete ? `<button class="btn delete-comment-btn btn-danger-sm" data-uuid="${c.uuid}">${t('admin.delete')}</button>` : ''}
 				</div>
 				<div class="markdown-body wiki-comment-body">${content}</div>
@@ -318,7 +322,7 @@ export async function wikiAfter(ctx: RouteContext): Promise<void> {
 		const target = e.target as HTMLElement;
 
 		if (target.matches('.delete-comment-btn')) {
-			if (!confirm(t('admin.deleteConfirm'))) return;
+			if (!(await showConfirm({ message: t('admin.deleteConfirm') }))) return;
 			const uuid = target.dataset.uuid!;
 			target.setAttribute('disabled', 'true');
 			target.textContent = '…';

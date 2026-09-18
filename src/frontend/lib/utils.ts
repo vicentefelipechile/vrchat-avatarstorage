@@ -8,7 +8,7 @@
 // module (lib/media, lib/toast, …) in new code.
 
 export { TimeUnit } from './time';
-export { $, $$, htmlDecode, loadingBtn } from './dom';
+export { $, $$, htmlDecode, loadingBtn, safeHttpUrl } from './dom';
 export { stripMarkdown, renderMarkdown, parseMarkdownToHtml } from './markdown';
 export { showToast, showProgressToast, type ToastType } from './toast';
 export { renderTurnstile } from './turnstile';

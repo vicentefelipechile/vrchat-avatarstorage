@@ -56,6 +56,18 @@ export function htmlDecode(input: string): string {
 	});
 }
 
+/** Returns a normalized URL only for http(s) links and same-origin relative paths. */
+export function safeHttpUrl(value: string | null | undefined): string | null {
+	if (!value) return null;
+	try {
+		const parsed = new URL(value, window.location.origin);
+		if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return null;
+		return parsed.href;
+	} catch {
+		return null;
+	}
+}
+
 /** Set button to loading state, returns restore function. */
 export function loadingBtn(btn: HTMLButtonElement, text = '…'): () => void {
 	const orig = btn.innerHTML;

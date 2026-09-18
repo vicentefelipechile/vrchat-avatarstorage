@@ -7,6 +7,7 @@ import { htmlDecode, renderMarkdown, showToast, mediaUrl, videoUrl, uploadChunke
 import { navigateTo } from '../core/router';
 import { DataCache } from '../core/cache';
 import { t } from '../core/i18n';
+import { showConfirm } from '../lib/confirm';
 
 const SIZE_LIMITS = {
 	image: 20 * 1024 * 1024,
@@ -271,9 +272,16 @@ function createImagePreview(src: string, mediaType: 'image' | 'video' | 'file', 
 	const media = mediaType === 'video'
 		? document.createElement('video')
 		: document.createElement('img');
-	// Allow only browser-generated blob: URLs and our own CDN / R2 download URLs — blocks javascript:/data: injection
-	const isSafeSrc = src.startsWith('blob:') || src.startsWith('https://cdn.vrcstorage.lat/') || src.startsWith('http://localhost:8788/') || src.startsWith('/api/download/');
-	if (isSafeSrc) media.setAttribute('src', src);
+	try {
+		const parsedSrc = new URL(src, window.location.origin);
+		const isBlob = parsedSrc.protocol === 'blob:';
+		const isCdn = parsedSrc.protocol === 'https:' && parsedSrc.hostname === 'cdn.vrcstorage.lat';
+		const isLocalCdn = parsedSrc.protocol === 'http:' && (parsedSrc.hostname === 'localhost' || parsedSrc.hostname === '127.0.0.1') && parsedSrc.port === '8788';
+		const isDownload = parsedSrc.origin === window.location.origin && parsedSrc.pathname.startsWith('/api/download/');
+		if (isBlob || isCdn || isLocalCdn || isDownload) media.setAttribute('src', parsedSrc.href);
+	} catch {
+		// Ignore invalid preview URLs.
+	}
 	if (mediaType === 'video') {
 		(media as HTMLVideoElement).controls = false;
 	}
@@ -901,7 +909,7 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 			}
 
 			deleteBtn.addEventListener('click', async () => {
-				if (!confirm(t('edit.confirmDeleteLink'))) return;
+				if (!(await showConfirm({ message: t('edit.confirmDeleteLink') }))) return;
 				deleteBtn.disabled = true;
 				try {
 					const res = await fetch(`/api/resources/${id}/links/${linkUuid}`, { method: 'DELETE' });

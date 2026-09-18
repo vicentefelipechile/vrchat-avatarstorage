@@ -4,7 +4,7 @@
 
 import { t } from '../core/i18n';
 import { DataCache } from '../core/cache';
-import { TimeUnit, mediaUrl, videoUrl, progressiveImg, htmlDecode, initLazyImages, initMediaPolling, metaLabel, showToast, showProgressToast } from '../lib/utils';
+import { TimeUnit, mediaUrl, videoUrl, progressiveImg, htmlDecode, initLazyImages, initMediaPolling, metaLabel, showToast, showProgressToast, safeHttpUrl } from '../lib/utils';
 import { downloadHost, type HostInfo } from '../lib/download-hosts';
 import { deleteComment, approveResource, rejectResource, deactivateResource } from '../features/admin';
 import { icons, getIcon } from '../lib/icons';
@@ -147,7 +147,9 @@ function kindCaption(kind: HostInfo['kind']): string {
  *  other link is a secondary source that surfaces its origin site's brand mark and name. `label` names the
  *  button — a link's own title, else its recognised host, else "Backup N". */
 function downloadButton(url: string, title: string | null | undefined, fallbackIndex: number): string {
-	const host = downloadHost(url);
+	const safeUrl = safeHttpUrl(url);
+	if (!safeUrl) return '';
+	const host = downloadHost(safeUrl);
 	const highlighted = host.kind === 'local';
 
 	let label: string;
@@ -163,7 +165,7 @@ function downloadButton(url: string, title: string | null | undefined, fallbackI
 	const icon = getIcon(highlighted ? 'download' : host.icon, 18);
 	const sub = `<span class="download-host">${kindCaption(host.kind)}</span>`;
 	return `
-		<a href="${url}" target="_blank" rel="noopener" class="download-btn${highlighted ? '' : ' secondary'}">
+		<a href="${safeUrl}" target="_blank" rel="noopener" class="download-btn${highlighted ? '' : ' secondary'}">
 			${icon}
 			<span class="download-file-name">${label}</span>
 			${sub}
@@ -359,9 +361,11 @@ function renderCommentsList(comments: Comment[], isAdmin: boolean): string {
 				? `<button type="button" class="comment-delete" data-comment-id="${c.uuid}" title="${t('admin.delete')}" aria-label="${t('admin.delete')}">${icons.trash(15)}</button>`
 				: '';
 
+			const authorAvatar = safeHttpUrl(c.author_avatar);
+
 			return `
 			<div id="comment-${c.uuid}" class="comment">
-				<img src="${c.author_avatar}" alt="${c.author}" class="comment-avatar">
+				${authorAvatar ? `<img src="${authorAvatar}" alt="${c.author}" class="comment-avatar">` : ''}
 				<div class="comment-body">
 					<div class="comment-meta">
 						<div class="comment-byline">

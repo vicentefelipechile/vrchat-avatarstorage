@@ -4,8 +4,9 @@
 
 import { t } from '../core/i18n';
 import { navigateTo } from '../core/router';
-import { renderMarkdown, showToast, mediaUrl, htmlDecode, parseMarkdownToHtml } from '../lib/utils';
+import { renderMarkdown, showToast, mediaUrl, htmlDecode, parseMarkdownToHtml, safeHttpUrl } from '../lib/utils';
 import { commentEditorHtml, initCommentEditor } from '../features/comment-editor';
+import { showConfirm } from '../lib/confirm';
 import type { RouteContext } from '../types';
 
 // =========================================================================
@@ -44,10 +45,11 @@ function commentCard(c: BlogComment): string {
 	const { isAdmin, user } = window.appState;
 	const canDelete = isAdmin || user?.username === c.author;
 	const rendered = parseMarkdownToHtml(c.text);
+	const avatarUrl = safeHttpUrl(c.author_avatar);
 	return `
 		<div class="comment-card" data-uuid="${c.uuid}">
 			<div class="comment-header">
-				${c.author_avatar ? `<img src="${c.author_avatar}" class="comment-avatar" alt="">` : '<span class="comment-avatar-placeholder">👤</span>'}
+				${avatarUrl ? `<img src="${avatarUrl}" class="comment-avatar" alt="">` : '<span class="comment-avatar-placeholder">👤</span>'}
 				<strong class="comment-author">${esc(c.author)}</strong>
 				<span class="comment-date">${new Date(c.timestamp * 1000).toLocaleDateString()}</span>
 				${canDelete ? `<button class="btn-icon delete-comment-btn" data-uuid="${c.uuid}" title="${t('admin.delete')}">🗑️</button>` : ''}
@@ -72,7 +74,7 @@ async function loadComments(postId: string): Promise<void> {
 
 		list.querySelectorAll<HTMLButtonElement>('.delete-comment-btn').forEach((btn) => {
 			btn.addEventListener('click', async () => {
-				if (!confirm(t('admin.deleteConfirm'))) return;
+				if (!(await showConfirm({ message: t('admin.deleteConfirm') }))) return;
 				const res = await fetch(`/api/blog/comments/${btn.dataset.uuid}`, { method: 'DELETE' });
 				if (res.ok) await loadComments(postId);
 				else showToast(t('common.error'), 'error');
@@ -170,7 +172,7 @@ export async function blogPostAfter(ctx: RouteContext): Promise<void> {
 
 	// Delete button
 	document.getElementById('blog-delete-btn')?.addEventListener('click', async () => {
-		if (!confirm(t('blog.deleteConfirm'))) return;
+		if (!(await showConfirm({ message: t('blog.deleteConfirm') }))) return;
 		const res = await fetch(`/api/blog/${id}`, { method: 'DELETE' });
 		if (res.ok) navigateTo('/blog');
 		else showToast(t('common.error'), 'error');

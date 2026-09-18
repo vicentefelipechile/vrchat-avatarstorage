@@ -14,6 +14,10 @@ interface DriveFolder {
 	name: string;
 }
 
+function esc(value: string): string {
+	return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
 let overlay: HTMLElement | null = null;
 
 function buildOverlay(): HTMLElement {
@@ -201,10 +205,10 @@ export function showDrivePicker(currentFolderId: string | null): Promise<{ id: s
 				const row = document.createElement('div');
 				row.className = 'drive-picker-row';
 				row.innerHTML = `
-					<button type="button" class="drive-picker-row-main" data-id="${f.id}">${getIcon('folder', 16)} <span class="drive-picker-row-name">${f.name}</span></button>
+					<button type="button" class="drive-picker-row-main" data-id="${esc(f.id)}">${getIcon('folder', 16)} <span class="drive-picker-row-name">${esc(f.name)}</span></button>
 					<div class="drive-picker-row-actions">
-						<button type="button" class="drive-picker-row-select" data-id="${f.id}" data-name="${f.name}">Seleccionar</button>
-						<button type="button" class="drive-picker-row-enter" data-id="${f.id}" title="Abrir">›</button>
+						<button type="button" class="drive-picker-row-select" data-id="${esc(f.id)}" data-name="${esc(f.name)}">Seleccionar</button>
+						<button type="button" class="drive-picker-row-enter" data-id="${esc(f.id)}" title="Abrir">›</button>
 					</div>
 				`;
 				const mainBtn = row.querySelector<HTMLButtonElement>('.drive-picker-row-main')!;

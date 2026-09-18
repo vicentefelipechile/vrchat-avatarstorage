@@ -6,7 +6,7 @@ import { DataCache } from '../core/cache';
 import { t } from '../core/i18n';
 import { diffString } from '../lib/diff';
 import type { RouteContext, Resource } from '../types';
-import { TimeUnit } from '../lib/utils';
+import { TimeUnit, safeHttpUrl } from '../lib/utils';
 
 // =========================================================================
 // Types
@@ -263,11 +263,12 @@ async function historyCard(entry: HistoryEntry, current: Resource, resourceUuid:
 	}
 
 	const badgeColor = entry.change_type === 'meta_edit' ? 'badge-purple' : entry.change_type === 'approval' ? 'badge-green' : 'badge-blue';
+	const safeActorAvatar = safeHttpUrl(actorAvatar) ?? '/avatar.png';
 
 	return `
 		<div class="history-card" style="background:var(--bg-card);border:1px solid var(--border-color);padding:20px;margin-bottom:20px">
 			<div class="history-header" style="display:flex;align-items:center;margin-bottom:15px;border-bottom:1px solid var(--border-color);padding-bottom:10px">
-				<img src="${actorAvatar}" alt="${actorName}" style="width:32px;height:32px;margin-right:10px;background:#ddd;border-radius:50%">
+				<img src="${safeActorAvatar}" alt="${actorName}" style="width:32px;height:32px;margin-right:10px;background:#ddd;border-radius:50%">
 				<div>
 					<div style="font-weight:bold">${actorName}</div>
 					<div style="font-size:0.85em;color:var(--text-muted)">${date}</div>
