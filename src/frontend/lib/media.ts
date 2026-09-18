@@ -7,44 +7,34 @@
 // Image resizing
 // =========================================================================
 
-export function resizeImage(file: File, maxWidth: number, maxHeight: number): Promise<File> {
+export async function resizeImage(file: File, maxWidth: number, maxHeight: number): Promise<File> {
+	const image = await createImageBitmap(file);
+	let { width, height } = image;
+
+	if (width > height) {
+		if (width > maxWidth) {
+			height = Math.round((height * maxWidth) / width);
+			width = maxWidth;
+		}
+	} else if (height > maxHeight) {
+		width = Math.round((width * maxHeight) / height);
+		height = maxHeight;
+	}
+
+	const canvas = document.createElement('canvas');
+	canvas.width = width;
+	canvas.height = height;
+	canvas.getContext('2d')!.drawImage(image, 0, 0, width, height);
+	image.close();
+
 	return new Promise((resolve, reject) => {
-		const img = document.createElement('img');
-		const objectUrl = URL.createObjectURL(file);
-		const cleanup = () => URL.revokeObjectURL(objectUrl);
-
-		img.onload = () => {
-			let { width, height } = img;
-
-			if (width > height) {
-				if (width > maxWidth) {
-					height = Math.round((height * maxWidth) / width);
-					width = maxWidth;
-				}
-			} else if (height > maxHeight) {
-				width = Math.round((width * maxHeight) / height);
-				height = maxHeight;
-			}
-
-			const canvas = document.createElement('canvas');
-			canvas.width = width;
-			canvas.height = height;
-			canvas.getContext('2d')!.drawImage(img, 0, 0, width, height);
-
-			canvas.toBlob(
-				(blob) =>
-					blob
-						? resolve(new File([blob], file.name, { type: file.type, lastModified: Date.now() }))
-						: reject(new Error('Canvas to Blob failed')),
-				file.type,
-			);
-			cleanup();
-		};
-		img.onerror = () => {
-			cleanup();
-			reject(new Error('Could not load image'));
-		};
-		img.src = objectUrl;
+		canvas.toBlob(
+			(blob) =>
+				blob
+					? resolve(new File([blob], file.name, { type: file.type, lastModified: Date.now() }))
+					: reject(new Error('Canvas to Blob failed')),
+			file.type,
+		);
 	});
 }
 

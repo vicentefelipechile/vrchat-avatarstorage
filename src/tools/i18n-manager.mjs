@@ -136,7 +136,7 @@ function setByPath(obj, dotPath, value) {
 	for (let i = 0; i < parts.length - 1; i++) {
 		const part = parts[i];
 		if (!Object.hasOwn(current, part)) {
-			current[part] = {};
+			Object.defineProperty(current, part, { value: {}, enumerable: true, configurable: true, writable: true });
 		} else if (typeof current[part] !== 'object' || current[part] === null) {
 			console.error(`  ✘ "${parts.slice(0, i + 1).join('.')}" exists but is not an object.`);
 			return false;
@@ -148,7 +148,7 @@ function setByPath(obj, dotPath, value) {
 		return 'skip';
 	}
 
-	current[leafKey] = value;
+	Object.defineProperty(current, leafKey, { value, enumerable: true, configurable: true, writable: true });
 	return true;
 }
 
