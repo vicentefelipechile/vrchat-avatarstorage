@@ -396,13 +396,14 @@ migrations/               # D1 schema & migration files
   0017_favorite_global_order.sql     # global_order column on user_favorites ("All" tab order,
                                      # independent of per-collection display_order)
   0018_media_variants_video_format.sql # Widens the media_variants format CHECK to allow 'mp4'
-  0019_drive_transfer.sql     # drive_transfer_jobs + Drive OAuth columns on user_oauth_providers
+  0019_user_anonymity.sql     # is_anonymous on users
   0020_notification_preferences.sql # user_notification_prefs table
-  0021_user_anonymity.sql     # is_anonymous on users
+  0021_drive_transfer.sql     # drive_transfer_jobs + Drive OAuth columns on user_oauth_providers
   0022_drive_progress.sql     # total_bytes/bytes_uploaded on drive_transfer_jobs (Drive progress toast)
-  0023_resources_fts.sql      # FTS5 resources_fts (title/description) for q search, trigram-optimized, with triggers
+  0023_resources_fts.sql      # FTS5 resources_fts (title/description) with porter/unicode61 and triggers
   0024_clothes_multi_type.sql # Junction clothes_clothing_types (multi-type 1..8 per clothes, OR filter via EXISTS) + migration from legacy clothes_meta.clothing_type (fixes DROP INDEX before DROP COLUMN)
   0025_share_links.sql       # share_links table (temporary bearer-token download links, token UNIQUE + idx on token/owner, FK cascade to media/users)
+  0026_user_ban.sql          # is_banned flag and index on users
                               # New migrations follow the pattern: NNNN_description.sql
 
 wrangler.jsonc            # Main Worker configuration & bindings

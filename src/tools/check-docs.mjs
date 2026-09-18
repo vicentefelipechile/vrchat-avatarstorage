@@ -9,9 +9,8 @@
 //   1. No duplicate (method, path) in the registry.
 //   2. Every endpoint's `tag` exists in TAG_GROUPS.
 //   3. `visibility` is one of the allowed values.
-//   4. Every route file in src/http/routes/* has at least one entry in the registry
-//      (coarse check — compares the set of mounted routes from src/index.ts vs registry).
-//      This catches a completely undocumented router (e.g. a new uploads endpoint without a doc).
+//   4. Prints route-file handler coverage as an informational report. It does not prove
+//      endpoint-level registry coverage because mounted paths are composed in src/index.ts.
 //   5. Prints coverage stats: total endpoints, public vs private, per-tag counts.
 // =========================================================================================================
 
@@ -106,7 +105,7 @@ console.log('--- docs:check ---\n');
 		// For now just report the count so CI is aware of new routers.
 		console.log(`  ${f}: ${routeCount} handler(s)`);
 		if (routeCount > 0) {
-			// no hard fail here — the tag check above covers naming; this is informational
+			// Informational only: mounted prefixes and registry paths are not one-to-one.
 		}
 	}
 	ok(`Scanned ${routeFiles.length} route files`);

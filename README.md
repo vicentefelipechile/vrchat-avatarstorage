@@ -9,11 +9,13 @@ This project leverages the Cloudflare developer ecosystem for edge execution and
 - **Framework**: [Hono](https://hono.dev/) (v4+) for routing and middleware.
 - **Language**: [TypeScript](https://www.typescriptlang.org/) for strong typing.
 - **Database**: **Cloudflare D1** (Serverless SQLite) for relational data (`c.env.DB`).
-- **Object Storage**: **Cloudflare R2** for storing avatars, images, and videos (`c.env.BUCKET`).
+- **Object Storage**: **Cloudflare R2** for originals (`c.env.BUCKET`) and processed media (`c.env.MEDIA_BUCKET`).
+- **Media Processing**: Cloudflare Images and Media Transformations through Queues.
+- **Realtime**: Durable Objects for the live feed.
 - **Caching & KV**: **Cloudflare KV** for caching, rate limiting, and temporary data (`c.env.VRCSTORAGE_KV`).
 - **Queues**: **Cloudflare Queues** for background processing and handling uploads async (`c.env.UPLOAD_QUEUE`).
 - **Validation**: [Zod](https://zod.dev/) for robust schema parsing and input validation.
-- **Testing**: [Vitest](https://vitest.dev/) with `@cloudflare/vitest-pool-workers` for worker integrations.
+- **Validation**: TypeScript, Prettier, i18n consistency checks and frontend build. There is currently no test runner configured.
 
 ## 🌟 Key Features
 
@@ -35,18 +37,17 @@ This project leverages the Cloudflare developer ecosystem for edge execution and
 
 ```text
 ├── public/                 # Static assets, CSS, Client-side logic, and Wiki markdown
-├── sql/                    # SQL Database migrations
+├── migrations/             # D1 SQL migrations
 ├── src/                    # Backend source code
 │   ├── auth.ts             # Authentication logic & session handling
 │   ├── helpers/            # Utility functions (e.g., file validation via magic bytes)
 │   ├── index.ts            # Entrypoint: Worker setup, Middlewares, routing logic
-│   ├── middleware/         # Security and Rate Limiting middlewares
-│   ├── routes/             # API modular routes (resources, users, uploads, comments, admin, etc.)
+│   ├── http/               # Middleware, routes, queue and scheduled handlers
+│   ├── repositories/       # D1 queries
+│   ├── services/           # Domain logic
 │   ├── test/               # Test configuration and setup wrappers
 │   ├── types.ts            # Shared TypeScript interfaces & models
 │   └── validators.ts       # Zod schemas & sanitization logic
-├── schema.sql              # Database schema logic for D1
-├── vitest.config.mts       # Testing settings definition
 └── wrangler.jsonc          # Cloudflare configuration, env vars, and bindings
 ```
 
@@ -84,16 +85,13 @@ Automatically updates `worker-configuration.d.ts` from `wrangler.jsonc` whenever
 npm run cf-typegen
 ```
 
-### Testing
-
-VRCStorage uses Vitest configured to run inside a Cloudflare Worker environment.
+### Validation
 
 ```bash
-# Run all tests
-npm test
-
-# Run a specific test
-npx vitest run path/to/file.test.ts
+npx tsc -p tsconfig.json --noEmit
+npx tsc -p tsconfig.frontend.json --noEmit
+npx prettier --check src/
+npm run build-frontend
 ```
 
 ### Deployment
@@ -112,7 +110,7 @@ npm run deploy:test
 - **Validation**: All incoming requests inputs must be verified with Zod schemas and validated in `src/validators.ts`.
 - **Sanitization**: Uses `sanitizeHtml` Regex utilities (no DOMPurify) to secure inputs.
 - **Database Rules**: Uses prepared statements (`.bind(val)`) to prevent SQL Injection.
-- **Code Formatting**: Ensure to run `npx prettier --check .` for lint checks.
+- **Code Formatting**: Ensure to run `npx prettier --check src/` for lint checks.
 
 ## 📄 License
 
