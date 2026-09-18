@@ -192,13 +192,15 @@ export class BlogService {
 	 * without this explicit cleanup. Throws NotFoundError if the post doesn't exist. The R2 bucket
 	 * is passed in so the service stays env-agnostic.
 	 */
-	async deletePost(uuid: string, bucket: R2Bucket): Promise<void> {
+	async deletePost(uuid: string, bucket: R2Bucket, mediaBucket: R2Bucket): Promise<void> {
 		if (!(await this.posts.exists(uuid))) throw new NotFoundError('Post not found');
 
 		const coverImageUuid = await this.posts.findCoverImageUuid(uuid);
 		if (coverImageUuid) {
 			const r2Key = await this.posts.findMediaKey(coverImageUuid);
 			if (r2Key) {
+				const variants = await this.posts.listMediaVariantKeys(coverImageUuid);
+				await Promise.all(variants.map((variant) => mediaBucket.delete(variant.r2_key)));
 				await bucket.delete(r2Key);
 				await this.posts.deleteMedia(coverImageUuid);
 			}

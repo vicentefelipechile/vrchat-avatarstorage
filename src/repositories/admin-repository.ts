@@ -23,7 +23,7 @@ import type { Resource, Media } from '../types';
  *  row is orphaned when nothing references it: no resource thumbnail/reference/attachment, no blog
  *  cover, and no free-text mention in user avatars, author avatars, comments, blog comments, or
  *  post bodies. */
-const ORPHANED_MEDIA_PREDICATE = `
+export const ORPHANED_MEDIA_PREDICATE = `
 	m.uuid NOT IN (
 		SELECT thumbnail_uuid FROM resources WHERE thumbnail_uuid IS NOT NULL
 		UNION SELECT reference_image_uuid FROM resources WHERE reference_image_uuid IS NOT NULL
@@ -140,14 +140,16 @@ export class AdminRepository {
 		await execute(this.db, 'UPDATE resources SET is_active = ? WHERE uuid = ?', [active, uuid]);
 	}
 
-	/** R2 keys of all media attached to a resource (gallery + attachments), for R2 cleanup. */
+	/** Media directly attached to a resource, including thumbnail and reference image. */
 	listResourceMediaKeys(uuid: string): Promise<Media[]> {
 		return queryAll<Media>(
 			this.db,
-			`SELECT m.r2_key FROM media m
-			 JOIN resource_n_media rm ON m.uuid = rm.media_uuid
-			 WHERE rm.resource_uuid = ?`,
-			[uuid],
+			`SELECT uuid, r2_key FROM media WHERE uuid IN (
+				SELECT thumbnail_uuid FROM resources WHERE uuid = ? AND thumbnail_uuid IS NOT NULL
+				UNION SELECT reference_image_uuid FROM resources WHERE uuid = ? AND reference_image_uuid IS NOT NULL
+				UNION SELECT media_uuid FROM resource_n_media WHERE resource_uuid = ?
+			)`,
+			[uuid, uuid, uuid],
 		);
 	}
 
@@ -158,6 +160,12 @@ export class AdminRepository {
 			'SELECT m.r2_key FROM media m JOIN resources r ON m.uuid = r.thumbnail_uuid WHERE r.uuid = ?',
 			[uuid],
 		);
+	}
+
+	/** Whether a media row remains referenced after a resource is removed. */
+	async isMediaReferenced(mediaUuid: string): Promise<boolean> {
+		const row = await queryOne<{ uuid: string }>(this.db, `SELECT m.uuid FROM media m WHERE m.uuid = ? AND NOT (${ORPHANED_MEDIA_PREDICATE})`, [mediaUuid]);
+		return row !== null;
 	}
 
 	/** Delete a resource by uuid. */

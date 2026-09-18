@@ -182,7 +182,7 @@ resources.delete('/:uuid', requireAdmin, async (c) => {
 	if (!parsed.success) return fail(c, 'A valid 2FA code is required', 400);
 	await new TwoFactorService(c.env.DB).verifyActionCode(user.username, parsed.data.code, c.env.JWT_SECRET, c.env.VRCSTORAGE_KV);
 	try {
-		await new ResourceService(c.env.DB).delete(user, uuid);
+		await new ResourceService(c.env.DB).delete(user, uuid, c.env.BUCKET, c.env.MEDIA_BUCKET);
 		await invalidateResourceCache(c.env, uuid);
 		return c.json({ success: true });
 	} catch (e) {

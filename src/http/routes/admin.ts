@@ -89,7 +89,7 @@ admin.post('/resource/:uuid/approve', async (c) => {
 
 admin.post('/resource/:uuid/reject', async (c) => {
 	await requireSensitiveCode(c, await c.req.json().catch(() => null));
-	await new AdminService(c.env.DB).rejectResource(c.req.param('uuid'), c.env.BUCKET);
+	await new AdminService(c.env.DB).rejectResource(c.req.param('uuid'), c.env.BUCKET, c.env.MEDIA_BUCKET);
 	return c.json({ success: true });
 });
 
@@ -244,7 +244,7 @@ admin.delete('/users/:username', async (c) => {
 	await requireSensitiveCode(c, await c.req.json().catch(() => null));
 	const targetUsername = c.req.param('username');
 
-	const removed = await new AdminService(c.env.DB).deleteUser(c.get('user').username, targetUsername, c.env.BUCKET);
+	const removed = await new AdminService(c.env.DB).deleteUser(c.get('user').username, targetUsername, c.env.BUCKET, c.env.MEDIA_BUCKET);
 	await c.env.VRCSTORAGE_KV.delete(`user:${targetUsername}`);
 
 	return c.json({ success: true, username: targetUsername, resources_removed: removed });

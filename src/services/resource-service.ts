@@ -223,11 +223,19 @@ export class ResourceService {
 	}
 
 	/** Deletes a resource. Admin-only (matches legacy DELETE behavior). */
-	async delete(user: AuthUser, uuid: string): Promise<void> {
+	async delete(user: AuthUser, uuid: string, bucket: R2Bucket, mediaBucket: R2Bucket): Promise<void> {
 		if (!user.is_admin) throw new ForbiddenError();
 		const resource = await this.repo.findByUuid(uuid);
 		if (!resource) throw new NotFoundError('Resource not found');
+		const media = await this.repo.listAttachedMedia(uuid);
 		await this.repo.buildDelete(uuid).run();
+		for (const item of media) {
+			if (await this.repo.isMediaReferenced(item.uuid)) continue;
+			const variants = await this.repo.listMediaVariantKeys(item.uuid);
+			await Promise.all(variants.map((variant) => mediaBucket.delete(variant.r2_key)));
+			await bucket.delete(item.r2_key);
+			await this.repo.deleteMedia(item.uuid);
+		}
 	}
 
 	// -------------------------------------------------------------------------

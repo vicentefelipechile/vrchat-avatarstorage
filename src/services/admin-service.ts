@@ -158,14 +158,17 @@ export class AdminService {
 	}
 
 	/** Reject a pending resource: delete its R2 media (thumbnail + attachments) then the DB row. */
-	async rejectResource(uuid: string, bucket: R2Bucket): Promise<void> {
+	async rejectResource(uuid: string, bucket: R2Bucket, mediaBucket: R2Bucket): Promise<void> {
 		const mediaFiles = await this.repo.listResourceMediaKeys(uuid);
-		const thumbnail = await this.repo.findResourceThumbnailKey(uuid);
-
-		if (thumbnail) await bucket.delete(thumbnail.r2_key);
-		for (const media of mediaFiles) await bucket.delete(media.r2_key);
 
 		await this.repo.deleteResource(uuid);
+		for (const media of mediaFiles) {
+			if (await this.repo.isMediaReferenced(media.uuid)) continue;
+			const variants = await this.repo.listMediaVariantKeys(media.uuid);
+			await Promise.all(variants.map((variant) => mediaBucket.delete(variant.r2_key)));
+			await bucket.delete(media.r2_key);
+			await this.repo.deleteMedia(media.uuid);
+		}
 	}
 
 	private async invalidateResourceCaches(kv: KVNamespace, category: string): Promise<void> {
@@ -277,7 +280,7 @@ export class AdminService {
 	 * (comments/resources cascade via FK). Guards against self-delete and deleting admins.
 	 * Returns the number of resources removed.
 	 */
-	async deleteUser(actorUsername: string, targetUsername: string, bucket: R2Bucket): Promise<number> {
+	async deleteUser(actorUsername: string, targetUsername: string, bucket: R2Bucket, mediaBucket: R2Bucket): Promise<number> {
 		if (targetUsername === actorUsername) throw new ValidationError('Cannot delete yourself');
 
 		const target = await this.repo.findUserByUsername(targetUsername);
@@ -286,7 +289,7 @@ export class AdminService {
 
 		const owned = await this.repo.listUserResourceUuids(target.uuid);
 		for (const r of owned) {
-			await this.rejectResource(r.uuid, bucket);
+			await this.rejectResource(r.uuid, bucket, mediaBucket);
 		}
 		await this.repo.deleteUserRow(target.uuid);
 		return owned.length;

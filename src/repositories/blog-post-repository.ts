@@ -189,4 +189,9 @@ export class BlogPostRepository {
 	async deleteMedia(mediaUuid: string): Promise<void> {
 		await execute(this.db, 'DELETE FROM media WHERE uuid = ?', [mediaUuid]);
 	}
+
+	/** Variant object keys for a media row, before its DB row is deleted. */
+	listMediaVariantKeys(mediaUuid: string): Promise<{ r2_key: string }[]> {
+		return queryAll<{ r2_key: string }>(this.db, 'SELECT r2_key FROM media_variants WHERE media_uuid = ?', [mediaUuid]);
+	}
 }

@@ -139,7 +139,7 @@ blog.put('/:uuid', requireAdmin, async (c) => {
 // =========================================================================================================
 
 blog.delete('/:uuid', requireAdmin, async (c) => {
-	await new BlogService(c.env.DB).deletePost(c.req.param('uuid')!, c.env.BUCKET);
+	await new BlogService(c.env.DB).deletePost(c.req.param('uuid')!, c.env.BUCKET, c.env.MEDIA_BUCKET);
 	await invalidateBlogListCache(c.env.VRCSTORAGE_KV);
 
 	return c.json({ success: true });

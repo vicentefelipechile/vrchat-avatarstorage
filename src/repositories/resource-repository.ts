@@ -19,11 +19,12 @@
 // =========================================================================================================
 
 import type { DB } from '../db/client';
-import { queryOne, queryAll } from '../db/client';
+import { queryOne, queryAll, execute } from '../db/client';
 import { QueryBuilder } from '../helpers/query-constructor';
 import type { ResourceRow, ResourceLinkRow, ResourceHistoryRow, ResourceCategory } from '../db/schema';
 import { RESOURCE_CATEGORIES, processedExpr } from '../db/schema';
 import { anonUsernameExpr, anonAvatarExpr } from '../helpers/anonymity';
+import { ORPHANED_MEDIA_PREDICATE } from './admin-repository';
 
 // =========================================================================================================
 // Types
@@ -163,6 +164,34 @@ export class ResourceRepository {
 	/** Full joined detail row (metadata, links json, media json) by uuid. */
 	findDetail(uuid: string): Promise<ResourceDetailRow | null> {
 		return queryOne<ResourceDetailRow>(this.db, DETAIL_SQL, [uuid]);
+	}
+
+	/** Media directly owned by a resource, including thumbnail and reference image. */
+	listAttachedMedia(resourceUuid: string): Promise<{ uuid: string; r2_key: string }[]> {
+		return queryAll<{ uuid: string; r2_key: string }>(
+			this.db,
+			`SELECT uuid, r2_key FROM media WHERE uuid IN (
+				SELECT thumbnail_uuid FROM resources WHERE uuid = ? AND thumbnail_uuid IS NOT NULL
+				UNION SELECT reference_image_uuid FROM resources WHERE uuid = ? AND reference_image_uuid IS NOT NULL
+				UNION SELECT media_uuid FROM resource_n_media WHERE resource_uuid = ?
+			)`,
+			[resourceUuid, resourceUuid, resourceUuid],
+		);
+	}
+
+	/** Variant object keys for a media row, before its DB row is deleted. */
+	listMediaVariantKeys(mediaUuid: string): Promise<{ r2_key: string }[]> {
+		return queryAll<{ r2_key: string }>(this.db, 'SELECT r2_key FROM media_variants WHERE media_uuid = ?', [mediaUuid]);
+	}
+
+	/** Whether a media row still has any reference after its owner is removed. */
+	async isMediaReferenced(mediaUuid: string): Promise<boolean> {
+		const row = await queryOne<{ uuid: string }>(this.db, `SELECT m.uuid FROM media m WHERE m.uuid = ? AND NOT (${ORPHANED_MEDIA_PREDICATE})`, [mediaUuid]);
+		return row !== null;
+	}
+
+	deleteMedia(mediaUuid: string): Promise<void> {
+		return execute(this.db, 'DELETE FROM media WHERE uuid = ?', [mediaUuid]).then(() => undefined);
 	}
 
 	/** Edit history for a resource, newest first, with actor info joined. */
