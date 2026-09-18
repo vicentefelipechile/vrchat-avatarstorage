@@ -125,19 +125,23 @@ function getByPath(obj, dotPath) {
 
 /**
  * Set nested value by dot-path, creating intermediate objects as needed.
- * Returns false if the key already exists (skip), true if inserted.
+ * Returns false for an unsafe or invalid path, skip if the key exists, or the updated root.
  */
 function setByPath(obj, dotPath, value) {
 	const parts = dotPath.split('.');
 	if (!isSafePath(parts)) return false;
 	const leafKey = parts[parts.length - 1];
 	let current = obj;
+	const parents = [];
 
 	for (let i = 0; i < parts.length - 1; i++) {
 		const part = parts[i];
+		parents.push([current, part]);
 		if (!Object.hasOwn(current, part)) {
-			Object.defineProperty(current, part, { value: {}, enumerable: true, configurable: true, writable: true });
-		} else if (typeof current[part] !== 'object' || current[part] === null) {
+			current = {};
+			continue;
+		}
+		if (typeof current[part] !== 'object' || current[part] === null) {
 			console.error(`  ✘ "${parts.slice(0, i + 1).join('.')}" exists but is not an object.`);
 			return false;
 		}
@@ -148,8 +152,12 @@ function setByPath(obj, dotPath, value) {
 		return 'skip';
 	}
 
-	Object.defineProperty(current, leafKey, { value, enumerable: true, configurable: true, writable: true });
-	return true;
+	let updated = Object.fromEntries([...Object.entries(current), [leafKey, value]]);
+	for (let i = parents.length - 1; i >= 0; i--) {
+		const [parent, key] = parents[i];
+		updated = Object.fromEntries([...Object.entries(parent), [key, updated]]);
+	}
+	return updated;
 }
 
 /**
@@ -278,6 +286,7 @@ function runAdd(map, dryRun) {
 					console.log(`  ↷ "${key}" already exists — skipped.`);
 					totalSkipped++;
 				} else {
+					data = result;
 					console.log(`  ✓ ${key} = '${value}'${isNew && !modified ? ' (new section file)' : ''}`);
 					modified = true;
 					totalWritten++;
