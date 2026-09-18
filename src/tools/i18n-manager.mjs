@@ -109,11 +109,18 @@ function loadMonolit(locale) {
 // Object path helpers
 // =============================================================================
 
+const UNSAFE_PATH_PARTS = new Set(['__proto__', 'constructor', 'prototype']);
+
+function isSafePath(parts) {
+	return parts.every((part) => !UNSAFE_PATH_PARTS.has(part));
+}
+
 /**
  * Get nested value by dot-path. Returns undefined if not found.
  */
 function getByPath(obj, dotPath) {
-	return dotPath.split('.').reduce((acc, k) => acc?.[k], obj);
+	const parts = dotPath.split('.');
+	return isSafePath(parts) ? parts.reduce((acc, k) => acc?.[k], obj) : undefined;
 }
 
 /**
@@ -122,12 +129,13 @@ function getByPath(obj, dotPath) {
  */
 function setByPath(obj, dotPath, value) {
 	const parts = dotPath.split('.');
+	if (!isSafePath(parts)) return false;
 	const leafKey = parts[parts.length - 1];
 	let current = obj;
 
 	for (let i = 0; i < parts.length - 1; i++) {
 		const part = parts[i];
-		if (current[part] === undefined) {
+		if (!Object.hasOwn(current, part)) {
 			current[part] = {};
 		} else if (typeof current[part] !== 'object' || current[part] === null) {
 			console.error(`  ✘ "${parts.slice(0, i + 1).join('.')}" exists but is not an object.`);
@@ -136,7 +144,7 @@ function setByPath(obj, dotPath, value) {
 		current = current[part];
 	}
 
-	if (current[leafKey] !== undefined) {
+	if (Object.hasOwn(current, leafKey)) {
 		return 'skip';
 	}
 

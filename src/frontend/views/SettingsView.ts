@@ -878,26 +878,38 @@ async function loadSharesPanel(): Promise<void> {
 			const now = Math.floor(Date.now() / 1000);
 			if (data.links.length === 0) {
 				statusEl.textContent = t('settings.sharesEmpty');
-				listEl.innerHTML = '';
+				listEl.replaceChildren();
 				return;
 			}
 			statusEl.hidden = true;
-			listEl.innerHTML = data.links
-				.map((l) => {
+			listEl.replaceChildren(
+				...data.links.map((l) => {
 					const state = l.revoked !== 0 ? 'revoked' : l.expires_at <= now ? 'expired' : l.max_uses !== null && l.uses >= l.max_uses ? 'exhausted' : 'active';
 					const uses = l.max_uses === null ? `${l.uses}/${t('item.shareUnlimited')}` : `${l.uses}/${l.max_uses}`;
 					const expiry = new Date(l.expires_at * 1000).toLocaleString();
-					return `<div style="margin:10px 0;padding:10px;border:1px solid var(--border-color);background:var(--bg-code);">
-						<div style="font-weight:bold;word-break:break-all">${l.file_name}</div>
-						<div style="margin-top:4px;color:var(--text-muted);font-size:0.8rem;">${t('settings.sharesUses')}: ${uses} · ${t('settings.sharesExpires')}: ${expiry} · ${t(`settings.sharesState_${state}`)}</div>
-						${
-							state === 'active'
-								? `<div style="margin-top:8px;"><button type="button" class="btn btn-outline btn-sm share-revoke-btn" data-uuid="${l.uuid}">${t('settings.sharesRevoke')}</button></div>`
-								: ''
-						}
-					</div>`;
-				})
-				.join('');
+					const card = document.createElement('div');
+					card.style.cssText = 'margin:10px 0;padding:10px;border:1px solid var(--border-color);background:var(--bg-code)';
+					const fileName = document.createElement('div');
+					fileName.style.cssText = 'font-weight:bold;word-break:break-all';
+					fileName.textContent = l.file_name;
+					const details = document.createElement('div');
+					details.style.cssText = 'margin-top:4px;color:var(--text-muted);font-size:0.8rem';
+					details.textContent = `${t('settings.sharesUses')}: ${uses} · ${t('settings.sharesExpires')}: ${expiry} · ${t(`settings.sharesState_${state}`)}`;
+					card.append(fileName, details);
+					if (state === 'active') {
+						const actions = document.createElement('div');
+						actions.style.marginTop = '8px';
+						const revoke = document.createElement('button');
+						revoke.type = 'button';
+						revoke.className = 'btn btn-outline btn-sm share-revoke-btn';
+						revoke.dataset.uuid = l.uuid;
+						revoke.textContent = t('settings.sharesRevoke');
+						actions.appendChild(revoke);
+						card.appendChild(actions);
+					}
+					return card;
+				}),
+			);
 		} catch {
 			statusEl.textContent = t('common.networkError');
 		}

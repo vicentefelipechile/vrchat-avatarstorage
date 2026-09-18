@@ -512,6 +512,10 @@ When adding a Markdown description field to a form (like in `AdCreateView` or `B
 - Render the preview via `marked` and `DOMPurify` inside a `.markdown-body` pane.
 - **Never** duplicate toolbar generation or image paste logic in individual views.
 
+### DOM HTML Sinks
+
+Avoid `innerHTML`, `outerHTML`, and HTML-string DOM insertion at all costs, even when the content is currently static or trusted: GitHub CodeQL reports these APIs as HTML-reinterpretation sinks. Use `textContent`, `replaceChildren()`, `createElement()`, `append()`, and typed property assignments instead. If rich HTML is genuinely required, route it through the existing `renderMarkdown()` helper so DOMPurify sanitizes it first; never interpolate API or user-controlled values into an HTML string.
+
 ### Frontend Utilities & Feedback
 
 All visual feedback or ephemeral messages to the user (success, error, loading states) MUST use the integrated `showToast` utility from `src/frontend/lib/utils.ts`.

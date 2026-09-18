@@ -65,7 +65,7 @@ function createPreviewItem(tag: 'img' | 'video', url: string, name: string, onDe
 		'display:inline-block;position:relative;border:2px solid var(--border-color);padding:10px;margin:5px;background:var(--bg-card);vertical-align:top';
 
 	const btn = document.createElement('button');
-	btn.innerHTML = '✕';
+	btn.textContent = '✕';
 	btn.style.cssText =
 		'position:absolute;top:5px;right:5px;background:#dc3545;color:white;border:none;border-radius:3px;width:25px;height:25px;cursor:pointer;font-weight:bold;z-index:10';
 	btn.onclick = (e) => {
@@ -523,12 +523,17 @@ export async function uploadAfter(_ctx: RouteContext): Promise<void> {
 						authorSuggestions.style.display = 'none';
 						return;
 					}
-					authorSuggestions.innerHTML = data
-						.map(
-							(a) =>
-								`<div class="suggestion-item" data-uuid="${a.uuid}" data-name="${a.name}" style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border-color)">${a.name}</div>`,
-						)
-						.join('');
+					authorSuggestions.replaceChildren(
+						...data.map((a) => {
+							const item = document.createElement('div');
+							item.className = 'suggestion-item';
+							item.dataset.uuid = a.uuid;
+							item.dataset.name = a.name;
+							item.style.cssText = 'padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border-color)';
+							item.textContent = a.name;
+							return item;
+						}),
+					);
 					authorSuggestions.style.display = 'block';
 					authorSuggestions.querySelectorAll<HTMLElement>('.suggestion-item').forEach((item) => {
 						item.addEventListener('click', () => {
@@ -574,12 +579,17 @@ export async function uploadAfter(_ctx: RouteContext): Promise<void> {
 						clothesBaseSuggestions.style.display = 'none';
 						return;
 					}
-					clothesBaseSuggestions.innerHTML = items
-						.map(
-							(r) =>
-								`<div class="suggestion-item" data-uuid="${r.uuid}" data-name="${r.title}" style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border-color)">${r.title}</div>`,
-						)
-						.join('');
+					clothesBaseSuggestions.replaceChildren(
+						...items.map((r) => {
+							const item = document.createElement('div');
+							item.className = 'suggestion-item';
+							item.dataset.uuid = r.uuid;
+							item.dataset.name = r.title;
+							item.style.cssText = 'padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border-color)';
+							item.textContent = r.title;
+							return item;
+						}),
+					);
 					clothesBaseSuggestions.style.display = 'block';
 					clothesBaseSuggestions.querySelectorAll<HTMLElement>('.suggestion-item').forEach((item) => {
 						item.addEventListener('click', () => {

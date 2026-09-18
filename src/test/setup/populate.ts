@@ -21,6 +21,7 @@
 
 import { hash } from 'bcryptjs';
 import { spawn, spawnSync } from 'node:child_process';
+import { randomInt } from 'node:crypto';
 import { existsSync, readdirSync, readFileSync, statSync, writeFileSync, unlinkSync } from 'node:fs';
 import { join, extname, basename, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -92,7 +93,7 @@ function wranglerExec(cmd: string[], input?: string): { ok: boolean; out: string
 function d1Exec(sql: string): void {
 	const flag = isRemote ? '--remote' : '--local';
 	// Use temp file to avoid shell-quoting issues with "DELETE FROM ..."
-	const tmp = join(tmpdir(), `vrc-d1-${Date.now()}-${Math.random().toString(36).slice(2)}.sql`);
+	const tmp = join(tmpdir(), `vrc-d1-${Date.now()}-${crypto.randomUUID()}.sql`);
 	writeFileSync(tmp, sql, 'utf8');
 	try {
 		const result = spawnSync(process.execPath, [WRANGLER_BIN, 'd1', 'execute', DB_NAME, flag, '--yes', '--file', tmp], {
@@ -236,7 +237,7 @@ function getSeedFiles(): string[] {
 	}
 	// Shuffle for variety
 	for (let i = files.length - 1; i > 0; i--) {
-		const j = Math.floor(Math.random() * (i + 1));
+		const j = randomInt(i + 1);
 		[files[i], files[j]] = [files[j] as string, files[i] as string];
 	}
 	return files;
@@ -251,7 +252,7 @@ function mediaTypeFor(ext: string): 'image' | 'video' | 'file' {
 
 function randomCategory(): string {
 	const cats = ['avatars', 'assets', 'clothes'] as const;
-	return cats[Math.floor(Math.random() * cats.length)] as string;
+	return cats[randomInt(cats.length)] as string;
 }
 
 function randomTitle(cat: string, idx: number): string {
@@ -261,7 +262,7 @@ function randomTitle(cat: string, idx: number): string {
 		clothes: ['Street Hoodie', 'Gothic Dress', 'Techwear Set', 'Casual Outfit', 'Armor Pack'],
 	};
 	const list = prefixes[cat] ?? prefixes['avatars'] as string[];
-	const pre = list[Math.floor(Math.random() * list.length)];
+	const pre = list[randomInt(list.length)];
 	return `${pre} #${idx} — Seeded`;
 }
 
@@ -272,17 +273,20 @@ function randomDescription(): string {
 		'Demo content — variety pack. Thumbnail and gallery from img-seed.',
 		'Seeded file — curated for testing filters, favorites and collections.',
 	];
-	return descs[Math.floor(Math.random() * descs.length)] as string;
+	return descs[randomInt(descs.length)] as string;
 }
 
 function pick<T>(arr: readonly T[]): T {
-	return arr[Math.floor(Math.random() * arr.length)] as T;
+	return arr[randomInt(arr.length)] as T;
+}
+function randomUnit(): number {
+	return randomInt(1_000_000) / 1_000_000;
 }
 function coin(p = 0.5): number {
-	return Math.random() < p ? 1 : 0;
+	return randomInt(1_000_000) < p * 1_000_000 ? 1 : 0;
 }
 function coinBool(p = 0.5): boolean {
-	return Math.random() < p;
+	return randomInt(1_000_000) < p * 1_000_000;
 }
 
 // Real enum pools mirrored from src/validators.ts — keeps seed in sync with allowed values
@@ -420,7 +424,7 @@ async function main(): Promise<void> {
 		...Array(clothesN).fill('clothes'),
 	];
 	for (let i = pool.length - 1; i > 0; i--) {
-		const j = Math.floor(Math.random() * (i + 1));
+		const j = randomInt(i + 1);
 		[pool[i], pool[j]] = [pool[j] as string, pool[i] as string];
 	}
 	console.log(`\n[seed] Seeding ${RESOURCE_COUNT} resources (${avatarsN} avatars / ${assetsN} assets / ${clothesN} clothes) with variety...`);
@@ -455,7 +459,7 @@ async function main(): Promise<void> {
 		const title = randomTitle(cat, i + 1);
 		const desc = randomDescription();
 		const resUuid = crypto.randomUUID();
-		const authorUuid = Math.random() < 0.7 ? userUuid : adminUuid;
+		const authorUuid = coinBool(0.7) ? userUuid : adminUuid;
 
 		// Pick thumbnail: prefer image, fallback to any
 		const thumbCandidates = seedFiles.filter((p) => mediaTypeFor(extname(p)) === 'image');
@@ -466,7 +470,7 @@ async function main(): Promise<void> {
 		addMedia(thumbUuid, thumbSrc, thumbType === 'file' ? 'image' : thumbType, basename(thumbSrc));
 
 		// Gallery: 1-2 extra images
-		const galleryCount = 1 + Math.floor(Math.random() * 2);
+		const galleryCount = 1 + randomInt(2);
 		const galleryUuids: string[] = [];
 		for (let g = 0; g < galleryCount; g++) {
 			const src = seedFiles[(i + 1 + g) % seedFiles.length] as string;
@@ -489,7 +493,7 @@ async function main(): Promise<void> {
 		// Resource
 		const safeTitle = title.replace(/'/g, "''");
 		const safeDesc = desc.replace(/'/g, "''");
-		resourceSql += `INSERT INTO resources (uuid, title, description, category, thumbnail_uuid, reference_image_uuid, author_uuid, download_count, is_active, created_at, updated_at) VALUES (${sqlQuote(resUuid)}, ${sqlQuote(safeTitle)}, ${sqlQuote(safeDesc)}, ${sqlQuote(cat)}, ${sqlQuote(thumbUuid)}, NULL, ${sqlQuote(authorUuid)}, ${Math.floor(Math.random() * 200)}, 1, ${now - i * 3600}, ${now - i * 3600});\n`;
+		resourceSql += `INSERT INTO resources (uuid, title, description, category, thumbnail_uuid, reference_image_uuid, author_uuid, download_count, is_active, created_at, updated_at) VALUES (${sqlQuote(resUuid)}, ${sqlQuote(safeTitle)}, ${sqlQuote(safeDesc)}, ${sqlQuote(cat)}, ${sqlQuote(thumbUuid)}, NULL, ${sqlQuote(authorUuid)}, ${randomInt(200)}, 1, ${now - i * 3600}, ${now - i * 3600});\n`;
 
 		// Category meta — varied so every faceted filter has coverage (mirrors production distribution)
 		if (cat === 'avatars') {
@@ -511,14 +515,14 @@ async function main(): Promise<void> {
 			const platform = pick(PLATFORMS);
 			resourceSql += `INSERT INTO clothes_meta (resource_uuid, gender_fit, is_base, is_nsfw, has_physbones, platform) VALUES (${sqlQuote(resUuid)}, ${sqlQuote(gfit)}, ${coin(0.1)}, ${coin(0.15)}, ${coin(0.35)}, ${sqlQuote(platform)});\n`;
 			// 1-8 types per clothes item (weighted to 1-2, occasional 3-4, rare 5-8 to test max)
-			const rr = Math.random();
+			const rr = randomUnit();
 			let nTypes: number;
 			if (rr < 0.6) nTypes = 1;
 			else if (rr < 0.8) nTypes = 2;
 			else if (rr < 0.9) nTypes = 3;
 			else if (rr < 0.95) nTypes = 4;
-			else nTypes = 5 + Math.floor(Math.random() * 4); // 5-8
-			const shuffled = [...CLOTHES_TYPES].sort(() => Math.random() - 0.5);
+			else nTypes = 5 + randomInt(4); // 5-8
+			const shuffled = [...CLOTHES_TYPES].sort(() => randomUnit() - 0.5);
 			const chosen = shuffled.slice(0, Math.min(nTypes, CLOTHES_TYPES.length));
 			for (const ct of chosen) {
 				resourceSql += `INSERT OR IGNORE INTO clothes_clothing_types (resource_uuid, clothing_type) VALUES (${sqlQuote(resUuid)}, ${sqlQuote(ct)});\n`;
@@ -537,7 +541,7 @@ async function main(): Promise<void> {
 		resourceSql += `INSERT INTO resource_links (uuid, resource_uuid, link_url, link_title, link_type, display_order, created_at) VALUES (${sqlQuote(linkUuid)}, ${sqlQuote(resUuid)}, ${sqlQuote(dlUrl)}, ${sqlQuote(fileName)}, 'download', 0, ${now});\n`;
 
 		// Extra external link for variety (mirrors downloadHost table)
-		if (Math.random() < 0.4) {
+		if (coinBool(0.4)) {
 			const extUuid = crypto.randomUUID();
 			const extUrl = i % 2 === 0 ? 'https://drive.google.com/file/d/1FAKESEED/view' : 'https://mega.nz/file/SEED123#fake';
 			resourceSql += `INSERT INTO resource_links (uuid, resource_uuid, link_url, link_title, link_type, display_order, created_at) VALUES (${sqlQuote(extUuid)}, ${sqlQuote(resUuid)}, ${sqlQuote(extUrl)}, 'Mirror', 'download', 1, ${now});\n`;
