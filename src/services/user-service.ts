@@ -53,6 +53,7 @@ export interface UpdatedProfile {
 	previousUsername: string;
 	is_admin: number;
 	is_anonymous: number;
+	is_banned: number;
 }
 
 // =========================================================================================================
@@ -141,6 +142,7 @@ export class UserService {
 			previousUsername: user.username,
 			is_admin: user.is_admin,
 			is_anonymous: resolvedIsAnonymous,
+			is_banned: user.is_banned,
 		};
 	}
 

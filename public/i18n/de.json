@@ -485,6 +485,7 @@
 	},
 	"login": {
 		"2fa_code": "Authentifizierungscode",
+		"accountSuspended": "Konto gesperrt",
 		"back": "Zurück",
 		"btn": "Anmelden",
 		"enter2FA": "Gib den 6-stelligen Code aus deiner Authenticator-App ein",
@@ -628,6 +629,20 @@
 			"subtitle": "Sitzungs-Cache leeren",
 			"title": "Cache-Verwaltung"
 		},
+		"comments": {
+			"btnDelete": "Löschen",
+			"colAuthor": "Autor",
+			"colDate": "Datum",
+			"colResource": "Ressource",
+			"colText": "Kommentar",
+			"commentsCountLabel": "Kommentare",
+			"confirmDelete": "Diesen Kommentar löschen?",
+			"noResults": "Keine Ergebnisse",
+			"searchPlaceholder": "Text, Autor, Ressource suchen…",
+			"title": "Kommentare",
+			"toastDeleteError": "Fehler beim Löschen des Kommentars",
+			"toastDeleted": "Kommentar gelöscht"
+		},
 		"media": {
 			"btnDeleteOrphaned": "Verwaiste Dateien löschen",
 			"confirmDelete": "Alle verwaisten Dateien löschen?",
@@ -644,6 +659,7 @@
 		"nav": {
 			"authors": "Autoren",
 			"cache": "Cache",
+			"comments": "Kommentare",
 			"media": "Medien / Bereinigung",
 			"overview": "Übersicht",
 			"resources": "Ressourcen",
@@ -657,22 +673,26 @@
 			"colUser": "Benutzer",
 			"latestUploads": "Neueste Uploads",
 			"latestUsers": "Neueste Benutzer",
-			"noData": "Keine Daten"
+			"noData": "Keine Daten",
+			"registrationsChart": "Registrierungen (30T)",
+			"uploadsChart": "Uploads (30T)"
 		},
 		"resources": {
 			"allCats": "Alle cats.",
 			"allStatus": "Alle",
 			"approved": "Genehmigt",
 			"btnApprove": "Genehmigen",
+			"btnDelete": "Löschen",
 			"colStatus": "Status",
+			"confirmDelete": "Ressource löschen?",
 			"noResults": "Keine Ergebnisse",
 			"pageLabel": "Seite",
 			"pending": "Ausstehend",
 			"resultsLabel": "Ergebnisse",
 			"searchPlaceholder": "Nach Titel suchen…",
 			"title": "Ressourcen",
-			"toastApproveError": "Fehler beim Genehmigen",
-			"toastApproved": "Ressource genehmigt"
+			"toastDeleteError": "Fehler beim Löschen der Ressource",
+			"toastDeleted": "Ressource gelöscht"
 		},
 		"stats": {
 			"assets": "Assets",
@@ -685,32 +705,35 @@
 			"users": "Benutzer"
 		},
 		"users": {
+			"btnBan": "Sperren",
 			"btnCache": "Cache leeren",
+			"btnDelete": "Löschen",
+			"btnMakeAdmin": "Zum Admin machen",
+			"btnRemoveAdmin": "Admin entfernen",
+			"btnUnban": "Entsperren",
 			"colRegistered": "Registriert",
 			"colRole": "Rolle",
+			"confirmBan": "Konto sperren",
+			"confirmDelete": "Benutzer und alle seine Ressourcen löschen?",
+			"confirmDemote": "Admin-Rechte entziehen für",
+			"confirmPromote": "Admin-Rechte gewähren für",
+			"confirmUnban": "Konto wiederherstellen",
 			"roleAdmin": "Admin",
+			"roleBanned": "Gesperrt",
 			"roleUser": "Benutzer",
 			"searchPlaceholder": "Nach Benutzernamen suchen…",
 			"title": "Benutzer",
+			"toastBanError": "Fehler beim Sperren des Kontos",
+			"toastBanned": "Konto gesperrt",
 			"toastCacheCleared": "Cache geleert für",
 			"toastCacheClearedError": "Fehler beim Leeren des Cache",
+			"toastDeleteError": "Fehler beim Löschen des Benutzers",
+			"toastDeleted": "Benutzer gelöscht",
+			"toastRoleChanged": "Rolle aktualisiert",
+			"toastRoleError": "Fehler beim Aktualisieren der Rolle",
+			"toastUnbanned": "Konto wiederhergestellt",
 			"usersCountLabel": "Benutzer"
 		}
-	},
-	"chat": {
-		"disconnected": "Verbindung wird wiederhergestellt...",
-		"empty": "Noch keine Nachrichten. Sag als Erster etwas.",
-		"invalid": "Diese Nachricht konnte nicht gesendet werden.",
-		"loginToChat": "Melde dich an, um mitzureden",
-		"placeholder": "Nachricht schreiben...",
-		"purge": "Chat leeren",
-		"purgeConfirm": "Alle Nachrichten im Chat löschen? Das kann nicht rückgängig gemacht werden.",
-		"purgeFailed": "Der Chat konnte nicht geleert werden.",
-		"purged": "Ein Administrator hat den Chat geleert.",
-		"rateLimited": "Warte kurz, bevor du erneut sendest.",
-		"send": "Senden",
-		"title": "Globaler Chat",
-		"tooLong": "Nachrichten dürfen höchstens 50 Zeichen lang sein."
 	},
 	"blog": {
 		"authorDisplayLabel": "Veröffentlichen als",

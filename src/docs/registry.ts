@@ -71,7 +71,7 @@ export const TAG_GROUPS: TagGroup[] = [
 	{ tag: '2fa', label: 'Two-Factor', description: 'TOTP two-factor authentication' },
 	{ tag: 'admin', label: 'Admin', description: 'Moderation, stats, and maintenance (admin-only)' },
 	{ tag: 'system', label: 'System', description: 'Configuration and version metadata' },
-	{ tag: 'realtime', label: 'Realtime', description: 'Live feed, polling updates, global chat, and notifications' },
+	{ tag: 'realtime', label: 'Realtime', description: 'Live feed, polling updates, and notifications' },
 ];
 
 // =========================================================================================================
@@ -714,6 +714,30 @@ export const ENDPOINTS: EndpointDoc[] = [
 		response: { description: 'JSON — { resources, pagination }' },
 	},
 	{
+		method: 'GET', path: '/api/admin/comments', summary: 'List all comments (moderation)', auth: 'admin', rateLimit: 'medium', visibility: 'internal', tag: 'admin',
+		description: 'Global comment list, newest first, with author + resource title. Optional search across text/author/resource.',
+		params: [q('q', 'Text/author/resource search', { type: 'string' }), q('page', 'Page number', { type: 'integer', defaultValue: '1' })],
+		response: { description: 'JSON — { comments, pagination }' },
+	},
+	{
+		method: 'POST', path: '/api/admin/users/:username/ban', summary: 'Suspend/restore a user', auth: 'admin', rateLimit: 'medium', visibility: 'internal', tag: 'admin',
+		description: 'Sets is_banned for a target user (admins must be demoted first; never yourself) and invalidates their KV session cache. Banned users cannot log in and existing sessions resolve to null.',
+		params: [p('username', 'Target username', 'string'), b('banned', 'Suspend (true) or restore (false)', { required: true, type: 'boolean' })],
+		response: { description: 'JSON — { success: true, username, banned }' },
+	},
+	{
+		method: 'DELETE', path: '/api/admin/users/:username', summary: 'Delete a user + their resources', auth: 'admin', rateLimit: 'medium', visibility: 'internal', tag: 'admin',
+		description: 'Removes every owned resource (same R2 cleanup as reject), then the user row (comments/resources cascade). Admins must be demoted first; never yourself. Invalidates the KV session cache.',
+		params: [p('username', 'Target username', 'string')],
+		response: { description: 'JSON — { success: true, username, resources_removed }' },
+	},
+	{
+		method: 'GET', path: '/api/admin/stats/timeseries', summary: 'Per-day uploads + registrations', auth: 'admin', rateLimit: 'medium', visibility: 'internal', tag: 'admin',
+		description: 'Aligned daily series for the dashboard charts, gap-filled with zeros.',
+		params: [q('days', 'Window length (7–90, default 30)', { type: 'integer', defaultValue: '30' })],
+		response: { description: 'JSON — { days: string[], uploads: number[], registrations: number[] }' },
+	},
+	{
 		method: 'POST', path: '/api/admin/media/generate-variants', summary: 'Backfill image variants (enqueue)', auth: 'admin', rateLimit: 'medium', visibility: 'internal', tag: 'admin',
 		description: 'Enqueues UPLOAD_QUEUE messages for every image/video that has no variants yet, so the queue handler regenerates them.',
 		params: [],
@@ -738,7 +762,7 @@ export const ENDPOINTS: EndpointDoc[] = [
 		params: [],
 		response: { description: 'JSON — { worker: { versionId, versionTag, commitHash, deployedAt, compatibilityDate }, runtime, request: { rayId, colo, country } }' },
 	},
-	// ---- Realtime (feed / updates / chat / notifications) ------------------------------------------------------
+	// ---- Realtime (feed / updates / notifications) -------------------------------------------------------------
 	{
 		method: 'GET', path: '/api/updates', summary: 'Polling change feed (fallback for live feed)', auth: 'public', rateLimit: 'global', visibility: 'public', tag: 'realtime',
 		description: 'Returns the server clock and the newest change timestamp per scope (avatars/assets/clothes/blog/comments) since ?since. The frontend polls this when the live WebSocket is down. Scopes map to DataCache prefixes the client invalidates.',
@@ -750,18 +774,6 @@ export const ENDPOINTS: EndpointDoc[] = [
 		description: 'Upgrades to a WebSocket backed by the global FeedRoom Durable Object. Broadcasts FeedEvent { scope, action, entityId, title?, category?, thumbnailUuid?, isNsfw? } in real time. When open, the frontend suspends the /api/updates poller; when it drops, the poller resumes and covers the gap. Same reconciler drives both paths.',
 		params: [],
 		response: { description: '101 Switching Protocols — WebSocket frames are JSON FeedEvent objects' },
-	},
-	{
-		method: 'GET', path: '/api/chat/live', summary: 'Global chat WebSocket', auth: 'optional', rateLimit: 'medium', visibility: 'public', tag: 'realtime',
-		description: 'Upgrades to a WebSocket backed by the global ChatRoom Durable Object. Reading is public; only authenticated sockets may send. Text-only, ≤50 chars, backlog of 50 messages. The route stamps X-Chat-User-Uuid/Username headers before forwarding to the DO — the client never supplies identity.',
-		params: [],
-		response: { description: '101 — WebSocket. Client sends { type: "send", text }; server emits { type: "history" | "message" | "purged" | "error", ... }' },
-	},
-	{
-		method: 'POST', path: '/api/chat/purge', summary: 'Purge global chat (admin)', auth: 'admin', rateLimit: 'strict', visibility: 'internal', tag: 'realtime',
-		description: 'Empties the ChatRoom history for everyone. Admin-only, rate-limited to 1/min (strict). HTTP (not a socket message) so the DO never reasons about roles.',
-		params: [],
-		response: { description: 'JSON — { success: true }' },
 	},
 	{
 		method: 'GET', path: '/api/notifications/preferences', summary: 'Get notification preferences', auth: 'auth', rateLimit: 'medium', visibility: 'private', tag: 'realtime',

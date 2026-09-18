@@ -22,6 +22,10 @@
 // GET  /stats                         — Consolidated dashboard metrics.
 // GET  /users?q=&page=                — Paginated user listing.
 // GET  /resources?category=&status=&q=&page= — Paginated resource listing.
+// GET  /comments?q=&page=             — Paginated global comment list (newest first).
+// POST /users/:username/ban           — Suspend/restore a user (+ KV invalidation).
+// DELETE /users/:username             — Delete a user + their resources (+ KV invalidation).
+// GET  /stats/timeseries?days=        — Per-day uploads + registrations (7–90d).
 // POST /media/generate-variants       — Enqueue variant backfill for images without variants.
 // POST /media/unify-keys?confirm=&limit= — One-off: make every media's R2 key equal its uuid (dry-run by default).
 // =========================================================================================================
@@ -31,9 +35,23 @@
 // =========================================================================================================
 
 import { Hono } from 'hono';
+import type { Context } from 'hono';
 import { requireAdmin, type AuthVariables } from '../middleware/auth';
 import { AdminService } from '../../services/admin-service';
 import { fail } from '../responses';
+import { SensitiveActionSchema } from '../../validators';
+import { TwoFactorService } from '../../services/two-factor-service';
+import { ValidationError } from '../../domain/errors';
+
+// =========================================================================================================
+// Helpers
+// =========================================================================================================
+
+async function requireSensitiveCode(c: Context<{ Bindings: Env; Variables: AuthVariables }>, body: unknown): Promise<void> {
+	const parsed = SensitiveActionSchema.safeParse(body);
+	if (!parsed.success) throw new ValidationError('A valid 2FA code is required');
+	await new TwoFactorService(c.env.DB).verifyActionCode(c.get('user').username, parsed.data.code, c.env.JWT_SECRET, c.env.VRCSTORAGE_KV);
+}
 
 // =========================================================================================================
 // Endpoints
@@ -70,6 +88,7 @@ admin.post('/resource/:uuid/approve', async (c) => {
 // =========================================================================================================
 
 admin.post('/resource/:uuid/reject', async (c) => {
+	await requireSensitiveCode(c, await c.req.json().catch(() => null));
 	await new AdminService(c.env.DB).rejectResource(c.req.param('uuid'), c.env.BUCKET);
 	return c.json({ success: true });
 });
@@ -100,6 +119,7 @@ admin.get('/stats/orphaned-media', async (c) => {
 // =========================================================================================================
 
 admin.post('/cleanup/orphaned-media', async (c) => {
+	await requireSensitiveCode(c, await c.req.json().catch(() => null));
 	const deleted = await new AdminService(c.env.DB).cleanupOrphanedMedia(c.env.BUCKET, c.env.MEDIA_BUCKET);
 	return c.json({ success: true, deleted, message: `Cleaned up ${deleted} orphaned files` });
 });
@@ -130,6 +150,7 @@ admin.post('/users/:username/role', async (c) => {
 	} catch {
 		return fail(c, 'Invalid JSON body', 400);
 	}
+	await requireSensitiveCode(c, body);
 
 	const isAdmin = await new AdminService(c.env.DB).changeRole(c.get('user').username, targetUsername, body.is_admin);
 
@@ -175,6 +196,69 @@ admin.get('/resources', async (c) => {
 
 	const { rows, pagination } = await new AdminService(c.env.DB).listResources(q, category, status, page);
 	return c.json({ resources: rows, pagination });
+});
+
+// =========================================================================================================
+// GET /api/admin/comments?q=&page=
+// Global comment list, newest first, with optional text/author/resource search.
+// =========================================================================================================
+
+admin.get('/comments', async (c) => {
+	const q = c.req.query('q') || '';
+	const page = Math.max(1, parseInt(c.req.query('page') || '1', 10));
+
+	const { rows, pagination } = await new AdminService(c.env.DB).listComments(q, page);
+	return c.json({ comments: rows, pagination });
+});
+
+// =========================================================================================================
+// POST /api/admin/users/:username/ban
+// Suspend (or restore) a user. Banned users cannot log in and existing sessions resolve to null.
+// The KV session cache is invalidated so the ban takes effect immediately (else up to 7 days stale).
+// =========================================================================================================
+
+admin.post('/users/:username/ban', async (c) => {
+	const targetUsername = c.req.param('username');
+
+	let body: { banned?: unknown };
+	try {
+		body = await c.req.json();
+	} catch {
+		return fail(c, 'Invalid JSON body', 400);
+	}
+	await requireSensitiveCode(c, body);
+
+	await new AdminService(c.env.DB).banUser(c.get('user').username, targetUsername, body.banned);
+	await c.env.VRCSTORAGE_KV.delete(`user:${targetUsername}`);
+
+	return c.json({ success: true, username: targetUsername, banned: body.banned });
+});
+
+// =========================================================================================================
+// DELETE /api/admin/users/:username
+// Delete a user and everything they own (resources + R2 originals, comments cascade).
+// The KV session cache is invalidated so a deleted user cannot keep acting on a stale session.
+// =========================================================================================================
+
+admin.delete('/users/:username', async (c) => {
+	await requireSensitiveCode(c, await c.req.json().catch(() => null));
+	const targetUsername = c.req.param('username');
+
+	const removed = await new AdminService(c.env.DB).deleteUser(c.get('user').username, targetUsername, c.env.BUCKET);
+	await c.env.VRCSTORAGE_KV.delete(`user:${targetUsername}`);
+
+	return c.json({ success: true, username: targetUsername, resources_removed: removed });
+});
+
+// =========================================================================================================
+// GET /api/admin/stats/timeseries?days=
+// Per-day uploads + registrations for the last N days (7–90, default 30) for the dashboard charts.
+// =========================================================================================================
+
+admin.get('/stats/timeseries', async (c) => {
+	const days = parseInt(c.req.query('days') || '30', 10);
+	const series = await new AdminService(c.env.DB).timeseries(days);
+	return c.json(series);
 });
 
 // =========================================================================================================

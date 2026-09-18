@@ -1,5 +1,6 @@
 {
 	"2fa_code": "Doğrulama Kodu",
+	"accountSuspended": "Hesap askıya alındı",
 	"back": "Geri",
 	"btn": "Giriş Yap",
 	"enter2FA": "Kimlik doğrulama uygulamanızdaki 6 haneli kodu girin",

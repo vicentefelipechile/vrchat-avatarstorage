@@ -12,9 +12,10 @@
 //
 // Error mapping reproduces the legacy status codes exactly:
 //   - resource missing (approve/deactivate) → NotFoundError   (404)
-//   - target user missing (role change)     → NotFoundError   (404)
-//   - invalid is_admin body                  → ValidationError (400)
-//   - self-demotion attempt                  → ValidationError (400)
+//   - target user missing (role/ban/delete)  → NotFoundError   (404)
+//   - invalid is_admin/banned body            → ValidationError (400)
+//   - self-demotion/self-ban/self-delete     → ValidationError (400)
+//   - ban/delete of an admin                 → ValidationError (400, demote first)
 // =========================================================================================================
 
 // =========================================================================================================
@@ -23,7 +24,7 @@
 
 import type { DB } from '../db/client';
 import type { UploadQueueMessage } from '../types';
-import { AdminRepository, type PendingResourceRow, type AdminUserRow } from '../repositories/admin-repository';
+import { AdminRepository, type PendingResourceRow, type AdminUserRow, type AdminCommentRow } from '../repositories/admin-repository';
 import { ChangeFeedRepository, type ChangeScope } from '../repositories/change-feed-repository';
 import { FeedPublisher } from './feed-publisher';
 import { NotFoundError, ValidationError } from '../domain/errors';
@@ -232,10 +233,11 @@ export class AdminService {
 		if (typeof isAdmin !== 'boolean') throw new ValidationError('is_admin must be a boolean');
 		if (targetUsername === actorUsername) throw new ValidationError('Cannot change your own role');
 
-		const targetUuid = await this.repo.findUserUuid(targetUsername);
-		if (!targetUuid) throw new NotFoundError('User not found');
+		const target = await this.repo.findUserByUsername(targetUsername);
+		if (!target) throw new NotFoundError('User not found');
+		if (isAdmin && target.two_factor_enabled !== 1) throw new ValidationError('User must enable 2FA before becoming an admin');
 
-		await this.repo.setUserAdmin(targetUuid, isAdmin ? 1 : 0);
+		await this.repo.setUserAdmin(target.uuid, isAdmin ? 1 : 0);
 		return isAdmin;
 	}
 
@@ -250,6 +252,75 @@ export class AdminService {
 		const total = await this.repo.countUsers(search);
 		const rows = await this.repo.listUsers(search, limit, offset);
 		return { rows, pagination: { page, limit, total, hasNextPage: offset + limit < total, hasPrevPage: page > 1 } };
+	}
+
+	/**
+	 * Suspend or restore a user. Guards against a non-boolean flag, self-ban, and banning an
+	 * admin (demote first — prevents admin lockout wars). Returns the target uuid so the route
+	 * can invalidate their KV session cache immediately.
+	 */
+	async banUser(actorUsername: string, targetUsername: string, banned: unknown): Promise<string> {
+		if (typeof banned !== 'boolean') throw new ValidationError('banned must be a boolean');
+		if (targetUsername === actorUsername) throw new ValidationError('Cannot ban yourself');
+
+		const target = await this.repo.findUserByUsername(targetUsername);
+		if (!target) throw new NotFoundError('User not found');
+		if (banned && target.is_admin === 1) throw new ValidationError('Cannot ban an admin — demote first');
+
+		await this.repo.setUserBanned(target.uuid, banned ? 1 : 0);
+		return target.uuid;
+	}
+
+	/**
+	 * Delete a user and everything they own. Each owned resource goes through the same R2
+	 * cleanup as a reject (thumbnail + attachments), then the user row is deleted
+	 * (comments/resources cascade via FK). Guards against self-delete and deleting admins.
+	 * Returns the number of resources removed.
+	 */
+	async deleteUser(actorUsername: string, targetUsername: string, bucket: R2Bucket): Promise<number> {
+		if (targetUsername === actorUsername) throw new ValidationError('Cannot delete yourself');
+
+		const target = await this.repo.findUserByUsername(targetUsername);
+		if (!target) throw new NotFoundError('User not found');
+		if (target.is_admin === 1) throw new ValidationError('Cannot delete an admin — demote first');
+
+		const owned = await this.repo.listUserResourceUuids(target.uuid);
+		for (const r of owned) {
+			await this.rejectResource(r.uuid, bucket);
+		}
+		await this.repo.deleteUserRow(target.uuid);
+		return owned.length;
+	}
+
+	/** A page of all comments (30/page), newest first, optionally filtered by text/author/resource. */
+	async listComments(search: string, page: number): Promise<Paginated<AdminCommentRow>> {
+		const limit = 30;
+		const offset = (page - 1) * limit;
+		const total = await this.repo.countCommentsGlobal(search);
+		const rows = await this.repo.listCommentsGlobal(search, limit, offset);
+		return { rows, pagination: { page, limit, total, hasNextPage: offset + limit < total, hasPrevPage: page > 1 } };
+	}
+
+	/** Per-day uploads + registrations for the last `days` days (7–90), gap-filled with zeros. */
+	async timeseries(daysRaw: number): Promise<{ days: string[]; uploads: number[]; registrations: number[] }> {
+		const days = Math.min(90, Math.max(7, Math.floor(daysRaw) || 30));
+		const since = Math.floor(Date.now() / 1000) - days * 24 * 60 * 60;
+		const [uploads, registrations] = await Promise.all([
+			this.repo.dailyCounts('resources', since),
+			this.repo.dailyCounts('users', since),
+		]);
+		const up = new Map(uploads.map((r) => [r.day, r.count]));
+		const reg = new Map(registrations.map((r) => [r.day, r.count]));
+		const labels: string[] = [];
+		const upSeries: number[] = [];
+		const regSeries: number[] = [];
+		for (let i = days - 1; i >= 0; i--) {
+			const day = new Date(Date.now() - i * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+			labels.push(day);
+			upSeries.push(up.get(day) ?? 0);
+			regSeries.push(reg.get(day) ?? 0);
+		}
+		return { days: labels, uploads: upSeries, registrations: regSeries };
 	}
 
 	/** A page of resources (30/page) with optional title/category/status filters. */

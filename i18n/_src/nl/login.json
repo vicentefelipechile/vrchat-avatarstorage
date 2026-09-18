@@ -1,5 +1,6 @@
 {
 	"2fa_code": "Authenticatiecode",
+	"accountSuspended": "Account geschorst",
 	"back": "Terug",
 	"btn": "Inloggen",
 	"enter2FA": "Voer de 6-cijferige code in van je authenticator-app",

@@ -1,5 +1,6 @@
 {
 	"2fa_code": "验证码",
+	"accountSuspended": "账号已封禁",
 	"back": "返回",
 	"btn": "登录",
 	"enter2FA": "请输入您验证器应用中的6位数代码",

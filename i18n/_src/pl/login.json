@@ -1,5 +1,6 @@
 {
 	"2fa_code": "Kod uwierzytelniania",
+	"accountSuspended": "Konto zawieszone",
 	"back": "Wstecz",
 	"btn": "Zaloguj się",
 	"enter2FA": "Wprowadź 6-cyfrowy kod z aplikacji uwierzytelniającej",

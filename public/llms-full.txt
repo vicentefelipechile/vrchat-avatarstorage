@@ -1410,6 +1410,64 @@ No parameters.
 
 **Response** - JSON - { resources, pagination }
 
+### `GET /api/admin/comments`
+
+**List all comments (moderation)** - Global comment list, newest first, with author + resource title. Optional search across text/author/resource.
+
+- Auth: Admin only | Rate limit: medium | Visibility: internal
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| query | `q` | string | No | Text/author/resource search |
+| query | `page` | integer | No | Page number Default: `1`. |
+
+**Response** - JSON - { comments, pagination }
+
+### `POST /api/admin/users/:username/ban`
+
+**Suspend/restore a user** - Sets is_banned for a target user (admins must be demoted first; never yourself) and invalidates their KV session cache. Banned users cannot log in and existing sessions resolve to null.
+
+- Auth: Admin only | Rate limit: medium | Visibility: internal
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| path | `username` | string | Yes | Target username |
+| body | `banned` | boolean | Yes | Suspend (true) or restore (false) |
+
+**Response** - JSON - { success: true, username, banned }
+
+### `DELETE /api/admin/users/:username`
+
+**Delete a user + their resources** - Removes every owned resource (same R2 cleanup as reject), then the user row (comments/resources cascade). Admins must be demoted first; never yourself. Invalidates the KV session cache.
+
+- Auth: Admin only | Rate limit: medium | Visibility: internal
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| path | `username` | string | Yes | Target username |
+
+**Response** - JSON - { success: true, username, resources_removed }
+
+### `GET /api/admin/stats/timeseries`
+
+**Per-day uploads + registrations** - Aligned daily series for the dashboard charts, gap-filled with zeros.
+
+- Auth: Admin only | Rate limit: medium | Visibility: internal
+
+**Parameters**
+
+| Location | Name | Type | Required | Description |
+| :------- | :--- | :--- | :------- | :---------- |
+| query | `days` | integer | No | Window length (7-90, default 30) Default: `30`. |
+
+**Response** - JSON - { days: string[], uploads: number[], registrations: number[] }
+
 ### `POST /api/admin/media/generate-variants`
 
 **Backfill image variants (enqueue)** - Enqueues UPLOAD_QUEUE messages for every image/video that has no variants yet, so the queue handler regenerates them.
@@ -1465,7 +1523,7 @@ No parameters.
 **Response** - JSON - { worker: { versionId, versionTag, commitHash, deployedAt, compatibilityDate }, runtime, request: { rayId, colo, country } }
 
 
-## Realtime - Live feed, polling updates, global chat, and notifications
+## Realtime - Live feed, polling updates, and notifications
 
 ### `GET /api/updates`
 
@@ -1492,30 +1550,6 @@ No parameters.
 No parameters.
 
 **Response** - 101 Switching Protocols - WebSocket frames are JSON FeedEvent objects
-
-### `GET /api/chat/live`
-
-**Global chat WebSocket** - Upgrades to a WebSocket backed by the global ChatRoom Durable Object. Reading is public; only authenticated sockets may send. Text-only, <=50 chars, backlog of 50 messages. The route stamps X-Chat-User-Uuid/Username headers before forwarding to the DO - the client never supplies identity.
-
-- Auth: Optional auth (gated field) | Rate limit: medium | Visibility: public
-
-**Parameters**
-
-No parameters.
-
-**Response** - 101 - WebSocket. Client sends { type: "send", text }; server emits { type: "history" | "message" | "purged" | "error", ... }
-
-### `POST /api/chat/purge`
-
-**Purge global chat (admin)** - Empties the ChatRoom history for everyone. Admin-only, rate-limited to 1/min (strict). HTTP (not a socket message) so the DO never reasons about roles.
-
-- Auth: Admin only | Rate limit: strict | Visibility: internal
-
-**Parameters**
-
-No parameters.
-
-**Response** - JSON - { success: true }
 
 ### `GET /api/notifications/preferences`
 

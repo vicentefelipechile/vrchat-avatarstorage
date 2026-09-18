@@ -100,12 +100,14 @@ oauth.get('/google/callback', async (c) => {
 		});
 
 		if (result.status === 'existing') {
+			// Suspended accounts cannot start a session, even via a linked provider.
+			if (result.is_banned === 1) return c.redirect('/login?error=account_suspended', 302);
 			// Known user — create a session and send home.
 			await createSession(c, { username: result.username, is_admin: result.is_admin });
 			// H-4: Include uuid in KV cache so getAuthUser can validate the cached entry.
 			await c.env.VRCSTORAGE_KV.put(
 				`user:${result.username}`,
-				JSON.stringify({ uuid: result.user_uuid, username: result.username, is_admin: result.is_admin === 1 }),
+				JSON.stringify({ uuid: result.user_uuid, username: result.username, is_admin: result.is_admin === 1, is_banned: false }),
 				{ expirationTtl: SESSION_TTL },
 			);
 			return c.redirect('/?login=google', 302);
@@ -157,7 +159,7 @@ oauth.post('/complete', async (c) => {
 	// Create a session for the newly registered user.
 	// H-4: Include uuid in KV cache so getAuthUser can validate the cached entry.
 	await createSession(c, { username: user.username, is_admin: user.is_admin });
-	await c.env.VRCSTORAGE_KV.put(`user:${user.username}`, JSON.stringify({ uuid: user.user_uuid, username: user.username, is_admin: false }), {
+	await c.env.VRCSTORAGE_KV.put(`user:${user.username}`, JSON.stringify({ uuid: user.user_uuid, username: user.username, is_admin: false, is_banned: false }), {
 		expirationTtl: SESSION_TTL,
 	});
 

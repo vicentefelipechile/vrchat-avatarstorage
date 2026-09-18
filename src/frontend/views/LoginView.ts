@@ -84,8 +84,14 @@ export async function loginView(_ctx: RouteContext): Promise<string> {
 // After
 // =========================================================================
 
-export function loginAfter(_ctx: RouteContext): void {
+export function loginAfter(ctx: RouteContext): void {
 	renderTurnstile('#turnstile-login');
+
+	// Banned users arriving from the OAuth callback land here with ?error=account_suspended.
+	if (ctx.query.get('error') === 'account_suspended') {
+		history.replaceState(null, '', '/login');
+		setTimeout(() => showToast(t('login.accountSuspended'), 'error', 4000), 300);
+	}
 
 	const form = document.getElementById('login-form') as HTMLFormElement;
 	const twofaForm = document.getElementById('twofa-form') as HTMLFormElement;

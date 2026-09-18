@@ -485,6 +485,7 @@
 	},
 	"login": {
 		"2fa_code": "Код аутентификации",
+		"accountSuspended": "Аккаунт заблокирован",
 		"back": "Назад",
 		"btn": "Войти",
 		"enter2FA": "Введите 6-значный код из приложения-аутентификатора",
@@ -628,6 +629,20 @@
 			"subtitle": "Очистить кэш сессии",
 			"title": "Управление кэшем"
 		},
+		"comments": {
+			"btnDelete": "Удалить",
+			"colAuthor": "Автор",
+			"colDate": "Дата",
+			"colResource": "Ресурс",
+			"colText": "Комментарий",
+			"commentsCountLabel": "комментариев",
+			"confirmDelete": "Удалить этот комментарий?",
+			"noResults": "Нет результатов",
+			"searchPlaceholder": "Поиск по тексту, автору, ресурсу…",
+			"title": "Комментарии",
+			"toastDeleteError": "Ошибка удаления комментария",
+			"toastDeleted": "Комментарий удалён"
+		},
 		"media": {
 			"btnDeleteOrphaned": "Удалить потерянные файлы",
 			"confirmDelete": "Удалить все потерянные файлы?",
@@ -644,6 +659,7 @@
 		"nav": {
 			"authors": "Авторы",
 			"cache": "Кэш",
+			"comments": "Комментарии",
 			"media": "Медиа / Очистка",
 			"overview": "Обзор",
 			"resources": "Ресурсы",
@@ -657,22 +673,26 @@
 			"colUser": "Пользователь",
 			"latestUploads": "Последние загрузки",
 			"latestUsers": "Новые пользователи",
-			"noData": "Нет данных"
+			"noData": "Нет данных",
+			"registrationsChart": "Регистрации (30д)",
+			"uploadsChart": "Загрузки (30д)"
 		},
 		"resources": {
 			"allCats": "Все кат.",
 			"allStatus": "Все",
 			"approved": "Одобренные",
 			"btnApprove": "Одобрить",
+			"btnDelete": "Удалить",
 			"colStatus": "Статус",
+			"confirmDelete": "Удалить ресурс?",
 			"noResults": "Нет результатов",
 			"pageLabel": "Страница",
 			"pending": "Ожидающие",
 			"resultsLabel": "результатов",
 			"searchPlaceholder": "Поиск по названию…",
 			"title": "Ресурсы",
-			"toastApproveError": "Ошибка одобрения",
-			"toastApproved": "Ресурс одобрен"
+			"toastDeleteError": "Ошибка удаления ресурса",
+			"toastDeleted": "Ресурс удалён"
 		},
 		"stats": {
 			"assets": "Assets",
@@ -685,32 +705,35 @@
 			"users": "Пользователи"
 		},
 		"users": {
+			"btnBan": "Забанить",
 			"btnCache": "Очистить кэш",
+			"btnDelete": "Удалить",
+			"btnMakeAdmin": "Сделать админом",
+			"btnRemoveAdmin": "Снять админа",
+			"btnUnban": "Разбанить",
 			"colRegistered": "Зарегистрирован",
 			"colRole": "Роль",
+			"confirmBan": "Заблокировать аккаунт",
+			"confirmDelete": "Удалить пользователя и все его ресурсы?",
+			"confirmDemote": "Снять права админа с",
+			"confirmPromote": "Выдать права админа",
+			"confirmUnban": "Восстановить аккаунт",
 			"roleAdmin": "Admin",
+			"roleBanned": "Забанен",
 			"roleUser": "Пользователь",
 			"searchPlaceholder": "Поиск по имени пользователя…",
 			"title": "Пользователи",
+			"toastBanError": "Ошибка блокировки аккаунта",
+			"toastBanned": "Аккаунт заблокирован",
 			"toastCacheCleared": "Кэш очищен для",
 			"toastCacheClearedError": "Ошибка очистки кэша",
+			"toastDeleteError": "Ошибка удаления пользователя",
+			"toastDeleted": "Пользователь удалён",
+			"toastRoleChanged": "Роль обновлена",
+			"toastRoleError": "Ошибка обновления роли",
+			"toastUnbanned": "Аккаунт восстановлен",
 			"usersCountLabel": "пользователей"
 		}
-	},
-	"chat": {
-		"disconnected": "Переподключение...",
-		"empty": "Сообщений пока нет. Напишите первым.",
-		"invalid": "Не удалось отправить это сообщение.",
-		"loginToChat": "Войдите, чтобы присоединиться к разговору",
-		"placeholder": "Напишите сообщение...",
-		"purge": "Очистить чат",
-		"purgeConfirm": "Удалить все сообщения из чата? Это действие необратимо.",
-		"purgeFailed": "Не удалось очистить чат.",
-		"purged": "Администратор очистил чат.",
-		"rateLimited": "Подождите немного перед следующей отправкой.",
-		"send": "Отправить",
-		"title": "Общий чат",
-		"tooLong": "Сообщение может содержать не более 50 символов."
 	},
 	"blog": {
 		"authorDisplayLabel": "Опубликовать как",

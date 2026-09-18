@@ -485,6 +485,7 @@
 	},
 	"login": {
 		"2fa_code": "Kod uwierzytelniania",
+		"accountSuspended": "Konto zawieszone",
 		"back": "Wstecz",
 		"btn": "Zaloguj się",
 		"enter2FA": "Wprowadź 6-cyfrowy kod z aplikacji uwierzytelniającej",
@@ -628,6 +629,20 @@
 			"subtitle": "Wyczyść pamięć podręczną sesji",
 			"title": "Zarządzanie pamięcią podręczną"
 		},
+		"comments": {
+			"btnDelete": "Usuń",
+			"colAuthor": "Autor",
+			"colDate": "Data",
+			"colResource": "Zasób",
+			"colText": "Komentarz",
+			"commentsCountLabel": "komentarze",
+			"confirmDelete": "Usunąć ten komentarz?",
+			"noResults": "Brak wyników",
+			"searchPlaceholder": "Szukaj tekstu, autora, zasobu…",
+			"title": "Komentarze",
+			"toastDeleteError": "Błąd usuwania komentarza",
+			"toastDeleted": "Komentarz usunięty"
+		},
 		"media": {
 			"btnDeleteOrphaned": "Usuń osierocone pliki",
 			"confirmDelete": "Usunąć wszystkie osierocone pliki?",
@@ -644,6 +659,7 @@
 		"nav": {
 			"authors": "Autorzy",
 			"cache": "Cache",
+			"comments": "Komentarze",
 			"media": "Media / Czyszczenie",
 			"overview": "Przegląd",
 			"resources": "Zasoby",
@@ -657,22 +673,26 @@
 			"colUser": "Użytkownik",
 			"latestUploads": "Najnowsze przesłane",
 			"latestUsers": "Najnowsi użytkownicy",
-			"noData": "Brak danych"
+			"noData": "Brak danych",
+			"registrationsChart": "Rejestracje (30d)",
+			"uploadsChart": "Przesłane (30d)"
 		},
 		"resources": {
 			"allCats": "Wszystkie cats.",
 			"allStatus": "Wszystkie",
 			"approved": "Zatwierdzone",
 			"btnApprove": "Zatwierdź",
+			"btnDelete": "Usuń",
 			"colStatus": "Status",
+			"confirmDelete": "Usunąć zasób?",
 			"noResults": "Brak wyników",
 			"pageLabel": "Strona",
 			"pending": "Oczekujące",
 			"resultsLabel": "wyników",
 			"searchPlaceholder": "Szukaj po tytule…",
 			"title": "Zasoby",
-			"toastApproveError": "Błąd zatwierdzania",
-			"toastApproved": "Zatwierdzono zasób"
+			"toastDeleteError": "Błąd usuwania zasobu",
+			"toastDeleted": "Zasób usunięty"
 		},
 		"stats": {
 			"assets": "Assets",
@@ -685,32 +705,35 @@
 			"users": "Użytkownicy"
 		},
 		"users": {
+			"btnBan": "Zbanuj",
 			"btnCache": "Wyczyść pamięć podręczną",
+			"btnDelete": "Usuń",
+			"btnMakeAdmin": "Nadaj admina",
+			"btnRemoveAdmin": "Odbierz admina",
+			"btnUnban": "Odbanuj",
 			"colRegistered": "Zarejestrowano",
 			"colRole": "Rola",
+			"confirmBan": "Zawieś konto",
+			"confirmDelete": "Usunąć użytkownika i wszystkie jego zasoby?",
+			"confirmDemote": "Odbierz uprawnienia admina użytkownikowi",
+			"confirmPromote": "Nadaj uprawnienia admina użytkownikowi",
+			"confirmUnban": "Przywróć konto",
 			"roleAdmin": "Admin",
+			"roleBanned": "Zbanowany",
 			"roleUser": "Użytkownik",
 			"searchPlaceholder": "Szukaj po nazwie użytkownika…",
 			"title": "Użytkownicy",
+			"toastBanError": "Błąd zawieszania konta",
+			"toastBanned": "Konto zawieszone",
 			"toastCacheCleared": "Wyczyszczono pamięć podręczną dla",
 			"toastCacheClearedError": "Błąd czyszczenia pamięci podręcznej",
+			"toastDeleteError": "Błąd usuwania użytkownika",
+			"toastDeleted": "Użytkownik usunięty",
+			"toastRoleChanged": "Rola zaktualizowana",
+			"toastRoleError": "Błąd aktualizacji roli",
+			"toastUnbanned": "Konto przywrócone",
 			"usersCountLabel": "użytkowników"
 		}
-	},
-	"chat": {
-		"disconnected": "Ponowne łączenie...",
-		"empty": "Nie ma jeszcze wiadomości. Napisz coś jako pierwszy.",
-		"invalid": "Nie udało się wysłać tej wiadomości.",
-		"loginToChat": "Zaloguj się, aby dołączyć do rozmowy",
-		"placeholder": "Napisz wiadomość...",
-		"purge": "Wyczyść czat",
-		"purgeConfirm": "Usunąć wszystkie wiadomości z czatu? Tej operacji nie można cofnąć.",
-		"purgeFailed": "Nie udało się wyczyścić czatu.",
-		"purged": "Administrator wyczyścił czat.",
-		"rateLimited": "Poczekaj chwilę przed wysłaniem kolejnej wiadomości.",
-		"send": "Wyślij",
-		"title": "Czat globalny",
-		"tooLong": "Wiadomość może mieć maksymalnie 50 znaków."
 	},
 	"blog": {
 		"authorDisplayLabel": "Publikuj jako",

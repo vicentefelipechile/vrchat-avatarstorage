@@ -80,7 +80,7 @@ twoFactor.post('/disable', requireAuth, async (c) => {
 
 	await c.env.VRCSTORAGE_KV.delete(`user:${result.username}`);
 
-	return c.json({ message: '2FA disabled successfully' });
+	return c.json({ message: '2FA disabled successfully', adminRevoked: true });
 });
 
 // =========================================================================================================

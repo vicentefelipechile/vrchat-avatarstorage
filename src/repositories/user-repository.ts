@@ -35,9 +35,9 @@ export class UserRepository {
 		return row !== null;
 	}
 
-	/** Minimal identity (username + admin flag) for a user uuid, or null. Used by OAuth login. */
-	findIdentityByUuid(uuid: string): Promise<{ username: string; is_admin: number } | null> {
-		return queryOne<{ username: string; is_admin: number }>(this.db, 'SELECT username, is_admin FROM users WHERE uuid = ?', [uuid]);
+	/** Minimal identity (username + admin/banned flags) for a user uuid, or null. Used by OAuth login. */
+	findIdentityByUuid(uuid: string): Promise<{ username: string; is_admin: number; is_banned: number } | null> {
+		return queryOne<{ username: string; is_admin: number; is_banned: number }>(this.db, 'SELECT username, is_admin, is_banned FROM users WHERE uuid = ?', [uuid]);
 	}
 
 	// -------------------------------------------------------------------------
@@ -100,11 +100,11 @@ export class UserRepository {
 		]);
 	}
 
-	/** Disable 2FA and clear the secret + backup codes. */
+	/** Disable 2FA, revoke admin access, and clear the secret + backup codes. */
 	async disableTwoFactor(uuid: string): Promise<void> {
 		await execute(
 			this.db,
-			'UPDATE users SET two_factor_enabled = 0, two_factor_secret = NULL, two_factor_backup_codes = NULL WHERE uuid = ?',
+			'UPDATE users SET two_factor_enabled = 0, two_factor_secret = NULL, two_factor_backup_codes = NULL, is_admin = 0 WHERE uuid = ?',
 			[uuid],
 		);
 	}

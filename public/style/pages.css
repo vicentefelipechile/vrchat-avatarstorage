@@ -603,6 +603,16 @@ footer p {
 	word-break: break-word;
 }
 
+.confirm-input {
+	width: 100%;
+	margin: 0 0 20px;
+	padding: 10px;
+	background: var(--bg-input);
+	border: 2px solid var(--border-color);
+	color: var(--text-main);
+	font: inherit;
+}
+
 .confirm-actions {
 	display: flex;
 	justify-content: flex-end;

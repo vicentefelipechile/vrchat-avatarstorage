@@ -485,6 +485,7 @@
 	},
 	"login": {
 		"2fa_code": "Código de Autenticación",
+		"accountSuspended": "Cuenta suspendida",
 		"back": "Atrás",
 		"btn": "Entrar",
 		"enter2FA": "Ingresa el código de 6 dígitos de tu app autenticadora",
@@ -628,6 +629,20 @@
 			"subtitle": "Limpiar caché de sesión",
 			"title": "Gestión de Caché"
 		},
+		"comments": {
+			"btnDelete": "Eliminar",
+			"colAuthor": "Autor",
+			"colDate": "Fecha",
+			"colResource": "Recurso",
+			"colText": "Comentario",
+			"commentsCountLabel": "comentarios",
+			"confirmDelete": "¿Eliminar este comentario?",
+			"noResults": "Sin resultados",
+			"searchPlaceholder": "Buscar texto, autor, recurso…",
+			"title": "Comentarios",
+			"toastDeleteError": "Error al eliminar el comentario",
+			"toastDeleted": "Comentario eliminado"
+		},
 		"media": {
 			"btnDeleteOrphaned": "Eliminar archivos huérfanos",
 			"confirmDelete": "¿Eliminar todos los archivos huérfanos?",
@@ -644,6 +659,7 @@
 		"nav": {
 			"authors": "Autores",
 			"cache": "Caché",
+			"comments": "Comentarios",
 			"media": "Media / Limpieza",
 			"overview": "Resumen",
 			"resources": "Recursos",
@@ -657,22 +673,26 @@
 			"colUser": "Usuario",
 			"latestUploads": "Últimas subidas",
 			"latestUsers": "Últimos registros",
-			"noData": "Sin datos"
+			"noData": "Sin datos",
+			"registrationsChart": "Registros (30d)",
+			"uploadsChart": "Subidas (30d)"
 		},
 		"resources": {
 			"allCats": "Todas las cats.",
 			"allStatus": "Todos",
 			"approved": "Aprobados",
 			"btnApprove": "Aprobar",
+			"btnDelete": "Eliminar",
 			"colStatus": "Estado",
+			"confirmDelete": "¿Eliminar recurso?",
 			"noResults": "Sin resultados",
 			"pageLabel": "Pág.",
 			"pending": "Pendientes",
 			"resultsLabel": "resultados",
 			"searchPlaceholder": "Buscar por título…",
 			"title": "Recursos",
-			"toastApproveError": "Error al aprobar",
-			"toastApproved": "Recurso aprobado"
+			"toastDeleteError": "Error al eliminar el recurso",
+			"toastDeleted": "Recurso eliminado"
 		},
 		"stats": {
 			"assets": "Assets",
@@ -685,32 +705,35 @@
 			"users": "Usuarios"
 		},
 		"users": {
+			"btnBan": "Banear",
 			"btnCache": "Limpiar caché",
+			"btnDelete": "Eliminar",
+			"btnMakeAdmin": "Hacer admin",
+			"btnRemoveAdmin": "Quitar admin",
+			"btnUnban": "Desbanear",
 			"colRegistered": "Registrado",
 			"colRole": "Rol",
+			"confirmBan": "Suspender cuenta",
+			"confirmDelete": "¿Eliminar usuario y todos sus recursos?",
+			"confirmDemote": "Quitar derechos de admin a",
+			"confirmPromote": "Otorgar derechos de admin a",
+			"confirmUnban": "Restaurar cuenta",
 			"roleAdmin": "Admin",
+			"roleBanned": "Baneado",
 			"roleUser": "User",
 			"searchPlaceholder": "Buscar por username…",
 			"title": "Usuarios",
+			"toastBanError": "Error al suspender la cuenta",
+			"toastBanned": "Cuenta suspendida",
 			"toastCacheCleared": "Caché limpiada para",
 			"toastCacheClearedError": "Error al limpiar caché",
+			"toastDeleteError": "Error al eliminar el usuario",
+			"toastDeleted": "Usuario eliminado",
+			"toastRoleChanged": "Rol actualizado",
+			"toastRoleError": "Error al actualizar el rol",
+			"toastUnbanned": "Cuenta restaurada",
 			"usersCountLabel": "usuarios"
 		}
-	},
-	"chat": {
-		"disconnected": "Reconectando...",
-		"empty": "Aún no hay mensajes. Sé el primero en decir algo.",
-		"invalid": "No se pudo enviar ese mensaje.",
-		"loginToChat": "Inicia sesión para unirte a la conversación",
-		"placeholder": "Escribe un mensaje...",
-		"purge": "Vaciar chat",
-		"purgeConfirm": "¿Borrar todos los mensajes del chat? Esto no se puede deshacer.",
-		"purgeFailed": "No se pudo vaciar el chat.",
-		"purged": "Un administrador vació el chat.",
-		"rateLimited": "Espera un poco antes de volver a enviar.",
-		"send": "Enviar",
-		"title": "Chat global",
-		"tooLong": "Los mensajes pueden tener hasta 50 caracteres."
 	},
 	"blog": {
 		"authorDisplayLabel": "Publicar como",

@@ -25,7 +25,7 @@ export const SECTION_ORDER = [
 	'common', 'nav', 'pagination', 'confirm', 'notifications', 'updates', 'home', 'cats',
 	'category', 'card', 'sort', 'filterPanel', 'favorites', 'collections', 'item', 'comment',
 	'edit', 'history', 'upload', 'meta', 'authorProfile', 'register', 'oauthRegister',
-	'login', 'settings', 'admin', 'chat', 'blog', 'wiki', 'dmca',
+	'login', 'settings', 'admin', 'blog', 'wiki', 'dmca',
 ];
 
 export const KNOWN_LOCALES = ['cn', 'de', 'en', 'es', 'fr', 'it', 'jp', 'nl', 'pl', 'pt', 'ru', 'tr'];

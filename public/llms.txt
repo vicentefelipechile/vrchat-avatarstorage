@@ -105,13 +105,12 @@ Base: `https://vrcstorage.lat/api`
 - [`GET` /api/config](https://vrcstorage.lat/api/config): Public site configuration - Returns public configuration needed by the frontend (Turnstile site key, etc.). No auth required. (No auth. Response: JSON - { turnstileSiteKey })
 - [`GET` /api/version](https://vrcstorage.lat/api/version): Worker version and request metadata - Unauthenticated deployment metadata: version ID/tag, commit hash, compatibility date, Cloudflare Ray/colo/country. Intentionally public for debugging. (No auth. Response: JSON - { worker: { versionId, versionTag, commitHash, deployedAt, compatibilityDate }, runtime, request: { rayId, colo, country } })
 
-## Public API - Realtime - Live feed, polling updates, global chat, and notifications
+## Public API - Realtime - Live feed, polling updates, and notifications
 
 Base: `https://vrcstorage.lat/api`
 
 - [`GET` /api/updates](https://vrcstorage.lat/api/updates): Polling change feed (fallback for live feed) - Returns the server clock and the newest change timestamp per scope (avatars/assets/clothes/blog/comments) since ?since. The frontend polls this when the live WebSocket is down. Scopes map to DataCache prefixes the client invalidates. (No auth. Query: `since`. Response: JSON - { now, changes: { avatars, assets, clothes, blog, comments } })
 - [`GET` /api/feed/live](https://vrcstorage.lat/api/feed/live): Live feed WebSocket - Upgrades to a WebSocket backed by the global FeedRoom Durable Object. Broadcasts FeedEvent { scope, action, entityId, title?, category?, thumbnailUuid?, isNsfw? } in real time. When open, the frontend suspends the /api/updates poller; when it drops, the poller resumes and covers the gap. Same reconciler drives both paths. (No auth. Response: 101 Switching Protocols - WebSocket frames are JSON FeedEvent objects)
-- [`GET` /api/chat/live](https://vrcstorage.lat/api/chat/live): Global chat WebSocket - Upgrades to a WebSocket backed by the global ChatRoom Durable Object. Reading is public; only authenticated sockets may send. Text-only, <=50 chars, backlog of 50 messages. The route stamps X-Chat-User-Uuid/Username headers before forwarding to the DO - the client never supplies identity. (Optional auth (gated field). Response: 101 - WebSocket. Client sends { type: "send", text }; server emits { type: "history" | "message" | "purged" | "error", ... })
 
 ## Optional
 

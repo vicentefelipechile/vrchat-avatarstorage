@@ -10,7 +10,6 @@
 @import url('./style/cards.css');
 @import url('./style/item.css');
 @import url('./style/wiki.css');
-@import url('./style/admin.css');
 @import url('./style/pages.css');
 @import url('./style/age-gate.css');
 @import url('./style/blog.css');
@@ -19,7 +18,6 @@
 @import url('./style/admin-dashboard.css');
 @import url('./style/favorites.css');
 @import url('./style/settings.css');
-@import url('./style/chat.css');
 
 
 /* ---- Shared utilities ---- */

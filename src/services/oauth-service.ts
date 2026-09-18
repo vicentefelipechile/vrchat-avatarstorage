@@ -44,7 +44,7 @@ export interface OAuthIdentity {
 
 /** Resolution result: a known account (create a session) or a new one (choose a username first). */
 export type OAuthResolution =
-	| { status: 'existing'; user_uuid: string; username: string; is_admin: number }
+	| { status: 'existing'; user_uuid: string; username: string; is_admin: number; is_banned: number }
 	| { status: 'pending'; pendingToken: string };
 
 /** The user created after a pending registration is completed. */
@@ -89,7 +89,7 @@ export class OAuthService {
 		if (link) {
 			const user = await this.userRepo.findIdentityByUuid(link.user_uuid);
 			if (user) {
-				return { status: 'existing', user_uuid: link.user_uuid, username: user.username, is_admin: user.is_admin };
+				return { status: 'existing', user_uuid: link.user_uuid, username: user.username, is_admin: user.is_admin, is_banned: user.is_banned };
 			}
 		}
 

@@ -41,6 +41,20 @@
 		"subtitle": "Oturum önbelleğini temizle",
 		"title": "Önbellek yönetimi"
 	},
+	"comments": {
+		"btnDelete": "Sil",
+		"colAuthor": "Yazar",
+		"colDate": "Tarih",
+		"colResource": "Kaynak",
+		"colText": "Yorum",
+		"commentsCountLabel": "yorum",
+		"confirmDelete": "Bu yorum silinsin mi?",
+		"noResults": "Sonuç yok",
+		"searchPlaceholder": "Metin, yazar, kaynak ara…",
+		"title": "Yorumlar",
+		"toastDeleteError": "Yorum silinirken hata",
+		"toastDeleted": "Yorum silindi"
+	},
 	"media": {
 		"btnDeleteOrphaned": "Sahipsiz dosyaları sil",
 		"confirmDelete": "Tüm sahipsiz dosyalar silinsin mi?",
@@ -57,6 +71,7 @@
 	"nav": {
 		"authors": "Yazarlar",
 		"cache": "Önbellek",
+		"comments": "Yorumlar",
 		"media": "Medya / Temizlik",
 		"overview": "Genel bakış",
 		"resources": "Kaynaklar",
@@ -70,22 +85,26 @@
 		"colUser": "Kullanıcı",
 		"latestUploads": "Son yüklemeler",
 		"latestUsers": "Son kullanıcılar",
-		"noData": "Veri yok"
+		"noData": "Veri yok",
+		"registrationsChart": "Kayıtlar (30g)",
+		"uploadsChart": "Yüklemeler (30g)"
 	},
 	"resources": {
 		"allCats": "Tüm kat.",
 		"allStatus": "Tümü",
 		"approved": "Onaylanan",
 		"btnApprove": "Onayla",
+		"btnDelete": "Sil",
 		"colStatus": "Durum",
+		"confirmDelete": "Kaynak silinsin mi?",
 		"noResults": "Sonuç yok",
 		"pageLabel": "Sayfa",
 		"pending": "Bekleyen",
 		"resultsLabel": "sonuç",
 		"searchPlaceholder": "Başlığa göre ara…",
 		"title": "Kaynaklar",
-		"toastApproveError": "Onaylarken hata",
-		"toastApproved": "Kaynak onaylandı"
+		"toastDeleteError": "Kaynak silinirken hata",
+		"toastDeleted": "Kaynak silindi"
 	},
 	"stats": {
 		"assets": "Assets",
@@ -98,15 +117,33 @@
 		"users": "Kullanıcılar"
 	},
 	"users": {
+		"btnBan": "Banla",
 		"btnCache": "Önbelleği temizle",
+		"btnDelete": "Sil",
+		"btnMakeAdmin": "Admin yap",
+		"btnRemoveAdmin": "Adminliği kaldır",
+		"btnUnban": "Banı kaldır",
 		"colRegistered": "Kayıt",
 		"colRole": "Rol",
+		"confirmBan": "Hesabı askıya al",
+		"confirmDelete": "Kullanıcı ve tüm kaynakları silinsin mi?",
+		"confirmDemote": "kullanıcısının admin yetkisini kaldır",
+		"confirmPromote": "kullanıcısına admin yetkisi ver",
+		"confirmUnban": "Hesabı geri yükle",
 		"roleAdmin": "Admin",
+		"roleBanned": "Banlı",
 		"roleUser": "Kullanıcı",
 		"searchPlaceholder": "Kullanıcı adına göre ara…",
 		"title": "Kullanıcılar",
+		"toastBanError": "Hesap askıya alınırken hata",
+		"toastBanned": "Hesap askıya alındı",
 		"toastCacheCleared": "Önbellek temizlendi:",
 		"toastCacheClearedError": "Önbellek temizlenirken hata",
+		"toastDeleteError": "Kullanıcı silinirken hata",
+		"toastDeleted": "Kullanıcı silindi",
+		"toastRoleChanged": "Rol güncellendi",
+		"toastRoleError": "Rol güncellenirken hata",
+		"toastUnbanned": "Hesap geri yüklendi",
 		"usersCountLabel": "kullanıcı"
 	}
 }

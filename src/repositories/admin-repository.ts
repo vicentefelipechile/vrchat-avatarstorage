@@ -53,7 +53,18 @@ export interface AdminUserRow {
 	username: string;
 	avatar_url: string | null;
 	is_admin: number;
+	is_banned: number;
 	created_at: number;
+}
+
+/** One global comment-moderation row: comment + author + resource title. */
+export interface AdminCommentRow {
+	uuid: string;
+	text: string;
+	created_at: number;
+	author_username: string | null;
+	resource_uuid: string;
+	resource_title: string | null;
 }
 
 // =========================================================================================================
@@ -286,8 +297,85 @@ export class AdminRepository {
 		const params = search ? [`%${search}%`, limit, offset] : [limit, offset];
 		return queryAll<AdminUserRow>(
 			this.db,
-			`SELECT uuid, username, avatar_url, is_admin, created_at FROM users ${where} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+			`SELECT uuid, username, avatar_url, is_admin, is_banned, created_at FROM users ${where} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
 			params,
+		);
+	}
+
+	/** A user's uuid + flags by username, or null. */
+	async findUserByUsername(username: string): Promise<{ uuid: string; is_admin: number; is_banned: number; two_factor_enabled: number } | null> {
+		return queryOne<{ uuid: string; is_admin: number; is_banned: number; two_factor_enabled: number }>(
+			this.db,
+			'SELECT uuid, is_admin, is_banned, two_factor_enabled FROM users WHERE username = ?',
+			[username],
+		);
+	}
+
+	/** Set a user's is_banned flag. */
+	async setUserBanned(uuid: string, isBanned: 0 | 1): Promise<void> {
+		await execute(this.db, 'UPDATE users SET is_banned = ? WHERE uuid = ?', [isBanned, uuid]);
+	}
+
+	/** Delete a user row (resources/comments cascade via FK; R2 originals are removed by the service first). */
+	async deleteUserRow(uuid: string): Promise<void> {
+		await execute(this.db, 'DELETE FROM users WHERE uuid = ?', [uuid]);
+	}
+
+	/** Every resource uuid owned by a user (for pre-delete R2 cleanup). */
+	listUserResourceUuids(userUuid: string): Promise<{ uuid: string }[]> {
+		return queryAll<{ uuid: string }>(this.db, 'SELECT uuid FROM resources WHERE author_uuid = ?', [userUuid]);
+	}
+
+	// -------------------------------------------------------------------------
+	// Comment moderation (global list)
+	// -------------------------------------------------------------------------
+
+	/** Count of comments matching an optional text/author/resource search. */
+	async countCommentsGlobal(search: string): Promise<number> {
+		const where = search
+			? 'WHERE c.text LIKE ? OR u.username LIKE ? OR r.title LIKE ?'
+			: '';
+		const params = search ? [`%${search}%`, `%${search}%`, `%${search}%`] : [];
+		const row = await queryOne<{ total: number }>(
+			this.db,
+			`SELECT COUNT(*) as total FROM comments c LEFT JOIN users u ON c.author_uuid = u.uuid LEFT JOIN resources r ON c.resource_uuid = r.uuid ${where}`,
+			params,
+		);
+		return row?.total ?? 0;
+	}
+
+	/** A page of all comments, newest first, with author + resource title. */
+	listCommentsGlobal(search: string, limit: number, offset: number): Promise<AdminCommentRow[]> {
+		const where = search
+			? 'WHERE c.text LIKE ? OR u.username LIKE ? OR r.title LIKE ?'
+			: '';
+		const params = search ? [`%${search}%`, `%${search}%`, `%${search}%`, limit, offset] : [limit, offset];
+		return queryAll<AdminCommentRow>(
+			this.db,
+			`SELECT c.uuid, c.text, c.created_at, u.username AS author_username,
+				c.resource_uuid, r.title AS resource_title
+			FROM comments c
+			LEFT JOIN users u ON c.author_uuid = u.uuid
+			LEFT JOIN resources r ON c.resource_uuid = r.uuid
+			${where}
+			ORDER BY c.created_at DESC LIMIT ? OFFSET ?`,
+			params,
+		);
+	}
+
+	// -------------------------------------------------------------------------
+	// Dashboard timeseries
+	// -------------------------------------------------------------------------
+
+	/** Per-day counts for the last N days (UTC). Table is a closed union — never user input. */
+	dailyCounts(table: 'resources' | 'users', sinceSeconds: number): Promise<{ day: string; count: number }[]> {
+		return queryAll<{ day: string; count: number }>(
+			this.db,
+			`SELECT date(created_at, 'unixepoch') AS day, COUNT(*) AS count
+			FROM ${table}
+			WHERE created_at >= ?
+			GROUP BY day ORDER BY day ASC`,
+			[sinceSeconds],
 		);
 	}
 

@@ -30,10 +30,6 @@
 				"name": "FEED",
 				"class_name": "FeedRoom",
 			},
-			{
-				"name": "CHAT",
-				"class_name": "ChatRoom",
-			},
 		],
 	},
 	"migrations": [
@@ -46,6 +42,12 @@
 		{
 			"tag": "v2",
 			"new_sqlite_classes": [
+				"ChatRoom"
+			],
+		},
+		{
+			"tag": "v3",
+			"deleted_classes": [
 				"ChatRoom"
 			],
 		},

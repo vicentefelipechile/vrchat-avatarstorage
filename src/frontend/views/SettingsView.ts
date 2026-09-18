@@ -708,6 +708,7 @@ function setup2FAHandlers(els: TwoFAEls): void {
 			});
 			const data = (await res.json()) as { error?: string };
 			if (res.ok) {
+				window.appState.isAdmin = false;
 				showToast(t('settings.2fa_disabled_success'), 'success');
 				els.disable.style.display = 'none';
 				await loadTwoFactorStatus();

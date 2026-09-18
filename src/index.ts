@@ -21,7 +21,6 @@ import { DomainError } from './domain/errors';
 import { handleQueue, handleDriveQueue } from './http/queue';
 import { handleScheduled } from './http/scheduled';
 import { FeedRoom } from './durable-objects/feed-room';
-import { ChatRoom } from './durable-objects/chat-room';
 
 import resourceRoutes from './http/routes/resources';
 import userRoutes from './http/routes/users';
@@ -42,7 +41,6 @@ import clothesRoutes from './http/routes/clothes';
 import authorsRoutes from './http/routes/authors';
 import updatesRoutes from './http/routes/updates';
 import feedRoutes from './http/routes/feed';
-import chatRoutes from './http/routes/chat';
 import collectionsRoutes from './http/routes/collections';
 import notificationsRoutes from './http/routes/notifications';
 import driveRoutes from './http/routes/drive';
@@ -136,7 +134,6 @@ app.route('/api/clothes', clothesRoutes);
 app.route('/api/authors', authorsRoutes);
 app.route('/api/updates', updatesRoutes);
 app.route('/api/feed', feedRoutes);
-app.route('/api/chat', chatRoutes);
 app.route('/api/notifications', notificationsRoutes);
 app.route('/api/drive', driveRoutes);
 app.route('/api/share', shareRoutes);
@@ -169,10 +166,9 @@ app.get('/*', async (c) => {
 // =========================================================================================================
 // Re-exported so the runtime can instantiate the classes named in wrangler.jsonc's durable_objects
 // bindings. FeedRoom is the transport for real-time feed events (see src/durable-objects/feed-room.ts);
-// ChatRoom is the global chat (see src/durable-objects/chat-room.ts).
 // =========================================================================================================
 
-export { FeedRoom, ChatRoom };
+export { FeedRoom };
 
 // =========================================================================================================
 // Worker Entrypoints

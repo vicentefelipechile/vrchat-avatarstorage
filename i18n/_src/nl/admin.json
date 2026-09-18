@@ -41,6 +41,20 @@
 		"subtitle": "Sessiecache wissen",
 		"title": "Cachebeheer"
 	},
+	"comments": {
+		"btnDelete": "Verwijderen",
+		"colAuthor": "Auteur",
+		"colDate": "Datum",
+		"colResource": "Resource",
+		"colText": "Reactie",
+		"commentsCountLabel": "reacties",
+		"confirmDelete": "Deze reactie verwijderen?",
+		"noResults": "Geen resultaten",
+		"searchPlaceholder": "Zoek tekst, auteur, resource…",
+		"title": "Reacties",
+		"toastDeleteError": "Fout bij verwijderen",
+		"toastDeleted": "Reactie verwijderd"
+	},
 	"media": {
 		"btnDeleteOrphaned": "Verweesde bestanden verwijderen",
 		"confirmDelete": "Alle verweesde bestanden verwijderen?",
@@ -57,6 +71,7 @@
 	"nav": {
 		"authors": "Auteurs",
 		"cache": "Cache",
+		"comments": "Reacties",
 		"media": "Media / Opschonen",
 		"overview": "Overzicht",
 		"resources": "Bronnen",
@@ -70,22 +85,26 @@
 		"colUser": "Gebruiker",
 		"latestUploads": "Nieuwste uploads",
 		"latestUsers": "Nieuwste gebruikers",
-		"noData": "Geen gegevens"
+		"noData": "Geen gegevens",
+		"registrationsChart": "Registraties (30d)",
+		"uploadsChart": "Uploads (30d)"
 	},
 	"resources": {
 		"allCats": "Alle cats.",
 		"allStatus": "Alle",
 		"approved": "Goedgekeurd",
 		"btnApprove": "Goedkeuren",
+		"btnDelete": "Verwijderen",
 		"colStatus": "Status",
+		"confirmDelete": "Resource verwijderen?",
 		"noResults": "Geen resultaten",
 		"pageLabel": "Pagina",
 		"pending": "In afwachting",
 		"resultsLabel": "resultaten",
 		"searchPlaceholder": "Zoeken op titel…",
 		"title": "Bronnen",
-		"toastApproveError": "Fout bij goedkeuren",
-		"toastApproved": "Bron goedgekeurd"
+		"toastDeleteError": "Fout bij verwijderen",
+		"toastDeleted": "Resource verwijderd"
 	},
 	"stats": {
 		"assets": "Assets",
@@ -98,15 +117,33 @@
 		"users": "Gebruikers"
 	},
 	"users": {
+		"btnBan": "Bannen",
 		"btnCache": "Cache wissen",
+		"btnDelete": "Verwijderen",
+		"btnMakeAdmin": "Admin maken",
+		"btnRemoveAdmin": "Admin verwijderen",
+		"btnUnban": "Debannen",
 		"colRegistered": "Geregistreerd",
 		"colRole": "Rol",
+		"confirmBan": "Account schorsen",
+		"confirmDelete": "Gebruiker en al zijn resources verwijderen?",
+		"confirmDemote": "Adminrechten intrekken van",
+		"confirmPromote": "Adminrechten verlenen aan",
+		"confirmUnban": "Account herstellen",
 		"roleAdmin": "Admin",
+		"roleBanned": "Verbannen",
 		"roleUser": "Gebruiker",
 		"searchPlaceholder": "Zoeken op gebruikersnaam…",
 		"title": "Gebruikers",
+		"toastBanError": "Fout bij schorsen",
+		"toastBanned": "Account geschorst",
 		"toastCacheCleared": "Cache gewist voor",
 		"toastCacheClearedError": "Fout bij het wissen van de cache",
+		"toastDeleteError": "Fout bij verwijderen",
+		"toastDeleted": "Gebruiker verwijderd",
+		"toastRoleChanged": "Rol bijgewerkt",
+		"toastRoleError": "Fout bij bijwerken rol",
+		"toastUnbanned": "Account hersteld",
 		"usersCountLabel": "gebruikers"
 	}
 }

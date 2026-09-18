@@ -34,6 +34,7 @@ import {
 	decryptSecret,
 	hashBackupCodes,
 	verifyBackupCode,
+	useBackupCode,
 	generateBackupCodes,
 } from '../auth/2fa';
 import { DomainError, NotFoundError, UnauthorizedError, ValidationError } from '../domain/errors';
@@ -97,6 +98,28 @@ export class TwoFactorService {
 		const secret = await decryptSecret(user.two_factor_secret, jwtSecret);
 		if (!secret) throw new DomainError('Failed to decrypt 2FA secret', 500);
 		return secret;
+	}
+
+	/** Verify and consume a code for a sensitive action. */
+	async verifyActionCode(username: string, code: string, jwtSecret: string, kv: KVNamespace): Promise<void> {
+		const user = await this.requireUser(username);
+		if (user.two_factor_enabled !== 1) throw new UnauthorizedError('2FA is required for this action');
+		const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(code.toUpperCase()));
+		const digestHex = Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, '0')).join('');
+		const usedCodeKey = `used_2fa_code:${user.uuid}:${digestHex}`;
+		if (await kv.get(usedCodeKey)) throw new UnauthorizedError('This 2FA code has already been used');
+
+		const secret = await this.decryptOrThrow(user, jwtSecret);
+		if (/^\d{6}$/.test(code) && verifyTwoFactorCode(secret, code)) {
+			await kv.put(usedCodeKey, '1', { expirationTtl: 90 });
+			return;
+		}
+
+		if (!user.two_factor_backup_codes) throw new UnauthorizedError('Invalid 2FA code');
+		const remaining = await useBackupCode(user.two_factor_backup_codes, code);
+		if (remaining === null) throw new UnauthorizedError('Invalid 2FA code');
+		await this.repo.updateBackupCodes(user.uuid, remaining);
+		await kv.put(usedCodeKey, '1', { expirationTtl: 90 });
 	}
 
 	// -------------------------------------------------------------------------

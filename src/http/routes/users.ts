@@ -59,8 +59,8 @@ const SESSION_TTL = 60 * 60 * 24 * 7; // 7 days
 
 // H-4: The KV cache must include `uuid` — getAuthUser skips the cache if uuid is absent.
 /** Cache the session user in KV under `user:<username>` (7d), mirroring the legacy shape. */
-function cacheSessionUser(c: { env: Env }, uuid: string, username: string, isAdmin: number, isAnonymous: number = 0): Promise<void> {
-	const sessionUser = { uuid, username, is_admin: isAdmin === 1, is_anonymous: isAnonymous === 1 };
+function cacheSessionUser(c: { env: Env }, uuid: string, username: string, isAdmin: number, isAnonymous: number = 0, isBanned: number = 0): Promise<void> {
+	const sessionUser = { uuid, username, is_admin: isAdmin === 1, is_anonymous: isAnonymous === 1, is_banned: isBanned === 1 };
 	return c.env.VRCSTORAGE_KV.put(`user:${username}`, JSON.stringify(sessionUser), { expirationTtl: SESSION_TTL });
 }
 
@@ -135,6 +135,9 @@ users.post('/login', async (c) => {
 	const isMatch = await verifyPassword(password, user.password_hash);
 	if (!isMatch) return c.json({ error: 'Invalid credentials' }, 401);
 
+	// Suspended accounts cannot start a session (checked again in getAuthUser + /login/2fa).
+	if (user.is_banned === 1) return c.json({ error: 'Account suspended' }, 403);
+
 	// 2FA enabled → issue a short-lived pre-auth token; the session is created after /login/2fa.
 	if (user.two_factor_enabled === 1) {
 		const preAuthToken = crypto.randomUUID();
@@ -143,7 +146,7 @@ users.post('/login', async (c) => {
 	}
 
 	await createSession(c, { username: user.username, is_admin: user.is_admin });
-	await cacheSessionUser(c, user.uuid, user.username, user.is_admin, user.is_anonymous);
+	await cacheSessionUser(c, user.uuid, user.username, user.is_admin, user.is_anonymous, user.is_banned);
 	return c.json({ success: true });
 });
 
@@ -173,7 +176,7 @@ users.put('/me', requireAuth, async (c) => {
 			await createSession(c, { username: result.username, is_admin: result.is_admin });
 			await c.env.VRCSTORAGE_KV.delete(`user:${result.previousUsername}`);
 		}
-		await cacheSessionUser(c, result.uuid, result.username, result.is_admin, result.is_anonymous);
+		await cacheSessionUser(c, result.uuid, result.username, result.is_admin, result.is_anonymous, result.is_banned);
 
 		return c.json({ success: true, username: result.username, avatar_url: result.avatar_url, is_anonymous: result.is_anonymous });
 	} catch (e) {
@@ -236,6 +239,7 @@ users.post('/login/2fa', async (c) => {
 
 	const user = await getUserWith2FA(c, username);
 	if (!user) return c.json({ error: 'User not found' }, 404);
+	if (user.is_banned === 1) return c.json({ error: 'Account suspended' }, 403);
 	if (user.two_factor_enabled !== 1) return c.json({ error: '2FA is not enabled for this user' }, 400);
 
 	const secret = await getDecrypted2FASecret(c, user);
@@ -266,7 +270,7 @@ users.post('/login/2fa', async (c) => {
 	if (!isValid) return c.json({ error: 'Invalid code' }, 401);
 
 	await createSession(c, { username: user.username, is_admin: user.is_admin });
-	await cacheSessionUser(c, user.uuid, user.username, user.is_admin, user.is_anonymous);
+	await cacheSessionUser(c, user.uuid, user.username, user.is_admin, user.is_anonymous, user.is_banned);
 	return c.json({ success: true });
 });
 

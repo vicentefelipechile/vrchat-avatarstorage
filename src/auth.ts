@@ -24,6 +24,7 @@ export type AuthUser = {
 	username: string;
 	is_admin: boolean;
 	is_anonymous: boolean;
+	is_banned: boolean;
 };
 
 // =========================================================================================================
@@ -101,22 +102,26 @@ export async function getAuthUser<E extends { Bindings: Env }>(c: Context<E>): P
 			if (denied) return null;
 		}
 
-		// 2. KV session cache — skip stale entries that predate the uuid field
+		// 2. KV session cache — skip stale entries that predate the uuid field.
+		// A ban invalidates this entry (like the role change does), so a banned flag here is fresh.
 		const cachedUser = (await c.env.VRCSTORAGE_KV.get(`user:${username}`, 'json')) as AuthUser | null;
 		if (cachedUser?.uuid) {
+			if (cachedUser.is_banned) return null;
 			return cachedUser;
 		}
 
 		// 3. Query DB — only load the fields needed for the session. Sensitive columns
 		// (password_hash, two_factor_secret, two_factor_backup_codes) are never needed here.
-		const user = await c.env.DB.prepare('SELECT uuid, username, is_admin, is_anonymous FROM users WHERE username = ?').bind(username).first<Pick<User, 'uuid' | 'username' | 'is_admin' | 'is_anonymous'>>();
+		const user = await c.env.DB.prepare('SELECT uuid, username, is_admin, is_anonymous, is_banned FROM users WHERE username = ?').bind(username).first<Pick<User, 'uuid' | 'username' | 'is_admin' | 'is_anonymous' | 'is_banned'>>();
 		if (!user) return null;
+		if (user.is_banned === 1) return null;
 
 		const sessionUser: AuthUser = {
 			uuid: user.uuid,
 			username: user.username,
 			is_admin: user.is_admin === 1,
 			is_anonymous: user.is_anonymous === 1,
+			is_banned: false,
 		};
 
 		// 4. Update KV
@@ -169,7 +174,7 @@ export async function deleteSession<E extends { Bindings: Env }>(c: Context<E>) 
 export async function getUserWith2FA<E extends { Bindings: Env }>(c: Context<E>, username: string): Promise<User | null> {
 	// Selects the full user row — 2FA columns (two_factor_secret, two_factor_backup_codes) are
 	// required here for decryption and backup-code verification. Only called by 2FA-specific flows.
-	const user = await c.env.DB.prepare('SELECT uuid, username, is_admin, password_hash, two_factor_enabled, two_factor_secret, two_factor_backup_codes FROM users WHERE username = ?').bind(username).first<User>();
+	const user = await c.env.DB.prepare('SELECT uuid, username, is_admin, is_banned, password_hash, two_factor_enabled, two_factor_secret, two_factor_backup_codes FROM users WHERE username = ?').bind(username).first<User>();
 	return user;
 }
 

@@ -1,5 +1,5 @@
 /* =============================================================================
-   admin-dashboard.css — Full redesigned admin dashboard styles
+   admin-dashboard.css — Admin dashboard: sidebar layout, stats, tables, forms
    Desktop only: viewport < 1024px shows warning message instead of layout
    ============================================================================= */
 
@@ -28,6 +28,7 @@
 /* ---- Layout ---- */
 .admin-layout {
 	display: flex;
+	width: 100%;
 	min-height: calc(100vh - 60px);
 	gap: 0;
 }
@@ -45,7 +46,7 @@
 
 .admin-sidebar-title {
 	font-size: 0.75rem;
-	font-weight: 700;
+	font-weight: bold;
 	text-transform: uppercase;
 	letter-spacing: 0.08em;
 	color: var(--text-muted);
@@ -76,33 +77,14 @@
 }
 
 .admin-sidebar-nav-item:hover {
-	background: var(--bg-body);
+	background: var(--bg-hover);
 	color: var(--text-main);
 }
 
 .admin-sidebar-nav-item.active {
 	background: var(--text-main);
 	color: var(--bg-body);
-	font-weight: 600;
-}
-
-.admin-sidebar-badge {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	min-width: 20px;
-	height: 20px;
-	padding: 0 5px;
-	font-size: 0.7rem;
-	font-weight: 700;
-	background: var(--accent, #e74c3c);
-	color: #fff;
-	border-radius: 0;
-}
-
-.admin-sidebar-nav-item.active .admin-sidebar-badge {
-	background: var(--bg-body);
-	color: var(--text-main);
+	font-weight: bold;
 }
 
 /* ---- Content Area ---- */
@@ -124,10 +106,10 @@
 
 .admin-section-title {
 	font-size: 1.15rem;
-	font-weight: 700;
+	font-weight: bold;
 	margin: 0 0 20px 0;
 	padding-bottom: 12px;
-	border-bottom: 1px solid var(--border-color);
+	border-bottom: 2px solid var(--border-color);
 	color: var(--text-main);
 }
 
@@ -145,17 +127,17 @@
 	padding: 16px 18px;
 }
 
-.admin-stat-card.--warning {
-	border-color: #d29922;
+.admin-stat-card.is-warning {
+	border-color: #b07000;
 }
 
-.admin-stat-card.--danger {
-	border-color: var(--accent, #e74c3c);
+.admin-stat-card.is-danger {
+	border-color: #b00020;
 }
 
 .admin-stat-value {
 	font-size: 1.8rem;
-	font-weight: 700;
+	font-weight: bold;
 	color: var(--text-main);
 	line-height: 1;
 	margin-bottom: 4px;
@@ -166,7 +148,15 @@
 	text-transform: uppercase;
 	letter-spacing: 0.06em;
 	color: var(--text-muted);
-	font-weight: 600;
+	font-weight: bold;
+}
+
+/* ---- Overview side-by-side panels ---- */
+.admin-overview-panels {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 20px;
+	margin-top: 20px;
 }
 
 /* ---- Action Bar ---- */
@@ -183,13 +173,21 @@
 	min-width: 180px;
 	padding: 7px 10px;
 	border: 2px solid var(--border-color);
-	background: var(--bg-body);
+	background: var(--bg-input);
 	color: var(--text-main);
 	font-family: inherit;
 	font-size: 0.88rem;
 }
 
+.admin-filter-select {
+	width: 140px;
+}
+
 /* ---- Data Table ---- */
+.admin-table-wrap {
+	overflow-x: auto;
+}
+
 .admin-data-table {
 	width: 100%;
 	border-collapse: collapse;
@@ -202,7 +200,7 @@
 	font-size: 0.72rem;
 	text-transform: uppercase;
 	letter-spacing: 0.06em;
-	font-weight: 700;
+	font-weight: bold;
 	color: var(--text-muted);
 	border-bottom: 2px solid var(--border-color);
 	white-space: nowrap;
@@ -210,7 +208,7 @@
 
 .admin-data-table td {
 	padding: 8px 12px;
-	border-bottom: 1px solid var(--border-color);
+	border-bottom: 1px solid var(--border-light);
 	vertical-align: middle;
 	color: var(--text-main);
 }
@@ -220,35 +218,145 @@
 }
 
 .admin-data-table tr:hover td {
-	background: var(--bg-card);
+	background: var(--bg-hover);
 }
 
-/* ---- Inline Badge Status ---- */
+.admin-empty {
+	text-align: center;
+	color: var(--text-muted);
+	padding: 24px 12px;
+}
+
+/* ---- Inline Badge Status (semantic toast palette, both themes) ---- */
 .admin-badge-status {
 	display: inline-block;
 	padding: 2px 8px;
 	font-size: 0.7rem;
-	font-weight: 700;
+	font-weight: bold;
 	text-transform: uppercase;
 	letter-spacing: 0.05em;
+	border: 2px solid var(--border-color);
 }
 
-.admin-badge-status.active {
-	background: rgba(63, 185, 80, 0.15);
-	color: #3fb950;
-	border: 2px solid #3fb950;
+.admin-badge-status.is-active {
+	border-color: #2a7a2a;
+	background: #e8f5e9;
+	color: #1b5e20;
 }
 
-.admin-badge-status.pending {
-	background: rgba(210, 153, 34, 0.15);
-	color: #d29922;
-	border: 2px solid #d29922;
+.admin-badge-status.is-pending {
+	border-color: #b07000;
+	background: #fff8e1;
+	color: #6d4c00;
 }
 
-.admin-badge-status.inactive {
-	background: rgba(248, 81, 73, 0.15);
-	color: #f85149;
-	border: 2px solid #f85149;
+.admin-badge-status.is-inactive {
+	border-color: #b00020;
+	background: #fdecea;
+	color: #7f0000;
+}
+
+[data-theme='dark'] .admin-badge-status.is-active {
+	background: #1b3a1b;
+	color: #a5d6a7;
+	border-color: #2e7d32;
+}
+
+[data-theme='dark'] .admin-badge-status.is-pending {
+	background: #3b2e00;
+	color: #ffe082;
+	border-color: #f9a825;
+}
+
+[data-theme='dark'] .admin-badge-status.is-inactive {
+	background: #3b1a1a;
+	color: #ef9a9a;
+	border-color: #c62828;
+}
+
+.admin-badge-status.is-banned {
+	border-color: var(--border-color);
+	background: var(--text-main);
+	color: var(--bg-body);
+}
+
+/* ---- Charts (pure flex bars, no chart lib) ---- */
+.admin-chart {
+	display: flex;
+	align-items: flex-end;
+	gap: 2px;
+	height: 96px;
+}
+
+.admin-chart-bar {
+	flex: 1;
+	min-width: 2px;
+	min-height: 3px;
+}
+
+.admin-chart-bar.is-uploads {
+	background: var(--btn-bg);
+}
+
+.admin-chart-bar.is-registrations {
+	background: var(--text-muted);
+}
+
+/* ---- Comment text cell (single-line snippet, full text in title) ---- */
+.admin-comment-text {
+	max-width: 320px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+/* ---- Numbered pagination ---- */
+.admin-pagination {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-top: 12px;
+}
+
+.admin-page-numbers {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.admin-page-btn {
+	min-width: 28px;
+	padding: 4px 8px;
+	border: 2px solid var(--border-color);
+	background: var(--bg-card);
+	color: var(--text-main);
+	font-family: inherit;
+	font-size: 0.8rem;
+	cursor: pointer;
+}
+
+.admin-page-btn:hover {
+	background: var(--bg-hover);
+}
+
+.admin-page-btn.is-active {
+	background: var(--text-main);
+	color: var(--bg-body);
+	font-weight: bold;
+	cursor: default;
+}
+
+.admin-page-ellipsis {
+	color: var(--text-muted);
+	padding: 0 2px;
+}
+
+.admin-page-info {
+	align-self: center;
+	font-size: 0.85rem;
+	color: var(--text-muted);
 }
 
 /* ---- Form Panel ---- */
@@ -265,9 +373,9 @@
 	text-transform: uppercase;
 	letter-spacing: 0.06em;
 	color: var(--text-muted);
-	font-weight: 700;
+	font-weight: bold;
 	padding-bottom: 10px;
-	border-bottom: 1px solid var(--border-color);
+	border-bottom: 1px solid var(--border-light);
 }
 
 .admin-form-grid {
@@ -281,11 +389,154 @@
 	grid-column: 1 / -1;
 }
 
+.admin-muted-paragraph {
+	font-size: 0.88rem;
+	color: var(--text-muted);
+	margin: 0 0 14px;
+}
+
+.admin-success-line {
+	color: #1b5e20;
+	font-size: 0.88rem;
+	margin: 10px 0 0;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+[data-theme='dark'] .admin-success-line {
+	color: #a5d6a7;
+}
+
+/* ---- Authors ---- */
+.admin-author-cell {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.admin-author-thumb {
+	width: 32px;
+	height: 32px;
+	object-fit: cover;
+	border: 1px solid var(--border-color);
+	flex-shrink: 0;
+}
+
+.admin-author-thumb-empty {
+	display: inline-block;
+	background: var(--bg-hover);
+}
+
+.admin-author-form-body {
+	display: flex;
+	gap: 20px;
+	align-items: flex-start;
+	margin-bottom: 16px;
+}
+
+.admin-author-avatar-col {
+	flex-shrink: 0;
+	width: 80px;
+}
+
+.admin-author-preview {
+	width: 80px;
+	height: 80px;
+	background: var(--bg-hover);
+	border: 2px solid var(--border-color);
+	overflow: hidden;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: var(--text-muted);
+	font-size: 0.7rem;
+	text-align: center;
+}
+
+.admin-author-preview-img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+.admin-author-avatar-actions {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	margin-top: 8px;
+}
+
+.admin-author-fields {
+	flex: 1;
+	min-width: 0;
+}
+
+.admin-author-desc {
+	resize: vertical;
+	width: 100%;
+}
+
+.admin-author-form-actions {
+	display: flex;
+	gap: 8px;
+}
+
+.admin-author-form-actions .btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+}
+
+/* ---- Media orphan details ---- */
+.admin-orphan-details {
+	margin-top: 10px;
+}
+
+.admin-orphan-details summary {
+	cursor: pointer;
+	font-weight: bold;
+	color: inherit;
+}
+
+.file-list {
+	margin-top: 10px;
+	max-height: 200px;
+	overflow-y: auto;
+	background: var(--bg-hover);
+	padding: 15px;
+	border: 2px solid var(--border-color);
+	list-style: none;
+}
+
+.file-list li {
+	margin: 5px 0;
+	font-size: 0.9em;
+	color: var(--text-main);
+}
+
+/* ---- Inline error (replaces ad-hoc .error-message) ---- */
+.admin-error-message {
+	text-align: center;
+	padding: 24px 12px;
+	color: #7f0000;
+}
+
+[data-theme='dark'] .admin-error-message {
+	color: #ef9a9a;
+}
+
 /* ---- Row Actions ---- */
 .admin-row-actions {
 	display: flex;
 	gap: 6px;
 	flex-wrap: wrap;
+}
+
+.admin-row-actions .btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
 }
 
 /* ---- Section: Loading State ---- */
@@ -294,6 +545,15 @@
 	padding: 40px 0;
 	color: var(--text-muted);
 	font-size: 0.9rem;
+}
+
+/* ---- Full-bleed: the admin dashboard owns the whole viewport width, unlike public
+   pages capped at 950px. Direct-child selector so it only matches when the admin
+   shell is the view root (id wins over .container, no !important needed). ---- */
+main#app:has(> .admin-layout),
+main#app:has(> .admin-desktop-only-warning) {
+	max-width: 100%;
+	padding: 0;
 }
 
 /* ---- Responsive: hide dashboard, show warning on small viewports ---- */
@@ -305,11 +565,4 @@
 	.admin-desktop-only-warning {
 		display: block;
 	}
-}
-
-/* ---- Global override for main container to allow full width for Admin ---- */
-main.container:has(.admin-layout),
-main.container:has(.admin-desktop-only-warning) {
-	max-width: 100% !important;
-	padding: 0 !important;
 }

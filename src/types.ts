@@ -16,6 +16,7 @@ export interface User {
 	avatar_url: string | null;
 	created_at: number;
 	is_admin: number;
+	is_banned: number;
 	two_factor_enabled: number;
 	two_factor_secret: string | null;
 	two_factor_backup_codes: string | null;
@@ -313,49 +314,6 @@ export interface FeedEvent {
 	thumbnailUuid?: string;
 	isNsfw?: boolean;
 }
-
-// =========================================================================
-// GLOBAL CHAT
-// =========================================================================
-
-/** Hard cap on a chat message. The DO enforces it; the input's `maxlength` only mirrors it for UX. */
-export const CHAT_MAX_LENGTH = 50;
-
-/** How many messages the room keeps. Older ones are pruned on insert — there is no full history. */
-export const CHAT_HISTORY_SIZE = 50;
-
-/**
- * A message already emitted, as a client sees it. Every field but `text` is assigned by the server:
- * the client sends only what it typed, so nobody can impersonate another user or forge a timestamp.
- */
-export interface ChatMessage {
-	uuid: string;
-	/** Author's `AuthUser.uuid` — users are identified by uuid across the project, never by a numeric id. */
-	userUuid: string;
-	username: string;
-	/** At most CHAT_MAX_LENGTH characters, already sanitized. */
-	text: string;
-	createdAt: number;
-}
-
-/** The only shape a client may send. Anything else is rejected as invalid. */
-export interface ChatClientMessage {
-	type: 'send';
-	text: string;
-}
-
-/**
- * Everything the ChatRoom emits. `history` opens a connection, `message` is the fan-out of a single
- * send, `purged` tells clients an admin emptied the room, and `error` explains a rejected send.
- */
-export type ChatServerMessage =
-	| { type: 'history'; messages: ChatMessage[] }
-	| { type: 'message'; message: ChatMessage }
-	| { type: 'purged' }
-	| { type: 'error'; code: ChatErrorCode };
-
-/** Why a send was refused. Clients map each code to a localized toast. */
-export type ChatErrorCode = 'unauthenticated' | 'too_long' | 'rate_limited' | 'invalid';
 
 // =========================================================================
 // CLOUDFLARE QUEUES

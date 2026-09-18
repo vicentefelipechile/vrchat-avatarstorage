@@ -1,5 +1,6 @@
 {
 	"2fa_code": "Authentication Code",
+	"accountSuspended": "Account suspended",
 	"back": "Back",
 	"btn": "Login",
 	"enter2FA": "Enter the 6-digit code from your authenticator app",

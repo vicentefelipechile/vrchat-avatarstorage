@@ -485,6 +485,7 @@
 	},
 	"login": {
 		"2fa_code": "認証コード",
+		"accountSuspended": "アカウントは停止されています",
 		"back": "戻る",
 		"btn": "ログイン",
 		"enter2FA": "認証アプリの6桁のコードを入力してください",
@@ -628,6 +629,20 @@
 			"subtitle": "セッションキャッシュをクリア",
 			"title": "キャッシュ管理"
 		},
+		"comments": {
+			"btnDelete": "削除",
+			"colAuthor": "投稿者",
+			"colDate": "日付",
+			"colResource": "リソース",
+			"colText": "コメント",
+			"commentsCountLabel": "件のコメント",
+			"confirmDelete": "このコメントを削除しますか？",
+			"noResults": "結果なし",
+			"searchPlaceholder": "本文、投稿者、リソースを検索…",
+			"title": "コメント",
+			"toastDeleteError": "コメントの削除中にエラー",
+			"toastDeleted": "コメントを削除しました"
+		},
 		"media": {
 			"btnDeleteOrphaned": "孤立ファイルを削除",
 			"confirmDelete": "すべての孤立ファイルを削除しますか？",
@@ -644,6 +659,7 @@
 		"nav": {
 			"authors": "作者",
 			"cache": "キャッシュ",
+			"comments": "コメント",
 			"media": "メディア / クリーンアップ",
 			"overview": "概要",
 			"resources": "リソース",
@@ -657,22 +673,26 @@
 			"colUser": "ユーザー",
 			"latestUploads": "最新のアップロード",
 			"latestUsers": "最新のユーザー",
-			"noData": "データなし"
+			"noData": "データなし",
+			"registrationsChart": "登録（30日）",
+			"uploadsChart": "アップロード（30日）"
 		},
 		"resources": {
 			"allCats": "すべてのカテゴリ",
 			"allStatus": "すべて",
 			"approved": "承認済み",
 			"btnApprove": "承認",
+			"btnDelete": "削除",
 			"colStatus": "ステータス",
+			"confirmDelete": "リソースを削除しますか？",
 			"noResults": "結果なし",
 			"pageLabel": "ページ",
 			"pending": "承認待ち",
 			"resultsLabel": "件",
 			"searchPlaceholder": "タイトルで検索…",
 			"title": "リソース",
-			"toastApproveError": "承認中にエラー",
-			"toastApproved": "リソースを承認しました"
+			"toastDeleteError": "リソースの削除中にエラー",
+			"toastDeleted": "リソースを削除しました"
 		},
 		"stats": {
 			"assets": "Assets",
@@ -685,32 +705,35 @@
 			"users": "ユーザー"
 		},
 		"users": {
+			"btnBan": "BANする",
 			"btnCache": "キャッシュをクリア",
+			"btnDelete": "削除",
+			"btnMakeAdmin": "管理者にする",
+			"btnRemoveAdmin": "管理者を外す",
+			"btnUnban": "BAN解除",
 			"colRegistered": "登録日",
 			"colRole": "権限",
+			"confirmBan": "アカウントを停止する",
+			"confirmDelete": "ユーザーとすべてのリソースを削除しますか？",
+			"confirmDemote": "の管理者権限を外す",
+			"confirmPromote": "に管理者権限を与える",
+			"confirmUnban": "アカウントを復元する",
 			"roleAdmin": "Admin",
+			"roleBanned": "BAN中",
 			"roleUser": "ユーザー",
 			"searchPlaceholder": "ユーザー名で検索…",
 			"title": "ユーザー",
+			"toastBanError": "アカウントの停止中にエラー",
+			"toastBanned": "アカウントを停止しました",
 			"toastCacheCleared": "のキャッシュをクリアしました",
 			"toastCacheClearedError": "キャッシュのクリア中にエラー",
+			"toastDeleteError": "ユーザーの削除中にエラー",
+			"toastDeleted": "ユーザーを削除しました",
+			"toastRoleChanged": "ロールを更新しました",
+			"toastRoleError": "ロールの更新中にエラー",
+			"toastUnbanned": "アカウントを復元しました",
 			"usersCountLabel": "ユーザー"
 		}
-	},
-	"chat": {
-		"disconnected": "再接続中...",
-		"empty": "まだメッセージはありません。最初に話しかけてみましょう。",
-		"invalid": "このメッセージを送信できませんでした。",
-		"loginToChat": "会話に参加するにはログインしてください",
-		"placeholder": "メッセージを入力...",
-		"purge": "チャットを消去",
-		"purgeConfirm": "チャットのすべてのメッセージを削除しますか？この操作は取り消せません。",
-		"purgeFailed": "チャットを消去できませんでした。",
-		"purged": "管理者がチャットを消去しました。",
-		"rateLimited": "次の送信まで少し待ってください。",
-		"send": "送信",
-		"title": "グローバルチャット",
-		"tooLong": "メッセージは50文字までです。"
 	},
 	"blog": {
 		"authorDisplayLabel": "投稿者として",

@@ -29,7 +29,7 @@ export async function tosView(_ctx: RouteContext): Promise<string> {
 			<div class="tos-content">
 				<section class="tos-section">
 					<h2>1. About VRCStorage</h2>
-					<p>VRCStorage (<strong>vrcstorage.lat</strong>) is a User-Generated Content (UGC) platform where users can upload, share, and download resources primarily intended for use in VRChat, including avatars, assets, clothing, and other related content. It also includes secondary features such as comments and chat.</p>
+					<p>VRCStorage (<strong>vrcstorage.lat</strong>) is a User-Generated Content (UGC) platform where users can upload, share, and download resources primarily intended for use in VRChat, including avatars, assets, clothing, and other related content. It also includes secondary features such as comments and notifications.</p>
 					<p>By accessing or using this platform, you agree to be bound by these Terms of Service. If you do not agree with any part of these terms, you may not use the platform.</p>
 					<p>The English version of these terms is the only official version.</p>
 				</section>
@@ -75,7 +75,7 @@ export async function tosView(_ctx: RouteContext): Promise<string> {
 						<li>Content that violates any applicable local, national, or international law or regulation.</li>
 						<li>Any content depicting the sexual exploitation of minors (CSAM), in any form whatsoever.</li>
 						<li>Doxxing or the disclosure of personal information of third parties without their explicit consent.</li>
-						<li>Spam, harassment, hate, or abusive behavior in comments or chat.</li>
+						<li>Spam, harassment, hate, or abusive behavior in comments.</li>
 						<li>Trying to break, overload, or abuse the service (mass uploads, bots, bypassing limits).</li>
 						<li>Content that violates the Terms of Service of VRChat or any other relevant platforms.</li>
 					</ul>
@@ -83,7 +83,7 @@ export async function tosView(_ctx: RouteContext): Promise<string> {
 
 				<section class="tos-section">
 					<h2>6. Content Moderation</h2>
-					<p>Uploaded resources are subject to review and approval by VRCStorage administrators before they become publicly available. Comments and chat messages appear instantly and are moderated afterwards.</p>
+						<p>Uploaded resources are subject to review and approval by VRCStorage administrators before they become publicly available. Comments appear instantly and are moderated afterwards.</p>
 					<p>VRCStorage reserves the right, at its sole discretion, to remove, reject, or deactivate any content that violates these Terms of Service or that it deems inappropriate, for any reason and without prior notice. Consequences may escalate from a warning to content removal, account suspension, or a permanent ban.</p>
 					<p>Users whose content is repeatedly rejected or removed may have their accounts suspended or permanently banned.</p>
 				</section>
@@ -105,7 +105,7 @@ export async function tosView(_ctx: RouteContext): Promise<string> {
 						<li><strong>Two-step verification:</strong> If you enable it, we keep what is needed to check your codes for as long as it stays active on your account.</li>
 						<li><strong>Login cookie:</strong> A cookie that keeps you signed in for 7 days.</li>
 						<li><strong>Your files:</strong> When you upload images or videos, we create optimized copies for fast loading (adapted sizes, a preview shown while loading, short animated previews of videos).</li>
-						<li><strong>Comments, chat, and favorites:</strong> What you write in comments or chat is public. We keep recent chat messages so the conversation can be shown. Favorites and collections you save are private unless you share them.</li>
+						<li><strong>Comments and favorites:</strong> What you write in comments is public. Favorites and collections you save are private unless you share them.</li>
 						<li><strong>Sharing and saving:</strong> If you create a temporary link to share a file, we use it only to deliver that file until the link expires or runs out of uses. If you save a file to your cloud drive, we use that access only to save the file you chose.</li>
 						<li><strong>Security and anti-bot checks:</strong> When registering or using the site, we may ask you to prove you are a person and we may review connection data temporarily to prevent abuse. We do not keep that connection data permanently.</li>
 						<li><strong>Language and theme:</strong> Your chosen language and theme (light/dark) are saved in your own browser. Your browser shares your preferred language with each visit, and we use it to show you the page and notices in that language.</li>

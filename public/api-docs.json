@@ -3062,6 +3062,110 @@
       }
     },
     {
+      "method": "GET",
+      "path": "/api/admin/comments",
+      "summary": "List all comments (moderation)",
+      "auth": "admin",
+      "rateLimit": "medium",
+      "visibility": "internal",
+      "tag": "admin",
+      "description": "Global comment list, newest first, with author + resource title. Optional search across text/author/resource.",
+      "params": [
+        {
+          "name": "q",
+          "location": "query",
+          "required": false,
+          "type": "string",
+          "description": "Text/author/resource search"
+        },
+        {
+          "name": "page",
+          "location": "query",
+          "required": false,
+          "type": "integer",
+          "description": "Page number",
+          "defaultValue": "1"
+        }
+      ],
+      "response": {
+        "description": "JSON — { comments, pagination }"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/users/:username/ban",
+      "summary": "Suspend/restore a user",
+      "auth": "admin",
+      "rateLimit": "medium",
+      "visibility": "internal",
+      "tag": "admin",
+      "description": "Sets is_banned for a target user (admins must be demoted first; never yourself) and invalidates their KV session cache. Banned users cannot log in and existing sessions resolve to null.",
+      "params": [
+        {
+          "name": "username",
+          "location": "path",
+          "required": true,
+          "type": "string",
+          "description": "Target username"
+        },
+        {
+          "name": "banned",
+          "location": "body",
+          "required": true,
+          "type": "boolean",
+          "description": "Suspend (true) or restore (false)"
+        }
+      ],
+      "response": {
+        "description": "JSON — { success: true, username, banned }"
+      }
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/admin/users/:username",
+      "summary": "Delete a user + their resources",
+      "auth": "admin",
+      "rateLimit": "medium",
+      "visibility": "internal",
+      "tag": "admin",
+      "description": "Removes every owned resource (same R2 cleanup as reject), then the user row (comments/resources cascade). Admins must be demoted first; never yourself. Invalidates the KV session cache.",
+      "params": [
+        {
+          "name": "username",
+          "location": "path",
+          "required": true,
+          "type": "string",
+          "description": "Target username"
+        }
+      ],
+      "response": {
+        "description": "JSON — { success: true, username, resources_removed }"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/stats/timeseries",
+      "summary": "Per-day uploads + registrations",
+      "auth": "admin",
+      "rateLimit": "medium",
+      "visibility": "internal",
+      "tag": "admin",
+      "description": "Aligned daily series for the dashboard charts, gap-filled with zeros.",
+      "params": [
+        {
+          "name": "days",
+          "location": "query",
+          "required": false,
+          "type": "integer",
+          "description": "Window length (7–90, default 30)",
+          "defaultValue": "30"
+        }
+      ],
+      "response": {
+        "description": "JSON — { days: string[], uploads: number[], registrations: number[] }"
+      }
+    },
+    {
       "method": "POST",
       "path": "/api/admin/media/generate-variants",
       "summary": "Backfill image variants (enqueue)",
@@ -3169,34 +3273,6 @@
       "params": [],
       "response": {
         "description": "101 Switching Protocols — WebSocket frames are JSON FeedEvent objects"
-      }
-    },
-    {
-      "method": "GET",
-      "path": "/api/chat/live",
-      "summary": "Global chat WebSocket",
-      "auth": "optional",
-      "rateLimit": "medium",
-      "visibility": "public",
-      "tag": "realtime",
-      "description": "Upgrades to a WebSocket backed by the global ChatRoom Durable Object. Reading is public; only authenticated sockets may send. Text-only, ≤50 chars, backlog of 50 messages. The route stamps X-Chat-User-Uuid/Username headers before forwarding to the DO — the client never supplies identity.",
-      "params": [],
-      "response": {
-        "description": "101 — WebSocket. Client sends { type: \"send\", text }; server emits { type: \"history\" | \"message\" | \"purged\" | \"error\", ... }"
-      }
-    },
-    {
-      "method": "POST",
-      "path": "/api/chat/purge",
-      "summary": "Purge global chat (admin)",
-      "auth": "admin",
-      "rateLimit": "strict",
-      "visibility": "internal",
-      "tag": "realtime",
-      "description": "Empties the ChatRoom history for everyone. Admin-only, rate-limited to 1/min (strict). HTTP (not a socket message) so the DO never reasons about roles.",
-      "params": [],
-      "response": {
-        "description": "JSON — { success: true }"
       }
     },
     {

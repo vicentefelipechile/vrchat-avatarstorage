@@ -25,6 +25,13 @@ interface ConfirmOptions {
 	danger?: boolean;
 }
 
+interface PromptOptions {
+	title?: string;
+	message: string;
+	placeholder?: string;
+	confirmText?: string;
+}
+
 // =========================================================================================================
 // Helpers
 // =========================================================================================================
@@ -103,5 +110,58 @@ export function showConfirm(opts: ConfirmOptions): Promise<boolean> {
 		root.classList.add('active');
 		document.body.style.overflow = 'hidden';
 		okBtn.focus();
+	});
+}
+
+export function showPrompt(opts: PromptOptions): Promise<string | null> {
+	if (!overlay) overlay = buildOverlay();
+	const root = overlay;
+	const titleEl = root.querySelector<HTMLElement>('.confirm-title')!;
+	const messageEl = root.querySelector<HTMLElement>('.confirm-message')!;
+	const okBtn = root.querySelector<HTMLButtonElement>('.confirm-ok')!;
+	const cancelBtn = root.querySelector<HTMLButtonElement>('.confirm-cancel')!;
+	const input = document.createElement('input');
+	input.className = 'confirm-input';
+	input.type = 'text';
+	input.inputMode = 'numeric';
+	input.autocomplete = 'one-time-code';
+	input.placeholder = opts.placeholder ?? '';
+	input.maxLength = 16;
+	messageEl.after(input);
+
+	return new Promise<string | null>((resolve) => {
+		const close = (result: string | null) => {
+			root.classList.remove('active');
+			document.body.style.overflow = '';
+			input.remove();
+			okBtn.removeEventListener('click', onOk);
+			cancelBtn.removeEventListener('click', onCancel);
+			root.removeEventListener('click', onBackdrop);
+			document.removeEventListener('keydown', onKey);
+			resolve(result);
+		};
+		const onOk = () => close(input.value.trim() || null);
+		const onCancel = () => close(null);
+		const onBackdrop = (e: MouseEvent) => {
+			if (e.target === root) close(null);
+		};
+		const onKey = (e: KeyboardEvent) => {
+			if (e.key === 'Escape') close(null);
+			if (e.key === 'Enter') onOk();
+		};
+
+		titleEl.textContent = opts.title ?? t('confirm.title');
+		titleEl.style.display = opts.title === '' ? 'none' : '';
+		messageEl.textContent = opts.message;
+		okBtn.textContent = opts.confirmText ?? t('confirm.confirm');
+		cancelBtn.textContent = t('common.cancel');
+		okBtn.classList.remove('btn-danger');
+		root.addEventListener('click', onBackdrop);
+		okBtn.addEventListener('click', onOk);
+		cancelBtn.addEventListener('click', onCancel);
+		document.addEventListener('keydown', onKey);
+		root.classList.add('active');
+		document.body.style.overflow = 'hidden';
+		input.focus();
 	});
 }

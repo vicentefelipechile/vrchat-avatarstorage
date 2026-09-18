@@ -41,6 +41,20 @@
 		"subtitle": "Limpiar caché de sesión",
 		"title": "Gestión de Caché"
 	},
+	"comments": {
+		"btnDelete": "Eliminar",
+		"colAuthor": "Autor",
+		"colDate": "Fecha",
+		"colResource": "Recurso",
+		"colText": "Comentario",
+		"commentsCountLabel": "comentarios",
+		"confirmDelete": "¿Eliminar este comentario?",
+		"noResults": "Sin resultados",
+		"searchPlaceholder": "Buscar texto, autor, recurso…",
+		"title": "Comentarios",
+		"toastDeleteError": "Error al eliminar el comentario",
+		"toastDeleted": "Comentario eliminado"
+	},
 	"media": {
 		"btnDeleteOrphaned": "Eliminar archivos huérfanos",
 		"confirmDelete": "¿Eliminar todos los archivos huérfanos?",
@@ -57,6 +71,7 @@
 	"nav": {
 		"authors": "Autores",
 		"cache": "Caché",
+		"comments": "Comentarios",
 		"media": "Media / Limpieza",
 		"overview": "Resumen",
 		"resources": "Recursos",
@@ -70,22 +85,26 @@
 		"colUser": "Usuario",
 		"latestUploads": "Últimas subidas",
 		"latestUsers": "Últimos registros",
-		"noData": "Sin datos"
+		"noData": "Sin datos",
+		"registrationsChart": "Registros (30d)",
+		"uploadsChart": "Subidas (30d)"
 	},
 	"resources": {
 		"allCats": "Todas las cats.",
 		"allStatus": "Todos",
 		"approved": "Aprobados",
 		"btnApprove": "Aprobar",
+		"btnDelete": "Eliminar",
 		"colStatus": "Estado",
+		"confirmDelete": "¿Eliminar recurso?",
 		"noResults": "Sin resultados",
 		"pageLabel": "Pág.",
 		"pending": "Pendientes",
 		"resultsLabel": "resultados",
 		"searchPlaceholder": "Buscar por título…",
 		"title": "Recursos",
-		"toastApproveError": "Error al aprobar",
-		"toastApproved": "Recurso aprobado"
+		"toastDeleteError": "Error al eliminar el recurso",
+		"toastDeleted": "Recurso eliminado"
 	},
 	"stats": {
 		"assets": "Assets",
@@ -98,15 +117,33 @@
 		"users": "Usuarios"
 	},
 	"users": {
+		"btnBan": "Banear",
 		"btnCache": "Limpiar caché",
+		"btnDelete": "Eliminar",
+		"btnMakeAdmin": "Hacer admin",
+		"btnRemoveAdmin": "Quitar admin",
+		"btnUnban": "Desbanear",
 		"colRegistered": "Registrado",
 		"colRole": "Rol",
+		"confirmBan": "Suspender cuenta",
+		"confirmDelete": "¿Eliminar usuario y todos sus recursos?",
+		"confirmDemote": "Quitar derechos de admin a",
+		"confirmPromote": "Otorgar derechos de admin a",
+		"confirmUnban": "Restaurar cuenta",
 		"roleAdmin": "Admin",
+		"roleBanned": "Baneado",
 		"roleUser": "User",
 		"searchPlaceholder": "Buscar por username…",
 		"title": "Usuarios",
+		"toastBanError": "Error al suspender la cuenta",
+		"toastBanned": "Cuenta suspendida",
 		"toastCacheCleared": "Caché limpiada para",
 		"toastCacheClearedError": "Error al limpiar caché",
+		"toastDeleteError": "Error al eliminar el usuario",
+		"toastDeleted": "Usuario eliminado",
+		"toastRoleChanged": "Rol actualizado",
+		"toastRoleError": "Error al actualizar el rol",
+		"toastUnbanned": "Cuenta restaurada",
 		"usersCountLabel": "usuarios"
 	}
 }

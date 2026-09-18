@@ -41,6 +41,20 @@
 		"subtitle": "Clear session cache",
 		"title": "Cache Management"
 	},
+	"comments": {
+		"btnDelete": "Delete",
+		"colAuthor": "Author",
+		"colDate": "Date",
+		"colResource": "Resource",
+		"colText": "Comment",
+		"commentsCountLabel": "comments",
+		"confirmDelete": "Delete this comment?",
+		"noResults": "No results",
+		"searchPlaceholder": "Search text, author, resource…",
+		"title": "Comments",
+		"toastDeleteError": "Error deleting comment",
+		"toastDeleted": "Comment deleted"
+	},
 	"media": {
 		"btnDeleteOrphaned": "Delete orphaned files",
 		"confirmDelete": "Delete all orphaned files?",
@@ -57,6 +71,7 @@
 	"nav": {
 		"authors": "Authors",
 		"cache": "Cache",
+		"comments": "Comments",
 		"media": "Media / Cleanup",
 		"overview": "Overview",
 		"resources": "Resources",
@@ -70,22 +85,26 @@
 		"colUser": "User",
 		"latestUploads": "Latest uploads",
 		"latestUsers": "Latest users",
-		"noData": "No data"
+		"noData": "No data",
+		"registrationsChart": "Registrations (30d)",
+		"uploadsChart": "Uploads (30d)"
 	},
 	"resources": {
 		"allCats": "All cats.",
 		"allStatus": "All",
 		"approved": "Approved",
 		"btnApprove": "Approve",
+		"btnDelete": "Delete",
 		"colStatus": "Status",
+		"confirmDelete": "Delete resource?",
 		"noResults": "No results",
 		"pageLabel": "Page",
 		"pending": "Pending",
 		"resultsLabel": "results",
 		"searchPlaceholder": "Search by title…",
 		"title": "Resources",
-		"toastApproveError": "Error approving",
-		"toastApproved": "Resource approved"
+		"toastDeleteError": "Error deleting resource",
+		"toastDeleted": "Resource deleted"
 	},
 	"stats": {
 		"assets": "Assets",
@@ -98,15 +117,33 @@
 		"users": "Users"
 	},
 	"users": {
+		"btnBan": "Ban",
 		"btnCache": "Clear cache",
+		"btnDelete": "Delete",
+		"btnMakeAdmin": "Make admin",
+		"btnRemoveAdmin": "Remove admin",
+		"btnUnban": "Unban",
 		"colRegistered": "Registered",
 		"colRole": "Role",
+		"confirmBan": "Suspend account",
+		"confirmDelete": "Delete user and all their resources?",
+		"confirmDemote": "Remove admin rights from",
+		"confirmPromote": "Grant admin rights to",
+		"confirmUnban": "Restore account",
 		"roleAdmin": "Admin",
+		"roleBanned": "Banned",
 		"roleUser": "User",
 		"searchPlaceholder": "Search by username…",
 		"title": "Users",
+		"toastBanError": "Error suspending account",
+		"toastBanned": "Account suspended",
 		"toastCacheCleared": "Cache cleared for",
 		"toastCacheClearedError": "Error clearing cache",
+		"toastDeleteError": "Error deleting user",
+		"toastDeleted": "User deleted",
+		"toastRoleChanged": "Role updated",
+		"toastRoleError": "Error updating role",
+		"toastUnbanned": "Account restored",
 		"usersCountLabel": "users"
 	}
 }

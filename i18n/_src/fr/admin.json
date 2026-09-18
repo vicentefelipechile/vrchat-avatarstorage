@@ -41,6 +41,20 @@
 		"subtitle": "Vider le cache de session",
 		"title": "Gestion du cache"
 	},
+	"comments": {
+		"btnDelete": "Supprimer",
+		"colAuthor": "Auteur",
+		"colDate": "Date",
+		"colResource": "Ressource",
+		"colText": "Commentaire",
+		"commentsCountLabel": "commentaires",
+		"confirmDelete": "Supprimer ce commentaire ?",
+		"noResults": "Aucun résultat",
+		"searchPlaceholder": "Rechercher texte, auteur, ressource…",
+		"title": "Commentaires",
+		"toastDeleteError": "Erreur lors de la suppression",
+		"toastDeleted": "Commentaire supprimé"
+	},
 	"media": {
 		"btnDeleteOrphaned": "Supprimer les fichiers orphelins",
 		"confirmDelete": "Supprimer tous les fichiers orphelins ?",
@@ -57,6 +71,7 @@
 	"nav": {
 		"authors": "Auteurs",
 		"cache": "Cache",
+		"comments": "Commentaires",
 		"media": "Médias / Nettoyage",
 		"overview": "Aperçu",
 		"resources": "Ressources",
@@ -70,22 +85,26 @@
 		"colUser": "Utilisateur",
 		"latestUploads": "Derniers téléversements",
 		"latestUsers": "Derniers inscrits",
-		"noData": "Aucune donnée"
+		"noData": "Aucune donnée",
+		"registrationsChart": "Inscriptions (30j)",
+		"uploadsChart": "Envois (30j)"
 	},
 	"resources": {
 		"allCats": "Toutes les cats.",
 		"allStatus": "Tous",
 		"approved": "Approuvés",
 		"btnApprove": "Approuver",
+		"btnDelete": "Supprimer",
 		"colStatus": "Statut",
+		"confirmDelete": "Supprimer la ressource ?",
 		"noResults": "Aucun résultat",
 		"pageLabel": "Page",
 		"pending": "En attente",
 		"resultsLabel": "résultats",
 		"searchPlaceholder": "Rechercher par titre…",
 		"title": "Ressources",
-		"toastApproveError": "Erreur lors de l'approbation",
-		"toastApproved": "Ressource approuvée"
+		"toastDeleteError": "Erreur lors de la suppression",
+		"toastDeleted": "Ressource supprimée"
 	},
 	"stats": {
 		"assets": "Assets",
@@ -98,15 +117,33 @@
 		"users": "Utilisateurs"
 	},
 	"users": {
+		"btnBan": "Bannir",
 		"btnCache": "Vider le cache",
+		"btnDelete": "Supprimer",
+		"btnMakeAdmin": "Rendre admin",
+		"btnRemoveAdmin": "Retirer admin",
+		"btnUnban": "Débannir",
 		"colRegistered": "Inscrit",
 		"colRole": "Rôle",
+		"confirmBan": "Suspendre le compte",
+		"confirmDelete": "Supprimer l'utilisateur et toutes ses ressources ?",
+		"confirmDemote": "Retirer les droits admin à",
+		"confirmPromote": "Accorder les droits admin à",
+		"confirmUnban": "Restaurer le compte",
 		"roleAdmin": "Admin",
+		"roleBanned": "Banni",
 		"roleUser": "Utilisateur",
 		"searchPlaceholder": "Rechercher par nom d'utilisateur…",
 		"title": "Utilisateurs",
+		"toastBanError": "Erreur lors de la suspension",
+		"toastBanned": "Compte suspendu",
 		"toastCacheCleared": "Cache vidé pour",
 		"toastCacheClearedError": "Erreur lors du vidage du cache",
+		"toastDeleteError": "Erreur lors de la suppression",
+		"toastDeleted": "Utilisateur supprimé",
+		"toastRoleChanged": "Rôle mis à jour",
+		"toastRoleError": "Erreur de mise à jour du rôle",
+		"toastUnbanned": "Compte restauré",
 		"usersCountLabel": "utilisateurs"
 	}
 }

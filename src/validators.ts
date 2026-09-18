@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { RESOURCE_CATEGORIES, CHAT_MAX_LENGTH } from './types';
+import { RESOURCE_CATEGORIES } from './types';
 // ============================================================================
 // Sanitization Helper
 // ============================================================================
@@ -467,29 +467,16 @@ export const ClothesFilterSchema = z.object({
 export type ClothesFilter = z.infer<typeof ClothesFilterSchema>;
 
 // ============================================================================
-// Chat Schemas
+// Sensitive Action Schemas
 // ============================================================================
 
-/**
- * The only payload ChatRoom accepts over a socket. Identity is not part of it: the DO reads the
- * author from the socket's attachment, so a client that adds `userUuid` or `username` here is
- * ignored rather than believed.
- *
- * The length cap applies to the trimmed text, so whitespace padding cannot buy extra characters.
- * `.strict()` rejects unknown keys outright instead of stripping them silently.
- */
-export const ChatSendSchema = z
-	.object({
-		type: z.literal('send'),
-		text: z
-			.string()
-			.transform((v) => v.trim())
-			.pipe(z.string().min(1).max(CHAT_MAX_LENGTH))
-			.transform((v) => sanitizeHtml(v)),
-	})
-	.strict();
-
-export type ChatSend = z.infer<typeof ChatSendSchema>;
+/** TOTP codes are six digits; backup codes are sixteen hexadecimal characters. */
+export const SensitiveActionSchema = z.object({
+	code: z
+		.string()
+		.trim()
+		.regex(/^(?:\d{6}|[a-fA-F0-9]{16})$/, 'Invalid 2FA code'),
+});
 
 // ============================================================================
 // Share Link Schemas

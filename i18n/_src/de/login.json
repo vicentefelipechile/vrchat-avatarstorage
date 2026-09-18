@@ -1,5 +1,6 @@
 {
 	"2fa_code": "Authentifizierungscode",
+	"accountSuspended": "Konto gesperrt",
 	"back": "Zurück",
 	"btn": "Anmelden",
 	"enter2FA": "Gib den 6-stelligen Code aus deiner Authenticator-App ein",

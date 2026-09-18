@@ -2,6 +2,7 @@ import { DataCache } from '../core/cache';
 import { t } from '../core/i18n';
 import { showToast } from '../lib/utils';
 import { showConfirm } from '../lib/confirm';
+import { requestTwoFactorCode, AdminApiError } from './admin/api';
 
 export async function deleteComment(uuid: string): Promise<void> {
 	const ok = await showConfirm({ message: t('admin.deleteConfirm'), confirmText: t('admin.delete'), danger: true });
@@ -42,13 +43,16 @@ export async function approveResource(uuid: string, onDone?: () => void | Promis
 export async function rejectResource(uuid: string): Promise<void> {
 	const ok = await showConfirm({ message: t('item.confirmReject'), confirmText: t('item.reject'), danger: true });
 	if (!ok) return;
+	const code = await requestTwoFactorCode();
+	if (!code) return;
 	try {
-		const res = await fetch(`/api/admin/resource/${uuid}/reject`, { method: 'POST' });
+		const res = await fetch(`/api/admin/resource/${uuid}/reject`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code }) });
 		if (res.ok) {
 			DataCache.clear(`/api/resources/${uuid}`);
 			window.location.href = '/';
 		} else {
-			showToast('Error rejecting resource', 'error');
+			const data = (await res.json().catch(() => null)) as { error?: string } | null;
+			showToast(data?.error ?? 'Error rejecting resource', 'error');
 		}
 	} catch (e) {
 		console.error(e);

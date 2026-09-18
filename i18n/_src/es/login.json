@@ -1,5 +1,6 @@
 {
 	"2fa_code": "Código de Autenticación",
+	"accountSuspended": "Cuenta suspendida",
 	"back": "Atrás",
 	"btn": "Entrar",
 	"enter2FA": "Ingresa el código de 6 dígitos de tu app autenticadora",
