@@ -1,19 +1,24 @@
 {
+	"active": "Activo",
 	"backToResource": "Volver al Recurso",
+	"inactive": "Inactivo",
+	"incomplete": "No hay suficientes datos guardados para reconstruir todos los cambios de esta revisión.",
+	"no": "No",
 	"noHistory": "No hay cambios registrados para este recurso.",
 	"noVisibleChanges": "Sin cambios visibles en el contenido.",
+	"showUnchanged": "Mostrar registros sin diferencias registradas",
 	"title": "Historial de Cambios",
+	"yes": "Sí",
 	"field": {
 		"cat": "Categoría",
 		"desc": "Descripción",
+		"status": "Estado",
 		"title": "Título"
 	},
 	"meta": {
 		"after": "Después",
 		"before": "Antes",
-		"field": "Campo",
-		"noChanges": "Sin cambios.",
-		"noFields": "Sin campos."
+		"noChanges": "Sin cambios."
 	},
 	"types": {
 		"approval": "Aprobación",

@@ -151,10 +151,7 @@ export class ResourceRepository {
 			return await queryAll<ResourceListRow>(this.db, sql, params);
 		} catch (e) {
 			if (String((e as Error).message).includes('no such table: resources_fts')) {
-				const fallbackSql = sql.replace(
-					`r.uuid IN (SELECT uuid FROM resources_fts WHERE title LIKE ? ESCAPE '\\')`,
-					`r.title LIKE ? ESCAPE '\\'`,
-				);
+				const fallbackSql = sql.replace(`r.uuid IN (SELECT uuid FROM resources_fts WHERE title LIKE ? ESCAPE '\\')`, `r.title LIKE ? ESCAPE '\\'`);
 				return queryAll<ResourceListRow>(this.db, fallbackSql, params);
 			}
 			throw e;
@@ -166,7 +163,7 @@ export class ResourceRepository {
 		return queryOne<ResourceDetailRow>(this.db, DETAIL_SQL, [uuid]);
 	}
 
-	/** Media directly owned by a resource, including thumbnail and reference image. */
+	/** Current and historical media owned by a resource. */
 	listAttachedMedia(resourceUuid: string): Promise<{ uuid: string; r2_key: string }[]> {
 		return queryAll<{ uuid: string; r2_key: string }>(
 			this.db,
@@ -174,8 +171,11 @@ export class ResourceRepository {
 				SELECT thumbnail_uuid FROM resources WHERE uuid = ? AND thumbnail_uuid IS NOT NULL
 				UNION SELECT reference_image_uuid FROM resources WHERE uuid = ? AND reference_image_uuid IS NOT NULL
 				UNION SELECT media_uuid FROM resource_n_media WHERE resource_uuid = ?
+			) OR EXISTS (
+				SELECT 1 FROM resource_history h WHERE h.resource_uuid = ?
+				AND (INSTR(h.previous_data, media.uuid) > 0 OR INSTR(h.previous_data, media.r2_key) > 0)
 			)`,
-			[resourceUuid, resourceUuid, resourceUuid],
+			[resourceUuid, resourceUuid, resourceUuid, resourceUuid],
 		);
 	}
 
@@ -195,33 +195,43 @@ export class ResourceRepository {
 	}
 
 	/** Edit history for a resource, newest first, with actor info joined. */
-	findHistory(uuid: string): Promise<(ResourceHistoryRow & { username: string; avatar_url: string | null })[]> {
+	findHistory(uuid: string): Promise<(ResourceHistoryRow & { username: string | null; avatar_url: string | null })[]> {
 		return queryAll(
 			this.db,
 			`SELECT h.*, ${anonUsernameExpr('u')} AS username, ${anonAvatarExpr('u')} AS avatar_url
 			 FROM resource_history h
 			 LEFT JOIN users u ON h.actor_uuid = u.uuid
 			 WHERE h.resource_uuid = ?
-			 ORDER BY h.created_at DESC`,
+			 ORDER BY h.created_at DESC, h.rowid DESC`,
 			[uuid],
+		);
+	}
+
+	/** Resolve historical references in bounded batches, not one request per revision. */
+	findHistoryReferenceLabels(uuids: string[]): Promise<{ uuid: string; label: string }[]> {
+		if (uuids.length === 0) return Promise.resolve([]);
+		const placeholders = uuids.map(() => '?').join(', ');
+		return queryAll(
+			this.db,
+			`SELECT uuid, name AS label FROM avatar_authors WHERE uuid IN (${placeholders})
+			 UNION ALL SELECT uuid, title AS label FROM resources WHERE uuid IN (${placeholders})`,
+			[...uuids, ...uuids],
 		);
 	}
 
 	/** Links for a resource ordered by display_order. */
 	findLinks(uuid: string): Promise<ResourceLinkRow[]> {
-		return queryAll<ResourceLinkRow>(
-			this.db,
-			'SELECT * FROM resource_links WHERE resource_uuid = ? ORDER BY display_order ASC',
-			[uuid],
-		);
+		return queryAll<ResourceLinkRow>(this.db, 'SELECT * FROM resource_links WHERE resource_uuid = ? ORDER BY display_order ASC', [uuid]);
+	}
+
+	async findGalleryMediaUuids(uuid: string): Promise<string[]> {
+		const rows = await queryAll<{ media_uuid: string }>(this.db, 'SELECT media_uuid FROM resource_n_media WHERE resource_uuid = ? ORDER BY media_uuid', [uuid]);
+		return rows.map((row) => row.media_uuid);
 	}
 
 	/** Deletes a single link scoped to its resource. Returns rows affected. */
 	async deleteLink(resourceUuid: string, linkUuid: string): Promise<number> {
-		const res = await this.db
-			.prepare('DELETE FROM resource_links WHERE uuid = ? AND resource_uuid = ?')
-			.bind(linkUuid, resourceUuid)
-			.run();
+		const res = await this.db.prepare('DELETE FROM resource_links WHERE uuid = ? AND resource_uuid = ?').bind(linkUuid, resourceUuid).run();
 		return res.meta.changes ?? 0;
 	}
 
@@ -245,24 +255,14 @@ export class ResourceRepository {
 
 	/** Prepared statement for batch-updating a link's display_order. */
 	buildUpdateLinkOrder(resourceUuid: string, linkUuid: string, displayOrder: number): D1PreparedStatement {
-		return this.db
-			.prepare('UPDATE resource_links SET display_order = ? WHERE uuid = ? AND resource_uuid = ?')
-			.bind(displayOrder, linkUuid, resourceUuid);
+		return this.db.prepare('UPDATE resource_links SET display_order = ? WHERE uuid = ? AND resource_uuid = ?').bind(displayOrder, linkUuid, resourceUuid);
 	}
 
 	// -------------------------------------------------------------------------
 	// Write statement factories (composed into a single db.batch by the service)
 	// -------------------------------------------------------------------------
 
-	buildInsertResource(r: {
-		uuid: string;
-		title: string;
-		description: string | null;
-		category: ResourceCategory;
-		thumbnail_uuid: string;
-		reference_image_uuid: string | null;
-		author_uuid: string;
-	}): D1PreparedStatement {
+	buildInsertResource(r: { uuid: string; title: string; description: string | null; category: ResourceCategory; thumbnail_uuid: string; reference_image_uuid: string | null; author_uuid: string }): D1PreparedStatement {
 		return this.db
 			.prepare(
 				`INSERT INTO resources (uuid, title, description, category, thumbnail_uuid, reference_image_uuid, author_uuid)
@@ -271,14 +271,7 @@ export class ResourceRepository {
 			.bind(r.uuid, r.title, r.description, r.category, r.thumbnail_uuid, r.reference_image_uuid, r.author_uuid);
 	}
 
-	buildInsertLink(l: {
-		uuid: string;
-		resource_uuid: string;
-		link_url: string;
-		link_title: string | null;
-		link_type: string;
-		display_order: number;
-	}): D1PreparedStatement {
+	buildInsertLink(l: { uuid: string; resource_uuid: string; link_url: string; link_title: string | null; link_type: string; display_order: number }): D1PreparedStatement {
 		return this.db
 			.prepare(
 				`INSERT INTO resource_links (uuid, resource_uuid, link_url, link_title, link_type, display_order)
@@ -288,22 +281,14 @@ export class ResourceRepository {
 	}
 
 	buildInsertMediaRelation(uuid: string, resourceUuid: string, mediaUuid: string): D1PreparedStatement {
-		return this.db
-			.prepare('INSERT INTO resource_n_media (uuid, resource_uuid, media_uuid) VALUES (?, ?, ?)')
-			.bind(uuid, resourceUuid, mediaUuid);
+		return this.db.prepare('INSERT INTO resource_n_media (uuid, resource_uuid, media_uuid) VALUES (?, ?, ?)').bind(uuid, resourceUuid, mediaUuid);
 	}
 
 	buildClearMediaRelations(resourceUuid: string): D1PreparedStatement {
 		return this.db.prepare('DELETE FROM resource_n_media WHERE resource_uuid = ?').bind(resourceUuid);
 	}
 
-	buildInsertHistory(h: {
-		uuid: string;
-		resource_uuid: string;
-		actor_uuid: string;
-		change_type: string;
-		previous_data: string;
-	}): D1PreparedStatement {
+	buildInsertHistory(h: { uuid: string; resource_uuid: string; actor_uuid: string; change_type: string; previous_data: string }): D1PreparedStatement {
 		return this.db
 			.prepare(
 				`INSERT INTO resource_history (uuid, resource_uuid, actor_uuid, change_type, previous_data)
@@ -313,11 +298,7 @@ export class ResourceRepository {
 	}
 
 	buildUpdateCore(uuid: string, title: string, description: string | null, category: string, isActive: number): D1PreparedStatement {
-		return this.db
-			.prepare(
-				`UPDATE resources SET title = ?, description = ?, category = ?, is_active = ?, updated_at = unixepoch() WHERE uuid = ?`,
-			)
-			.bind(title, description, category, isActive, uuid);
+		return this.db.prepare(`UPDATE resources SET title = ?, description = ?, category = ?, is_active = ?, updated_at = unixepoch() WHERE uuid = ?`).bind(title, description, category, isActive, uuid);
 	}
 
 	buildUpdateThumbnail(uuid: string, thumbnailUuid: string): D1PreparedStatement {
@@ -348,6 +329,7 @@ const DETAIL_SQL = `
 		rm_ref.r2_key        AS reference_image_key,
 		rm_ref.uuid          AS reference_image_media_uuid,
 		am.gender            AS av_gender,
+		am.author_uuid       AS av_author_uuid,
 		am.avatar_size       AS av_avatar_size,
 		am.avatar_type       AS av_avatar_type,
 		am.is_nsfw           AS av_is_nsfw,

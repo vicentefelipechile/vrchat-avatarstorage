@@ -1,52 +1,38 @@
-// =========================================================================
-// views/HistoryView.ts — Revision history with word-level and meta diff
-// =========================================================================
+// =========================================================================================================
+// RESOURCE HISTORY VIEW
+// =========================================================================================================
+// Accessible before/after comparisons. API values are always rendered as text, never HTML.
+// =========================================================================================================
+
+// =========================================================================================================
+// Imports
+// =========================================================================================================
 
 import { DataCache } from '../core/cache';
-import { t } from '../core/i18n';
-import { diffString } from '../lib/diff';
-import type { RouteContext, Resource } from '../types';
-import { TimeUnit, safeHttpUrl } from '../lib/utils';
+import { getCurrentLang, t } from '../core/i18n';
+import { buildHistoryRevisions, diffWords, htmlDecode, mediaUrl, metaLabel, safeHttpUrl, showToast } from '../lib/utils';
+import type { HistoryEntry, HistoryFieldChange, HistoryRevision, Resource, RouteContext } from '../types';
 
-// =========================================================================
-// Types
-// =========================================================================
+// =========================================================================================================
+// Constants
+// =========================================================================================================
 
-interface HistoryEntry {
-	uuid: string;
-	change_type: string;
-	created_at: number;
-	previous_data: Resource;
-	actor?: { username: string; avatar_url?: string };
-}
-
-interface MetaEditFields {
-	[key: string]: unknown;
-}
-
-interface MetaEditSnapshot {
-	meta_type: 'avatar_meta' | 'asset_meta' | 'clothes_meta';
-	fields: MetaEditFields;
-}
-
-// =========================================================================
-// Helpers — content_edit
-// =========================================================================
-
-const AVATAR_DETAILS_RE = /\n\n---\n\n### Avatar Details\n[\s\S]*$/;
-const cleanDesc = (text: string) => (text ? text.replace(AVATAR_DETAILS_RE, '') : '');
-
-// =========================================================================
-// Helpers — meta_edit
-// =========================================================================
-
-const META_FIELD_LABELS: Record<string, string> = {
-	avatar_gender: 'meta.avatar.gender',
-	avatar_size: 'meta.avatar.size',
-	avatar_type: 'meta.avatar.type',
+const FIELD_LABELS: Record<string, string> = {
+	title: 'history.field.title',
+	description: 'history.field.desc',
+	category: 'history.field.cat',
+	is_active: 'history.field.status',
+	thumbnail_uuid: 'upload.thumbnail',
+	reference_image_uuid: 'edit.changeReference',
+	gallery_media_uuids: 'edit.galleryTitle',
+	links: 'edit.existingLinks',
+	gender: 'meta.avatar_gender.title',
+	avatar_gender: 'meta.avatar_gender.title',
+	avatar_size: 'meta.avatar_size.title',
+	avatar_type: 'meta.avatar_type.title',
 	is_nsfw: 'meta.features.nsfw',
 	has_physbones: 'meta.features.physbones',
-	has_face_tracking: 'meta.features.face_tracking',
+	has_face_tracking: 'meta.features.facetracking',
 	has_dps: 'meta.features.dps',
 	has_gogoloco: 'meta.features.gogoloco',
 	has_toggles: 'meta.features.toggles',
@@ -58,281 +44,231 @@ const META_FIELD_LABELS: Record<string, string> = {
 	asset_type: 'meta.asset_type.title',
 	unity_version: 'meta.sdk_version.unityVersion',
 	gender_fit: 'meta.avatar_gender.title',
-	clothing_type: 'meta.clothes_type.title',
+	clothing_type: 'meta.clothing_type.title',
 	is_base: 'meta.clothes.isBase',
-	base_avatar_uuid: 'meta.asset_type.avatarBase',
-	base_avatar_name_raw: 'meta.asset_type.avatarBase',
-	has_physbones_clothes: 'meta.features.physbones',
-} as const;
+	base_avatar_uuid: 'meta.clothes.baseAvatar',
+	base_avatar_name_raw: 'meta.clothes.baseAvatar',
+};
+const VALUE_NAMESPACES: Record<string, string> = {
+	gender: 'avatar_gender',
+	avatar_gender: 'avatar_gender',
+	gender_fit: 'avatar_gender',
+	avatar_size: 'avatar_size',
+	avatar_type: 'avatar_type',
+	asset_type: 'asset_type',
+	clothing_type: 'clothing_type',
+	platform: 'platform',
+};
+const LOCALES: Record<string, string> = { cn: 'zh-CN', jp: 'ja' };
+const MEDIA_FIELDS = new Set(['thumbnail_uuid', 'reference_image_uuid', 'gallery_media_uuids']);
 
-function formatMetaValue(key: string, value: unknown): string {
-	if (value === null || value === undefined) return '—';
-	if (Array.isArray(value)) return value.length ? value.join(', ') : '—';
-	if (typeof value === 'number' && (key.startsWith('has_') || key.startsWith('is_'))) return value === 1 ? '✓ Sí' : '✗ No';
-	return String(value);
+// =========================================================================================================
+// Helpers
+// =========================================================================================================
+
+function element<K extends keyof HTMLElementTagNameMap>(tag: K, className = '', text?: string): HTMLElementTagNameMap[K] {
+	const node = document.createElement(tag);
+	if (className) node.className = className;
+	if (text !== undefined) node.textContent = text;
+	return node;
 }
 
-async function fetchCurrentMeta(uuid: string, metaType: MetaEditSnapshot['meta_type']): Promise<MetaEditFields | null> {
-	const endpointMap: Record<string, string> = {
-		avatar_meta: `/api/avatars/${uuid}`,
-		asset_meta: `/api/assets/${uuid}`,
-		clothes_meta: `/api/clothes/${uuid}`,
-	};
-	const url = endpointMap[metaType];
-	if (!url) return null;
-	try {
-		const res = await DataCache.fetch<HistoryEntry>(url, { ttl: TimeUnit.Minute * 30, persistent: true });
-		if (!res) return null;
-
-		// The endpoint returns a flat object where meta fields are top-level or nested
-		// assets/avatars/clothes routes return flat rows, extract everything except uuid/title/is_active
-		const ignored = new Set(['uuid', 'title', 'is_active', 'resource_uuid']);
-		const out: MetaEditFields = {};
-		for (const [k, v] of Object.entries(res)) {
-			if (!ignored.has(k)) out[k] = v;
-		}
-		return out;
-	} catch {
-		return null;
+function formatValue(key: string, value: unknown, labels: Record<string, string>): string {
+	if (value === null || value === undefined || value === '') return '—';
+	if (Array.isArray(value)) return value.length ? value.map((item) => formatValue(key, item, labels)).join(key === 'links' ? '\n\n' : ', ') : '—';
+	if (key === 'links' && typeof value === 'object') {
+		return Object.entries(value)
+			.filter(([field, text]) => (field === 'link_title' || field === 'link_url') && typeof text === 'string' && text)
+			.map(([, text]) => htmlDecode(String(text)))
+			.join('\n');
 	}
+	if ((key.startsWith('has_') || key.startsWith('is_')) && (value === 0 || value === 1 || typeof value === 'boolean')) {
+		if (key === 'is_active') return value ? t('history.active') : t('history.inactive');
+		return value ? t('history.yes') : t('history.no');
+	}
+	if (key === 'category') return t(`cats.${String(value)}`);
+	if (key === 'sdk_version' && (value === 'sdk2' || value === 'sdk3')) return t(`meta.sdk_version.${value === 'sdk2' ? 'v2' : 'v3'}`);
+	if (typeof VALUE_NAMESPACES[key] === 'string') return metaLabel(VALUE_NAMESPACES[key], String(value));
+	if ((key === 'author_uuid' || key === 'base_avatar_uuid') && typeof value === 'string' && typeof labels[value] === 'string') return htmlDecode(labels[value]);
+	return typeof value === 'object' ? JSON.stringify(value) : htmlDecode(String(value));
 }
 
-const IGNORED_META_KEYS = new Set(['resource_uuid', 'uuid']);
-
-function renderMetaDiff(snapshot: MetaEditSnapshot, current: MetaEditFields | null, authorName?: string): string {
-	const prev = snapshot.fields;
-
-	if (!current) {
-		// Can't fetch current state — just show the snapshot as-is
-		const rows = Object.entries(prev)
-			.filter(([k]) => !IGNORED_META_KEYS.has(k))
-			.map(([k, v]) => {
-				const label = t(META_FIELD_LABELS[k] || k);
-				return `<tr>
-					<td style="color:var(--text-muted);font-size:0.85em">${label}</td>
-					<td><del style="color:#b31d28;background:#ffeef0;padding:1px 4px">${formatMetaValue(k, v)}</del></td>
-					<td style="color:var(--text-muted)">—</td>
-				</tr>`;
-			})
-			.join('');
-		return rows
-			? `<table style="width:100%;border-collapse:collapse;font-size:0.88em">
-				<thead><tr>
-					<th style="text-align:left;padding:4px 8px;border-bottom:1px solid var(--border-color);width:40%">${t('history.meta.field')}</th>
-					<th style="text-align:left;padding:4px 8px;border-bottom:1px solid var(--border-color)">${t('history.meta.before')}</th>
-					<th style="text-align:left;padding:4px 8px;border-bottom:1px solid var(--border-color)">${t('history.meta.after')}</th>
-				</tr></thead>
-				<tbody>${rows}</tbody>
-			</table>`
-			: `<em style="color:#666">${t('history.meta.noFields')}</em>`;
+function appendMedia(container: HTMLElement, key: string, value: unknown): void {
+	const ids = (Array.isArray(value) ? value : [value]).filter((id): id is string => typeof id === 'string' && id.length > 0);
+	if (!ids.length) {
+		container.textContent = '—';
+		return;
 	}
-
-	const changedRows: string[] = [];
-
-	for (const [k, prevVal] of Object.entries(prev)) {
-		if (IGNORED_META_KEYS.has(k)) continue;
-		const currVal = current[k];
-		const prevStr = formatMetaValue(k, prevVal);
-		const currStr = formatMetaValue(k, currVal);
-
-		if (prevStr === currStr) continue;
-
-		const label = t(META_FIELD_LABELS[k] || k);
-
-		// Special case: author_uuid changed from null to a UUID
-		if (k === 'author_uuid' && !prevVal && currVal) {
-			const displayName = authorName ?? String(currVal);
-			changedRows.push(`<tr style="background:var(--bg-hover)">
-				<td style="padding:5px 8px;border-bottom:1px solid var(--border-color);font-weight:500">${label}</td>
-				<td style="padding:5px 8px;border-bottom:1px solid var(--border-color)"><span style="color:var(--text-muted)">—</span></td>
-				<td style="padding:5px 8px;border-bottom:1px solid var(--border-color)"><ins style="color:#22863a;background:#e6ffec;padding:1px 4px;text-decoration:none">${displayName}</ins></td>
-			</tr>`);
-			continue;
-		}
-
-		changedRows.push(`<tr>
-			<td style="padding:5px 8px;border-bottom:1px solid var(--border-color);color:var(--text-muted);font-size:0.85em">${label}</td>
-			<td style="padding:5px 8px;border-bottom:1px solid var(--border-color)"><del style="color:#b31d28;background:#ffeef0;padding:1px 4px;text-decoration:none">${prevStr}</del></td>
-			<td style="padding:5px 8px;border-bottom:1px solid var(--border-color)"><ins style="color:#22863a;background:#e6ffec;padding:1px 4px;text-decoration:none">${currStr}</ins></td>
-		</tr>`);
+	const gallery = element('div', 'history-media');
+	for (const id of ids) {
+		const link = element('a', 'history-media-link');
+		link.href = mediaUrl(id, 'original');
+		link.target = '_blank';
+		link.rel = 'noopener noreferrer';
+		link.title = id;
+		const image = element('img');
+		image.src = mediaUrl(id, 'low');
+		image.alt = t(FIELD_LABELS[key]);
+		image.loading = 'lazy';
+		image.width = 120;
+		image.height = 120;
+		image.addEventListener('error', () => link.replaceChildren(document.createTextNode(id)), { once: true });
+		link.append(image);
+		gallery.append(link);
 	}
-
-	if (changedRows.length === 0) {
-		return `<em style="color:#666">${t('history.meta.noChanges')}</em>`;
-	}
-
-	return `<table style="width:100%;border-collapse:collapse;font-size:0.88em">
-		<thead><tr>
-			<th style="text-align:left;padding:4px 8px;border-bottom:1px solid var(--border-color);width:35%">${t('history.meta.field')}</th>
-			<th style="text-align:left;padding:4px 8px;border-bottom:1px solid var(--border-color)">${t('history.meta.before')}</th>
-			<th style="text-align:left;padding:4px 8px;border-bottom:1px solid var(--border-color)">${t('history.meta.after')}</th>
-		</tr></thead>
-		<tbody>${changedRows.join('')}</tbody>
-	</table>`;
+	container.append(gallery);
 }
 
-// =========================================================================
-// Helpers — card renderer
-// =========================================================================
-
-async function historyCard(entry: HistoryEntry, current: Resource, resourceUuid: string): Promise<string> {
-	const date = new Date(entry.created_at * 1000).toLocaleString();
-	const actorName = entry.actor?.username ?? 'Unknown';
-	const actorAvatar = entry.actor?.avatar_url ?? '';
-	const changeTypeLabel = t(`history.types.${entry.change_type}`) || entry.change_type;
-
-	let changesHtml = '';
-
-	if (entry.change_type === 'meta_edit') {
-		let snapshot: MetaEditSnapshot | null = null;
-		try {
-			const raw = entry.previous_data as unknown as string;
-			snapshot = typeof raw === 'string' ? (JSON.parse(raw) as MetaEditSnapshot) : (raw as unknown as MetaEditSnapshot);
-		} catch {
-			snapshot = null;
+function comparison(change: HistoryFieldChange, labels: Record<string, string>): HTMLElement {
+	const section = element('section', 'history-field');
+	section.append(element('h3', '', typeof FIELD_LABELS[change.key] === 'string' ? t(FIELD_LABELS[change.key]) : change.key.replace(/_/g, ' ')));
+	const columns = element('div', 'history-comparison');
+	const before = element('div', 'history-value history-value-before');
+	const after = element('div', 'history-value history-value-after');
+	before.append(element('h4', 'history-value-label', `− ${t('history.meta.before')}`));
+	after.append(element('h4', 'history-value-label', `+ ${t('history.meta.after')}`));
+	const oldValue = element('div', 'history-value-text');
+	const newValue = element('div', 'history-value-text');
+	if (change.key === 'description') {
+		oldValue.tabIndex = 0;
+		newValue.tabIndex = 0;
+		oldValue.setAttribute('aria-label', `${t('history.field.desc')} — ${t('history.meta.before')}`);
+		newValue.setAttribute('aria-label', `${t('history.field.desc')} — ${t('history.meta.after')}`);
+	}
+	if (MEDIA_FIELDS.has(change.key)) {
+		appendMedia(oldValue, change.key, change.before);
+		appendMedia(newValue, change.key, change.after);
+	} else if (change.key === 'title' || change.key === 'description') {
+		const oldText = String(change.before ?? '');
+		const newText = String(change.after ?? '');
+		for (const part of diffWords(change.key === 'title' ? htmlDecode(oldText) : oldText, change.key === 'title' ? htmlDecode(newText) : newText)) {
+			if (part.type === 'equal') {
+				oldValue.append(document.createTextNode(part.text));
+				newValue.append(document.createTextNode(part.text));
+			} else if (part.type === 'delete') oldValue.append(element('del', '', part.text));
+			else newValue.append(element('ins', '', part.text));
 		}
-
-		if (!snapshot) {
-			changesHtml = `<em style="color:#666">Snapshot de metadatos inválido</em>`;
-		} else {
-			const currentMeta = await fetchCurrentMeta(resourceUuid, snapshot.meta_type);
-
-			// Try to resolve author name if author_uuid changed
-			/*
-			let authorName: string | undefined;
-			const prevAuthorUuid = snapshot.fields.author_uuid;
-			const currAuthorUuid = currentMeta?.['author_uuid'];
-			if (!prevAuthorUuid && currAuthorUuid) {
-				try {
-					const authorRes = await fetch(`/api/authors/${currAuthorUuid}`);
-					if (authorRes.ok) {
-						const a = (await authorRes.json()) as { name?: string; slug?: string };
-						authorName = a.name ?? a.slug;
-					}
-				} catch {
-					// fallback to UUID
-				}
-			}
-			*/
-
-			changesHtml = renderMetaDiff(snapshot, currentMeta);
-		}
-	} else if (entry.change_type === 'approval') {
-		const prev = entry.previous_data as unknown as { is_active?: boolean };
-		const wasActive = prev?.is_active;
-		changesHtml = wasActive
-			? `<span style="color:#b31d28">Recurso desactivado / rechazado</span>`
-			: `<span style="color:#22863a">Recurso aprobado / activado</span>`;
+		if (!oldValue.textContent) oldValue.textContent = '—';
+		if (!newValue.textContent) newValue.textContent = '—';
 	} else {
-		// content_edit — existing behaviour
-		const prev = entry.previous_data;
-
-		if (prev.title !== current.title) {
-			changesHtml += `
-			<div class="diff-block">
-				<strong>${t('history.field.title')}:</strong>
-				<div class="diff-content">${diffString(prev.title, current.title)}</div>
-			</div>`;
-		}
-
-		const prevDesc = cleanDesc(prev.description);
-		const currDesc = cleanDesc(current.description);
-		if (prevDesc !== currDesc) {
-			changesHtml += `
-			<div class="diff-block">
-				<strong>${t('history.field.desc')}:</strong>
-				<div class="diff-content markdown-body" style="font-size:0.9em;padding:10px;background:var(--bg-code);border:1px solid var(--border-color);white-space:pre-wrap!important;font-family:monospace">
-					${diffString(prevDesc, currDesc)}
-				</div>
-			</div>`;
-		}
-
-		if (prev.category !== current.category) {
-			changesHtml += `
-			<div class="diff-block">
-				<strong>${t('history.field.cat')}:</strong>
-				<div class="diff-content">
-					<del style="background:#ffeef0;color:#b31d28">${prev.category}</del>
-					&rarr;
-					<ins style="background:#e6ffec;color:#22863a">${current.category}</ins>
-				</div>
-			</div>`;
-		}
-
-		if (!changesHtml) changesHtml = `<em style="color:#666">${t('history.noVisibleChanges')}</em>`;
+		oldValue.append(element('del', '', formatValue(change.key, change.before, labels)));
+		newValue.append(element('ins', '', formatValue(change.key, change.after, labels)));
 	}
-
-	const badgeColor = entry.change_type === 'meta_edit' ? 'badge-purple' : entry.change_type === 'approval' ? 'badge-green' : 'badge-blue';
-	const safeActorAvatar = safeHttpUrl(actorAvatar) ?? '/avatar.png';
-
-	return `
-		<div class="history-card" style="background:var(--bg-card);border:1px solid var(--border-color);padding:20px;margin-bottom:20px">
-			<div class="history-header" style="display:flex;align-items:center;margin-bottom:15px;border-bottom:1px solid var(--border-color);padding-bottom:10px">
-				<img src="${safeActorAvatar}" alt="${actorName}" style="width:32px;height:32px;margin-right:10px;background:#ddd;border-radius:50%">
-				<div>
-					<div style="font-weight:bold">${actorName}</div>
-					<div style="font-size:0.85em;color:var(--text-muted)">${date}</div>
-				</div>
-				<div style="margin-left:auto">
-					<span class="badge ${badgeColor}">${changeTypeLabel}</span>
-				</div>
-			</div>
-			<div class="history-changes">${changesHtml}</div>
-		</div>`;
+	before.append(oldValue);
+	after.append(newValue);
+	columns.append(before, after);
+	section.append(columns);
+	return section;
 }
 
-// =========================================================================
+function historyCard(revision: HistoryRevision, labels: Record<string, string>, dateFormat: Intl.DateTimeFormat): HTMLElement {
+	const { entry } = revision;
+	const card = element('li', 'history-card');
+	const header = element('header', 'history-header');
+	const actor = element('div', 'history-actor');
+	const avatar = element('img', 'history-avatar');
+	avatar.src = safeHttpUrl(entry.actor?.avatar_url) ?? '/avatar.png';
+	avatar.alt = '';
+	avatar.width = 36;
+	avatar.height = 36;
+	avatar.loading = 'lazy';
+	avatar.addEventListener(
+		'error',
+		() => {
+			avatar.hidden = true;
+		},
+		{ once: true },
+	);
+	const info = element('div', 'history-actor-info');
+	info.append(element('strong', '', htmlDecode(entry.actor?.username ?? t('common.unknown'))));
+	const date = new Date(entry.created_at);
+	if (Number.isFinite(date.getTime())) {
+		const time = element('time', '', dateFormat.format(date));
+		time.dateTime = date.toISOString();
+		info.append(time);
+	} else info.append(element('span', '', t('common.unknown')));
+	actor.append(avatar, info);
+	const knownType = ['content_edit', 'meta_edit', 'approval', 'create'].includes(entry.change_type);
+	header.append(actor, element('h2', 'history-type', knownType ? t(`history.types.${entry.change_type}`) : t('common.unknown')));
+	card.append(header);
+	for (const change of revision.changes) card.append(comparison(change, { ...labels, ...entry.reference_labels }));
+	if (revision.incomplete) card.append(element('p', 'history-notice', t('history.incomplete')));
+	else if (!revision.changes.length) card.append(element('p', 'history-notice', entry.change_type === 'meta_edit' ? t('history.meta.noChanges') : t('history.noVisibleChanges')));
+	return card;
+}
+
+// =========================================================================================================
 // View
-// =========================================================================
+// =========================================================================================================
 
-export async function historyView(ctx: RouteContext): Promise<string> {
-	document.title = `VRCStorage — ${t('history.title')}`;
-	const id = ctx.params.id;
-
-	return `
-		<div class="history-container" style="max-width:1000px;margin:0 auto">
-			<div style="margin-bottom:20px">
-				<a href="/item/${id}" data-link class="btn" style="background:#666">&larr; ${t('history.backToResource')}</a>
-			</div>
-			<h1>${t('history.title')}</h1>
-			<div id="history-list" class="timeline">
-				<p>${t('common.loading')}</p>
-			</div>
-		</div>`;
+export function historyView(_ctx: RouteContext): string {
+	return '<section id="resource-history" class="history-page" aria-busy="true"></section>';
 }
 
-// =========================================================================
+// =========================================================================================================
 // After
-// =========================================================================
+// =========================================================================================================
 
 export async function historyAfter(ctx: RouteContext): Promise<void> {
-	const id = ctx.params.id;
-	const list = document.getElementById('history-list')!;
+	document.title = `VRCStorage — ${t('history.title')}`;
+	const page = document.getElementById('resource-history');
+	if (!page) return;
+	const id = encodeURIComponent(ctx.params.id);
+	const back = element('a', 'btn btn-outline', `← ${t('history.backToResource')}`);
+	back.href = `/item/${id}`;
+	back.dataset.link = '';
+	const heading = element('div', 'history-heading');
+	heading.append(element('h1', '', t('history.title')));
+	const status = element('p', 'history-notice', t('common.loading'));
+	status.setAttribute('role', 'status');
+	page.append(back, heading, status);
 
 	try {
-		const [entries, currentRes] = await Promise.all([
-			DataCache.fetch(`/api/resources/${id}/history`, { ttl: TimeUnit.Minute * 5 }) as Promise<HistoryEntry[]>,
-			DataCache.fetch(`/api/resources/${id}`, { ttl: TimeUnit.Minute * 5 }) as Promise<Resource>,
-		]);
-
-		if (!entries || entries.length === 0) {
-			list.innerHTML = `<p>${t('history.noHistory')}</p>`;
+		// Do not mix cached current data with a newer revision chain.
+		const [entries, current] = await Promise.all([DataCache.fetch<HistoryEntry[]>(`/api/resources/${id}/history`, { ttl: 0 }), DataCache.fetch<Resource>(`/api/resources/${id}`, { ttl: 0 })]);
+		if (!page.isConnected) return;
+		heading.append(element('p', 'history-resource-title', htmlDecode(current.title)));
+		if (!entries.length) {
+			status.textContent = t('history.noHistory');
 			return;
 		}
-
-		// meta_edit cards require async fetches — resolve all in order
-		let nextState: Resource = currentRes;
-		const cardPromises: Promise<string>[] = [];
-		for (const entry of entries) {
-			cardPromises.push(historyCard(entry, nextState, id));
-			if (entry.change_type === 'content_edit') {
-				nextState = entry.previous_data;
+		const labels: Record<string, string> = {};
+		for (const entry of entries) Object.assign(labels, entry.reference_labels);
+		if (current.meta && 'author_uuid' in current.meta && current.meta.author_uuid && current.meta.author_name) labels[current.meta.author_uuid] = current.meta.author_name;
+		const lang = getCurrentLang();
+		const dateFormat = new Intl.DateTimeFormat(LOCALES[lang] ?? lang, { dateStyle: 'medium', timeStyle: 'short' });
+		const list = element('ol', 'history-list');
+		list.setAttribute('aria-label', t('history.title'));
+		const revisions = buildHistoryRevisions(entries, current);
+		const unchangedCards: HTMLElement[] = [];
+		for (const revision of revisions) {
+			const card = historyCard(revision, labels, dateFormat);
+			if (!revision.incomplete && !revision.changes.length) {
+				card.hidden = true;
+				unchangedCards.push(card);
 			}
+			list.append(card);
 		}
-
-		const cards = await Promise.all(cardPromises);
-		list.innerHTML = cards.join('');
-	} catch (e) {
-		list.innerHTML = `<p style="color:red">Error loading history: ${(e as Error).message}</p>`;
+		if (unchangedCards.length) {
+			const filter = element('label', 'history-filter');
+			const checkbox = element('input');
+			checkbox.type = 'checkbox';
+			filter.append(checkbox, document.createTextNode(`${t('history.showUnchanged')} (${unchangedCards.length})`));
+			const empty = element('p', 'history-notice', t('history.noVisibleChanges'));
+			empty.hidden = unchangedCards.length !== revisions.length;
+			checkbox.addEventListener('change', () => {
+				for (const card of unchangedCards) card.hidden = !checkbox.checked;
+				empty.hidden = checkbox.checked || unchangedCards.length !== revisions.length;
+			});
+			heading.append(filter, empty);
+		}
+		status.replaceWith(list);
+	} catch (error) {
+		console.error('Failed to load resource history:', error);
+		if (!page.isConnected) return;
+		status.textContent = t('common.loadError');
+		showToast(t('common.loadError'), 'error');
+	} finally {
+		page.setAttribute('aria-busy', 'false');
 	}
 }

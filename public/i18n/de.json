@@ -255,21 +255,26 @@
 		"uploadingThumbnail": "Vorschaubild wird hochgeladen..."
 	},
 	"history": {
+		"active": "Aktiv",
 		"backToResource": "Zurück zur Ressource",
+		"inactive": "Inaktiv",
+		"incomplete": "Es sind nicht genügend Daten gespeichert, um alle Änderungen dieser Revision zu rekonstruieren.",
+		"no": "Nein",
 		"noHistory": "Keine Änderungen für diese Ressource aufgezeichnet.",
 		"noVisibleChanges": "Keine sichtbaren Inhaltsänderungen.",
+		"showUnchanged": "Einträge ohne gespeicherte Unterschiede anzeigen",
 		"title": "Änderungsverlauf",
+		"yes": "Ja",
 		"field": {
 			"cat": "Kategorie",
 			"desc": "Beschreibung",
+			"status": "Status",
 			"title": "Titel"
 		},
 		"meta": {
 			"after": "Nachher",
 			"before": "Vorher",
-			"field": "Geändertes Feld",
-			"noChanges": "Keine Änderungen.",
-			"noFields": "Keine Felder."
+			"noChanges": "Keine Änderungen."
 		},
 		"types": {
 			"approval": "Genehmigung",

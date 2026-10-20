@@ -255,21 +255,26 @@
 		"uploadingThumbnail": "Caricamento miniatura..."
 	},
 	"history": {
+		"active": "Attivo",
 		"backToResource": "Torna alla risorsa",
+		"inactive": "Inattivo",
+		"incomplete": "I dati salvati non sono sufficienti per ricostruire tutte le modifiche di questa revisione.",
+		"no": "No",
 		"noHistory": "Nessuna modifica registrata per questa risorsa.",
 		"noVisibleChanges": "Nessuna modifica visibile al contenuto.",
+		"showUnchanged": "Mostra le voci senza differenze registrate",
 		"title": "Cronologia modifiche",
+		"yes": "Sì",
 		"field": {
 			"cat": "Categoria",
 			"desc": "Descrizione",
+			"status": "Stato",
 			"title": "Titolo"
 		},
 		"meta": {
 			"after": "Dopo",
 			"before": "Prima",
-			"field": "Campo modificato",
-			"noChanges": "Nessuna modifica.",
-			"noFields": "Nessun campo."
+			"noChanges": "Nessuna modifica."
 		},
 		"types": {
 			"approval": "Approvazione",

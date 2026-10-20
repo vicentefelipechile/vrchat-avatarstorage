@@ -1,19 +1,24 @@
 {
+	"active": "已启用",
 	"backToResource": "返回资源",
+	"inactive": "已停用",
+	"incomplete": "保存的数据不足，无法还原此版本的所有更改。",
+	"no": "否",
 	"noHistory": "此资源没有变更记录。",
 	"noVisibleChanges": "没有可见的内容变更。",
+	"showUnchanged": "显示未记录差异的条目",
 	"title": "变更历史",
+	"yes": "是",
 	"field": {
 		"cat": "类别",
 		"desc": "描述",
+		"status": "状态",
 		"title": "标题"
 	},
 	"meta": {
 		"after": "之后",
 		"before": "之前",
-		"field": "更改的字段",
-		"noChanges": "无更改。",
-		"noFields": "无字段。"
+		"noChanges": "无更改。"
 	},
 	"types": {
 		"approval": "批准",

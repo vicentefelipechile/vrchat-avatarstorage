@@ -92,10 +92,7 @@ export class AuthorService {
 		const author = await this.repo.findBySlug(slug);
 		if (!author) throw new NotFoundError('Author not found');
 
-		const [total, avatars] = await Promise.all([
-			this.repo.countAvatars(author.uuid),
-			this.repo.listAvatars(author.uuid, limit, offset),
-		]);
+		const [total, avatars] = await Promise.all([this.repo.countAvatars(author.uuid), this.repo.listAvatars(author.uuid, limit, offset)]);
 
 		return {
 			author,
@@ -188,10 +185,12 @@ export class AuthorService {
 
 		const existing = await this.repo.findMetaAuthor(resourceUuid);
 		if (!existing) throw new NotFoundError('Avatar metadata not found for this resource');
+		if (existing.author_uuid === author.uuid) return;
 
 		const previousData = JSON.stringify({
 			meta_type: 'avatar_meta',
 			fields: { author_uuid: existing.author_uuid, author_name_raw: existing.author_name_raw },
+			after: { author_uuid: author.uuid, author_name_raw: existing.author_name_raw },
 		});
 
 		await batch(this.db, [

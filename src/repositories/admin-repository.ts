@@ -22,7 +22,7 @@ import type { Resource, Media } from '../types';
 /** The orphaned-media predicate, shared by the stats count, the listing, and the cleanup. A media
  *  row is orphaned when nothing references it: no resource thumbnail/reference/attachment, no blog
  *  cover, and no free-text mention in user avatars, author avatars, comments, blog comments, or
- *  post bodies. */
+ *  post bodies or resource revision snapshots. */
 export const ORPHANED_MEDIA_PREDICATE = `
 	m.uuid NOT IN (
 		SELECT thumbnail_uuid FROM resources WHERE thumbnail_uuid IS NOT NULL
@@ -32,9 +32,12 @@ export const ORPHANED_MEDIA_PREDICATE = `
 	)
 	AND NOT EXISTS (SELECT 1 FROM users          WHERE INSTR(users.avatar_url,          m.r2_key) > 0)
 	AND NOT EXISTS (SELECT 1 FROM avatar_authors WHERE INSTR(avatar_authors.avatar_url, m.r2_key) > 0)
+	AND NOT EXISTS (SELECT 1 FROM resources r WHERE INSTR(r.description, m.r2_key) > 0 OR INSTR(r.description, m.uuid) > 0)
+	AND NOT EXISTS (SELECT 1 FROM resource_links l WHERE INSTR(l.link_url, m.r2_key) > 0 OR INSTR(l.link_url, m.uuid) > 0)
 	AND NOT EXISTS (SELECT 1 FROM comments       WHERE INSTR(comments.text,             m.r2_key) > 0)
 	AND NOT EXISTS (SELECT 1 FROM blog_comments  WHERE INSTR(blog_comments.text,        m.r2_key) > 0)
-	AND NOT EXISTS (SELECT 1 FROM blog_posts     WHERE INSTR(blog_posts.content,        m.r2_key) > 0)`;
+	AND NOT EXISTS (SELECT 1 FROM blog_posts     WHERE INSTR(blog_posts.content,        m.r2_key) > 0)
+	AND NOT EXISTS (SELECT 1 FROM resource_history h WHERE INSTR(h.previous_data, m.uuid) > 0 OR INSTR(h.previous_data, m.r2_key) > 0)`;
 
 // =========================================================================================================
 // Types
@@ -102,14 +105,8 @@ export class AdminRepository {
 	}
 
 	/** Lightweight metadata for a freshly approved resource — drives the enriched FeedEvent. */
-	async findResourceNotificationMeta(
-		uuid: string,
-	): Promise<{ title: string; category: string; thumbnail_uuid: string | null; subType: string | null; isNsfw: boolean } | null> {
-		const row = await queryOne<{ title: string; category: string; thumbnail_uuid: string | null }>(
-			this.db,
-			'SELECT title, category, thumbnail_uuid FROM resources WHERE uuid = ?',
-			[uuid],
-		);
+	async findResourceNotificationMeta(uuid: string): Promise<{ title: string; category: string; thumbnail_uuid: string | null; subType: string | null; isNsfw: boolean } | null> {
+		const row = await queryOne<{ title: string; category: string; thumbnail_uuid: string | null }>(this.db, 'SELECT title, category, thumbnail_uuid FROM resources WHERE uuid = ?', [uuid]);
 		if (!row) return null;
 		let subType: string | null = null;
 		let isNsfw = false;
@@ -117,11 +114,7 @@ export class AdminRepository {
 			const m = await queryOne<{ avatar_type: string }>(this.db, 'SELECT avatar_type FROM avatar_meta WHERE resource_uuid = ?', [uuid]);
 			subType = m?.avatar_type ?? null;
 		} else if (row.category === 'assets') {
-			const m = await queryOne<{ asset_type: string; is_nsfw: number }>(
-				this.db,
-				'SELECT asset_type, is_nsfw FROM asset_meta WHERE resource_uuid = ?',
-				[uuid],
-			);
+			const m = await queryOne<{ asset_type: string; is_nsfw: number }>(this.db, 'SELECT asset_type, is_nsfw FROM asset_meta WHERE resource_uuid = ?', [uuid]);
 			subType = m?.asset_type ?? null;
 			isNsfw = m?.is_nsfw === 1;
 		} else if (row.category === 'clothes') {
@@ -140,7 +133,7 @@ export class AdminRepository {
 		await execute(this.db, 'UPDATE resources SET is_active = ? WHERE uuid = ?', [active, uuid]);
 	}
 
-	/** Media directly attached to a resource, including thumbnail and reference image. */
+	/** Current and historical media owned by a resource. */
 	listResourceMediaKeys(uuid: string): Promise<Media[]> {
 		return queryAll<Media>(
 			this.db,
@@ -148,18 +141,17 @@ export class AdminRepository {
 				SELECT thumbnail_uuid FROM resources WHERE uuid = ? AND thumbnail_uuid IS NOT NULL
 				UNION SELECT reference_image_uuid FROM resources WHERE uuid = ? AND reference_image_uuid IS NOT NULL
 				UNION SELECT media_uuid FROM resource_n_media WHERE resource_uuid = ?
+			) OR EXISTS (
+				SELECT 1 FROM resource_history h WHERE h.resource_uuid = ?
+				AND (INSTR(h.previous_data, media.uuid) > 0 OR INSTR(h.previous_data, media.r2_key) > 0)
 			)`,
-			[uuid, uuid, uuid],
+			[uuid, uuid, uuid, uuid],
 		);
 	}
 
 	/** R2 key of a resource's thumbnail, or null. */
 	findResourceThumbnailKey(uuid: string): Promise<Media | null> {
-		return queryOne<Media>(
-			this.db,
-			'SELECT m.r2_key FROM media m JOIN resources r ON m.uuid = r.thumbnail_uuid WHERE r.uuid = ?',
-			[uuid],
-		);
+		return queryOne<Media>(this.db, 'SELECT m.r2_key FROM media m JOIN resources r ON m.uuid = r.thumbnail_uuid WHERE r.uuid = ?', [uuid]);
 	}
 
 	/** Whether a media row remains referenced after a resource is removed. */
@@ -229,7 +221,10 @@ export class AdminRepository {
 
 	/** All dashboard metrics in one D1 batch. `cutoffTime`/`windowStart` scope the orphaned-media
 	 *  count to the same 24h–48h age window the cleanup uses. */
-	async fetchStats(cutoffTime: number, windowStart: number): Promise<{
+	async fetchStats(
+		cutoffTime: number,
+		windowStart: number,
+	): Promise<{
 		users: number;
 		avatars: number;
 		assets: number;
@@ -241,18 +236,7 @@ export class AdminRepository {
 		latest_uploads: unknown[];
 		latest_registrations: unknown[];
 	}> {
-		const [
-			totalUsers,
-			totalAvatars,
-			totalAssets,
-			totalClothes,
-			totalPending,
-			totalAuthors,
-			totalMedia,
-			orphanedMedia,
-			latestUploads,
-			latestRegistrations,
-		] = await this.db.batch([
+		const [totalUsers, totalAvatars, totalAssets, totalClothes, totalPending, totalAuthors, totalMedia, orphanedMedia, latestUploads, latestRegistrations] = await this.db.batch([
 			this.db.prepare('SELECT COUNT(*) as count FROM users'),
 			this.db.prepare("SELECT COUNT(*) as count FROM resources WHERE category = 'avatars' AND is_active = 1"),
 			this.db.prepare("SELECT COUNT(*) as count FROM resources WHERE category = 'assets' AND is_active = 1"),
@@ -260,9 +244,7 @@ export class AdminRepository {
 			this.db.prepare('SELECT COUNT(*) as count FROM resources WHERE is_active = 0'),
 			this.db.prepare('SELECT COUNT(*) as count FROM avatar_authors'),
 			this.db.prepare('SELECT COUNT(*) as count FROM media'),
-			this.db
-				.prepare(`SELECT COUNT(*) as count FROM media m WHERE m.created_at < ? AND m.created_at >= ? AND ${ORPHANED_MEDIA_PREDICATE}`)
-				.bind(cutoffTime, windowStart),
+			this.db.prepare(`SELECT COUNT(*) as count FROM media m WHERE m.created_at < ? AND m.created_at >= ? AND ${ORPHANED_MEDIA_PREDICATE}`).bind(cutoffTime, windowStart),
 			this.db.prepare(
 				`SELECT r.uuid, r.title, r.category, r.created_at, u.username as author_username
 				FROM resources r LEFT JOIN users u ON r.author_uuid = u.uuid
@@ -303,20 +285,12 @@ export class AdminRepository {
 	listUsers(search: string, limit: number, offset: number): Promise<AdminUserRow[]> {
 		const where = search ? 'WHERE username LIKE ?' : '';
 		const params = search ? [`%${search}%`, limit, offset] : [limit, offset];
-		return queryAll<AdminUserRow>(
-			this.db,
-			`SELECT uuid, username, avatar_url, is_admin, is_banned, created_at FROM users ${where} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
-			params,
-		);
+		return queryAll<AdminUserRow>(this.db, `SELECT uuid, username, avatar_url, is_admin, is_banned, created_at FROM users ${where} ORDER BY created_at DESC LIMIT ? OFFSET ?`, params);
 	}
 
 	/** A user's uuid + flags by username, or null. */
 	async findUserByUsername(username: string): Promise<{ uuid: string; is_admin: number; is_banned: number; two_factor_enabled: number } | null> {
-		return queryOne<{ uuid: string; is_admin: number; is_banned: number; two_factor_enabled: number }>(
-			this.db,
-			'SELECT uuid, is_admin, is_banned, two_factor_enabled FROM users WHERE username = ?',
-			[username],
-		);
+		return queryOne<{ uuid: string; is_admin: number; is_banned: number; two_factor_enabled: number }>(this.db, 'SELECT uuid, is_admin, is_banned, two_factor_enabled FROM users WHERE username = ?', [username]);
 	}
 
 	/** Set a user's is_banned flag. */
@@ -340,23 +314,15 @@ export class AdminRepository {
 
 	/** Count of comments matching an optional text/author/resource search. */
 	async countCommentsGlobal(search: string): Promise<number> {
-		const where = search
-			? 'WHERE c.text LIKE ? OR u.username LIKE ? OR r.title LIKE ?'
-			: '';
+		const where = search ? 'WHERE c.text LIKE ? OR u.username LIKE ? OR r.title LIKE ?' : '';
 		const params = search ? [`%${search}%`, `%${search}%`, `%${search}%`] : [];
-		const row = await queryOne<{ total: number }>(
-			this.db,
-			`SELECT COUNT(*) as total FROM comments c LEFT JOIN users u ON c.author_uuid = u.uuid LEFT JOIN resources r ON c.resource_uuid = r.uuid ${where}`,
-			params,
-		);
+		const row = await queryOne<{ total: number }>(this.db, `SELECT COUNT(*) as total FROM comments c LEFT JOIN users u ON c.author_uuid = u.uuid LEFT JOIN resources r ON c.resource_uuid = r.uuid ${where}`, params);
 		return row?.total ?? 0;
 	}
 
 	/** A page of all comments, newest first, with author + resource title. */
 	listCommentsGlobal(search: string, limit: number, offset: number): Promise<AdminCommentRow[]> {
-		const where = search
-			? 'WHERE c.text LIKE ? OR u.username LIKE ? OR r.title LIKE ?'
-			: '';
+		const where = search ? 'WHERE c.text LIKE ? OR u.username LIKE ? OR r.title LIKE ?' : '';
 		const params = search ? [`%${search}%`, `%${search}%`, `%${search}%`, limit, offset] : [limit, offset];
 		return queryAll<AdminCommentRow>(
 			this.db,

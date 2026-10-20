@@ -255,21 +255,26 @@
 		"uploadingThumbnail": "Enviando Miniatura..."
 	},
 	"history": {
+		"active": "Ativo",
 		"backToResource": "Voltar ao Recurso",
+		"inactive": "Inativo",
+		"incomplete": "Não há dados guardados suficientes para reconstruir todas as alterações desta revisão.",
+		"no": "Não",
 		"noHistory": "Não há alterações registradas para este recurso.",
 		"noVisibleChanges": "Sem alterações visíveis no conteúdo.",
+		"showUnchanged": "Mostrar entradas sem diferenças registadas",
 		"title": "Histórico de Alterações",
+		"yes": "Sim",
 		"field": {
 			"cat": "Categoria",
 			"desc": "Descrição",
+			"status": "Estado",
 			"title": "Título"
 		},
 		"meta": {
 			"after": "Depois",
 			"before": "Antes",
-			"field": "Campo alterado",
-			"noChanges": "Sem alterações.",
-			"noFields": "Sem campos."
+			"noChanges": "Sem alterações."
 		},
 		"types": {
 			"approval": "Aprovação",

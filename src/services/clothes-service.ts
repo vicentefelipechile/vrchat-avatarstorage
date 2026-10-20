@@ -188,9 +188,18 @@ export class ClothesService {
 			}
 		}
 
+		const fields: Record<string, unknown> = { ...existing, clothing_type: existingTypes };
+		const after: Record<string, unknown> = { ...fields };
+		for (const col of ClothesRepository.EDITABLE_META_COLUMNS) {
+			if (patch[col] !== undefined) after[col] = patch[col] ?? null;
+		}
+		if (hasClothingType) after.clothing_type = clothingTypeVal;
+		const sameTypes = [...existingTypes].sort().join(',') === [...(clothingTypeVal ?? existingTypes)].sort().join(',');
+		if (sameTypes && ClothesRepository.EDITABLE_META_COLUMNS.every((col) => (after[col] ?? '') === (fields[col] ?? ''))) return;
 		const previousData = JSON.stringify({
 			meta_type: 'clothes_meta',
-			fields: { ...existing, clothing_type: existingTypes },
+			fields,
+			after,
 		});
 
 		const statements: D1PreparedStatement[] = [

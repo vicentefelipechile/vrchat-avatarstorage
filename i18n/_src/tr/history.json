@@ -1,19 +1,24 @@
 {
+	"active": "Etkin",
 	"backToResource": "Kaynağa Dön",
+	"inactive": "Devre dışı",
+	"incomplete": "Bu sürümdeki tüm değişiklikleri yeniden oluşturmak için yeterli kayıtlı veri yok.",
+	"no": "Hayır",
 	"noHistory": "Bu kaynak için değişiklik kaydı yok.",
 	"noVisibleChanges": "Görünür içerik değişikliği yok.",
+	"showUnchanged": "Kayıtlı farkı olmayan girdileri göster",
 	"title": "Değişiklik Geçmişi",
+	"yes": "Evet",
 	"field": {
 		"cat": "Kategori",
 		"desc": "Açıklama",
+		"status": "Durum",
 		"title": "Başlık"
 	},
 	"meta": {
 		"after": "Sonra",
 		"before": "Önce",
-		"field": "Değiştirilen Alan",
-		"noChanges": "Değişiklik yok.",
-		"noFields": "Alan yok."
+		"noChanges": "Değişiklik yok."
 	},
 	"types": {
 		"approval": "Onay",

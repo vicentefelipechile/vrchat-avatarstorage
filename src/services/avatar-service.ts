@@ -181,17 +181,21 @@ export class AvatarService {
 		if (!existing) throw new NotFoundError('Avatar metadata not found');
 
 		// Whitelisted partial update — only editable columns, only keys actually present.
+		const fields: Record<string, unknown> = { ...existing };
+		const after = { ...fields };
 		const setClauses: string[] = [];
 		const setBindings: unknown[] = [];
 		for (const col of AvatarRepository.EDITABLE_META_COLUMNS) {
 			if (patch[col] !== undefined) {
 				setClauses.push(`${col} = ?`);
 				setBindings.push(patch[col] ?? null);
+				after[col] = patch[col] ?? null;
 			}
 		}
 		if (setClauses.length === 0) throw new ValidationError('No fields to update');
 
-		const previousData = JSON.stringify({ meta_type: 'avatar_meta', fields: existing });
+		if (AvatarRepository.EDITABLE_META_COLUMNS.every((col) => (fields[col] ?? '') === (after[col] ?? ''))) return;
+		const previousData = JSON.stringify({ meta_type: 'avatar_meta', fields: existing, after });
 
 		await batch(this.db, [
 			this.resources.buildInsertHistory({

@@ -1,19 +1,24 @@
 {
+	"active": "Actief",
 	"backToResource": "Terug naar bron",
+	"inactive": "Inactief",
+	"incomplete": "Er zijn niet genoeg gegevens opgeslagen om alle wijzigingen in deze revisie te reconstrueren.",
+	"no": "Nee",
 	"noHistory": "Geen wijzigingen geregistreerd voor deze bron.",
 	"noVisibleChanges": "Geen zichtbare inhoudswijzigingen.",
+	"showUnchanged": "Vermeldingen zonder vastgelegde verschillen tonen",
 	"title": "Wijzigingsgeschiedenis",
+	"yes": "Ja",
 	"field": {
 		"cat": "Categorie",
 		"desc": "Beschrijving",
+		"status": "Status",
 		"title": "Titel"
 	},
 	"meta": {
 		"after": "Na",
 		"before": "Voor",
-		"field": "Gewijzigd veld",
-		"noChanges": "Geen wijzigingen.",
-		"noFields": "Geen velden."
+		"noChanges": "Geen wijzigingen."
 	},
 	"types": {
 		"approval": "Goedkeuring",

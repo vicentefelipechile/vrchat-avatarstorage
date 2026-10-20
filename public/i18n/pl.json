@@ -255,21 +255,26 @@
 		"uploadingThumbnail": "Przesyłanie miniatury..."
 	},
 	"history": {
+		"active": "Aktywny",
 		"backToResource": "Powrót do zasobu",
+		"inactive": "Nieaktywny",
+		"incomplete": "Brakuje zapisanych danych, aby odtworzyć wszystkie zmiany w tej wersji.",
+		"no": "Nie",
 		"noHistory": "Brak zapisanych zmian dla tego zasobu.",
 		"noVisibleChanges": "Brak widocznych zmian treści.",
+		"showUnchanged": "Pokaż wpisy bez zapisanych różnic",
 		"title": "Historia zmian",
+		"yes": "Tak",
 		"field": {
 			"cat": "Kategoria",
 			"desc": "Opis",
+			"status": "Stan",
 			"title": "Tytuł"
 		},
 		"meta": {
 			"after": "Po",
 			"before": "Przed",
-			"field": "Zmienione pole",
-			"noChanges": "Brak zmian.",
-			"noFields": "Brak pól."
+			"noChanges": "Brak zmian."
 		},
 		"types": {
 			"approval": "Zatwierdzenie",

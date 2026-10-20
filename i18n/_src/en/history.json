@@ -1,19 +1,24 @@
 {
+	"active": "Active",
 	"backToResource": "Back to Resource",
+	"inactive": "Inactive",
+	"incomplete": "There is not enough saved data to reconstruct all changes in this revision.",
+	"no": "No",
 	"noHistory": "No changes recorded for this resource.",
 	"noVisibleChanges": "No visible content changes.",
+	"showUnchanged": "Show entries with no recorded differences",
 	"title": "Change History",
+	"yes": "Yes",
 	"field": {
 		"cat": "Category",
 		"desc": "Description",
+		"status": "Status",
 		"title": "Title"
 	},
 	"meta": {
 		"after": "After",
 		"before": "Before",
-		"field": "Field Changed",
-		"noChanges": "No changes",
-		"noFields": "No fields"
+		"noChanges": "No changes"
 	},
 	"types": {
 		"approval": "Approval",

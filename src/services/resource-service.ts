@@ -21,6 +21,13 @@ import type { AuthUser } from '../auth';
 import { ResourceRepository } from '../repositories/resource-repository';
 import type { ResourceDetailRow } from '../repositories/resource-repository';
 import { NotFoundError, ForbiddenError, ValidationError } from '../domain/errors';
+import type { ResourceHistoryWithActor } from '../types';
+
+// =========================================================================================================
+// Constants
+// =========================================================================================================
+
+const HISTORY_REFERENCE_BATCH_SIZE = 50;
 
 // =========================================================================================================
 // Types
@@ -66,14 +73,7 @@ export class ResourceService {
 		return this.repo.findLatest(limit);
 	}
 
-	async search(params: {
-		page: number;
-		limit: number;
-		category?: string;
-		sortBy?: string;
-		sortOrder: 'ASC' | 'DESC';
-		q?: string;
-	}) {
+	async search(params: { page: number; limit: number; category?: string; sortBy?: string; sortOrder: 'ASC' | 'DESC'; q?: string }) {
 		const rows = await this.repo.search(params);
 		const hasNextPage = rows.length > params.limit;
 		return {
@@ -92,13 +92,42 @@ export class ResourceService {
 		return mapDetail(row, isLoggedIn);
 	}
 
-	async history(uuid: string) {
+	async history(uuid: string): Promise<ResourceHistoryWithActor[]> {
 		const rows = await this.repo.findHistory(uuid);
-		return rows.map((h) => ({
-			...h,
-			created_at: h.created_at * 1000,
-			actor: { username: h.username, avatar_url: h.avatar_url },
-			previous_data: JSON.parse(h.previous_data),
+		const entries = rows.map((h) => {
+			let previousData: Record<string, unknown> | null = null;
+			try {
+				const parsed: unknown = JSON.parse(h.previous_data);
+				if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) previousData = parsed as Record<string, unknown>;
+			} catch (error) {
+				console.error('Invalid history snapshot:', h.uuid, error);
+			}
+			return {
+				uuid: h.uuid,
+				change_type: h.change_type,
+				created_at: h.created_at * 1000,
+				actor: { username: h.username, avatar_url: h.avatar_url },
+				previous_data: previousData,
+			};
+		});
+		const entryReferences = entries.map((entry) => {
+			const references = new Set<string>();
+			for (const fields of [entry.previous_data?.fields, entry.previous_data?.after]) {
+				if (!fields || typeof fields !== 'object') continue;
+				for (const [key, value] of Object.entries(fields)) {
+					if ((key === 'author_uuid' || key === 'base_avatar_uuid') && typeof value === 'string') references.add(value);
+				}
+			}
+			return [...references];
+		});
+		const ids = [...new Set(entryReferences.flat())];
+		const labels: Record<string, string> = {};
+		for (let offset = 0; offset < ids.length; offset += HISTORY_REFERENCE_BATCH_SIZE) {
+			for (const row of await this.repo.findHistoryReferenceLabels(ids.slice(offset, offset + HISTORY_REFERENCE_BATCH_SIZE))) labels[row.uuid] = row.label;
+		}
+		return entries.map((entry, index) => ({
+			...entry,
+			reference_labels: Object.fromEntries(entryReferences[index].filter((id) => labels[id]).map((id) => [id, labels[id]])),
 		}));
 	}
 
@@ -159,27 +188,56 @@ export class ResourceService {
 		const title = input.title ?? resource.title;
 		const description = input.description ?? resource.description;
 		const category = input.category ?? resource.category;
-		const isActive =
-			isAdmin && typeof input.is_active === 'number' && (input.is_active === 0 || input.is_active === 1)
-				? input.is_active
-				: resource.is_active;
+		const isActive = isAdmin && typeof input.is_active === 'number' && (input.is_active === 0 || input.is_active === 1) ? input.is_active : resource.is_active;
 
 		const statements: D1PreparedStatement[] = [];
+		const existingLinks = input.new_links?.length ? await this.repo.findLinks(uuid) : [];
 
 		// History snapshot (admin edits only)
 		if (isAdmin) {
-			const previousData = JSON.stringify({
+			const before: Record<string, unknown> = {
 				title: resource.title,
 				description: resource.description,
 				category: resource.category,
-			});
+			};
+			const after: Record<string, unknown> = { title, description, category };
+			if (input.thumbnail_uuid !== undefined) {
+				before.thumbnail_uuid = resource.thumbnail_uuid;
+				after.thumbnail_uuid = input.thumbnail_uuid;
+			}
+			if (input.reference_image_uuid !== undefined) {
+				before.reference_image_uuid = resource.reference_image_uuid;
+				after.reference_image_uuid = input.reference_image_uuid;
+			}
+			if (input.gallery_media_uuids !== undefined) {
+				before.gallery_media_uuids = await this.repo.findGalleryMediaUuids(uuid);
+				after.gallery_media_uuids = [...input.gallery_media_uuids].sort();
+			}
+			if (input.new_links?.length) {
+				const links = existingLinks.map((link) => ({ link_url: link.link_url, link_title: link.link_title, link_type: link.link_type }));
+				before.links = links;
+				after.links = [...links, ...input.new_links.map((link) => ({ link_url: link.link_url, link_title: link.link_title ?? null, link_type: link.link_type ?? 'general' }))];
+			}
+			if (Object.keys(before).some((key) => JSON.stringify(before[key] ?? '') !== JSON.stringify(after[key] ?? ''))) {
+				statements.push(
+					this.repo.buildInsertHistory({
+						uuid: crypto.randomUUID(),
+						resource_uuid: uuid,
+						actor_uuid: user.uuid,
+						change_type: 'content_edit',
+						previous_data: JSON.stringify({ ...before, after }),
+					}),
+				);
+			}
+		}
+		if (isActive !== resource.is_active) {
 			statements.push(
 				this.repo.buildInsertHistory({
 					uuid: crypto.randomUUID(),
 					resource_uuid: uuid,
 					actor_uuid: user.uuid,
-					change_type: 'content_edit',
-					previous_data: previousData,
+					change_type: 'approval',
+					previous_data: JSON.stringify({ is_active: resource.is_active, after: { is_active: isActive } }),
 				}),
 			);
 		}
@@ -188,8 +246,7 @@ export class ResourceService {
 
 		// New links (appended after the current max display_order)
 		if (input.new_links && input.new_links.length > 0) {
-			const existing = await this.repo.findLinks(uuid);
-			let nextOrder = (existing.at(-1)?.display_order ?? 0) + 1;
+			let nextOrder = (existingLinks.at(-1)?.display_order ?? 0) + 1;
 			for (const link of input.new_links) {
 				statements.push(
 					this.repo.buildInsertLink({
@@ -308,7 +365,7 @@ function mapDetail(row: ResourceDetailRow, isLoggedIn: boolean) {
 		mediaFiles,
 		canDownload: isLoggedIn,
 		links: isLoggedIn ? allLinks : publicLinks,
-		downloadUrl: isLoggedIn ? (downloadLinks[0] as { link_url?: string } | undefined)?.link_url ?? null : null,
+		downloadUrl: isLoggedIn ? ((downloadLinks[0] as { link_url?: string } | undefined)?.link_url ?? null) : null,
 		backupUrls: isLoggedIn ? downloadLinks.slice(1).map((l) => l.link_url) : [],
 	};
 }
@@ -318,6 +375,7 @@ function mapMeta(r: Record<string, unknown>): Record<string, unknown> | null {
 	if (cat === 'avatars' && r.av_gender != null) {
 		return {
 			avatar_gender: r.av_gender,
+			author_uuid: r.av_author_uuid,
 			avatar_size: r.av_avatar_size,
 			avatar_type: r.av_avatar_type,
 			is_nsfw: r.av_is_nsfw,

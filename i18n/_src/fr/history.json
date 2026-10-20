@@ -1,19 +1,24 @@
 {
+	"active": "Actif",
 	"backToResource": "Retour à la ressource",
+	"inactive": "Inactif",
+	"incomplete": "Les données enregistrées ne suffisent pas à reconstituer toutes les modifications de cette révision.",
+	"no": "Non",
 	"noHistory": "Aucun changement enregistré pour cette ressource.",
 	"noVisibleChanges": "Aucun changement visible.",
+	"showUnchanged": "Afficher les entrées sans différences enregistrées",
 	"title": "Historique des modifications",
+	"yes": "Oui",
 	"field": {
 		"cat": "Catégorie",
 		"desc": "Description",
+		"status": "État",
 		"title": "Titre"
 	},
 	"meta": {
 		"after": "Après",
 		"before": "Avant",
-		"field": "Champ modifié",
-		"noChanges": "Aucune modification.",
-		"noFields": "Aucun champ."
+		"noChanges": "Aucune modification."
 	},
 	"types": {
 		"approval": "Approbation",

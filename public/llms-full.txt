@@ -316,7 +316,7 @@ No parameters.
 
 ### `GET /api/resources/:uuid/history`
 
-**Resource edit history** -  Chronological edit history for a resource. Requires authentication.
+**Resource edit history** - Resource revisions, newest first, with millisecond timestamps, actor information, parsed previous_data and reference_labels for linked authors/base avatars. New snapshots include an after object; legacy snapshots contain only the previous state. Invalid snapshots return previous_data: null without hiding other revisions. Requires authentication.
 
 - Auth: Auth required | Rate limit: global | Visibility: private
 

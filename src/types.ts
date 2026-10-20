@@ -192,6 +192,7 @@ export type HistoryChangeType = 'content_edit' | 'meta_edit' | 'approval';
 export interface MetaEditSnapshot {
 	meta_type: 'avatar_meta' | 'asset_meta' | 'clothes_meta';
 	fields: Record<string, unknown>;
+	after?: Record<string, unknown>;
 }
 
 export interface ResourceHistory {
@@ -203,9 +204,15 @@ export interface ResourceHistory {
 	created_at: number;
 }
 
-export interface ResourceHistoryWithActor extends ResourceHistory {
+export interface ResourceHistoryWithActor {
+	uuid: string;
+	change_type: string;
+	/** API timestamps are Unix milliseconds. */
+	created_at: number;
+	previous_data: Record<string, unknown> | null;
+	reference_labels: Record<string, string>;
 	actor: {
-		username: string;
+		username: string | null;
 		avatar_url: string | null;
 	};
 }

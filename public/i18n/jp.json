@@ -255,21 +255,26 @@
 		"uploadingThumbnail": "サムネイルをアップロード中..."
 	},
 	"history": {
+		"active": "有効",
 		"backToResource": "リソースに戻る",
+		"inactive": "無効",
+		"incomplete": "保存されたデータが不足しているため、この版のすべての変更を復元できません。",
+		"no": "いいえ",
 		"noHistory": "このリソースの変更履歴はありません。",
 		"noVisibleChanges": "コンテンツに目に見える変更はありません。",
+		"showUnchanged": "差分が記録されていない項目を表示",
 		"title": "変更履歴",
+		"yes": "はい",
 		"field": {
 			"cat": "カテゴリー",
 			"desc": "説明",
+			"status": "状態",
 			"title": "タイトル"
 		},
 		"meta": {
 			"after": "後",
 			"before": "前",
-			"field": "変更されたフィールド",
-			"noChanges": "変更なし。",
-			"noFields": "フィールドなし。"
+			"noChanges": "変更なし。"
 		},
 		"types": {
 			"approval": "承認",

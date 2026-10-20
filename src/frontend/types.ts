@@ -75,6 +75,7 @@ export interface ResourceAuthor {
 // =========================================================================
 
 export interface AvatarMeta {
+	author_uuid?: string | null;
 	avatar_gender?: string | null;
 	avatar_size?: string | null;
 	avatar_type?: string | null;
@@ -150,6 +151,39 @@ export interface Comment {
 	author: string;
 	author_avatar: string;
 	timestamp: number;
+}
+
+// =========================================================================================================
+// Resource history
+// =========================================================================================================
+
+export type HistoryFields = Record<string, unknown>;
+
+export interface HistoryEntry {
+	uuid: string;
+	change_type: string;
+	/** API timestamps are Unix milliseconds. */
+	created_at: number;
+	previous_data: unknown;
+	actor?: { username: string | null; avatar_url?: string | null };
+	reference_labels?: Record<string, string>;
+}
+
+export interface HistoryFieldChange {
+	key: string;
+	before: unknown;
+	after: unknown;
+}
+
+export interface HistoryRevision {
+	entry: HistoryEntry;
+	changes: HistoryFieldChange[];
+	incomplete: boolean;
+}
+
+export interface DiffPart {
+	type: 'equal' | 'insert' | 'delete';
+	text: string;
 }
 
 export interface BlogPost {
