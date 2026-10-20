@@ -4,23 +4,17 @@
 
 import { t } from '../core/i18n';
 import { navigateTo } from '../core/router';
-import type { RouteContext } from '../types';
 
 // =========================================================================
 // View
 // =========================================================================
 
-export async function oauthRegisterView(ctx: RouteContext): Promise<string> {
+export async function oauthRegisterView(): Promise<string> {
 	document.title = `VRCStorage — ${t('oauthRegister.title')}`;
 
 	if (window.appState.isLoggedIn) {
 		navigateTo('/');
 		return '';
-	}
-
-	const token = ctx.query.get('token');
-	if (!token) {
-		return `<div class="login-box"><p class="danger">Invalid or missing registration token.</p></div>`;
 	}
 
 	return `
@@ -56,10 +50,7 @@ export async function oauthRegisterView(ctx: RouteContext): Promise<string> {
 // After
 // =========================================================================
 
-export function oauthRegisterAfter(ctx: RouteContext): void {
-	const token = ctx.query.get('token');
-	if (!token) return;
-
+export function oauthRegisterAfter(): void {
 	const form = document.getElementById('oauth-register-form') as HTMLFormElement | null;
 	const errorDiv = document.getElementById('oauth-register-error')!;
 	const btn = document.getElementById('oauth-register-btn') as HTMLButtonElement;
@@ -87,14 +78,14 @@ export function oauthRegisterAfter(ctx: RouteContext): void {
 			const res = await fetch('/api/auth/complete', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ token, username }),
+				body: JSON.stringify({ username }),
 			});
 			const data = (await res.json()) as { success?: boolean; error?: string };
 
 			if (res.ok && data.success) {
 				localStorage.removeItem('auth_state');
 				window.location.href = '/';
-			} else if (res.status === 410) {
+			} else if (res.status === 410 || res.status === 401) {
 				showError(t('oauthRegister.errorExpired'));
 			} else if (res.status === 409) {
 				showError(t('oauthRegister.errorTaken'));

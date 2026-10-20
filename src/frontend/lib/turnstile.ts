@@ -16,7 +16,7 @@ async function getSiteKey(): Promise<string | null> {
 	}
 }
 
-export async function renderTurnstile(selector: string): Promise<void> {
+export async function renderTurnstile(selector: string): Promise<string | undefined> {
 	if (!window.turnstile) {
 		console.warn('Turnstile not loaded yet.');
 		return;
@@ -32,5 +32,5 @@ export async function renderTurnstile(selector: string): Promise<void> {
 	if (!container) return;
 
 	container.innerHTML = '';
-	window.turnstile.render(selector, { sitekey: key.trim() });
+	return window.turnstile.render(selector, { sitekey: key.trim() });
 }

@@ -40,7 +40,7 @@ const OAUTH_STATE_TTL = 60 * 10; // 10 minutes
 const PENDING_OAUTH_TOKEN_COOKIE = 'oauth_pending_token';
 
 const COMPLETE_SCHEMA = z.object({
-	token: z.string().min(1).max(128),
+	token: z.string().min(1).max(128).optional(),
 	username: z.string().min(3).max(32).regex(USERNAME_ALPHANUMERIC, 'Username may only contain letters, numbers, and underscores'),
 });
 
@@ -144,9 +144,7 @@ oauth.post('/complete', async (c) => {
 
 	const { token: tokenFromBody, username } = parsed.data;
 
-	// Accept the token from either the cookie (new secure path) or the request body (legacy path).
-	// The cookie path is preferred; the body fallback exists for the transition period while the
-	// frontend is updated to not send the token in the request body.
+	// Prefer the httpOnly cookie; accept older clients still sending the token in the body.
 	const token = tokenFromCookie ?? tokenFromBody;
 	if (!token) return fail(c, 'Missing registration token', 401);
 

@@ -116,6 +116,7 @@ export async function settingsView(_ctx: RouteContext): Promise<string> {
 								<small class="settings-hint">${t('settings.2fa_code_hint')}</small>
 							</div>
 						</div>
+						<div id="turnstile-password" class="mb-10"></div>
 						<button id="change-password-btn" class="btn">${icons.lock(16)} ${t('settings.change_password')}</button>
 					</section>
 
@@ -460,6 +461,11 @@ function setupSectionNav(): void {
 // =========================================================================
 
 async function loadPasswordSection(): Promise<void> {
+	let passwordWidgetId: string | undefined;
+	document.querySelector<HTMLButtonElement>('.settings-nav-item[data-panel="security"]')?.addEventListener('click', async () => {
+		if (!passwordWidgetId) passwordWidgetId = await renderTurnstile('#turnstile-password');
+	});
+
 	// Detect if user has 2FA enabled to show/hide the code field
 	let has2FA = false;
 	try {
@@ -504,7 +510,7 @@ async function loadPasswordSection(): Promise<void> {
 			return;
 		}
 
-		const body: Record<string, string> = { new_password: newPw };
+		const body: Record<string, string> = { new_password: newPw, token: passwordWidgetId ? (window.turnstile?.getResponse(passwordWidgetId) ?? '') : '' };
 		if (hasPassword) body.current_password = currentPw;
 		if (has2FA && twoFactorCode) body.two_factor_code = twoFactorCode;
 
@@ -528,6 +534,7 @@ async function loadPasswordSection(): Promise<void> {
 		} catch {
 			showToast(t('common.networkError'), 'error');
 		} finally {
+			if (passwordWidgetId) window.turnstile?.reset(passwordWidgetId);
 			restore();
 		}
 	});
