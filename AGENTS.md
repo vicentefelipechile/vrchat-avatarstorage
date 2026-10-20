@@ -13,6 +13,10 @@ This guide is for agentic coding agents (like yourself) operating in the VRCStor
 - **Don't celebrate the user's feedback.** Receiving a correction is normal. Treat it as such.
 - **Always be honest.** Give the real answer, even if it's uncomfortable. Never soften the truth to avoid conflict. A wrong answer delivered kindly is still wrong.
 
+## Delegation
+
+- Do not use subagents or delegate work to other agents. Inspection, implementation, review, and verification must be performed directly by the primary agent.
+
 ## Tech Stack
 
 - **Runtime:** [Cloudflare Workers](https://developers.cloudflare.com/workers/)
@@ -302,6 +306,7 @@ src/
       meta-label.ts       # metaLabel(namespace, value) — localized resource metadata badges
       time.ts             # TimeUnit enum (cache TTLs, intervals)
       diff.ts             # Content diff utilities (HistoryView)
+      resource-history.ts # Reconstructs legacy resource revisions and reads saved before/after snapshots
     features/             # Stateful, self-contained subsystems. May use core + lib; never import a view.
       feed.ts             # FeedClient — live WebSocket to /api/feed/live (suspends the poller while up)
       updates.ts          # Polling fallback — GET /api/updates cursor poller
@@ -354,6 +359,7 @@ public/
     favorites.css         # Favorites view: collection tabs, compact cards, drag-and-drop
     search.css            # Search bar and filter panel styles
     settings.css          # Settings view: sidebar navigation + section panels
+    history.css           # Resource history: revision cards and responsive before/after comparisons
   sw.js                   # Service worker
   processing/             # Mirrored copies of the CDN "processing" placeholders ({lang}.webp)
   test/                   # Sample images used by the DB seed script (npm run seed)
@@ -669,6 +675,8 @@ A media record is considered **in use** if its `uuid` or `r2_key` appears in any
 | Resource thumbnail                 | `resources.thumbnail_uuid`                         |
 | Resource reference image           | `resources.reference_image_uuid`                   |
 | Resource gallery file              | `resource_n_media.media_uuid`                      |
+| Resource revision snapshot         | `INSTR(resource_history.previous_data, m.uuid)` or `m.r2_key` |
+| Resource description / local link  | `INSTR(resources.description / resource_links.link_url, m.uuid)` or `m.r2_key` |
 | Blog post cover image              | `blog_posts.cover_image_uuid`                      |
 | User avatar                        | `INSTR(users.avatar_url, m.r2_key)`                |
 | Image embedded in resource comment | `INSTR(comments.text, m.r2_key)`                   |
@@ -679,6 +687,8 @@ A media record is considered **in use** if its `uuid` or `r2_key` appears in any
 >
 > - Images in **active** comments are protected from deletion.
 > - Once a comment is deleted, the image becomes orphaned and will be removed by a cron run — but only while it falls inside the 24h–48h age window (see above). An image whose media is already older than 48h when its last reference is removed will **not** be auto-cleaned.
+
+Resource revision snapshots retain referenced media so before/after previews remain available. Both resource-deletion paths collect current and historical media before deleting the resource; after its history cascades away, they delete only media with no remaining references.
 
 #### Rules for modifying this system
 
