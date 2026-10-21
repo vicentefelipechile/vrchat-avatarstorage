@@ -2,17 +2,17 @@
 // views/LoginView.ts — Login form with Google OAuth and 2FA support
 // =========================================================================
 // FLOW
-//  Step 1 — POST /api/auth/login with { username, password, token }
+//  Step 1 — Auth.Login with { username, password, token }
 //           If res.ok → full session created (no 2FA) → redirect /
 //           If requires_2fa === true → store pre_auth_token, reveal step 2
-//  Step 2 — POST /api/auth/login/2fa with { username, code, pre_auth_token }
+//  Step 2 — Auth.LoginTwoFactor with { username, code, pre_auth_token }
 //           If res.ok → full session created → redirect /
 // =========================================================================
 
 import { t } from '../core/i18n';
+import { api, VrcStorageApiError } from '../api';
 import { renderTurnstile, showToast, loadingBtn } from '../lib/utils';
 import { navigateTo } from '../core/router';
-import { DataCache } from '../core/cache';
 import type { RouteContext } from '../types';
 
 // =========================================================================
@@ -115,21 +115,9 @@ export function loginAfter(ctx: RouteContext): void {
 		const token = new FormData(form).get('cf-turnstile-response') as string;
 
 		try {
-			const res = await fetch('/api/auth/login', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ username, password, token }),
-			});
-			const data = (await res.json()) as {
-				success?: boolean;
-				requires_2fa?: boolean;
-				pre_auth_token?: string;
-				username?: string;
-				error?: string;
-			};
+			const data = await api.Auth.Login({ username, password, token });
 
-			// Check requires_2fa FIRST — the backend returns 200 for this case too,
-			// so we must inspect the payload before treating res.ok as a full login.
+			// A successful HTTP response can still require the second authentication step.
 			if (data.requires_2fa && data.pre_auth_token) {
 				// Store token in closure — never persisted to localStorage
 				_preAuthToken = data.pre_auth_token;
@@ -145,18 +133,12 @@ export function loginAfter(ctx: RouteContext): void {
 				return;
 			}
 
-			if (res.ok) {
-				sessionStorage.setItem('flash_toast', JSON.stringify({ message: t('login.success'), type: 'success' }));
-				localStorage.setItem('auth_state', JSON.stringify({ isLoggedIn: true, isAdmin: false, user: null }));
-				DataCache.clearScope('/api/resources');
-				window.location.href = '/';
-				return;
-			}
-
-			showToast(data.error ?? t('login.error'), 'error');
+			sessionStorage.setItem('flash_toast', JSON.stringify({ message: t('login.success'), type: 'success' }));
+			localStorage.setItem('auth_state', JSON.stringify({ isLoggedIn: true, isAdmin: false, user: null }));
+			window.location.href = '/';
+		} catch (error) {
+			showToast(error instanceof Error ? error.message : t('common.networkError'), 'error');
 			window.turnstile?.reset();
-		} catch {
-			showToast(t('common.networkError'), 'error');
 		} finally {
 			restore();
 		}
@@ -178,25 +160,14 @@ export function loginAfter(ctx: RouteContext): void {
 		}
 
 		try {
-			const res = await fetch('/api/auth/login/2fa', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ username: _username, code, pre_auth_token: _preAuthToken }),
-			});
-			const data = (await res.json()) as { success?: boolean; error?: string };
-
-			if (res.ok) {
-				sessionStorage.setItem('flash_toast', JSON.stringify({ message: t('login.success'), type: 'success' }));
-				localStorage.setItem('auth_state', JSON.stringify({ isLoggedIn: true, isAdmin: false, user: null }));
-				DataCache.clearScope('/api/resources');
-				window.location.href = '/';
-				return;
-			}
-
-			showToast(data.error ?? t('login.error'), 'error');
-
-			// If token expired, force back to step 1
-			if (res.status === 401) {
+			await api.Auth.LoginTwoFactor({ username: _username, code, pre_auth_token: _preAuthToken });
+			sessionStorage.setItem('flash_toast', JSON.stringify({ message: t('login.success'), type: 'success' }));
+			localStorage.setItem('auth_state', JSON.stringify({ isLoggedIn: true, isAdmin: false, user: null }));
+			window.location.href = '/';
+		} catch (error) {
+			showToast(error instanceof Error ? error.message : t('common.networkError'), 'error');
+			// The backend consumes the pre-auth token on every verification attempt.
+			if (error instanceof VrcStorageApiError && error.status === 401) {
 				_preAuthToken = '';
 				_username = '';
 				twofaForm.style.display = 'none';
@@ -205,8 +176,6 @@ export function loginAfter(ctx: RouteContext): void {
 				oauthDiv.style.display = '';
 				window.turnstile?.reset();
 			}
-		} catch {
-			showToast(t('common.networkError'), 'error');
 		} finally {
 			restore();
 		}

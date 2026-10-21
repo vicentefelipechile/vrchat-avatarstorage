@@ -3,10 +3,11 @@
 // =========================================================================
 
 import type { RouteContext, Resource, ResourceLink, MediaFile } from '../types';
-import { htmlDecode, renderMarkdown, showToast, mediaUrl, videoUrl, uploadChunked, CHUNK_SIZE } from '../lib/utils';
+import { htmlDecode, renderMarkdown, showToast, mediaUrl, videoUrl } from '../lib/utils';
 import { navigateTo } from '../core/router';
-import { DataCache } from '../core/cache';
 import { t } from '../core/i18n';
+import { api, CHUNK_SIZE } from '../api';
+import type { ResourceUpdate } from '../api/types';
 import { showConfirm } from '../lib/confirm';
 
 const SIZE_LIMITS = {
@@ -22,33 +23,6 @@ function syncInputFiles(input: HTMLInputElement, files: File[]): void {
 	const dt = new DataTransfer();
 	files.forEach((f) => dt.items.add(f));
 	input.files = dt.files;
-}
-
-// =========================================================================
-// Helpers — Upload
-// =========================================================================
-
-function uploadWithProgress(url: string, fd: FormData, onProgress: (p: number) => void): Promise<{ r2_key: string; media_uuid: string }> {
-	return new Promise((resolve, reject) => {
-		const xhr = new XMLHttpRequest();
-		xhr.open('PUT', url);
-		xhr.upload.onprogress = (ev) => {
-			if (ev.lengthComputable) onProgress((ev.loaded / ev.total) * 100);
-		};
-		xhr.onload = () => {
-			if (xhr.status >= 200 && xhr.status < 300) {
-				try {
-					resolve(JSON.parse(xhr.responseText) as { r2_key: string; media_uuid: string });
-				} catch {
-					reject(new Error('Invalid JSON'));
-				}
-			} else {
-				reject(new Error(`Upload failed ${xhr.status}`));
-			}
-		};
-		xhr.onerror = () => reject(new Error('Network error'));
-		xhr.send(fd);
-	});
 }
 
 // =========================================================================
@@ -269,15 +243,13 @@ function createImagePreview(src: string, mediaType: 'image' | 'video' | 'file', 
 	const wrap = document.createElement('div');
 	wrap.style.cssText = 'position:relative;display:inline-block;border:2px solid var(--border-color);padding:10px;margin:5px;background:var(--bg-card);vertical-align:top';
 
-	const media = mediaType === 'video'
-		? document.createElement('video')
-		: document.createElement('img');
+	const media = mediaType === 'video' ? document.createElement('video') : document.createElement('img');
 	try {
 		const parsedSrc = new URL(src, window.location.origin);
 		const isBlob = parsedSrc.protocol === 'blob:';
 		const isCdn = parsedSrc.protocol === 'https:' && parsedSrc.hostname === 'cdn.vrcstorage.lat';
 		const isLocalCdn = parsedSrc.protocol === 'http:' && (parsedSrc.hostname === 'localhost' || parsedSrc.hostname === '127.0.0.1') && parsedSrc.port === '8788';
-		const isDownload = parsedSrc.origin === window.location.origin && parsedSrc.pathname.startsWith('/api/download/');
+		const isDownload = api.Resources.DownloadKey(src) !== null;
 		if (isBlob || isCdn || isLocalCdn || isDownload) media.setAttribute('src', parsedSrc.href);
 	} catch {
 		// Ignore invalid preview URLs.
@@ -335,39 +307,10 @@ function setCheckbox(id: string, value: number | boolean | null | undefined): vo
 // Link management helpers
 // =========================================================================
 
-function buildLinkRow(link: ResourceLink, _index: number): string {
-	const linkUuid = link.uuid || '';
-	const title = link.link_title || '';
-	const url = link.link_url;
-	const isR2File = link.link_type === 'download' && url.startsWith('/api/download/');
-	// Legacy string builder — kept for reference. Values are escaped; prefer createLinkRow() which avoids HTML-interpreting tainted data entirely.
-	const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-	return `<div class="link-row" data-link-uuid="${esc(linkUuid)}" data-r2-file="${isR2File ? '1' : '0'}" style="border:1px solid var(--border-color);padding:12px;margin-bottom:8px;background:var(--bg-card)">
-		<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-			<div style="display:flex;flex-direction:column;gap:4px">
-				<button type="button" class="btn-link-up btn btn-sm" style="padding:2px 6px;font-family:inherit" title="${t('edit.moveUp') ?? 'Up'}">▲</button>
-				<button type="button" class="btn-link-down btn btn-sm" style="padding:2px 6px;font-family:inherit" title="${t('edit.moveDown') ?? 'Down'}">▼</button>
-			</div>
-			<div style="flex:1;min-width:140px">
-				<label style="font-size:0.8em;color:var(--text-muted)">${t('edit.linkTitle')}</label>
-				<input type="text" class="link-title-input form-control" value="${esc(htmlDecode(title))}" style="width:100%;${isR2File ? 'background-color:var(--bg-dropdown);' : ''}" ${isR2File ? 'readonly' : ''}>
-			</div>
-			<div style="flex:2;min-width:180px">
-				<label style="font-size:0.8em;color:var(--text-muted)">${t('edit.linkUrl')}</label>
-				<input type="text" class="link-url-input form-control" value="${esc(htmlDecode(url))}" style="width:100%;${isR2File ? 'background-color:var(--bg-dropdown);' : ''}" ${isR2File ? 'readonly' : ''}>
-			</div>
-			<div style="display:flex;gap:6px;align-items:flex-end">
-				${isR2File ? '' : `<button type="button" class="btn-link-save btn btn-sm" style="font-family:inherit">${t('edit.linkSave')}</button>`}
-				<button type="button" class="btn-link-delete btn btn-sm btn-danger" style="font-family:inherit">${t('admin.delete')}</button>
-			</div>
-		</div>
-	</div>`;
-}
-
 function createLinkRow(link: ResourceLink): HTMLElement {
 	const title = htmlDecode(link.link_title || '');
 	const url = htmlDecode(link.link_url);
-	const isR2File = link.link_type === 'download' && url.startsWith('/api/download/');
+	const isR2File = link.link_type === 'download' && api.Resources.DownloadKey(url) !== null;
 	const row = document.createElement('div');
 	row.className = 'link-row';
 	row.dataset.linkUuid = link.uuid || '';
@@ -520,7 +463,7 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 
 	let resource: Resource;
 	try {
-		resource = (await DataCache.fetch(`/api/resources/${id}`)) as Resource;
+		resource = await api.Resources.Get(id, { cache: { ttl: 60000 } });
 		if (!resource) throw new Error('Not found');
 		document.title = `VRCStorage \u2014 Edit ${resource.title}`;
 	} catch (e) {
@@ -555,17 +498,11 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 
 	if (isAdmin) {
 		const cat = resource.category;
-		const endpointMap: Record<string, string> = {
-			avatars: `/api/avatars/${id}`,
-			assets: `/api/assets/${id}`,
-			clothes: `/api/clothes/${id}`,
-		};
-		const metaEndpoint = endpointMap[cat];
-		if (metaEndpoint) {
+		const categoryApi = cat === 'avatars' ? api.Categories.Avatars : cat === 'assets' ? api.Categories.Assets : cat === 'clothes' ? api.Categories.Clothes : null;
+		if (categoryApi) {
 			try {
-				const metaRes = await fetch(metaEndpoint);
-				if (metaRes.ok) {
-					const meta = (await metaRes.json()) as Record<string, unknown>;
+				const meta = (await categoryApi.Get(id)) as Record<string, unknown>;
+				if (meta) {
 					if (cat === 'avatars') {
 						setRadioValue('av-gender', meta.gender as string);
 						setRadioValue('av-body-size', meta.avatar_size as string);
@@ -593,7 +530,7 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 						setCheckbox('asset-nsfw', meta.is_nsfw as number);
 					} else if (cat === 'clothes') {
 						setRadioValue('cl-gender', meta.gender_fit as string);
-						const cTypes = (meta.clothing_type as unknown) as string[] | string | undefined;
+						const cTypes = meta.clothing_type as unknown as string[] | string | undefined;
 						const arr = Array.isArray(cTypes) ? cTypes : cTypes ? [cTypes] : [];
 						for (const ct of arr) {
 							const el = document.querySelector<HTMLInputElement>(`input[name="clothes-type"][value="${ct}"]`);
@@ -655,8 +592,7 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 			}
 			authorDebounce = setTimeout(async () => {
 				try {
-					const res = await fetch(`/api/authors/search?q=${encodeURIComponent(q)}`);
-					const data = (await res.json()) as { uuid: string; name: string; slug: string }[];
+					const data = await api.Authors.Search(q);
 					if (!data.length) {
 						authorSuggestions.style.display = 'none';
 						return;
@@ -710,8 +646,7 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 			}
 			baseDebounce = setTimeout(async () => {
 				try {
-					const res = await fetch(`/api/avatars/search?q=${encodeURIComponent(q)}&limit=10`);
-					const items = (await res.json()) as { uuid: string; title: string }[];
+					const items = await api.Categories.Avatars.Search(q, 10);
 					if (!items.length) {
 						clothesBaseSuggestions.style.display = 'none';
 						return;
@@ -762,9 +697,7 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 	const currentThumbnailEl = document.getElementById('current-thumbnail')!;
 	if (resource.thumbnail_media_uuid) {
 		const thumbSrc = mediaUrl(resource.thumbnail_media_uuid, 'med');
-		currentThumbnailEl.appendChild(
-			createImagePreview(thumbSrc, 'image', t('upload.thumbnail')),
-		);
+		currentThumbnailEl.appendChild(createImagePreview(thumbSrc, 'image', t('upload.thumbnail')));
 	} else {
 		currentThumbnailEl.innerHTML = `<p style="color:var(--text-muted)">${t('edit.noThumbnail')}</p>`;
 	}
@@ -776,9 +709,7 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 	const currentReferenceEl = document.getElementById('current-reference')!;
 	if (resource.reference_image_media_uuid) {
 		const refSrc = mediaUrl(resource.reference_image_media_uuid, 'med');
-		currentReferenceEl.appendChild(
-			createImagePreview(refSrc, 'image', t('edit.currentReference')),
-		);
+		currentReferenceEl.appendChild(createImagePreview(refSrc, 'image', t('edit.currentReference')));
 	} else {
 		currentReferenceEl.innerHTML = `<p style="color:var(--text-muted)">${t('edit.noReference')}</p>`;
 	}
@@ -801,14 +732,8 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 		}
 
 		for (const mf of visibleFiles) {
-			// Media → CDN by uuid: a video plays from its normalized MP4, an image from its `med` variant;
-			// a private 'file' would stay on /api/download.
-			const src =
-				mf.uuid && mf.media_type === 'video'
-					? videoUrl(mf.uuid)
-					: mf.uuid && mf.media_type === 'image'
-						? mediaUrl(mf.uuid, 'med')
-						: `/api/download/${mf.r2_key}`;
+			// Public previews use the CDN; private files keep their authenticated download URL.
+			const src = mf.uuid && mf.media_type === 'video' ? videoUrl(mf.uuid) : mf.uuid && mf.media_type === 'image' ? mediaUrl(mf.uuid, 'med') : api.Resources.DownloadUrl(mf.r2_key);
 			currentGalleryEl.appendChild(
 				createImagePreview(src, mf.media_type, undefined, false, () => {
 					removedMediaUuids.add(mf.uuid || '');
@@ -881,28 +806,15 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 				saveBtn.addEventListener('click', async () => {
 					saveBtn.disabled = true;
 					try {
-						const res = await fetch(`/api/resources/${id}/links/${linkUuid}`, {
-							method: 'PUT',
-							headers: { 'Content-Type': 'application/json' },
-							body: JSON.stringify({
-								link_title: titleInput.value || null,
-								link_url: urlInput.value,
-							}),
-						});
-						if (res.ok) {
-							showToast(t('edit.linkSaved'), 'success');
-							const idx = allLinks.findIndex((l) => l.uuid === linkUuid);
-							if (idx !== -1) {
-								allLinks[idx].link_title = titleInput.value || null;
-								allLinks[idx].link_url = urlInput.value;
-							}
-							DataCache.clear(`/api/resources/${id}`);
-						} else {
-							const data = (await res.json()) as { error?: string };
-							showToast(data.error ?? t('edit.linkSaveError'), 'error');
+						await api.Resources.UpdateLink(id, linkUuid, { link_title: titleInput.value || null, link_url: urlInput.value });
+						showToast(t('edit.linkSaved'), 'success');
+						const idx = allLinks.findIndex((l) => l.uuid === linkUuid);
+						if (idx !== -1) {
+							allLinks[idx].link_title = titleInput.value || null;
+							allLinks[idx].link_url = urlInput.value;
 						}
-					} catch {
-						showToast(t('edit.linkSaveError'), 'error');
+					} catch (error) {
+						showToast(error instanceof Error ? error.message : t('edit.linkSaveError'), 'error');
 					}
 					saveBtn.disabled = false;
 				});
@@ -912,21 +824,14 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 				if (!(await showConfirm({ message: t('edit.confirmDeleteLink') }))) return;
 				deleteBtn.disabled = true;
 				try {
-					const res = await fetch(`/api/resources/${id}/links/${linkUuid}`, { method: 'DELETE' });
-					if (res.ok) {
-						showToast(t('edit.linkDeleted'), 'success');
-						const idx = allLinks.findIndex((l) => l.uuid === linkUuid);
-						if (idx !== -1) allLinks.splice(idx, 1);
-						reorderDirty = true;
-						DataCache.clear(`/api/resources/${id}`);
-						renderLinks();
-					} else {
-						const data = (await res.json()) as { error?: string };
-						showToast(data.error ?? t('edit.linkDeleteError'), 'error');
-						deleteBtn.disabled = false;
-					}
-				} catch {
-					showToast(t('edit.linkDeleteError'), 'error');
+					await api.Resources.DeleteLink(id, linkUuid);
+					showToast(t('edit.linkDeleted'), 'success');
+					const idx = allLinks.findIndex((l) => l.uuid === linkUuid);
+					if (idx !== -1) allLinks.splice(idx, 1);
+					reorderDirty = true;
+					renderLinks();
+				} catch (error) {
+					showToast(error instanceof Error ? error.message : t('edit.linkDeleteError'), 'error');
 					deleteBtn.disabled = false;
 				}
 			});
@@ -1091,9 +996,18 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 			const isValidExt = VALID_EXTENSIONS.some((ext) => file.name.toLowerCase().endsWith(ext));
 			const isValidSize = file.size <= SIZE_LIMITS.file;
 			const mb = (file.size / 1024 / 1024).toFixed(2);
-			let color = 'green', sym = '✓', msg = `${file.name} (${mb} MB)`;
-			if (!isValidExt) { color = 'red'; sym = '✗'; msg += ` - ${t('upload.errorInvalidFileType')}`; }
-			else if (!isValidSize) { color = 'red'; sym = '✗'; msg += ` - ${t('upload.errorFileTooLarge')} (max ${maxMb}MB)`; }
+			let color = 'green',
+				sym = '✓',
+				msg = `${file.name} (${mb} MB)`;
+			if (!isValidExt) {
+				color = 'red';
+				sym = '✗';
+				msg += ` - ${t('upload.errorInvalidFileType')}`;
+			} else if (!isValidSize) {
+				color = 'red';
+				sym = '✗';
+				msg += ` - ${t('upload.errorFileTooLarge')} (max ${maxMb}MB)`;
+			}
 			const row = document.createElement('div');
 			row.style.cssText = 'display:flex;align-items:center;gap:8px;margin:2px 0';
 			if (idx >= MAX_MAIN_FILES) row.style.opacity = '0.45';
@@ -1184,7 +1098,7 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 				const fd = new FormData();
 				fd.append('file', newThumbnailFile);
 				fd.append('media_type', newThumbnailFile.type.startsWith('video/') ? 'video' : 'image');
-				const thumbData = await uploadWithProgress('/api/upload', fd, updateProgressBar);
+				const thumbData = await api.Uploads.WithProgress(fd, updateProgressBar);
 				newThumbnailUuid = thumbData.media_uuid;
 			}
 
@@ -1194,7 +1108,7 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 				const fd = new FormData();
 				fd.append('file', newReferenceFile);
 				fd.append('media_type', newReferenceFile.type.startsWith('video/') ? 'video' : 'image');
-				const refData = await uploadWithProgress('/api/upload', fd, updateProgressBar);
+				const refData = await api.Uploads.WithProgress(fd, updateProgressBar);
 				newReferenceUuid = refData.media_uuid;
 			}
 
@@ -1207,7 +1121,7 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 					fd.append('file', file);
 					fd.append('media_type', file.type.startsWith('video/') ? 'video' : 'image');
 					updateProgressBar(0);
-					const data = await uploadWithProgress('/api/upload', fd, updateProgressBar);
+					const data = await api.Uploads.WithProgress(fd, updateProgressBar);
 					newGalleryUuids.push(data.media_uuid);
 				}
 			}
@@ -1230,12 +1144,12 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 					updateProgressBar(0);
 					let fileData: { r2_key: string; media_uuid: string };
 					if (f.size > CHUNK_SIZE) {
-						fileData = await uploadChunked(f, 'file', (p) => updateProgressBar(p));
+						fileData = await api.Uploads.Chunked(f, 'file', (p) => updateProgressBar(p));
 					} else {
 						const fd = new FormData();
 						fd.append('file', f);
 						fd.append('media_type', 'file');
-						fileData = await uploadWithProgress('/api/upload', fd, updateProgressBar);
+						fileData = await api.Uploads.WithProgress(fd, updateProgressBar);
 					}
 					newMainFileData.push({ ...fileData, originalName: f.name, size: f.size });
 				}
@@ -1248,16 +1162,10 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 				const orderedUuids = allLinks.map((l) => l.uuid!).filter(Boolean) as string[];
 				const orderChanged = orderedUuids.length !== initialOrder.length || orderedUuids.some((u, i) => u !== initialOrder[i]);
 				if (orderChanged && orderedUuids.length > 0) {
-					const reorderRes = await fetch(`/api/resources/${id}/links/reorder`, {
-						method: 'POST',
-						headers: { 'Content-Type': 'application/json' },
-						body: JSON.stringify({ ordered_uuids: orderedUuids }),
-					});
-					if (!reorderRes.ok) {
-						const data = (await reorderRes.json()) as { error?: string };
-						showToast(data.error ?? t('edit.reorderError'), 'warning');
-					} else {
-						DataCache.clear(`/api/resources/${id}`);
+					try {
+						await api.Resources.ReorderLinks(id, orderedUuids);
+					} catch (error) {
+						showToast(error instanceof Error ? error.message : t('edit.reorderError'), 'warning');
 					}
 				}
 			}
@@ -1265,19 +1173,12 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 			// Compute final gallery list (keep all existing media including file media, plus new gallery + new main file media to avoid orphan cleanup)
 			const keptMediaFiles = existingMediaFiles.filter((mf) => !removedMediaUuids.has(mf.uuid || ''));
 			const newMainFileMediaUuids = newMainFileData.map((f) => f.media_uuid);
-			const hasMediaChanges =
-				newThumbnailFile ||
-				newReferenceFile !== undefined ||
-				newGalleryFiles.length > 0 ||
-				newMainFileData.length > 0 ||
-				removedMediaUuids.size > 0;
-			const galleryMediaUuids: string[] | undefined = hasMediaChanges
-				? [...keptMediaFiles.map((mf) => mf.uuid!).filter(Boolean), ...newGalleryUuids, ...newMainFileMediaUuids]
-				: undefined;
+			const hasMediaChanges = newThumbnailFile || newReferenceFile !== undefined || newGalleryFiles.length > 0 || newMainFileData.length > 0 || removedMediaUuids.size > 0;
+			const galleryMediaUuids: string[] | undefined = hasMediaChanges ? [...keptMediaFiles.map((mf) => mf.uuid!).filter(Boolean), ...newGalleryUuids, ...newMainFileMediaUuids] : undefined;
 
 			// Collect new links: uploaded main files (R2) + external backup URLs (mirrors UploadView)
 			const fileLinks = newMainFileData.map((f) => ({
-				link_url: `/api/download/${f.r2_key}`,
+				link_url: api.Resources.DownloadPath(f.r2_key),
 				link_title: f.originalName,
 				link_type: 'download' as const,
 			}));
@@ -1287,13 +1188,13 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 				link_type: 'download' as const,
 				link_title: null,
 			}));
-			const newLinks: object[] = [...fileLinks, ...backupLinks];
+			const newLinks: ResourceLink[] = [...fileLinks, ...backupLinks];
 
 			const categoryVal = (document.getElementById('category') as HTMLSelectElement).value;
 			const description = descEl.value;
 			const title = (document.getElementById('title') as HTMLInputElement).value;
 
-			const resourceBody: Record<string, unknown> = {
+			const resourceBody: ResourceUpdate = {
 				title,
 				category: categoryVal,
 				description,
@@ -1304,27 +1205,13 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 			if (galleryMediaUuids !== undefined) resourceBody.gallery_media_uuids = galleryMediaUuids;
 			if (newLinks.length > 0) resourceBody.new_links = newLinks;
 
-			const resourceRes = await fetch(`/api/resources/${id}`, {
-				method: 'PUT',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify(resourceBody),
-			});
-
-			if (!resourceRes.ok) {
-				const data = (await resourceRes.json()) as { error?: string };
-				throw new Error(data.error ?? 'Update failed');
-			}
+			await api.Resources.Update(id, resourceBody);
 
 			// Update category meta (admin only)
 			if (isAdmin) {
-				const metaEndpointMap: Record<string, string> = {
-					avatars: `/api/avatars/${id}`,
-					assets: `/api/assets/${id}`,
-					clothes: `/api/clothes/${id}`,
-				};
-				const metaEndpoint = metaEndpointMap[categoryVal];
+				const categoryApi = categoryVal === 'avatars' ? api.Categories.Avatars : categoryVal === 'assets' ? api.Categories.Assets : categoryVal === 'clothes' ? api.Categories.Clothes : null;
 
-				if (metaEndpoint) {
+				if (categoryApi) {
 					let metaBody: Record<string, unknown> = {};
 
 					if (categoryVal === 'avatars') {
@@ -1388,20 +1275,15 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 					}
 
 					if (Object.keys(metaBody).length > 0) {
-						const metaRes = await fetch(metaEndpoint, {
-							method: 'PUT',
-							headers: { 'Content-Type': 'application/json' },
-							body: JSON.stringify(metaBody),
-						});
-						if (!metaRes.ok) {
-							const data = (await metaRes.json()) as { error?: string };
-							showToast(`Meta update: ${data.error ?? 'failed'}`, 'warning');
+						try {
+							await categoryApi.Update(id, metaBody);
+						} catch (error) {
+							showToast(error instanceof Error ? error.message : t('common.error'), 'warning');
 						}
 					}
 				}
 			}
 
-			DataCache.clear(`/api/resources/${id}`);
 			showToast(t('settings.save') + ' \u2713', 'success');
 			navigateTo(`/item/${id}`);
 		} catch (err) {

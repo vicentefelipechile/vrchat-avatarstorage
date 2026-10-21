@@ -8,7 +8,7 @@
 import { getPaginationItems } from '../../lib/pagination';
 import { t } from '../../core/i18n';
 import { esc } from './esc';
-import type { PaginationMeta } from './types';
+import type { Pagination as PaginationMeta } from '../../api/types';
 
 export function totalPages(meta: PaginationMeta): number {
 	return Math.max(1, Math.ceil(meta.total / meta.limit));
@@ -50,4 +50,3 @@ export function errorRow(colspan: number): string {
 export function emptyRow(colspan: number, message: string): string {
 	return `<tr><td colspan="${colspan}" class="admin-empty">${esc(message)}</td></tr>`;
 }
-

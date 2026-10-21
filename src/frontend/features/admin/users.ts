@@ -6,10 +6,10 @@ import { t } from '../../core/i18n';
 import { showToast } from '../../lib/utils';
 import { showConfirm } from '../../lib/confirm';
 import { icons } from '../../lib/icons';
-import { adminGet, adminPost, adminDelete, requestTwoFactorCode, AdminApiError } from './api';
+import { api, VrcStorageApiError } from '../../api';
+import { requestTwoFactorCode } from './two-factor';
 import { esc, fmtDate } from './esc';
 import { paginationBar, wirePagination, errorRow, emptyRow } from './admin-table';
-import type { UserRow, PaginationMeta } from './types';
 
 export function loadUsers(el: HTMLElement, signal: AbortSignal): void {
 	let q = '';
@@ -34,7 +34,7 @@ export function loadUsers(el: HTMLElement, signal: AbortSignal): void {
 		const qp = new URLSearchParams({ page: String(page) });
 		if (q) qp.set('q', q);
 		try {
-			const data = await adminGet<{ users: UserRow[]; pagination: PaginationMeta }>(`/api/admin/users?${qp}`, signal);
+			const data = await api.Admin.Users(qp, { signal });
 			if (signal.aborted) return;
 			tbody.innerHTML =
 				data.users
@@ -69,7 +69,7 @@ export function loadUsers(el: HTMLElement, signal: AbortSignal): void {
 			const username = cacheBtn.dataset.clearCache!;
 			cacheBtn.disabled = true;
 			try {
-				await adminPost(`/api/admin/cache/clear/${encodeURIComponent(username)}`);
+				await api.Admin.ClearUserCache(username);
 				showToast(`${t('admin.users.toastCacheCleared')} "${username}"`, 'success');
 			} catch {
 				showToast(t('admin.users.toastCacheClearedError'), 'error');
@@ -91,11 +91,11 @@ export function loadUsers(el: HTMLElement, signal: AbortSignal): void {
 			if (!code) return;
 			roleBtn.disabled = true;
 			try {
-				await adminPost(`/api/admin/users/${encodeURIComponent(username)}/role`, { is_admin: makeAdmin, code });
+				await api.Admin.ChangeRole(username, { is_admin: makeAdmin, code });
 				showToast(t('admin.users.toastRoleChanged'), 'success');
 				await refresh();
 			} catch (error) {
-				showToast(error instanceof AdminApiError ? error.message : t('admin.users.toastRoleError'), 'error');
+				showToast(error instanceof VrcStorageApiError ? error.message : t('admin.users.toastRoleError'), 'error');
 				roleBtn.disabled = false;
 			}
 			return;
@@ -114,11 +114,11 @@ export function loadUsers(el: HTMLElement, signal: AbortSignal): void {
 			if (!code) return;
 			banBtn.disabled = true;
 			try {
-				await adminPost(`/api/admin/users/${encodeURIComponent(username)}/ban`, { banned, code });
+				await api.Admin.BanUser(username, { banned, code });
 				showToast(banned ? t('admin.users.toastBanned') : t('admin.users.toastUnbanned'), 'success');
 				await refresh();
 			} catch (error) {
-				showToast(error instanceof AdminApiError ? error.message : t('admin.users.toastBanError'), 'error');
+				showToast(error instanceof VrcStorageApiError ? error.message : t('admin.users.toastBanError'), 'error');
 				banBtn.disabled = false;
 			}
 			return;
@@ -136,11 +136,11 @@ export function loadUsers(el: HTMLElement, signal: AbortSignal): void {
 			if (!code) return;
 			delBtn.disabled = true;
 			try {
-				const d = await adminDelete<{ resources_removed?: number }>(`/api/admin/users/${encodeURIComponent(username)}`, { code });
+				const d = await api.Admin.DeleteUser(username, code);
 				showToast(`${t('admin.users.toastDeleted')} (${d.resources_removed ?? 0})`, 'success');
 				await refresh();
 			} catch (error) {
-				showToast(error instanceof AdminApiError ? error.message : t('admin.users.toastDeleteError'), 'error');
+				showToast(error instanceof VrcStorageApiError ? error.message : t('admin.users.toastDeleteError'), 'error');
 				delBtn.disabled = false;
 			}
 		}

@@ -70,8 +70,8 @@ export async function createSession<E extends { Bindings: Env }>(c: Context<E>, 
 	setCookie(c, COOKIE_NAME, token, {
 		httpOnly: true,
 		secure: true, // Always true for production/Cloudflare
-		sameSite: 'Strict', // Upgraded from Lax: cookie never sent on cross-site requests,
-		// even top-level navigations. Eliminates CSRF vector in XSS chain attacks.
+		// Pages is cross-site; exact CORS/CSRF origins still guard cookie-authenticated requests.
+		sameSite: 'None',
 		path: '/',
 		maxAge: MAX_AGE,
 	});
@@ -142,6 +142,7 @@ export async function deleteSession<E extends { Bindings: Env }>(c: Context<E>) 
 	setCookie(c, COOKIE_NAME, '', {
 		httpOnly: true,
 		secure: true,
+		sameSite: 'None',
 		path: '/',
 		maxAge: 0,
 	});

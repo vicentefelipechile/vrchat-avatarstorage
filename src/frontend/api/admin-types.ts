@@ -1,6 +1,22 @@
 // =========================================================================================================
-// features/admin/types.ts — Shared row/pagination types for the admin dashboard sections
+// Admin API response contracts
 // =========================================================================================================
+
+// =========================================================================================================
+// Types
+// =========================================================================================================
+
+export interface PendingResource {
+	uuid: string;
+	title: string;
+	description: string | null;
+	category: string;
+	thumbnail_key: string | null;
+	timestamp: number;
+	created_at: number;
+	is_active: number;
+	author: { username: string; avatar_url: string | null } | null;
+}
 
 export interface AdminStats {
 	users: number;
@@ -65,12 +81,4 @@ export interface Timeseries {
 	days: string[];
 	uploads: number[];
 	registrations: number[];
-}
-
-export interface PaginationMeta {
-	page: number;
-	limit: number;
-	total: number;
-	hasNextPage: boolean;
-	hasPrevPage: boolean;
 }

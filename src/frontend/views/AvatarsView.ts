@@ -9,28 +9,8 @@
 
 import { createFilteredListView, FilterType, TimeUnit, type FilteredResource } from '../features/filtered-list';
 import { metaLabel } from '../lib/utils';
-
-// =========================================================================
-// Types
-// =========================================================================
-
-interface AvatarMeta {
-	avatar_gender: string;
-	avatar_size: string;
-	avatar_type: string;
-	is_nsfw: number;
-	has_physbones: number;
-	has_dps: number;
-	has_face_tracking: number;
-	has_gogoloco: number;
-	has_toggles: number;
-	is_quest_optimized: number;
-	sdk_version: string;
-	platform: string;
-	author_name_raw: string | null;
-	author_name: string | null;
-	author_slug: string | null;
-}
+import { api } from '../api';
+import type { AvatarListMeta as AvatarMeta } from '../api/categories';
 
 // =========================================================================
 // Config
@@ -41,17 +21,7 @@ const FILTERS = {
 		{
 			name: 'avatar_type',
 			type: FilterType.CheckBox,
-			options: [
-				{ value: 'human' },
-				{ value: 'furry' },
-				{ value: 'anime' },
-				{ value: 'chibi' },
-				{ value: 'cartoon' },
-				{ value: 'semi-realistic', label: 'semiRealistic' },
-				{ value: 'monster' },
-				{ value: 'fantasy' },
-				{ value: 'other' },
-			],
+			options: [{ value: 'human' }, { value: 'furry' }, { value: 'anime' }, { value: 'chibi' }, { value: 'cartoon' }, { value: 'semi-realistic', label: 'semiRealistic' }, { value: 'monster' }, { value: 'fantasy' }, { value: 'other' }],
 		},
 		{
 			name: 'avatar_gender',
@@ -97,9 +67,7 @@ function authorLine(res: FilteredResource<AvatarMeta>): string {
 	const { author_name, author_name_raw, author_slug } = res.meta;
 	const display = author_name || author_name_raw || '';
 	if (!display) return '';
-	const inner = author_slug
-		? `<a href="/authors/${author_slug}" data-link class="card-author-link">${display}</a>`
-		: `<span class="card-author-plain">${display}</span>`;
+	const inner = author_slug ? `<a href="/authors/${author_slug}" data-link class="card-author-link">${display}</a>` : `<span class="card-author-plain">${display}</span>`;
 	return `<p class="card-author">${inner}</p>`;
 }
 
@@ -109,7 +77,7 @@ function authorLine(res: FilteredResource<AvatarMeta>): string {
 
 export const { view: avatarsView, after: avatarsAfter } = createFilteredListView<AvatarMeta>({
 	slug: 'avatar',
-	endpoint: '/api/avatars',
+	list: (filters, options) => api.Categories.Avatars.List(filters, options),
 	route: '/avatars',
 	titleKey: 'filterPanel.titleAvatars',
 	countKey: 'filterPanel.avatarCountStr',

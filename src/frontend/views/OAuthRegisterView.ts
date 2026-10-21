@@ -3,6 +3,7 @@
 // =========================================================================
 
 import { t } from '../core/i18n';
+import { api, VrcStorageApiError } from '../api';
 import { navigateTo } from '../core/router';
 
 // =========================================================================
@@ -75,25 +76,17 @@ export function oauthRegisterAfter(): void {
 		errorDiv.style.display = 'none';
 
 		try {
-			const res = await fetch('/api/auth/complete', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ username }),
-			});
-			const data = (await res.json()) as { success?: boolean; error?: string };
-
-			if (res.ok && data.success) {
-				localStorage.removeItem('auth_state');
-				window.location.href = '/';
-			} else if (res.status === 410 || res.status === 401) {
+			await api.Auth.CompleteOAuth({ username });
+			localStorage.removeItem('auth_state');
+			window.location.href = '/';
+		} catch (error) {
+			if (error instanceof VrcStorageApiError && (error.status === 410 || error.status === 401)) {
 				showError(t('oauthRegister.errorExpired'));
-			} else if (res.status === 409) {
+			} else if (error instanceof VrcStorageApiError && error.status === 409) {
 				showError(t('oauthRegister.errorTaken'));
 			} else {
-				showError(data.error ?? t('common.error'));
+				showError(error instanceof Error ? error.message : t('common.error'));
 			}
-		} catch {
-			showError(t('common.error'));
 		}
 	});
 }

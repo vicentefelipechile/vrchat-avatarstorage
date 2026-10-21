@@ -8,10 +8,10 @@
 // Imports
 // =========================================================================================================
 
-import { DataCache } from '../core/cache';
+import { api } from '../api';
 import { getCurrentLang, t } from '../core/i18n';
 import { buildHistoryRevisions, diffWords, htmlDecode, mediaUrl, metaLabel, safeHttpUrl, showToast } from '../lib/utils';
-import type { HistoryEntry, HistoryFieldChange, HistoryRevision, Resource, RouteContext } from '../types';
+import type { HistoryFieldChange, HistoryRevision, RouteContext } from '../types';
 
 // =========================================================================================================
 // Constants
@@ -225,7 +225,7 @@ export async function historyAfter(ctx: RouteContext): Promise<void> {
 
 	try {
 		// Do not mix cached current data with a newer revision chain.
-		const [entries, current] = await Promise.all([DataCache.fetch<HistoryEntry[]>(`/api/resources/${id}/history`, { ttl: 0 }), DataCache.fetch<Resource>(`/api/resources/${id}`, { ttl: 0 })]);
+		const [entries, current] = await Promise.all([api.Resources.History(id), api.Resources.Get(id)]);
 		if (!page.isConnected) return;
 		heading.append(element('p', 'history-resource-title', htmlDecode(current.title)));
 		if (!entries.length) {

@@ -6,23 +6,10 @@
 // Imports
 // =========================================================================
 
-import { DataCache } from '../core/cache';
+import { api } from '../api';
 import { t } from '../core/i18n';
 import { stripMarkdown, TimeUnit, progressiveImg } from '../lib/utils';
 import type { RouteContext, Resource } from '../types';
-
-// =========================================================================
-// Interfaces
-// =========================================================================
-
-interface CategoryViewData {
-	resources: Resource[];
-	pagination: {
-		page: number;
-		hasNextPage: boolean;
-		hasPrevPage: boolean;
-	};
-}
 
 // =========================================================================
 // Helpers
@@ -92,12 +79,11 @@ export async function categoryView(ctx: RouteContext): Promise<string> {
 	const categoryLabel = t('cats.' + category) || category;
 	document.title = `VRCStorage — ${categoryLabel}`;
 
-	const cacheKey = `/api/resources?category=${category}&page=${page}${searchQuery ? `&q=${encodeURIComponent(searchQuery)}` : ''}`;
 	let resources: Resource[] = [];
 	let hasMore = false;
 
 	try {
-		const data = await DataCache.fetch<CategoryViewData>(cacheKey, { ttl: TimeUnit.Minute * 15 });
+		const data = await api.Resources.List({ category, page, q: searchQuery || undefined }, { cache: { ttl: TimeUnit.Minute * 15 } });
 		resources = data.resources;
 		hasMore = data.pagination.hasNextPage;
 	} catch {
@@ -117,11 +103,7 @@ export async function categoryView(ctx: RouteContext): Promise<string> {
 			${searchQuery ? `<p class="category-description">${t('category.showing')} "<strong>${searchQuery}</strong>"</p>` : ''}
 		</div>
 
-		${
-			resources.length === 0
-				? `<p class="empty-message">${t('common.noResourcesFound')}</p>`
-				: `<div class="grid">${resources.map(resourceCard).join('')}</div>`
-		}
+		${resources.length === 0 ? `<p class="empty-message">${t('common.noResourcesFound')}</p>` : `<div class="grid">${resources.map(resourceCard).join('')}</div>`}
 
 		${paginationControls(category, page, hasMore, searchQuery || null)}`;
 }

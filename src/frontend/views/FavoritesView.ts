@@ -3,47 +3,13 @@
 // drag-and-drop reorder, up/down buttons, and a move-to-collection dropdown.
 // =========================================================================
 
-import { DataCache } from '../core/cache';
+import { api } from '../api';
+import type { Collection, Favorite, FavoritesResponse } from '../api/types';
 import { t } from '../core/i18n';
 import { icons } from '../lib/icons';
 import { stripMarkdown, progressiveImg, showToast } from '../lib/utils';
 import { showConfirm, showPrompt } from '../lib/confirm';
 import type { RouteContext } from '../types';
-
-// =========================================================================
-// Types
-// =========================================================================
-
-interface Favorite {
-	uuid: string;
-	thumbnail_key?: string;
-	thumbnail_uuid?: string;
-	thumbnail_media_type?: 'image' | 'video' | 'file';
-	placeholder_blur?: string | null;
-	processed?: number;
-	is_nsfw?: number;
-	title: string;
-	description?: string;
-	category: string;
-	download_count?: number;
-	created_at?: number;
-	collection_uuid: string | null;
-}
-
-interface Collection {
-	uuid: string;
-	name: string;
-	display_order: number;
-	favorite_count: number;
-}
-
-interface FavoritesResponse {
-	favorites: Favorite[];
-}
-
-interface CollectionsResponse {
-	collections: Collection[];
-}
 
 // =========================================================================
 // State
@@ -77,11 +43,7 @@ function favoriteCard(fav: Favorite): string {
 				<div class="drag-handle" title="${t('favorites.dragToReorder')}">${icons['grip-vertical'](16)}</div>
 				<a href="/item/${fav.uuid}" data-link class="card-link favorite-card-image-link">
 					<div class="card-image${fav.thumbnail_uuid ? nsfwClass : ` card-image-placeholder${nsfwClass}`}">
-						${
-							fav.thumbnail_uuid
-								? progressiveImg({ uuid: fav.thumbnail_uuid, placeholder: fav.placeholder_blur ?? null, res: 'low', alt: title, processed: fav.processed !== 0, format: fav.thumbnail_media_type === 'video' ? 'gif' : 'webp' })
-								: ''
-						}
+						${fav.thumbnail_uuid ? progressiveImg({ uuid: fav.thumbnail_uuid, placeholder: fav.placeholder_blur ?? null, res: 'low', alt: title, processed: fav.processed !== 0, format: fav.thumbnail_media_type === 'video' ? 'gif' : 'webp' }) : ''}
 						<span class="card-badge">${categoryLabel}</span>
 					</div>
 				</a>
@@ -106,9 +68,7 @@ function favoriteCard(fav: Favorite): string {
 function tabBar(): string {
 	const tabs: string[] = [];
 
-	tabs.push(
-		`<button class="favorites-tab${activeCollection === 'all' ? ' active' : ''}" data-collection="all">${t('favorites.all')}</button>`,
-	);
+	tabs.push(`<button class="favorites-tab${activeCollection === 'all' ? ' active' : ''}" data-collection="all">${t('favorites.all')}</button>`);
 
 	for (const col of collections) {
 		tabs.push(
@@ -155,12 +115,7 @@ function scheduleReorder(): void {
 		if (ordered_uuids.length === 0) return;
 
 		try {
-			await fetch('/api/favorites/reorder', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ ordered_uuids, collection_uuid: activeCollection }),
-			});
-			DataCache.clear('/api/favorites');
+			await api.Favorites.Reorder({ ordered_uuids, collection_uuid: activeCollection });
 		} catch {
 			showToast(t('common.networkError'), 'error');
 		}
@@ -216,7 +171,7 @@ export async function favoritesView(ctx: RouteContext): Promise<string> {
 	activeCollection = collectionParam && collectionParam !== 'all' ? collectionParam : 'all';
 
 	try {
-		const colData = (await DataCache.fetch('/api/collections')) as CollectionsResponse;
+		const colData = await api.Collections.List({ cache: { ttl: 60000 } });
 		collections = colData.collections ?? [];
 	} catch {
 		collections = [];
@@ -227,11 +182,9 @@ export async function favoritesView(ctx: RouteContext): Promise<string> {
 		activeCollection = 'all';
 	}
 
-	const apiUrl = activeCollection === 'all' ? '/api/favorites?collection=all' : `/api/favorites?collection=${activeCollection}`;
-
 	let data: FavoritesResponse = { favorites: [] };
 	try {
-		data = (await DataCache.fetch(`${apiUrl}&_=${Date.now()}`)) as FavoritesResponse;
+		data = await api.Favorites.List(activeCollection);
 	} catch {
 		/* show empty */
 	}
@@ -251,11 +204,7 @@ export async function favoritesView(ctx: RouteContext): Promise<string> {
 			${tabBar()}
 		</div>
 
-		${
-			favs.length === 0
-				? `<p class="empty-message">${t('common.noFavorites')}</p>`
-				: `<div id="favorites-grid" class="grid favorites-grid">${favs.map(favoriteCard).join('')}</div>`
-		}`;
+		${favs.length === 0 ? `<p class="empty-message">${t('common.noFavorites')}</p>` : `<div id="favorites-grid" class="grid favorites-grid">${favs.map(favoriteCard).join('')}</div>`}`;
 }
 
 // =========================================================================
@@ -323,12 +272,7 @@ function wireCollectionCreate(): void {
 			}
 			submitting = true;
 			try {
-				await fetch('/api/collections', {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ name }),
-				});
-				DataCache.clear('/api/collections');
+				await api.Collections.Create({ name });
 				showToast(t('collections.created').replace('{name}', name), 'success');
 				window.history.pushState(null, '', '/favorites');
 				window.dispatchEvent(new PopStateEvent('popstate'));
@@ -372,12 +316,7 @@ function wireCollectionMenu(): void {
 				const newName = await showPrompt({ message: t('collections.namePlaceholder') });
 				if (!newName?.trim()) return;
 				try {
-					await fetch(`/api/collections/${colUuid}`, {
-						method: 'PUT',
-						headers: { 'Content-Type': 'application/json' },
-						body: JSON.stringify({ name: newName.trim() }),
-					});
-					DataCache.clear('/api/collections');
+					await api.Collections.Update(colUuid, { name: newName.trim() });
 					window.dispatchEvent(new PopStateEvent('popstate'));
 				} catch {
 					showToast(t('common.networkError'), 'error');
@@ -389,9 +328,7 @@ function wireCollectionMenu(): void {
 				menu.remove();
 				if (!(await showConfirm({ message: t('collections.confirmDelete') }))) return;
 				try {
-					await fetch(`/api/collections/${colUuid}`, { method: 'DELETE' });
-					DataCache.clear('/api/collections');
-					DataCache.clear('/api/favorites');
+					await api.Collections.Delete(colUuid);
 					window.history.pushState(null, '', '/favorites');
 					window.dispatchEvent(new PopStateEvent('popstate'));
 				} catch {
@@ -468,9 +405,7 @@ function wireRemove(): void {
 			else updateUpDownState();
 
 			try {
-				await fetch(`/api/favorites/${uuid}`, { method: 'DELETE' });
-				DataCache.clear('/api/favorites');
-				DataCache.clear('/api/collections');
+				await api.Favorites.Remove(uuid);
 			} catch {
 				/* ignore */
 			}
@@ -534,12 +469,7 @@ function wireCollectionDropdowns(): void {
  * stays put (only its collection tag + the target count update); on a collection tab the
  * card leaves the current view.
  */
-async function moveFavoriteToCollection(
-	uuid: string,
-	card: HTMLElement,
-	fromCollection: string | null,
-	toCollection: string | null,
-): Promise<void> {
+async function moveFavoriteToCollection(uuid: string, card: HTMLElement, fromCollection: string | null, toCollection: string | null): Promise<void> {
 	if (fromCollection === toCollection) return;
 
 	if (activeCollection === 'all') {
@@ -559,13 +489,7 @@ async function moveFavoriteToCollection(
 	showToast(t('favorites.movedTo').replace('{item}', title).replace('{collection}', destName), 'success');
 
 	try {
-		await fetch(`/api/favorites/${uuid}/collection`, {
-			method: 'PUT',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ collection_uuid: toCollection }),
-		});
-		DataCache.clear('/api/favorites');
-		DataCache.clear('/api/collections');
+		await api.Favorites.Move(uuid, toCollection);
 	} catch {
 		showToast(t('common.networkError'), 'error');
 	}

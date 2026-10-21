@@ -1,16 +1,14 @@
 // =========================================================================================================
-// features/admin/comments.ts — Global comment moderation (delete reuses the ItemView endpoint,
-// which already allows admin deletes via CommentService)
+// features/admin/comments.ts — Global comment moderation
 // =========================================================================================================
 
 import { t } from '../../core/i18n';
 import { showToast } from '../../lib/utils';
 import { showConfirm } from '../../lib/confirm';
 import { icons } from '../../lib/icons';
-import { adminGet } from './api';
+import { api } from '../../api';
 import { esc, fmtDate } from './esc';
 import { paginationBar, wirePagination, errorRow, emptyRow } from './admin-table';
-import type { AdminCommentRow, PaginationMeta } from './types';
 
 function snippet(text: string, max = 120): string {
 	const flat = text.replace(/\s+/g, ' ').trim();
@@ -40,7 +38,7 @@ export function loadComments(el: HTMLElement, signal: AbortSignal): void {
 		const qp = new URLSearchParams({ page: String(page) });
 		if (q) qp.set('q', q);
 		try {
-			const data = await adminGet<{ comments: AdminCommentRow[]; pagination: PaginationMeta }>(`/api/admin/comments?${qp}`, signal);
+			const data = await api.Admin.Comments(qp, { signal });
 			if (signal.aborted) return;
 			tbody.innerHTML =
 				data.comments
@@ -68,8 +66,7 @@ export function loadComments(el: HTMLElement, signal: AbortSignal): void {
 		if (!ok) return;
 		btn.disabled = true;
 		try {
-			const r = await fetch(`/api/comments/${btn.dataset.delcomment}`, { method: 'DELETE' });
-			if (!r.ok) throw new Error(`DELETE → ${r.status}`);
+			await api.Comments.Delete(btn.dataset.delcomment!);
 			showToast(t('admin.comments.toastDeleted'), 'success');
 			await refresh();
 		} catch {

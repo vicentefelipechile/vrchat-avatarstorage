@@ -3,25 +3,12 @@
 // =========================================================================
 
 import { t } from '../core/i18n';
+import { api } from '../api';
+import type { BlogPostDto as BlogPost } from '../api/types';
 import { navigateTo } from '../core/router';
 import { renderMarkdown, showToast, mediaUrl } from '../lib/utils';
 import { markdownToolbarHtml, initMarkdownToolbar } from '../features/comment-editor';
 import type { RouteContext } from '../types';
-
-// =========================================================================
-// Types
-// =========================================================================
-
-interface BlogPost {
-	uuid: string;
-	title: string;
-	content: string;
-	excerpt?: string;
-	cover_image_key?: string;
-	cover_image_uuid?: string;
-	author_display: 'personal' | 'team';
-	slug?: string;
-}
 
 // =========================================================================
 // Helpers
@@ -149,9 +136,7 @@ export async function blogCreateAfter(ctx: RouteContext): Promise<void> {
 
 	if (editId) {
 		try {
-			const res = await fetch(`/api/blog/${editId}`);
-			if (!res.ok) throw new Error('Not found');
-			existingPost = (await res.json()) as BlogPost;
+			existingPost = await api.Blog.Get(editId);
 		} catch {
 			container.innerHTML = `<p class="error-text">${t('blog.notFound')}</p>`;
 			return;
@@ -186,9 +171,7 @@ export async function blogCreateAfter(ctx: RouteContext): Promise<void> {
 		try {
 			const fd = new FormData();
 			fd.append('file', file);
-			const res = await fetch('/api/upload', { method: 'PUT', body: fd });
-			if (!res.ok) throw new Error();
-			const data = (await res.json()) as { media_uuid?: string };
+			const data = await api.Uploads.Single(fd);
 			const newUuid = data.media_uuid ?? '';
 			(document.getElementById('blog-cover-uuid') as HTMLInputElement).value = newUuid;
 			console.log('[blog] cover uploaded, media_uuid =', newUuid);
@@ -232,22 +215,12 @@ export async function blogCreateAfter(ctx: RouteContext): Promise<void> {
 		showError('', false);
 
 		try {
-			const res = await fetch(editId ? `/api/blog/${editId}` : '/api/blog', {
-				method: editId ? 'PUT' : 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ title, content, excerpt, cover_image_uuid, author_display }),
-			});
-			const data = (await res.json()) as { uuid?: string; error?: string };
-
-			if (!res.ok) {
-				showError(data.error ?? t('common.error'));
-				restore();
-				return;
-			}
+			const payload = { title, content, excerpt, cover_image_uuid, author_display };
+			const data = editId ? await api.Blog.Update(editId, payload) : await api.Blog.Create(payload);
 
 			navigateTo(`/blog/${editId ?? data.uuid}`);
-		} catch {
-			showError(t('common.error'));
+		} catch (error) {
+			showError(error instanceof Error ? error.message : t('common.error'));
 			restore();
 		}
 	});

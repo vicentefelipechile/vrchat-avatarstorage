@@ -18,6 +18,8 @@
 // =========================================================================================================
 
 import { t } from '../core/i18n';
+import { api } from '../api';
+import type { NotificationPrefsDTO } from '../api/types';
 import { navigateTo } from '../core/router';
 import { htmlDecode } from '../lib/dom';
 import { mediaUrl } from '../lib/utils';
@@ -25,16 +27,6 @@ import { mediaUrl } from '../lib/utils';
 // =========================================================================================================
 // Types
 // =========================================================================================================
-
-export interface NotificationPrefsDTO {
-	enabled: boolean;
-	avatars_enabled: boolean;
-	avatar_types: string[] | null;
-	assets_enabled: boolean;
-	asset_types: string[] | null;
-	clothes_enabled: boolean;
-	updated_at: number | null;
-}
 
 export interface FeedEvent {
 	scope: 'avatars' | 'assets' | 'clothes' | 'blog' | 'comments';
@@ -93,9 +85,7 @@ export function setCachedPrefs(prefs: NotificationPrefsDTO | null): void {
 export async function fetchNotificationPrefs(): Promise<NotificationPrefsDTO | null> {
 	if (!window.appState.isLoggedIn) return null;
 	try {
-		const res = await fetch('/api/notifications/preferences');
-		if (!res.ok) return null;
-		const data = (await res.json()) as NotificationPrefsDTO;
+		const data = await api.Notifications.Preferences();
 		cachedPrefs = data;
 		prefsLoaded = true;
 		return data;
@@ -147,10 +137,7 @@ export function shouldNotifyForEvent(event: FeedEvent, prefs: NotificationPrefsD
 // =========================================================================================================
 
 function buildNotificationBody(event: FeedEvent): string {
-	const scopeLabel =
-		event.scope === 'avatars' ? t('notifications.scope_avatars') :
-		event.scope === 'assets' ? t('notifications.scope_assets') :
-		event.scope === 'clothes' ? t('notifications.scope_clothes') : event.scope;
+	const scopeLabel = event.scope === 'avatars' ? t('notifications.scope_avatars') : event.scope === 'assets' ? t('notifications.scope_assets') : event.scope === 'clothes' ? t('notifications.scope_clothes') : event.scope;
 	const rawTitle = event.title?.trim() || t('notifications.untitled');
 	// Titles are stored via sanitizeHtml (e.g. " → &quot;), so decode before showing
 	// as plain-text Notification body. Loop to handle legacy double-encoded rows.

@@ -3,7 +3,7 @@
 // =========================================================================================================
 // The shared vocabulary for real-time content updates and the reconciliation both delivery paths run:
 // the live WebSocket client (feed.ts) and the polling fallback (updates.ts). A scope maps to the cache
-// prefixes it invalidates and to the i18n label it toasts. Kept in one place so the two paths cannot
+// domain invalidation it triggers and to the i18n label it toasts. Kept in one place so the two paths cannot
 // drift — they invalidate the same keys and announce the same wording.
 // =========================================================================================================
 
@@ -11,7 +11,7 @@
 // Imports
 // =========================================================================================================
 
-import { DataCache } from '../core/cache';
+import { api } from '../api';
 import { showToast, TimeUnit } from '../lib/utils';
 import { t } from '../core/i18n';
 
@@ -26,16 +26,12 @@ export type FeedScope = 'avatars' | 'assets' | 'clothes' | 'blog' | 'comments';
 // Maps
 // =========================================================================================================
 
-/**
- * Cache URL prefixes each scope invalidates. A scope maps to every list/detail key whose data the
- * change could have altered; `clearScope` sweeps their paginated and filtered variants in one call.
- */
-const SCOPE_PREFIXES: Record<FeedScope, string[]> = {
-	avatars: ['/api/avatars', '/api/resources/latest'],
-	assets: ['/api/assets', '/api/resources/latest'],
-	clothes: ['/api/clothes', '/api/resources/latest'],
-	blog: ['/api/blog'],
-	comments: ['/api/comments'],
+const SCOPE_INVALIDATORS: Record<FeedScope, () => void> = {
+	avatars: () => api.Categories.Avatars.Invalidate(),
+	assets: () => api.Categories.Assets.Invalidate(),
+	clothes: () => api.Categories.Clothes.Invalidate(),
+	blog: () => api.Blog.Invalidate(),
+	comments: () => api.Comments.Invalidate(),
 };
 
 /** i18n leaf key naming each scope in a toast. */
@@ -51,12 +47,10 @@ const SCOPE_LABELS: Record<FeedScope, string> = {
 // Reconciliation
 // =========================================================================================================
 
-/** Invalidates every cache prefix owned by the changed scopes so the next read re-fetches fresh data. */
+/** Lets each domain invalidate its own cached data before the view refreshes. */
 export function invalidateScopes(scopes: FeedScope[]): void {
 	for (const scope of scopes) {
-		for (const prefix of SCOPE_PREFIXES[scope]) {
-			DataCache.clearScope(prefix);
-		}
+		SCOPE_INVALIDATORS[scope]();
 	}
 }
 

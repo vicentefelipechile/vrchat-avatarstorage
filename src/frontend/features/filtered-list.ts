@@ -1,19 +1,19 @@
 // =========================================================================
-// views/filtered-list.ts — Factory for sidebar-filtered resource listings
+// features/filtered-list.ts — Factory for sidebar-filtered resource listings
 // =========================================================================
 //
 // Avatars, assets and clothes are the same page: a filter panel on the left,
 // a paginated grid of cards on the right, a sort select, and a partial refresh
 // that swaps only the results when a filter or sort changes. This factory holds
-// that shared shape once; each view supplies only what differs — its endpoint,
+// that shared shape once; each view supplies only what differs — its list operation,
 // its filter config, the i18n keys, and how a card renders its meta badge.
 
 import { t } from '../core/i18n';
 import { buildFilterPanel, initFilterPanel, FilterType, type FilterPanelConfig } from './filter-panel';
 import type { RouteContext } from '../types';
-import { DataCache } from '../core/cache';
 import { TimeUnit, progressiveImg, initLazyImages, initMediaPolling } from '../lib/utils';
 import { paginationHtml } from '../lib/pagination';
+import type { ApiOptions, Filters } from '../api/types';
 
 // =========================================================================
 // Types
@@ -46,10 +46,10 @@ interface ListResponse<Meta> {
 
 /** Everything a concrete listing view must supply to the factory. */
 export interface FilteredListConfig<Meta> {
-	/** URL slug and cache/DOM id prefix, e.g. 'avatars' → `/api/avatars`, `#avatars-results`. */
+	/** DOM id prefix, e.g. 'avatars' → `#avatars-results`. */
 	slug: string;
-	/** API path (without query string), e.g. `/api/avatars`. */
-	endpoint: string;
+	/** Semantic category operation supplied by the view. */
+	list: (filters: Filters, options: ApiOptions) => Promise<ListResponse<Meta>>;
 	/** Route path the pagination links point at, e.g. `/avatars`. */
 	route: string;
 	/** document.title i18n key. */
@@ -118,9 +118,8 @@ async function buildResults<Meta>(cfg: FilteredListConfig<Meta>, params: URLSear
 
 	let data: ListResponse<Meta> | null = null;
 	try {
-		const res = await DataCache.fetch<ListResponse<Meta>>(`${cfg.endpoint}?${params.toString()}`, {
-			ttl: cfg.cacheTtl,
-			persistent: true,
+		const res = await cfg.list(params, {
+			cache: { ttl: cfg.cacheTtl, persistent: true },
 		});
 		if (res) data = res;
 	} catch {
@@ -136,10 +135,7 @@ async function buildResults<Meta>(cfg: FilteredListConfig<Meta>, params: URLSear
 		hasPrevPage: false,
 	};
 
-	const cardsHtml =
-		resources.length === 0
-			? `<div class="category-empty"><p>${t(cfg.emptyKey)}</p></div>`
-			: `<div class="grid">${resources.map((r) => card(cfg, r)).join('')}</div>`;
+	const cardsHtml = resources.length === 0 ? `<div class="category-empty"><p>${t(cfg.emptyKey)}</p></div>` : `<div class="grid">${resources.map((r) => card(cfg, r)).join('')}</div>`;
 
 	const limit = (pagination as Pagination).limit ?? 24;
 	const totalPages = Math.max(1, Math.ceil(pagination.total / limit));

@@ -3,6 +3,7 @@
 // =========================================================================
 
 import { t, getCurrentLang } from '../core/i18n';
+import { api } from '../api';
 import { DataCache } from '../core/cache';
 import { renderTurnstile, renderMarkdown, showToast, TimeUnit, parseMarkdownToHtml } from '../lib/utils';
 import DOMPurify from 'dompurify';
@@ -241,7 +242,7 @@ export async function wikiAfter(ctx: RouteContext): Promise<void> {
 		const container = document.getElementById('comments-container');
 		if (!container) return;
 		try {
-			const comments = (await fetch('/api/wiki/comments').then((r) => r.json())) as WikiComment[];
+			const comments = await api.Wiki.ListComments();
 			if (!comments?.length) {
 				container.innerHTML = `<p>${t('comment.noComments')}</p>`;
 				return;
@@ -258,15 +259,16 @@ export async function wikiAfter(ctx: RouteContext): Promise<void> {
 		contentEl.innerHTML = `
 			<h1>${t('wiki.comments.title')}</h1>
 			<div id="comments-container"><p>${t('common.loading')}</p></div>
-			${user
-				? `<form id="wiki-comment-form" class="wiki-comment-form">
+			${
+				user
+					? `<form id="wiki-comment-form" class="wiki-comment-form">
 					<div class="form-group">
 						<textarea id="comment-text" rows="3" placeholder="${t('comment.commentPlaceholder')}" required class="comment-textarea"></textarea>
 					</div>
 					<div id="turnstile-wiki-comment" class="mb-10"></div>
 					<button type="submit" class="btn">${t('item.send')}</button>
 				</form>`
-				: `<hr><h3>${t('comment.loginToComment')}</h3>`
+					: `<hr><h3>${t('comment.loginToComment')}</h3>`
 			}`;
 
 		await loadComments();
@@ -292,21 +294,12 @@ export async function wikiAfter(ctx: RouteContext): Promise<void> {
 
 				const token = new FormData(form).get('cf-turnstile-response') as string;
 				try {
-					const res = await fetch('/api/wiki/comments', {
-						method: 'POST',
-						headers: { 'Content-Type': 'application/json' },
-						body: JSON.stringify({ text, token }),
-					});
-					if (res.ok) {
-						textEl.value = '';
-						window.turnstile?.reset();
-						await loadComments();
-					} else {
-						const data = (await res.json()) as { error?: string };
-						showToast(`${t('common.error')}: ` + (data.error ?? t('wiki.toast.unknownError')), 'error');
-					}
-				} catch {
-					showToast(t('wiki.toast.submitError'), 'error');
+					await api.Wiki.CreateComment({ text, token });
+					textEl.value = '';
+					window.turnstile?.reset();
+					await loadComments();
+				} catch (error) {
+					showToast(error instanceof Error ? error.message : t('wiki.toast.submitError'), 'error');
 				} finally {
 					restore();
 				}
@@ -327,14 +320,10 @@ export async function wikiAfter(ctx: RouteContext): Promise<void> {
 			target.setAttribute('disabled', 'true');
 			target.textContent = '…';
 			try {
-				const res = await fetch(`/api/wiki/comments/${uuid}`, { method: 'DELETE' });
-				if (res.ok) document.getElementById(`comment-${uuid}`)?.remove();
-				else {
-					const d = (await res.json()) as { error?: string };
-					showToast('Error: ' + (d.error ?? 'Unknown'), 'error');
-				}
-			} catch {
-				showToast('Error deleting comment', 'error');
+				await api.Wiki.DeleteComment(uuid);
+				document.getElementById(`comment-${uuid}`)?.remove();
+			} catch (error) {
+				showToast(error instanceof Error ? error.message : t('common.error'), 'error');
 			} finally {
 				target.removeAttribute('disabled');
 				target.textContent = t('admin.delete');

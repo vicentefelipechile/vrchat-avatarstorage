@@ -4,10 +4,12 @@
 
 import QRCode from 'qrcode';
 import { t } from '../core/i18n';
+import { api } from '../api';
+import type { NotificationPrefsDTO, PasswordChange, ProfileUpdate } from '../api/types';
 import { icons } from '../lib/icons';
 import { renderTurnstile, resizeImage, showToast, loadingBtn, mediaUrl, metaLabel, safeHttpUrl } from '../lib/utils';
 import { showConfirm } from '../lib/confirm';
-import { isNotificationSupported, getNotificationPermission, requestNotificationPermission, setCachedPrefs, type NotificationPrefsDTO } from '../features/notifications';
+import { isNotificationSupported, getNotificationPermission, requestNotificationPermission, setCachedPrefs } from '../features/notifications';
 import type { RouteContext } from '../types';
 
 const AVATAR_TYPE_OPTIONS = ['human', 'anime', 'furry', 'chibi', 'cartoon', 'semi-realistic', 'monster', 'fantasy', 'mecha', 'kemono', 'other'] as const;
@@ -364,30 +366,18 @@ export async function settingsAfter(_ctx: RouteContext): Promise<void> {
 				const fd = new FormData();
 				fd.append('file', resized);
 				fd.append('media_type', 'image');
-				const uploadRes = await fetch('/api/upload', { method: 'PUT', body: fd });
-				if (!uploadRes.ok) throw new Error('Error uploading avatar');
-				const uploadData = (await uploadRes.json()) as { r2_key: string; media_uuid: string };
+				const uploadData = await api.Uploads.Single(fd);
 				avatarUrl = mediaUrl(uploadData.media_uuid, 'med');
 			}
 
 			const is_anonymous = anonCheckbox.checked ? 1 : 0;
-			const body: Record<string, string | number> = { username, token, is_anonymous };
+			const body: ProfileUpdate = { username, token, is_anonymous };
 			if (avatarUrl) body.avatar_url = avatarUrl;
 
-			const res = await fetch('/api/auth/me', {
-				method: 'PUT',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify(body),
-			});
-
-			if (res.ok) {
-				showToast(t('settings.success'), 'success');
-				window.turnstile?.reset();
-				setTimeout(() => location.reload(), 1200);
-			} else {
-				const data = (await res.json()) as { error?: string };
-				throw new Error(data.error ?? 'Update failed');
-			}
+			await api.Auth.UpdateMe(body);
+			showToast(t('settings.success'), 'success');
+			window.turnstile?.reset();
+			setTimeout(() => location.reload(), 1200);
 		} catch (err) {
 			showToast((err as Error).message, 'error');
 			window.turnstile?.reset();
@@ -469,8 +459,7 @@ async function loadPasswordSection(): Promise<void> {
 	// Detect if user has 2FA enabled to show/hide the code field
 	let has2FA = false;
 	try {
-		const res = await fetch('/api/2fa/status');
-		const data = (await res.json()) as { enabled: boolean };
+		const data = await api.TwoFactor.Status();
 		has2FA = data.enabled;
 	} catch {
 		/* ignore */
@@ -510,29 +499,19 @@ async function loadPasswordSection(): Promise<void> {
 			return;
 		}
 
-		const body: Record<string, string> = { new_password: newPw, token: passwordWidgetId ? (window.turnstile?.getResponse(passwordWidgetId) ?? '') : '' };
+		const body: PasswordChange = { new_password: newPw, token: passwordWidgetId ? (window.turnstile?.getResponse(passwordWidgetId) ?? '') : '' };
 		if (hasPassword) body.current_password = currentPw;
 		if (has2FA && twoFactorCode) body.two_factor_code = twoFactorCode;
 
 		try {
-			const res = await fetch('/api/auth/me/password', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify(body),
-			});
-			const data = (await res.json()) as { success?: boolean; error?: string };
-
-			if (res.ok) {
-				showToast(t('settings.password_changed'), 'success', 4000);
-				// All sessions invalidated by the backend — reload to trigger re-auth
-				setTimeout(() => {
-					window.location.href = '/';
-				}, 2500);
-			} else {
-				showToast(data.error ?? t('settings.toast.passwordChangeFailed'), 'error');
-			}
-		} catch {
-			showToast(t('common.networkError'), 'error');
+			await api.Auth.ChangePassword(body);
+			showToast(t('settings.password_changed'), 'success', 4000);
+			// All sessions invalidated by the backend — reload to trigger re-auth.
+			setTimeout(() => {
+				window.location.href = '/';
+			}, 2500);
+		} catch (error) {
+			showToast(error instanceof Error ? error.message : t('common.networkError'), 'error');
 		} finally {
 			if (passwordWidgetId) window.turnstile?.reset(passwordWidgetId);
 			restore();
@@ -556,8 +535,7 @@ async function loadTwoFactorStatus(): Promise<void> {
 	};
 
 	try {
-		const res = await fetch('/api/2fa/status');
-		const data = (await res.json()) as { enabled: boolean };
+		const data = await api.TwoFactor.Status();
 
 		Object.values(els).forEach((el) => (el.style.display = 'none'));
 
@@ -594,17 +572,7 @@ function setup2FAHandlers(els: TwoFAEls): void {
 
 	const fetchQR = async (password?: string, restore?: () => void) => {
 		try {
-			const res = await fetch('/api/2fa/setup', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify(password ? { password } : {}),
-			});
-			const data = (await res.json()) as { otpauthUrl?: string; secret?: string; error?: string };
-			if (!res.ok) {
-				showToast(data.error ?? t('settings.toast.twoFactorSetupFailed'), 'error');
-				if (restore) restore();
-				return;
-			}
+			const data = await api.TwoFactor.Setup(password ? { password } : {});
 
 			els.password.style.display = 'none';
 			els.enable.style.display = 'none';
@@ -614,8 +582,8 @@ function setup2FAHandlers(els: TwoFAEls): void {
 			qrContainer.innerHTML = '';
 			qrContainer.appendChild(canvas);
 			secretText.textContent = data.secret ?? '';
-		} catch {
-			showToast(t('common.networkError'), 'error');
+		} catch (error) {
+			showToast(error instanceof Error ? error.message : t('common.networkError'), 'error');
 		} finally {
 			if (restore) restore();
 		}
@@ -666,22 +634,13 @@ function setup2FAHandlers(els: TwoFAEls): void {
 		const code = (document.getElementById('2fa-code') as HTMLInputElement).value.trim();
 
 		try {
-			const res = await fetch('/api/2fa/verify', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ code }),
-			});
-			const data = (await res.json()) as { backupCodes?: string[]; error?: string };
-			if (res.ok) {
-				els.setup.style.display = 'none';
-				els.backup.style.display = 'block';
-				backupCodesList.textContent = data.backupCodes?.join('\n') ?? '';
-				showToast(t('settings.2fa_enabled_success'), 'success');
-			} else {
-				showToast(data.error ?? t('settings.toast.invalidCode'), 'error');
-			}
-		} catch {
-			showToast(t('common.networkError'), 'error');
+			const data = await api.TwoFactor.Verify({ code });
+			els.setup.style.display = 'none';
+			els.backup.style.display = 'block';
+			backupCodesList.textContent = data.backupCodes.join('\n');
+			showToast(t('settings.2fa_enabled_success'), 'success');
+		} catch (error) {
+			showToast(error instanceof Error ? error.message : t('common.networkError'), 'error');
 		} finally {
 			restore();
 		}
@@ -712,29 +671,16 @@ function setup2FAHandlers(els: TwoFAEls): void {
 		const password = (document.getElementById('2fa-disable-password') as HTMLInputElement).value;
 		const code = (document.getElementById('2fa-disable-code') as HTMLInputElement).value;
 
-		const body: Record<string, string> = { code: code || '' };
-		if (hasPassword) body.password = password;
-
 		try {
-			const res = await fetch('/api/2fa/disable', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify(body),
-			});
-			const data = (await res.json()) as { error?: string };
-			if (res.ok) {
-				window.appState.isAdmin = false;
-				showToast(t('settings.2fa_disabled_success'), 'success');
-				els.disable.style.display = 'none';
-				await loadTwoFactorStatus();
-				// Also hide the 2FA code field in the password section
-				const pw2faSection = document.getElementById('pw-2fa-section') as HTMLElement;
-				if (pw2faSection) pw2faSection.style.display = 'none';
-			} else {
-				showToast(data.error ?? t('settings.toast.twoFactorDisableFailed'), 'error');
-			}
-		} catch {
-			showToast(t('common.networkError'), 'error');
+			await api.TwoFactor.Disable({ code: code || '', password: hasPassword ? password : undefined });
+			window.appState.isAdmin = false;
+			showToast(t('settings.2fa_disabled_success'), 'success');
+			els.disable.style.display = 'none';
+			await loadTwoFactorStatus();
+			const pw2faSection = document.getElementById('pw-2fa-section') as HTMLElement;
+			if (pw2faSection) pw2faSection.style.display = 'none';
+		} catch (error) {
+			showToast(error instanceof Error ? error.message : t('common.networkError'), 'error');
 		} finally {
 			restore();
 		}
@@ -767,15 +713,17 @@ async function loadDrivePanel(): Promise<void> {
 		const m = v.match(/\/folders\/([a-zA-Z0-9_-]+)/);
 		if (m) return m[1];
 		// Accept raw ID (most common): strip query/hash if user pasted url with params
-		const id = v.split(/[?#\s]/)[0].split('/').pop() ?? v;
+		const id =
+			v
+				.split(/[?#\s]/)[0]
+				.split('/')
+				.pop() ?? v;
 		return id.trim() || null;
 	};
 
 	const refresh = async () => {
 		try {
-			const res = await fetch('/api/drive/status');
-			if (!res.ok) throw new Error();
-			const data = (await res.json()) as { linked: boolean; folder_id: string | null; folder_name: string | null };
+			const data = await api.Drive.Status();
 			statusEl.hidden = true;
 			controlsEl.hidden = false;
 			if (data.linked) {
@@ -810,8 +758,7 @@ async function loadDrivePanel(): Promise<void> {
 		const ok = await showConfirm({ title: t('confirm.title'), message: t('settings.driveDisconnectConfirm'), confirmText: t('confirm.confirm'), cancelText: t('common.cancel'), danger: true });
 		if (!ok) return;
 		try {
-			const res = await fetch('/api/drive/link', { method: 'DELETE' });
-			if (!res.ok) throw new Error();
+			await api.Drive.Unlink();
 			showToast(t('settings.driveDisconnected'), 'success');
 			await refresh();
 		} catch {
@@ -826,15 +773,7 @@ async function loadDrivePanel(): Promise<void> {
 		const btn = document.getElementById('drive-save-folder-btn') as HTMLButtonElement;
 		const restore = loadingBtn(btn, '…');
 		try {
-			const res = await fetch('/api/drive/folder', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ folder_id: folderId, folder_name: folderId }),
-			});
-			if (!res.ok) {
-				const data = (await res.json()) as { error?: string };
-				throw new Error(data.error ?? 'Failed');
-			}
+			await api.Drive.SetFolder({ folder_id: folderId, folder_name: folderId });
 			showToast(folderId ? t('settings.driveFolderSaved') : t('settings.driveFolderCleared'), 'success');
 			await refresh();
 		} catch (e) {
@@ -847,38 +786,18 @@ async function loadDrivePanel(): Promise<void> {
 	document.getElementById('drive-clear-folder-btn')?.addEventListener('click', async () => {
 		if (folderInput) folderInput.value = '';
 		try {
-			await fetch('/api/drive/folder', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ folder_id: null, folder_name: null }) });
+			await api.Drive.SetFolder({ folder_id: null, folder_name: null });
 			showToast(t('settings.driveFolderCleared'), 'success');
 			await refresh();
 		} catch {
 			showToast(t('common.networkError'), 'error');
 		}
 	});
-
-	// Browser kept for future — hidden until drive.readonly is approved.
-	// Re-enable by wiring showDrivePicker here again:
-	// document.getElementById('drive-change-folder-btn')?.addEventListener('click', async () => {
-	// 	const { showDrivePicker } = await import('../features/drive-picker');
-	// 	let currentId: string | null = null;
-	// 	try { const s = await fetch('/api/drive/status').then((r) => r.json() as Promise<{ folder_id: string | null }>); currentId = s.folder_id; } catch {}
-	// 	const picked = await showDrivePicker(currentId); if (picked === null) return;
-	// 	await fetch('/api/drive/folder', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ folder_id: picked.id, folder_name: picked.name }) }); await refresh();
-	// });
 }
 
 // =========================================================================
 // Shares panel — manage temporary links (revoke = force-expire)
 // =========================================================================
-
-interface ShareLinkDTO {
-	uuid: string;
-	file_name: string;
-	uses: number;
-	max_uses: number | null;
-	expires_at: number;
-	revoked: number;
-	created_at: number;
-}
 
 async function loadSharesPanel(): Promise<void> {
 	const statusEl = document.getElementById('shares-status') as HTMLElement;
@@ -887,9 +806,7 @@ async function loadSharesPanel(): Promise<void> {
 
 	const render = async () => {
 		try {
-			const res = await fetch('/api/share/mine');
-			if (!res.ok) throw new Error();
-			const data = (await res.json()) as { links: ShareLinkDTO[] };
+			const data = await api.Share.Mine();
 			const now = Math.floor(Date.now() / 1000);
 			if (data.links.length === 0) {
 				statusEl.textContent = t('settings.sharesEmpty');
@@ -939,8 +856,7 @@ async function loadSharesPanel(): Promise<void> {
 		const ok = await showConfirm({ title: t('settings.sharesRevokeTitle'), message: t('settings.sharesRevokeConfirm'), confirmText: t('confirm.confirm'), cancelText: t('common.cancel'), danger: true });
 		if (!ok) return;
 		try {
-			const res = await fetch(`/api/share/${btn.dataset.uuid}`, { method: 'DELETE' });
-			if (!res.ok) throw new Error();
+			await api.Share.Revoke(btn.dataset.uuid!);
 			showToast(t('settings.sharesRevoked'), 'success');
 			await render();
 		} catch {
@@ -1030,9 +946,7 @@ async function loadNotificationsPanel(): Promise<void> {
 	let currentPrefs: NotificationPrefsDTO | null = null;
 
 	try {
-		const res = await fetch('/api/notifications/preferences');
-		if (!res.ok) throw new Error();
-		currentPrefs = (await res.json()) as NotificationPrefsDTO;
+		currentPrefs = await api.Notifications.Preferences();
 	} catch {
 		statusEl.textContent = t('common.networkError');
 		return;
@@ -1066,16 +980,7 @@ async function loadNotificationsPanel(): Promise<void> {
 			updated_at: null,
 		};
 		try {
-			const res = await fetch('/api/notifications/preferences', {
-				method: 'PUT',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify(payload),
-			});
-			if (!res.ok) {
-				const data = (await res.json()) as { error?: string };
-				throw new Error(data.error ?? 'Failed');
-			}
-			const saved = (await res.json()) as NotificationPrefsDTO;
+			const saved = await api.Notifications.UpdatePreferences(payload);
 			currentPrefs = saved;
 			setCachedPrefs(saved);
 			showToast(t('notifications.saved'), 'success');

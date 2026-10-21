@@ -2,13 +2,14 @@
 // lib/turnstile.ts — Cloudflare Turnstile widget rendering
 // =========================================================================
 
+import { api } from '../api';
+
 let _cachedSiteKey: string | null = null;
 
 async function getSiteKey(): Promise<string | null> {
 	if (_cachedSiteKey) return _cachedSiteKey;
 	try {
-		const res = await fetch('/api/config');
-		const data = (await res.json()) as { turnstileSiteKey?: string };
+		const data = await api.System.Config();
 		_cachedSiteKey = data.turnstileSiteKey ?? null;
 		return _cachedSiteKey;
 	} catch {

@@ -2,11 +2,12 @@
 // features/drive-picker.ts — Browsable Drive folder picker (design system)
 // =========================================================================
 // Hierarchical explorer: breadcrumb + subfolders of current parent.
-// Uses GET /api/drive/folders?parentId= and POST /api/drive/folders/create.
+// Folder reads and creation go through the Drive API domain.
 // No API key, no external Picker library — fully proxy via backend.
 // =========================================================================
 
 import { t } from '../core/i18n';
+import { api, VrcStorageApiError } from '../api';
 import { getIcon } from '../lib/icons';
 
 interface DriveFolder {
@@ -138,12 +139,7 @@ export function showDrivePicker(currentFolderId: string | null): Promise<{ id: s
 			const prev = createBtn.innerHTML;
 			createBtn.textContent = '…';
 			try {
-				const res = await fetch('/api/drive/folders/create', {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ name, parentId: currentId }),
-				});
-				if (!res.ok) throw new Error();
+				await api.Drive.CreateFolder({ name, parentId: currentId });
 				inputEl.value = '';
 				await load(currentId);
 			} catch {
@@ -234,20 +230,13 @@ export function showDrivePicker(currentFolderId: string | null): Promise<{ id: s
 			scopeError = false;
 			render();
 			try {
-				const url = parentId ? `/api/drive/folders?parentId=${encodeURIComponent(parentId)}` : '/api/drive/folders';
-				const res = await fetch(url);
-				if (!res.ok) {
-					const data = (await res.json().catch(() => ({}))) as { error?: string };
-					if (res.status === 403) {
-						scopeError = true;
-						scopeMessage = data.error ?? 'Necesitas reconectar Drive para ver tus carpetas.';
-						throw new Error(scopeMessage);
-					}
-					throw new Error();
-				}
-				const data = (await res.json()) as { folders: DriveFolder[] };
+				const data = await api.Drive.Folders(parentId);
 				folders = data.folders ?? [];
 			} catch (e) {
+				if (e instanceof VrcStorageApiError && e.status === 403) {
+					scopeError = true;
+					scopeMessage = e.message;
+				}
 				if (!scopeError) folders = [];
 			} finally {
 				loading = false;
@@ -269,10 +258,13 @@ export function showDrivePicker(currentFolderId: string | null): Promise<{ id: s
 			if (currentFolderId) {
 				let currentName = 'Carpeta actual';
 				try {
-					const s = await fetch('/api/drive/status').then((r) => r.json() as Promise<{ folder_name: string | null }>);
+					const s = await api.Drive.Status();
 					if (s.folder_name) currentName = s.folder_name;
 				} catch {}
-				path = [{ id: null, name: 'Mi unidad' }, { id: currentFolderId, name: currentName }];
+				path = [
+					{ id: null, name: 'Mi unidad' },
+					{ id: currentFolderId, name: currentName },
+				];
 				currentId = currentFolderId;
 			} else {
 				path = [{ id: null, name: 'Mi unidad' }];

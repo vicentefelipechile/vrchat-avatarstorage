@@ -198,9 +198,10 @@ route('/example', exampleView, { after: exampleAfter });
 | Layer                | Contains                                                                 | May import from        |
 | -------------------- | ------------------------------------------------------------------------ | ---------------------- |
 | `core/`              | The SPA's own runtime: router, i18n, DataCache                            | nothing (leaf layer)   |
-| `lib/`               | Stateless helpers. No app state, no DOM ownership, no fetching own data   | `core/`                |
-| `features/`          | Stateful subsystems that own DOM and/or a lifecycle (feed, editor, lists) | `core/`, `lib/`        |
-| `views/`             | One module per route (`viewFn` + optional `afterFn`)                      | `core/`, `lib/`, `features/` |
+| `api/`               | VRCStorageApi facade, domain DTOs and HTTP transport                     | `core/`, frontend types |
+| `lib/`               | Shared helpers; media polling and Turnstile use semantic API methods     | `core/`, `api/`         |
+| `features/`          | Stateful subsystems that own DOM and/or a lifecycle (feed, editor, lists) | `core/`, `api/`, `lib/` |
+| `views/`             | One module per route (`viewFn` + optional `afterFn`)                      | `core/`, `api/`, `lib/`, `features/` |
 | `app.ts`             | Composition root: registers routes, nav, auth, boot                       | everything             |
 
 **Rules:**
@@ -212,7 +213,17 @@ route('/example', exampleView, { after: exampleAfter });
 
 #### Filtered listings go through the factory
 
-`AvatarsView`, `AssetsView` and `ClothesView` are the same page with a different endpoint. They are **not** written by hand — each calls `createFilteredListView(...)` from `src/frontend/features/filtered-list.ts`, supplying only what differs: the API endpoint, the `FilterPanelConfig`, the i18n key namespace, and how a card renders its meta badge. Adding a fourth resource listing means another factory call, never a copy of an existing view.
+`AvatarsView`, `AssetsView` and `ClothesView` are the same page with a different domain. They are **not** written by hand — each calls `createFilteredListView(...)` from `src/frontend/features/filtered-list.ts`, supplying only what differs: the semantic category `list` callback, the `FilterPanelConfig`, the i18n key namespace, and how a card renders its meta badge. Adding a fourth resource listing means another factory call, never a copy of an existing view.
+
+#### Frontend HTTP API
+
+- Import `api` from `src/frontend/api/` and call semantic operations such as `api.Resources.Get(uuid)` or `api.Uploads.Chunked(file, mediaType, onProgress)`.
+- Only `api/client.ts` executes API `fetch`/XHR. Domain modules own endpoint paths and DTOs; the root facade only composes domains. Never import backend validators or database rows into the browser.
+- Cached API reads pass `{ cache: { ttl, persistent? } }` to the domain method. `DataCache.load` accepts the loader; API cache keys include the resolved origin while retaining the prefixes used by polling invalidation. `DataCache.fetch`/`prefetch` are for static content such as wiki Markdown.
+- Domain mutations declare their cache prefixes through the transport's internal `invalidate` option; invalidation runs only after a successful response. Views never build API cache keys. External session changes use `api.Auth.Invalidate()`; polling calls each affected domain's `Invalidate()`. Retired in-flight reads cannot repopulate invalidated cache entries.
+- Only the exact hostname `vrcstorage.pages.dev` resolves API requests to `https://vrcstorage.lat`. Other hosts use same-origin API paths. CDN URLs, static wiki files, external links and OAuth/Drive browser navigations are not rewritten.
+- Session cookies use `SameSite=None; Secure; HttpOnly` for Pages requests. CORS and CSRF share an exact origin allowlist; multipart headers are explicitly allowed. Browsers that block third-party cookies may still block Pages authentication. Turnstile must allow the Pages hostname in its dashboard configuration.
+- Google and Drive OAuth remain browser navigations, outside the JSON resolver. `public/_redirects` sends their two authorization entrypoints from static Pages to the canonical Worker; `assets.run_worker_first` lists those exact paths so the Worker executes its own handlers instead of redirecting to itself. Callbacks stay on the canonical origin and must be registered in Google's OAuth configuration. The existing WebSocket feature is unchanged and has no API fallback.
 
 #### Name search (q) and multi-value faceted filters
 
@@ -285,13 +296,24 @@ src/
     build-frontend.mjs    # esbuild script: bundles src/frontend/ → public/js/bundle.js
                           # --dev flag enables source maps; --watch flag enables watch mode
     user-passrecover.mjs  # CLI script: reset user password via wrangler d1 (npm run user-passrecover)
-  frontend/               # TypeScript SPA source (compiled by esbuild) — layered: core → lib → features → views
+  frontend/               # TypeScript SPA source — layered: core → api/lib → features → views
     app.ts                # Entry point: route registration, nav, auth, boot
     types.ts              # Frontend-only TypeScript types (RouteContext, ViewFn, etc.)
     core/                 # Framework layer: the SPA's own runtime. Depends on nothing above it.
       router.ts           # History API SPA router (route/notFound/navigateTo/initRouter)
       i18n.ts             # i18n: static locale imports + t() / setLanguage() / getCurrentLang()
       cache.ts            # DataCache — two-layer cache: in-memory Map + localStorage (survives reloads)
+    api/                  # VRCStorageApi facade, API domains and browser-only DTOs
+      index.ts            # Facade composition + shared instance
+      client.ts           # Sole API fetch/XHR transport, parsing, credentials and cache integration
+      origin.ts           # Exact Pages hostname fallback for API paths only
+      errors.ts           # VrcStorageApiError: HTTP, network, abort, malformed and rate-limit failures
+      types.ts            # Request/response DTOs and repeated-key query construction
+      resources.ts        auth.ts          two-factor.ts      uploads.ts
+      media.ts            favorites.ts     collections.ts     comments.ts
+      blog.ts             wiki.ts          authors.ts         categories.ts
+      admin.ts            admin-types.ts   drive.ts           notifications.ts
+      share.ts            system.ts        updates.ts
     lib/                  # Stateless utilities. No DOM ownership, no app state — pure helpers.
       utils.ts            # Barrel: re-exports every lib module. Views import from here, not the leaves.
       dom.ts              # $ / $$ / htmlDecode / loadingBtn
@@ -299,7 +321,6 @@ src/
       confirm.ts          # showConfirm — modal confirmation promise (replaces window.confirm)
       markdown.ts         # stripMarkdown / renderMarkdown (marked + DOMPurify)
       media.ts            # mediaUrl / videoUrl / progressiveImg / initLazyImages / initMediaPolling / resizeImage
-      upload.ts           # uploadChunked + CHUNK_SIZE (30MB multipart chunking)
       download-hosts.ts   # downloadHost(url) → HostInfo + the KNOWN_HOSTS table
       icons.ts            # Centralized Lucide + simple-icons registry (icon/brandIcon/getIcon)
       turnstile.ts        # renderTurnstile — widget mount helper
@@ -340,6 +361,7 @@ src/
   validators.ts           # Zod schemas + sanitizeHtml helper
 
 public/
+  _redirects              # Pages OAuth/Drive navigation entrypoints → canonical Worker (not API fetch rewriting)
   index.html              # SPA shell
   style.css               # CSS import manifest (imports from public/style/)
   style/                  # Modular CSS files
@@ -705,7 +727,7 @@ Link-preview fetchers (Discord/Telegram/…) `GET` every shared URL within secon
 
 ### Change Feed (Real-Time Updates)
 
-The frontend poller (`src/frontend/features/updates.ts`) hits `GET /api/updates?since=<ms>` on an interval and learns which content **scopes** changed. Each scope maps to a set of `DataCache` URL prefixes it invalidates via `DataCache.clearScope(prefix)`, so the next read re-fetches fresh data from the API. The scopes are `avatars | assets | clothes | blog | comments`. The API is the single source of truth — an update carries only a scope + timestamp, never business data.
+The frontend poller (`src/frontend/features/updates.ts`) hits `GET /api/updates?since=<ms>` on an interval and learns which content **scopes** changed. `SCOPE_INVALIDATORS` maps each scope to its API domain's `Invalidate()` operation; that domain owns the cache prefixes, so the next read re-fetches fresh data from the API. The scopes are `avatars | assets | clothes | blog | comments`. The API is the single source of truth — an update carries only a scope + timestamp, never business data.
 
 The backend records changes in the `change_feed` table (migration `0014_change_feed.sql`) through `ChangeFeedRepository.bump(scope, entityId)`, exposed to the poller as a read via `ChangeFeedService.latest`.
 
@@ -720,7 +742,7 @@ A `bump` announces content to every connected user, so it must fire at the momen
 
 The mutation has already persisted before the bump runs, so a feed-write failure must never fail the request or roll back the change. Call it as `await this.changeFeed.bump(scope, id).catch(() => {})`. The only consequence of a dropped bump is that this one change goes unannounced until the next change refreshes the feed.
 
-**When adding a new gated content type** (created hidden, published later): put the bump — and the live broadcast (below) — at the publish/approve step, never at creation. **When adding a new instantly-public content type**: bump + broadcast at creation. In both cases add the scope to `FeedScope` in `src/types.ts` (the single source of vocabulary; `ChangeScope` aliases it) and to the `SCOPE_PREFIXES` / `SCOPE_LABELS` maps in `src/frontend/features/feed-scopes.ts` (with matching `updates.<scope>` i18n keys), or the frontend will neither invalidate nor announce it.
+**When adding a new gated content type** (created hidden, published later): put the bump — and the live broadcast (below) — at the publish/approve step, never at creation. **When adding a new instantly-public content type**: bump + broadcast at creation. In both cases add the scope to `FeedScope` in `src/types.ts` (the single source of vocabulary; `ChangeScope` aliases it) and to the `SCOPE_INVALIDATORS` / `SCOPE_LABELS` maps in `src/frontend/features/feed-scopes.ts` (with matching `updates.<scope>` i18n keys), or the frontend will neither invalidate nor announce it.
 
 ### Live Feed (Durable Object)
 

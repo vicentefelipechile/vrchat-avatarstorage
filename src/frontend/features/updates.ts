@@ -15,21 +15,9 @@
 // =========================================================================================================
 
 import { TimeUnit } from '../lib/utils';
-import { reconcileScopes, type FeedScope } from './feed-scopes';
-
-// =========================================================================================================
-// Types
-// =========================================================================================================
-
-interface ScopeChange {
-	scope: FeedScope;
-	updated_at: number;
-}
-
-interface UpdatesResult {
-	now: number;
-	changes: ScopeChange[];
-}
+import { api } from '../api';
+import { reconcileScopes } from './feed-scopes';
+import type { UpdatesResult } from '../api/updates';
 
 // =========================================================================================================
 // Configuration
@@ -70,13 +58,9 @@ async function pollOnce(): Promise<void> {
 	const cursor = readCursor();
 	const isFirstPoll = cursor === undefined;
 
-	const url = cursor === undefined ? '/api/updates' : `/api/updates?since=${cursor}`;
-
 	let result: UpdatesResult;
 	try {
-		const res = await fetch(url);
-		if (!res.ok) return;
-		result = (await res.json()) as UpdatesResult;
+		result = await api.Updates.Since(cursor);
 	} catch {
 		// Network hiccup — keep the cursor untouched and try again next interval.
 		return;

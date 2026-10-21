@@ -21,18 +21,14 @@ export const securityMiddleware = (app: any) => {
 		}),
 	);
 
-	const origins = [
-		'https://testing-vrchat-avatarstorage.vicentefelipechile.workers.dev',
-		'https://vrchat-avatarstorage.vicentefelipechile.workers.dev',
-		'https://vrcstorage.lat',
-	];
+	const origins = ['https://testing-vrchat-avatarstorage.vicentefelipechile.workers.dev', 'https://vrchat-avatarstorage.vicentefelipechile.workers.dev', 'https://vrcstorage.lat', 'https://vrcstorage.pages.dev'];
 
 	app.use(
 		'*',
 		cors({
 			origin: origins,
 			allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-			allowHeaders: ['Content-Type', 'Authorization'],
+			allowHeaders: ['Content-Type', 'Authorization', 'X-Upload-ID', 'X-Key', 'X-Part-Number'],
 			exposeHeaders: ['Content-Length'],
 			maxAge: 600,
 			credentials: true,

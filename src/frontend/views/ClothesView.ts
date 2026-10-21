@@ -6,21 +6,8 @@
 
 import { createFilteredListView, FilterType, TimeUnit } from '../features/filtered-list';
 import { metaLabel } from '../lib/utils';
-
-// =========================================================================
-// Types
-// =========================================================================
-
-interface ClothesMeta {
-	gender_fit: string;
-	clothing_type: string[];
-	is_base: number;
-	is_nsfw: number;
-	has_physbones: number;
-	platform: string;
-	base_avatar_uuid: string | null;
-	base_avatar_name_raw: string | null;
-}
+import { api } from '../api';
+import type { ClothesListMeta as ClothesMeta } from '../api/categories';
 
 // =========================================================================
 // Config
@@ -79,7 +66,7 @@ const FILTERS = {
 
 export const { view: clothesView, after: clothesAfter } = createFilteredListView<ClothesMeta>({
 	slug: 'clothes',
-	endpoint: '/api/clothes',
+	list: (filters, options) => api.Categories.Clothes.List(filters, options),
 	route: '/clothes',
 	titleKey: 'filterPanel.titleClothes',
 	countKey: 'filterPanel.clothesCountStr',

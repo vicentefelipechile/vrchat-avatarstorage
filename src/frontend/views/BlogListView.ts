@@ -3,29 +3,10 @@
 // =========================================================================
 
 import { t } from '../core/i18n';
+import { api } from '../api';
+import type { BlogPostDto as BlogPost, BlogList as BlogListResponse } from '../api/types';
 import { mediaUrl } from '../lib/utils';
 import type { RouteContext } from '../types';
-
-// =========================================================================
-// Types
-// =========================================================================
-
-interface BlogPost {
-	uuid: string;
-	title: string;
-	excerpt?: string;
-	content: string;
-	cover_image_key?: string;
-	cover_image_uuid?: string;
-	author_display: 'personal' | 'team';
-	author_username?: string;
-	created_at: number;
-}
-
-interface BlogListResponse {
-	data: BlogPost[];
-	pagination?: { page: number; total_pages: number };
-}
 
 // =========================================================================
 // Helpers
@@ -38,9 +19,7 @@ function esc(str: string): string {
 function blogCard(post: BlogPost): string {
 	const date = new Date(post.created_at * 1000).toLocaleDateString();
 	const authorName = post.author_display === 'team' ? t('blog.team') : (post.author_username ?? '');
-	const coverHtml = post.cover_image_uuid
-		? `<div class="blog-card-cover"><img src="${mediaUrl(post.cover_image_uuid, 'med')}" alt="${esc(post.title)}" loading="lazy"></div>`
-		: '';
+	const coverHtml = post.cover_image_uuid ? `<div class="blog-card-cover"><img src="${mediaUrl(post.cover_image_uuid, 'med')}" alt="${esc(post.title)}" loading="lazy"></div>` : '';
 
 	return `
 		<a class="blog-card" href="/blog/${post.uuid}" data-link>
@@ -68,9 +47,7 @@ export async function blogListView(_ctx: RouteContext): Promise<string> {
 	let pagination: BlogListResponse['pagination'];
 
 	try {
-		const res = await fetch('/api/blog?page=1&limit=10');
-		if (!res.ok) throw new Error();
-		const data = (await res.json()) as BlogListResponse;
+		const data = await api.Blog.List(1, 10);
 		posts = data.data ?? [];
 		pagination = data.pagination;
 	} catch {
@@ -121,8 +98,7 @@ export function blogListAfter(_ctx: RouteContext): void {
 		container.innerHTML = `<p class="loading-text">${t('blog.loading')}</p>`;
 
 		try {
-			const res = await fetch(`/api/blog?page=${page}&limit=10`);
-			const data = (await res.json()) as BlogListResponse;
+			const data = await api.Blog.List(page, 10);
 			const posts = data.data ?? [];
 
 			container.innerHTML = posts.length === 0 ? `<p class="empty-state">${t('blog.noPostsYet')}</p>` : posts.map(blogCard).join('');

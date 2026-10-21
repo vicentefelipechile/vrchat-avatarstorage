@@ -3,8 +3,9 @@
 // =========================================================================
 
 import { t } from '../core/i18n';
-import { DataCache } from '../core/cache';
-import { renderMarkdown, showToast, uploadChunked, CHUNK_SIZE } from '../lib/utils';
+import { api, CHUNK_SIZE } from '../api';
+import type { ResourceWrite } from '../api/types';
+import { renderMarkdown, showToast } from '../lib/utils';
 import { navigateTo } from '../core/router';
 import type { RouteContext } from '../types';
 
@@ -61,13 +62,11 @@ function validateImageDimensions(file: File): Promise<ImageDimCheck> {
 function createPreviewItem(tag: 'img' | 'video', url: string, name: string, onDelete: () => void): HTMLDivElement {
 	const container = document.createElement('div');
 	container.className = 'preview-item';
-	container.style.cssText =
-		'display:inline-block;position:relative;border:2px solid var(--border-color);padding:10px;margin:5px;background:var(--bg-card);vertical-align:top';
+	container.style.cssText = 'display:inline-block;position:relative;border:2px solid var(--border-color);padding:10px;margin:5px;background:var(--bg-card);vertical-align:top';
 
 	const btn = document.createElement('button');
 	btn.textContent = '✕';
-	btn.style.cssText =
-		'position:absolute;top:5px;right:5px;background:#dc3545;color:white;border:none;border-radius:3px;width:25px;height:25px;cursor:pointer;font-weight:bold;z-index:10';
+	btn.style.cssText = 'position:absolute;top:5px;right:5px;background:#dc3545;color:white;border:none;border-radius:3px;width:25px;height:25px;cursor:pointer;font-weight:bold;z-index:10';
 	btn.onclick = (e) => {
 		e.preventDefault();
 		onDelete();
@@ -85,34 +84,10 @@ function createPreviewItem(tag: 'img' | 'video', url: string, name: string, onDe
 
 	const label = document.createElement('div');
 	label.textContent = name;
-	label.style.cssText =
-		'margin-top:5px;font-size:12px;color:var(--text-muted);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
+	label.style.cssText = 'margin-top:5px;font-size:12px;color:var(--text-muted);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
 
 	container.append(btn, media, label);
 	return container;
-}
-
-function uploadWithProgress(url: string, fd: FormData, onProgress: (p: number) => void): Promise<{ r2_key: string; media_uuid: string }> {
-	return new Promise((resolve, reject) => {
-		const xhr = new XMLHttpRequest();
-		xhr.open('PUT', url);
-		xhr.upload.onprogress = (ev) => {
-			if (ev.lengthComputable) onProgress((ev.loaded / ev.total) * 100);
-		};
-		xhr.onload = () => {
-			if (xhr.status >= 200 && xhr.status < 300) {
-				try {
-					resolve(JSON.parse(xhr.responseText) as { r2_key: string; media_uuid: string });
-				} catch {
-					reject(new Error('Invalid JSON'));
-				}
-			} else {
-				reject(new Error(`Upload failed ${xhr.status}`));
-			}
-		};
-		xhr.onerror = () => reject(new Error('Network error'));
-		xhr.send(fd);
-	});
 }
 
 // =========================================================================
@@ -452,7 +427,7 @@ export async function uploadAfter(_ctx: RouteContext): Promise<void> {
 	// -----------------------------------------------------------------------
 
 	try {
-		const config = (await fetch('/api/config').then((r) => r.json())) as { turnstileSiteKey?: string };
+		const config = await api.System.Config();
 		if (window.turnstile && config.turnstileSiteKey) {
 			turnstileWidgetId =
 				window.turnstile.render('#turnstile-container', {
@@ -521,8 +496,7 @@ export async function uploadAfter(_ctx: RouteContext): Promise<void> {
 			}
 			authorDebounce = setTimeout(async () => {
 				try {
-					const res = await fetch(`/api/authors/search?q=${encodeURIComponent(q)}`);
-					const data = (await res.json()) as { uuid: string; name: string; slug: string }[];
+					const data = await api.Authors.Search(q);
 					if (!data.length) {
 						authorSuggestions.style.display = 'none';
 						return;
@@ -576,8 +550,7 @@ export async function uploadAfter(_ctx: RouteContext): Promise<void> {
 			}
 			baseDebounce = setTimeout(async () => {
 				try {
-					const res = await fetch(`/api/resources?category=avatars&q=${encodeURIComponent(q)}&limit=10`);
-					const data = (await res.json()) as { resources?: { uuid: string; title: string }[] };
+					const data = await api.Resources.List({ category: 'avatars', q, limit: 10 });
 					const items = data.resources ?? [];
 					if (!items.length) {
 						clothesBaseSuggestions.style.display = 'none';
@@ -786,8 +759,7 @@ export async function uploadAfter(_ctx: RouteContext): Promise<void> {
 			const remove = document.createElement('button');
 			remove.type = 'button';
 			remove.textContent = '✕';
-			remove.style.cssText =
-				'background:#dc3545;color:white;border:none;border-radius:3px;width:20px;height:20px;cursor:pointer;font-weight:bold;flex:none';
+			remove.style.cssText = 'background:#dc3545;color:white;border:none;border-radius:3px;width:20px;height:20px;cursor:pointer;font-weight:bold;flex:none';
 			remove.onclick = () => {
 				selectedMainFiles.splice(idx, 1);
 				syncInputFiles(fileInput, selectedMainFiles);
@@ -857,7 +829,7 @@ export async function uploadAfter(_ctx: RouteContext): Promise<void> {
 				// No title: the detail view names the button after the recognised host (Google Drive, MEGA, …),
 				// falling back to "Backup N" only when the host is unknown.
 				link_title: null,
-				link_type: 'download',
+				link_type: 'download' as const,
 				display_order: startOrder + i + 1,
 			}));
 
@@ -1054,32 +1026,16 @@ export async function uploadAfter(_ctx: RouteContext): Promise<void> {
 			// 0. Pre-flight Validation (validate_only bypasses Turnstile, no real token needed here)
 			updateProgress(t('upload.validating') ?? 'Validating...', 0);
 			const dummyUuid = '00000000-0000-0000-0000-000000000000';
-			const endpointMap: Record<string, string> = { avatars: '/api/avatars', assets: '/api/assets', clothes: '/api/clothes' };
-			const endpoint = endpointMap[category] ?? '/api/resources';
-			
-			const preflightRes = await fetch(`${endpoint}?validate_only=true`, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					title, description, category, meta, token: 'dummy',
-					thumbnail_uuid: dummyUuid, reference_image_uuid: null, media_files: [], links: []
-				})
-			});
-			if (!preflightRes.ok) {
-				const err = (await preflightRes.json()) as { error?: string; details?: { path?: (string | number)[]; message?: string }[] };
-				if (err.details && err.details.length > 0) {
-					const detailMsgs = err.details.map(d => `${d.path?.join('.') || 'field'}: ${d.message}`).join(', ');
-					throw new Error(`${err.error ?? t('upload.errorCreateResource')} - ${detailMsgs}`);
-				}
-				throw new Error(err.error ?? t('upload.errorCreateResource'));
-			}
+			const categoryApi = category === 'avatars' ? api.Categories.Avatars : category === 'assets' ? api.Categories.Assets : category === 'clothes' ? api.Categories.Clothes : null;
+			if (!categoryApi) throw new Error(t('upload.errorCreateResource'));
+			await categoryApi.Preflight({ title, description, category, meta, token: 'dummy', thumbnail_uuid: dummyUuid, reference_image_uuid: null, media_files: [], links: [] });
 
 			// 1. Thumbnail
 			const thumbFd = new FormData();
 			thumbFd.append('file', thumbnail);
 			thumbFd.append('media_type', thumbnail.type.startsWith('video/') ? 'video' : 'image');
 			updateProgress(t('upload.uploadingThumbnail'), 0);
-			const thumbData = await uploadWithProgress('/api/upload', thumbFd, (p) => updateProgress(t('upload.uploadingThumbnail'), p));
+			const thumbData = await api.Uploads.WithProgress(thumbFd, (p) => updateProgress(t('upload.uploadingThumbnail'), p));
 
 			// 2. Reference images
 			const galleryUuids: string[] = [];
@@ -1091,7 +1047,7 @@ export async function uploadAfter(_ctx: RouteContext): Promise<void> {
 					fd.append('media_type', ref.type.startsWith('video/') ? 'video' : 'image');
 					const label = `${t('upload.uploadingReference')} (${i + 1}/${referenceFiles.length})`;
 					updateProgress(label, 0);
-					const refData = await uploadWithProgress('/api/upload', fd, (p) => updateProgress(label, p));
+					const refData = await api.Uploads.WithProgress(fd, (p) => updateProgress(label, p));
 					galleryUuids.push(refData.media_uuid);
 				}
 			}
@@ -1106,12 +1062,12 @@ export async function uploadAfter(_ctx: RouteContext): Promise<void> {
 
 				let fileData: { r2_key: string; media_uuid: string };
 				if (f.size > CHUNK_SIZE) {
-					fileData = await uploadChunked(f, 'file', (p) => updateProgress(label, p));
+					fileData = await api.Uploads.Chunked(f, 'file', (p) => updateProgress(label, p));
 				} else {
 					const fd = new FormData();
 					fd.append('file', f);
 					fd.append('media_type', 'file');
-					fileData = await uploadWithProgress('/api/upload', fd, (p) => updateProgress(label, p));
+					fileData = await api.Uploads.WithProgress(fd, (p) => updateProgress(label, p));
 				}
 				uploadedFiles.push({ ...fileData, originalName: f.name, size: f.size });
 			}
@@ -1123,9 +1079,9 @@ export async function uploadAfter(_ctx: RouteContext): Promise<void> {
 			updateProgress(t('upload.creating'), 100);
 
 			const fileLinks = uploadedFiles.map((f, i) => ({
-				link_url: `/api/download/${f.r2_key}`,
+				link_url: api.Resources.DownloadPath(f.r2_key),
 				link_title: f.originalName,
-				link_type: 'download',
+				link_type: 'download' as const,
 				display_order: i,
 				file_size: f.size,
 				version: '1.0',
@@ -1133,7 +1089,7 @@ export async function uploadAfter(_ctx: RouteContext): Promise<void> {
 
 			const extra = collectBackupLinks(fileLinks.length);
 
-			const body = {
+			const body: ResourceWrite = {
 				title,
 				description,
 				category,
@@ -1145,27 +1101,10 @@ export async function uploadAfter(_ctx: RouteContext): Promise<void> {
 				token: turnstileToken,
 			};
 
-			const res = await fetch(endpoint, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify(body),
-			});
-
-			if (res.ok) {
-				const data = (await res.json()) as { uuid: string };
-				DataCache.clear('/api/resources/latest');
-				DataCache.clear(`/api/resources?category=${category}`);
-				window.removeEventListener('beforeunload', preventNav);
-				resetState();
-				navigateTo('/item/' + data.uuid);
-			} else {
-				const err = (await res.json()) as { error?: string; details?: { path?: (string | number)[]; message?: string }[] };
-				if (err.details && err.details.length > 0) {
-					const detailMsgs = err.details.map(d => `${d.path?.join('.') || 'field'}: ${d.message}`).join(', ');
-					throw new Error(`${err.error ?? t('upload.errorCreateResource')} - ${detailMsgs}`);
-				}
-				throw new Error(err.error ?? t('upload.errorCreateResource'));
-			}
+			const data = await categoryApi.Create(body);
+			window.removeEventListener('beforeunload', preventNav);
+			resetState();
+			navigateTo('/item/' + data.uuid);
 		} catch (err) {
 			uploadError.textContent = `${t('common.error')}: ${(err as Error).message}`;
 			progressContainer.style.display = 'none';

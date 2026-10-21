@@ -16,6 +16,7 @@
 // =============================================================================
 
 import { t } from '../core/i18n';
+import { api } from '../api';
 import { renderTurnstile, showToast, mediaUrl } from '../lib/utils';
 import { icons } from '../lib/icons';
 
@@ -280,11 +281,8 @@ async function uploadAndInsertImage(file: File, textarea: HTMLTextAreaElement): 
 		const fd = new FormData();
 		fd.append('file', file);
 
-		const res = await fetch('/api/upload', { method: 'PUT', body: fd });
+		const data = await api.Uploads.Single(fd);
 		dismiss();
-		if (!res.ok) throw new Error(await res.text());
-
-		const data = (await res.json()) as { r2_key: string; media_uuid: string };
 		const markdown = `![image](${mediaUrl(data.media_uuid, 'original', 'png')})`;
 		const pos = textarea.selectionStart;
 		textarea.setRangeText('\n\n' + markdown + '\n\n', pos, pos, 'end');

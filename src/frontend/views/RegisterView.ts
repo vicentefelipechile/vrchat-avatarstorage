@@ -3,6 +3,7 @@
 // =========================================================================
 
 import { t } from '../core/i18n';
+import { api } from '../api';
 import { renderTurnstile, showToast } from '../lib/utils';
 import { navigateTo } from '../core/router';
 import type { RouteContext } from '../types';
@@ -77,25 +78,14 @@ export function registerAfter(_ctx: RouteContext): void {
 		const token = new FormData(form).get('cf-turnstile-response') as string;
 
 		try {
-			const res = await fetch('/api/auth/register', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ username, password, token }),
-			});
-			const data = (await res.json()) as { error?: string };
-
-			if (res.ok) {
-				localStorage.setItem('auth_state', JSON.stringify({ isLoggedIn: true, isAdmin: false, user: { username } }));
-				window.appState = { isLoggedIn: true, isAdmin: false, user: { username } as never };
-				navigateTo('/');
-				showToast(t('register.success'), 'success');
-			} else {
-				showToast(data.error ?? t('register.error'), 'error');
-				window.turnstile?.reset();
-				restore();
-			}
-		} catch {
-			showToast(t('common.networkError'), 'error');
+			await api.Auth.Register({ username, password, token });
+			localStorage.setItem('auth_state', JSON.stringify({ isLoggedIn: true, isAdmin: false, user: { username } }));
+			window.appState = { isLoggedIn: true, isAdmin: false, user: { username } };
+			navigateTo('/');
+			showToast(t('register.success'), 'success');
+		} catch (error) {
+			showToast(error instanceof Error ? error.message : t('common.networkError'), 'error');
+			window.turnstile?.reset();
 			restore();
 		}
 	});

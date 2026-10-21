@@ -9,52 +9,9 @@
 import { getIcon } from '../lib/icons';
 import { t } from '../core/i18n';
 import type { RouteContext } from '../types';
-import { DataCache } from '../core/cache';
+import { api } from '../api';
+import type { AuthorProfile as AuthorProfileResponse } from '../api/types';
 import { TimeUnit, progressiveImg, htmlDecode, metaLabel, safeHttpUrl } from '../lib/utils';
-
-interface AvatarAuthor {
-	uuid: string;
-	name: string;
-	slug: string;
-	avatar_url: string | null;
-	description: string | null;
-	website_url: string | null;
-	twitter_url: string | null;
-	booth_url: string | null;
-	gumroad_url: string | null;
-	patreon_url: string | null;
-	discord_url: string | null;
-}
-
-// =========================================================================
-// Types
-// =========================================================================
-
-interface AuthorProfileResponse {
-	author: AvatarAuthor;
-	avatars: {
-		uuid: string;
-		title: string;
-		thumbnail_key: string | null;
-		thumbnail_media_uuid: string | null;
-		thumbnail_media_type: 'image' | 'video' | 'file';
-		placeholder_blur: string | null;
-		processed: number;
-		download_count: number;
-		created_at: number;
-		avatar_gender: string;
-		avatar_type: string;
-		platform: string;
-		is_nsfw: number;
-	}[];
-	pagination: {
-		page: number;
-		limit: number;
-		total: number;
-		hasNextPage: boolean;
-		hasPrevPage: boolean
-	};
-}
 
 // =========================================================================
 // Helpers
@@ -100,8 +57,7 @@ export async function authorView(ctx: RouteContext): Promise<string> {
 
 	let data: AuthorProfileResponse | null = null;
 	try {
-		// const res = await fetch(`/api/authors/${slug}?page=${page}`);
-		const res = await DataCache.fetch<AuthorProfileResponse>(`/api/authors/${slug}?page=${page}`, { ttl: TimeUnit.Day });
+		const res = await api.Authors.Get(slug, page, { cache: { ttl: TimeUnit.Day } });
 		if (res) {
 			data = res;
 		} else {
@@ -119,9 +75,7 @@ export async function authorView(ctx: RouteContext): Promise<string> {
 	document.title = `${htmlDecode(author.name)} — VRCStorage`;
 
 	const avatarUrl = safeHttpUrl(author.avatar_url);
-	const avatarHtml = avatarUrl
-		? `<img class="author-profile-avatar" src="${avatarUrl}" alt="${htmlDecode(author.name)}" loading="lazy">`
-		: `<div class="author-profile-avatar-placeholder">${getIcon('user', 32)}</div>`;
+	const avatarHtml = avatarUrl ? `<img class="author-profile-avatar" src="${avatarUrl}" alt="${htmlDecode(author.name)}" loading="lazy">` : `<div class="author-profile-avatar-placeholder">${getIcon('user', 32)}</div>`;
 
 	const socials = [
 		socialLink(author.website_url, 'Website', 'globe'),
@@ -134,12 +88,8 @@ export async function authorView(ctx: RouteContext): Promise<string> {
 
 	const socialsHtml = socials.length ? `<ul class="author-socials">${socials.join('')}</ul>` : '';
 
-	const prevBtn = pagination.hasPrevPage
-		? `<a href="/authors/${slug}?page=${page - 1}" data-link class="btn">← ${t('filterPanel.prev')}</a>`
-		: '';
-	const nextBtn = pagination.hasNextPage
-		? `<a href="/authors/${slug}?page=${page + 1}" data-link class="btn">${t('filterPanel.next')} →</a>`
-		: '';
+	const prevBtn = pagination.hasPrevPage ? `<a href="/authors/${slug}?page=${page - 1}" data-link class="btn">← ${t('filterPanel.prev')}</a>` : '';
+	const nextBtn = pagination.hasNextPage ? `<a href="/authors/${slug}?page=${page + 1}" data-link class="btn">${t('filterPanel.next')} →</a>` : '';
 	const pagCtrls =
 		prevBtn || nextBtn
 			? `<div class="pagination" style="display:flex;gap:10px;justify-content:center;margin-top:30px;">
@@ -147,10 +97,7 @@ export async function authorView(ctx: RouteContext): Promise<string> {
 		  </div>`
 			: '';
 
-	const gridHtml =
-		avatars.length === 0
-			? `<div class="author-no-resources">${t('authorProfile.noResources')}</div>`
-			: `<div class="grid">${avatars.map(avatarMiniCard).join('')}</div>${pagCtrls}`;
+	const gridHtml = avatars.length === 0 ? `<div class="author-no-resources">${t('authorProfile.noResources')}</div>` : `<div class="grid">${avatars.map(avatarMiniCard).join('')}</div>${pagCtrls}`;
 
 	return `<div class="author-profile-header">
 		${avatarHtml}

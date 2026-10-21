@@ -7,15 +7,15 @@ import { showToast } from '../../lib/utils';
 import { loadingBtn } from '../../lib/dom';
 import { showConfirm } from '../../lib/confirm';
 import { icons } from '../../lib/icons';
-import { adminGet, adminPost, requestTwoFactorCode, AdminApiError } from './api';
+import { api, VrcStorageApiError } from '../../api';
+import { requestTwoFactorCode } from './two-factor';
 import { esc } from './esc';
-import type { OrphanStats } from './types';
 
 export function loadMedia(el: HTMLElement, signal: AbortSignal): void {
 	el.innerHTML = `<h2 class="admin-section-title">${esc(t('admin.media.title'))}</h2>
 		<div class="admin-loading">${esc(t('common.loading'))}</div>`;
 
-	adminGet<OrphanStats>('/api/admin/stats/orphaned-media', signal)
+	api.Admin.OrphanStats({ signal })
 		.then((stats) => {
 			if (signal.aborted) return;
 			const filesList = stats.orphaned_files.length
@@ -33,9 +33,11 @@ export function loadMedia(el: HTMLElement, signal: AbortSignal): void {
 				<h3>${esc(t('admin.media.subtitle'))}</h3>
 				<p class="admin-muted-paragraph">${esc(t('admin.media.desc'))}</p>
 				${filesList}
-				${stats.orphaned_count > 0
-					? `<button type="button" class="btn btn-sm btn-danger" data-cleanup>${icons.trash(14)} ${esc(t('admin.media.btnDeleteOrphaned'))} (${stats.orphaned_count})</button>`
-					: `<p class="admin-success-line">${icons.check(14)} ${esc(t('admin.media.noOrphaned'))}</p>`}`;
+				${
+					stats.orphaned_count > 0
+						? `<button type="button" class="btn btn-sm btn-danger" data-cleanup>${icons.trash(14)} ${esc(t('admin.media.btnDeleteOrphaned'))} (${stats.orphaned_count})</button>`
+						: `<p class="admin-success-line">${icons.check(14)} ${esc(t('admin.media.noOrphaned'))}</p>`
+				}`;
 
 			el.querySelector('[data-cleanup]')?.addEventListener('click', async (e) => {
 				const ok = await showConfirm({ message: t('admin.media.confirmDelete'), confirmText: t('admin.media.btnDeleteOrphaned'), danger: true });
@@ -45,11 +47,11 @@ export function loadMedia(el: HTMLElement, signal: AbortSignal): void {
 				const btn = e.target as HTMLButtonElement;
 				const restore = loadingBtn(btn, `… ${t('admin.media.toastDeleting')}`);
 				try {
-					const d = await adminPost<{ deleted?: number }>('/api/admin/cleanup/orphaned-media', { code });
+					const d = await api.Admin.CleanupMedia(code);
 					showToast(`${d.deleted ?? 0} ${t('admin.media.toastDeleted')}`, 'success');
 					loadMedia(el, signal);
 				} catch (error) {
-					showToast(error instanceof AdminApiError ? error.message : t('admin.networkError'), 'error');
+					showToast(error instanceof VrcStorageApiError ? error.message : t('admin.networkError'), 'error');
 					restore();
 				}
 			});

@@ -12,7 +12,6 @@ export { $, $$, htmlDecode, loadingBtn, safeHttpUrl } from './dom';
 export { stripMarkdown, renderMarkdown, parseMarkdownToHtml } from './markdown';
 export { showToast, showProgressToast, type ToastType } from './toast';
 export { renderTurnstile } from './turnstile';
-export { CHUNK_SIZE, uploadChunked, type ChunkedUploadResult } from './upload';
 export { downloadHost, type DownloadKind, type HostInfo } from './download-hosts';
 export { resizeImage, mediaUrl, videoUrl, progressiveImg, initLazyImages, initMediaPolling } from './media';
 export { metaLabel } from './meta-label';

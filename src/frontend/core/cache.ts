@@ -9,10 +9,15 @@
 //   3. Live network fetch (deduplicates concurrent in-flight requests)
 //
 // Entries are stored with a Unix timestamp and considered valid while `Date.now() - timestamp < ttl`.
-// Persistent entries skip the TTL check and are kept until explicitly cleared via `clear()`.
+// Persistent entries survive reloads but still obey their TTL.
 // =========================================================================================================
 
-import { TimeUnit } from '../lib/time';
+// =========================================================================================================
+// Constants
+// =========================================================================================================
+
+const DEFAULT_TTL = 60000;
+const CACHE_PREFIX = 'cache:';
 
 // =========================================================================================================
 // Interfaces
@@ -52,9 +57,6 @@ export enum CacheErrorType {
 // =========================================================================================================
 // Helpers
 // =========================================================================================================
-
-/** localStorage key prefix used for all cache entries. Centralised to avoid scattered literals. */
-const CACHE_PREFIX = 'cache:';
 
 /**
  * Normalises the `options` argument accepted by `fetch()` and `prefetch()` into a `ResolvedOptions`
@@ -126,62 +128,30 @@ export const DataCache = {
 
 	// =========================================================================================================
 	// fetch<T>(url, options?)
-	// Resolves data for a given URL through the two-layer cache, then falls back to a live network request.
+	// Static content only; API domains supply their own transport through load().
 	// =========================================================================================================
 
-	/**
-	 * Fetches data for the given URL, returning a cached result when available and still valid.
-	 *
-	 * Resolution order:
-	 *   1. In-memory `cache` Map — returned immediately if the entry exists and has not expired.
-	 *   2. `localStorage` — deserialized and promoted to in-memory if not expired; stale entries are pruned.
-	 *   3. Network — a real `fetch()` call is made. Concurrent requests for the same URL are deduplicated
-	 *      via the `pending` map so only one HTTP request is ever in flight at a time.
-	 *
-	 * After a successful network response the result is stored in:
-	 *   - `this.cache` (always)
-	 *   - `localStorage` (only when `persistent: true`; TTL is still enforced on subsequent reads)
-	 *
-	 * @param url - The URL to fetch. Used as the cache key.
-	 * @param options - Either a `CacheOptions` object or a plain TTL number in milliseconds.
-	 *                  Defaults to `60000` ms (1 minute).
-	 * @returns A Promise that resolves to `T` — a parsed JSON object or raw text string depending on `options.type`.
-	 * @throws Re-throws any network error or non-OK HTTP response as an `Error`.
-	 *
-	 * @example
-	 * // 1. Explicit type — TypeScript knows the shape of `data` without any cast.
-	 * interface Category { uuid: string; name: string; }
-	 * const data = await DataCache.fetch<Category[]>('/api/categories');
-	 * //    ^? Category[]
-	 * console.log(data[0].name);
-	 *
-	 * @example
-	 * // 2. Omitting T altogether — resolves to `unknown`; you must narrow the type yourself.
-	 * const raw = await DataCache.fetch('/api/categories');
-	 * //    ^? unknown  →  narrow before use
-	 * const categories = raw as Category[];
-	 *
-	 * @example
-	 * // 3. Plain TTL shorthand (number) — 30 s cache, no localStorage persistence.
-	 * const authors = await DataCache.fetch<Author[]>('/api/authors', 30000);
-	 *
-	 * @example
-	 * // 4. Full CacheOptions object — persistent across reloads, 5 min TTL.
-	 * const config = await DataCache.fetch<AppConfig>('/api/config', {
-	 * 	ttl: 300000,
-	 * 	persistent: true,
-	 * });
-	 *
-	 * @example
-	 * // 5. Text response — useful for Markdown wiki pages.
-	 * const markdown = await DataCache.fetch<string>('/wiki/en/home.md', {
-	 * 	ttl: 120000,
-	 * 	type: 'text',
-	 * });
-	 */
-	async fetch<T = unknown>(url: string, options: CacheOptions | number = 60000 | TimeUnit.Minute): Promise<T> {
+	async fetch<T = unknown>(url: string, options: CacheOptions | number = DEFAULT_TTL): Promise<T> {
+		const type = resolveOptions(options).type;
+		return this.load<T>(
+			url,
+			async () => {
+				const res = await fetch(url);
+				if (!res.ok) throw new Error(`Fetch error: ${res.status}`);
+				return (type === 'text' ? await res.text() : await res.json()) as T;
+			},
+			options,
+		);
+	},
+
+	// =========================================================================================================
+	// load<T>(key, loader, options?)
+	// Keeps cache policy independent of the API transport.
+	// =========================================================================================================
+
+	async load<T>(url: string, loader: () => Promise<T>, options: CacheOptions | number = DEFAULT_TTL): Promise<T> {
 		const now = Date.now();
-		const { ttl, persistent, type } = resolveOptions(options);
+		const { ttl, persistent } = resolveOptions(options);
 
 		// 1. Memory cache — fastest path, no I/O required.
 		if (this.cache.has(url)) {
@@ -214,13 +184,11 @@ export const DataCache = {
 		// 3. Deduplicate in-flight requests — if the same URL is already being fetched, reuse its Promise.
 		if (this.pending.has(url)) return this.pending.get(url)! as Promise<T>;
 
-		const promise = (async () => {
-			try {
-				const res = await fetch(url);
-				if (!res.ok) throw new Error(`Fetch error: ${res.status}`);
-
-				// Parse the response body according to the requested type.
-				const data: unknown = type === 'text' ? await res.text() : await res.json();
+		const promise: Promise<T> = Promise.resolve()
+			.then(loader)
+			.then((data) => {
+				// An invalidation can retire this request while its response is still in flight.
+				if (this.pending.get(url) !== promise) return data;
 				const entry: CacheEntry = { data, timestamp: Date.now() };
 
 				// Always store in memory.
@@ -230,11 +198,10 @@ export const DataCache = {
 				if (persistent) persistToStorage(url, entry);
 
 				return data;
-			} finally {
-				// Always remove from pending map once the request settles (success or error).
-				this.pending.delete(url);
-			}
-		})();
+			})
+			.finally(() => {
+				if (this.pending.get(url) === promise) this.pending.delete(url);
+			});
 
 		this.pending.set(url, promise);
 		return promise as Promise<T>;
@@ -261,7 +228,7 @@ export const DataCache = {
 	 */
 	prefetch(url: string, options: CacheOptions | number = 60000): void {
 		const now = Date.now();
-		const { ttl, persistent } = resolveOptions(options);
+		const { ttl } = resolveOptions(options);
 
 		// 1. In-memory check — nothing to do if the entry is still valid.
 		if (this.cache.has(url)) {
@@ -310,15 +277,26 @@ export const DataCache = {
 	 */
 	clear(url?: string): void {
 		if (url) {
+			this.clearScope(`${url}|`);
 			// Targeted eviction — removes only the specified URL from both layers.
 			this.cache.delete(url);
-			localStorage.removeItem(`${CACHE_PREFIX}${url}`);
+			this.pending.delete(url);
+			try {
+				localStorage.removeItem(`${CACHE_PREFIX}${url}`);
+			} catch (error) {
+				console.warn('LocalStorage eviction error', error);
+			}
 		} else {
 			// Full flush — clears the in-memory Map and every `cache:*` localStorage key.
 			this.cache.clear();
-			Object.keys(localStorage)
-				.filter((k) => k.startsWith(CACHE_PREFIX))
-				.forEach((k) => localStorage.removeItem(k));
+			this.pending.clear();
+			try {
+				Object.keys(localStorage)
+					.filter((k) => k.startsWith(CACHE_PREFIX))
+					.forEach((k) => localStorage.removeItem(k));
+			} catch (error) {
+				console.warn('LocalStorage eviction error', error);
+			}
 		}
 	},
 
@@ -343,11 +321,18 @@ export const DataCache = {
 		for (const url of [...this.cache.keys()]) {
 			if (url.startsWith(prefix)) this.cache.delete(url);
 		}
+		for (const url of [...this.pending.keys()]) {
+			if (url.startsWith(prefix)) this.pending.delete(url);
+		}
 
 		// localStorage layer — keys are stored as `cache:<url>`, so match against the prefixed form.
 		const storagePrefix = `${CACHE_PREFIX}${prefix}`;
-		Object.keys(localStorage)
-			.filter((k) => k.startsWith(storagePrefix))
-			.forEach((k) => localStorage.removeItem(k));
+		try {
+			Object.keys(localStorage)
+				.filter((k) => k.startsWith(storagePrefix))
+				.forEach((k) => localStorage.removeItem(k));
+		} catch (error) {
+			console.warn('LocalStorage eviction error', error);
+		}
 	},
 };

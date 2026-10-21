@@ -6,18 +6,8 @@
 
 import { createFilteredListView, FilterType, TimeUnit } from '../features/filtered-list';
 import { metaLabel } from '../lib/utils';
-
-// =========================================================================
-// Types
-// =========================================================================
-
-interface AssetMeta {
-	asset_type: string;
-	is_nsfw: number;
-	unity_version: string;
-	platform: string;
-	sdk_version: string;
-}
+import { api } from '../api';
+import type { AssetListMeta as AssetMeta } from '../api/categories';
 
 // =========================================================================
 // Config
@@ -71,7 +61,7 @@ const FILTERS = {
 
 export const { view: assetsView, after: assetsAfter } = createFilteredListView<AssetMeta>({
 	slug: 'asset',
-	endpoint: '/api/assets',
+	list: (filters, options) => api.Categories.Assets.List(filters, options),
 	route: '/assets',
 	titleKey: 'filterPanel.titleAssets',
 	countKey: 'filterPanel.assetCountStr',

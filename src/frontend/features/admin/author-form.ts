@@ -5,7 +5,7 @@
 import { t } from '../../core/i18n';
 import { showToast, mediaUrl } from '../../lib/utils';
 import { icons } from '../../lib/icons';
-import { adminGet } from './api';
+import { api } from '../../api';
 import { esc, safeAvatarSrc } from './esc';
 
 export type AuthorFormMode = 'create' | 'edit';
@@ -46,13 +46,8 @@ async function uploadAuthorImage(fileInput: HTMLInputElement, preview: HTMLEleme
 	try {
 		const formData = new FormData();
 		formData.append('file', file);
-		const r = await fetch('/api/upload', { method: 'PUT', body: formData });
+		const d = await api.Uploads.Single(formData);
 		dismiss();
-		if (!r.ok) {
-			showToast(t('admin.authors.toastUploadError'), 'error');
-			return;
-		}
-		const d = (await r.json()) as { r2_key?: string; media_uuid?: string };
 		if (!d.media_uuid) {
 			showToast(t('admin.authors.toastInvalidServerResp'), 'error');
 			return;
@@ -137,26 +132,18 @@ export function showAuthorForm(sectionEl: HTMLElement, mode: AuthorFormMode, aut
 			gumroad_url: val('[data-gumroad]'),
 		};
 		try {
-			const r = await fetch(isEdit ? `/api/authors/${author!.slug}` : '/api/authors', {
-				method: isEdit ? 'PUT' : 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify(payload),
-			});
-			if (r.ok) {
-				showToast(t('admin.authors.toastSaved'), 'success');
-				form.remove();
-				onSaved();
-			} else {
-				const d = (await r.json()) as { error?: string };
-				showToast(d.error ?? 'Error', 'error');
-			}
-		} catch {
-			showToast(t('admin.networkError'), 'error');
+			if (isEdit) await api.Authors.Update(author!.slug, payload);
+			else await api.Authors.Create(payload);
+			showToast(t('admin.authors.toastSaved'), 'success');
+			form.remove();
+			onSaved();
+		} catch (error) {
+			showToast(error instanceof Error ? error.message : t('admin.networkError'), 'error');
 		}
 	});
 }
 
 export async function fetchAuthorForEdit(slug: string): Promise<AuthorFormData> {
-	const { author } = await adminGet<{ author: AuthorFormData }>(`/api/authors/${slug}`);
+	const { author } = await api.Authors.Get(slug);
 	return author;
 }

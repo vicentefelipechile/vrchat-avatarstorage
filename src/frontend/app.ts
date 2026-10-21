@@ -3,8 +3,9 @@
 // =========================================================================
 
 import { route, notFound, navigateTo, initRouter } from './core/router';
+import { api } from './api';
+import type { VersionInfo } from './api/types';
 import { setLanguage, getCurrentLang, t } from './core/i18n';
-import { DataCache } from './core/cache';
 import { showToast, TimeUnit, initLazyImages, initMediaPolling } from './lib/utils';
 import { showConfirm } from './lib/confirm';
 import { initUpdatesPoller } from './features/updates';
@@ -35,7 +36,6 @@ import { avatarsView, avatarsAfter } from './views/AvatarsView';
 import { assetsView, assetsAfter } from './views/AssetsView';
 import { clothesView, clothesAfter } from './views/ClothesView';
 import { authorView, authorAfter } from './views/AuthorView';
-
 
 // =========================================================================
 // Global state
@@ -147,10 +147,10 @@ async function updateNav(): Promise<void> {
 	};
 
 	try {
-		const data = (await DataCache.fetch('/api/auth/status', TimeUnit.Hour)) as AuthUser & { loggedIn: boolean; is_admin: boolean };
+		const data = await api.Auth.Status({ cache: { ttl: TimeUnit.Hour } });
 		window.appState.isLoggedIn = data.loggedIn;
 		window.appState.isAdmin = data.is_admin;
-		window.appState.user = data.loggedIn ? data : null;
+		window.appState.user = data.loggedIn && data.username ? { ...data, username: data.username, avatar_url: data.avatar_url ?? undefined } : null;
 		localStorage.setItem(
 			'auth_state',
 			JSON.stringify({
@@ -164,16 +164,15 @@ async function updateNav(): Promise<void> {
 		window.appState = { isLoggedIn: false, isAdmin: false, user: null };
 	}
 
-	const changed =
-		prev.isLoggedIn !== window.appState.isLoggedIn ||
-		prev.isAdmin !== window.appState.isAdmin ||
-		prev.username !== window.appState.user?.username;
+	const changed = prev.isLoggedIn !== window.appState.isLoggedIn || prev.isAdmin !== window.appState.isAdmin || prev.username !== window.appState.user?.username;
 
-	if (changed) updateNavDOM();
+	if (changed) {
+		api.Auth.Invalidate();
+		updateNavDOM();
+	}
 
-	// Resource detail is auth-gated: clear stale anonymous cache on login change.
+	// Re-render an auth-gated detail page when the session becomes available.
 	if (prev.isLoggedIn !== window.appState.isLoggedIn) {
-		DataCache.clearScope('/api/resources');
 		if (window.appState.isLoggedIn && location.pathname.startsWith('/item/')) navigateTo(location.pathname, true);
 	}
 }
@@ -181,27 +180,6 @@ async function updateNav(): Promise<void> {
 // =========================================================================
 // Version info modal
 // =========================================================================
-
-interface VersionInfo {
-	worker?: {
-		versionId?: string;
-		versionTag?: string | null;
-		commitHash?: string;
-		deployedAt?: string;
-		deployedAtTimestamp?: number;
-		compatibilityDate?: string;
-	};
-	runtime?: {
-		name?: string;
-		engine?: string;
-	};
-	request?: {
-		rayId?: string | null;
-		requestId?: string | null;
-		country?: string | null;
-		colo?: string | null;
-	};
-}
 
 function populateVersionInfo(data: VersionInfo): void {
 	const set = (id: string, val?: string | number | null) => {
@@ -236,9 +214,7 @@ function initVersionModal(): void {
 		modal.style.display = 'flex';
 		if (loaded) return;
 		try {
-			const res = await fetch('/api/version');
-			if (!res.ok) throw new Error();
-			populateVersionInfo((await res.json()) as VersionInfo);
+			populateVersionInfo(await api.System.Version());
 			loading?.style.setProperty('display', 'none');
 			dataEl?.style.setProperty('display', 'block');
 			loaded = true;
@@ -269,9 +245,7 @@ function initVersionModal(): void {
 function initPrefetch(): void {
 	document.body.addEventListener('mouseover', (e) => {
 		const card = (e.target as HTMLElement).closest<HTMLElement>('.card');
-		const link =
-			(e.target as HTMLElement).closest<HTMLAnchorElement>('a[href^="/item/"]') ??
-			card?.querySelector<HTMLAnchorElement>('a[href^="/item/"]');
+		const link = (e.target as HTMLElement).closest<HTMLAnchorElement>('a[href^="/item/"]') ?? card?.querySelector<HTMLAnchorElement>('a[href^="/item/"]');
 
 		const href = link?.getAttribute('href');
 		if (!href) return;
@@ -280,8 +254,8 @@ function initPrefetch(): void {
 		if (!uuid) return;
 
 		// Don't persist auth-gated detail.
-		DataCache.prefetch(`/api/resources/${uuid}`, { ttl: TimeUnit.Minute * 5 });
-		DataCache.prefetch(`/api/comments/${uuid}`, { ttl: TimeUnit.Minute * 5 });
+		void api.Resources.Get(uuid, { cache: { ttl: TimeUnit.Minute * 5 } }).catch((error) => console.error('Prefetch failed', error));
+		void api.Comments.List(uuid, { cache: { ttl: TimeUnit.Minute * 5 } }).catch((error) => console.error('Prefetch failed', error));
 	});
 }
 
@@ -345,11 +319,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 		e.preventDefault();
 		if (!(await showConfirm({ message: t('login.logoutConfirm') }))) return;
 		try {
-			await fetch('/api/auth/logout', { method: 'POST' });
-			DataCache.clear('/api/auth/status');
-			// Resources cached during the session carry their download links; drop that scope so
-			// browsing back to an item after logout re-fetches the anonymous copy (login prompt).
-			DataCache.clearScope('/api/resources');
+			await api.Auth.Logout();
 			localStorage.removeItem('auth_state');
 			window.appState = { isLoggedIn: false, isAdmin: false, user: null };
 			await updateNav();
@@ -412,8 +382,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 	// One-time eviction of old persistent resource cache.
 	if (!localStorage.getItem('resource_cache_v2')) {
-		DataCache.clearScope('/api/resources');
-		try { localStorage.setItem('resource_cache_v2', '1'); } catch {}
+		api.Resources.Invalidate();
+		try {
+			localStorage.setItem('resource_cache_v2', '1');
+		} catch {}
 	}
 
 	// Boot
@@ -425,7 +397,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 	initUpdatesPoller();
 	initFeedClient();
 	initNotifications();
-
 
 	// Flash toast — shown after a full-page redirect (e.g. after standard login)
 	const flashRaw = sessionStorage.getItem('flash_toast');
@@ -447,9 +418,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 		history.replaceState(null, '', '/');
 		// Pre-populate auth_state so the nav renders correctly without waiting for the async fetch
 		localStorage.setItem('auth_state', JSON.stringify({ isLoggedIn: true, isAdmin: false, user: null }));
-		// Resources fetched while anonymous omit download links; drop that scope so items browsed
-		// before the OAuth redirect re-fetch the authenticated copy (with links) on the next visit.
-		DataCache.clearScope('/api/resources');
+		api.Auth.Invalidate();
 		setTimeout(() => showToast(t('login.success'), 'success', 4000), 300);
 	}
 

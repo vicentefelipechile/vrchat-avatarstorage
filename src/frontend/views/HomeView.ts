@@ -2,7 +2,7 @@
 // views/HomeView.ts — Homepage: latest resources grid
 // =========================================================================
 
-import { DataCache } from '../core/cache';
+import { api } from '../api';
 import { t } from '../core/i18n';
 import { stripMarkdown, TimeUnit, progressiveImg } from '../lib/utils';
 import type { RouteContext, Resource } from '../types';
@@ -24,15 +24,16 @@ function resourceCard(res: Resource): string {
 	return `
 		<div class="card">
 			<a href="/item/${res.uuid}" data-link class="card-link">
-				${res.thumbnail_media_uuid
-		? `<div class="card-image${nsfwClass}">
+				${
+					res.thumbnail_media_uuid
+						? `<div class="card-image${nsfwClass}">
 					${progressiveImg({ uuid: res.thumbnail_media_uuid, placeholder: res.placeholder_blur ?? null, res: 'low', alt: title, processed: res.processed !== 0, format: res.thumbnail_media_type === 'video' ? 'gif' : 'webp' })}
 					<span class="card-badge">${categoryLabel}</span>
 				</div>`
-		: `<div class="card-image card-image-placeholder${nsfwClass}">
+						: `<div class="card-image card-image-placeholder${nsfwClass}">
 				<span class="card-badge">${categoryLabel}</span>
 			</div>`
-	}
+				}
 			</a>
 			<div class="card-body">
 				<h3>${title}${res.title.length > 50 ? '...' : ''}</h3>
@@ -59,11 +60,9 @@ export async function homeView(_ctx: RouteContext): Promise<string> {
 
 	const apiCategories = ['avatars', 'assets', 'clothes'];
 
-	const resources = (await DataCache.fetch('/api/resources/latest', { ttl: TimeUnit.Minute * 15 }).catch(() => [])) as Resource[];
+	const resources = await api.Resources.Latest({ cache: { ttl: TimeUnit.Minute * 15 } }).catch(() => []);
 
-	const categoriesHtml = apiCategories
-		.map((cat) => `<a href="/${cat}" data-link class="category-btn">${t('cats.' + cat)}</a>`)
-		.join('');
+	const categoriesHtml = apiCategories.map((cat) => `<a href="/${cat}" data-link class="category-btn">${t('cats.' + cat)}</a>`).join('');
 
 	return `
 		<section class="hero-section">
@@ -73,9 +72,6 @@ export async function homeView(_ctx: RouteContext): Promise<string> {
 		</section>
 		<section class="latest-section" id="home-latest-section">
 			<h2>${t('home.latest')}</h2>
-			${resources.length === 0
-		? `<p class="empty-message">${t('common.noResourcesFound')}</p>`
-		: `<div class="grid">${resources.map(resourceCard).join('')}</div>`
-	}
+			${resources.length === 0 ? `<p class="empty-message">${t('common.noResourcesFound')}</p>` : `<div class="grid">${resources.map(resourceCard).join('')}</div>`}
 		</section>`;
 }

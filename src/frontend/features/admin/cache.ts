@@ -5,7 +5,7 @@
 import { t } from '../../core/i18n';
 import { showToast } from '../../lib/utils';
 import { loadingBtn } from '../../lib/dom';
-import { adminPost } from './api';
+import { api } from '../../api';
 import { esc } from './esc';
 
 export function loadCache(el: HTMLElement): void {
@@ -29,7 +29,7 @@ export function loadCache(el: HTMLElement): void {
 		if (!username) return;
 		const restore = loadingBtn(btn);
 		try {
-			await adminPost(`/api/admin/cache/clear/${encodeURIComponent(username)}`);
+			await api.Admin.ClearUserCache(username);
 			showToast(`${t('admin.users.toastCacheCleared')} "${username}"`, 'success');
 			input.value = '';
 		} catch {

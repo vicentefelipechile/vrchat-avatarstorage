@@ -3,35 +3,13 @@
 // =========================================================================
 
 import { t } from '../core/i18n';
+import { api, VrcStorageApiError } from '../api';
+import type { BlogPostDto as BlogPost, ApiComment as BlogComment } from '../api/types';
 import { navigateTo } from '../core/router';
 import { renderMarkdown, showToast, mediaUrl, htmlDecode, parseMarkdownToHtml, safeHttpUrl } from '../lib/utils';
 import { commentEditorHtml, initCommentEditor } from '../features/comment-editor';
 import { showConfirm } from '../lib/confirm';
 import type { RouteContext } from '../types';
-
-// =========================================================================
-// Types
-// =========================================================================
-
-interface BlogPost {
-	uuid: string;
-	title: string;
-	content: string;
-	excerpt?: string;
-	cover_image_key?: string;
-	cover_image_uuid?: string;
-	author_display: 'personal' | 'team';
-	author_username?: string;
-	created_at: number;
-}
-
-interface BlogComment {
-	uuid: string;
-	author: string;
-	author_avatar?: string;
-	timestamp: number;
-	text: string;
-}
 
 // =========================================================================
 // Helpers
@@ -63,7 +41,7 @@ async function loadComments(postId: string): Promise<void> {
 	list.innerHTML = `<p class="loading-text">${t('common.loadingComments')}</p>`;
 
 	try {
-		const comments = (await fetch(`/api/blog/${postId}/comments`).then((r) => r.json())) as BlogComment[];
+		const comments = await api.Blog.Comments.List(postId);
 
 		if (!comments?.length) {
 			list.innerHTML = `<p class="empty-state">${t('comment.noComments')}</p>`;
@@ -75,9 +53,12 @@ async function loadComments(postId: string): Promise<void> {
 		list.querySelectorAll<HTMLButtonElement>('.delete-comment-btn').forEach((btn) => {
 			btn.addEventListener('click', async () => {
 				if (!(await showConfirm({ message: t('admin.deleteConfirm') }))) return;
-				const res = await fetch(`/api/blog/comments/${btn.dataset.uuid}`, { method: 'DELETE' });
-				if (res.ok) await loadComments(postId);
-				else showToast(t('common.error'), 'error');
+				try {
+					await api.Blog.Comments.Delete(btn.dataset.uuid!);
+					await loadComments(postId);
+				} catch (error) {
+					showToast(error instanceof Error ? error.message : t('common.error'), 'error');
+				}
 			});
 		});
 	} catch {
@@ -94,11 +75,9 @@ export async function blogPostView(ctx: RouteContext): Promise<string> {
 
 	let post: BlogPost;
 	try {
-		const res = await fetch(`/api/blog/${id}`);
-		if (res.status === 404) return `<p class="error-text">${t('blog.notFound')}</p>`;
-		if (!res.ok) throw new Error();
-		post = (await res.json()) as BlogPost;
-	} catch {
+		post = await api.Blog.Get(id);
+	} catch (error) {
+		if (error instanceof VrcStorageApiError && error.status === 404) return `<p class="error-text">${t('blog.notFound')}</p>`;
 		return `<p class="error-text">${t('common.error')}</p>`;
 	}
 
@@ -108,9 +87,7 @@ export async function blogPostView(ctx: RouteContext): Promise<string> {
 	const authorName = post.author_display === 'team' ? t('blog.team') : (post.author_username ?? '');
 	const { isAdmin } = window.appState;
 
-	const coverHtml = post.cover_image_uuid
-		? `<div class="blog-post-cover"><img src="${mediaUrl(post.cover_image_uuid, 'original', 'png')}" alt="${esc(post.title)}"></div>`
-		: '';
+	const coverHtml = post.cover_image_uuid ? `<div class="blog-post-cover"><img src="${mediaUrl(post.cover_image_uuid, 'original', 'png')}" alt="${esc(post.title)}"></div>` : '';
 
 	const adminActions = isAdmin
 		? `<div class="blog-admin-actions">
@@ -121,11 +98,11 @@ export async function blogPostView(ctx: RouteContext): Promise<string> {
 
 	const commentFormHtml = window.appState.isLoggedIn
 		? commentEditorHtml({
-			formId: 'blog-comment-form',
-			textareaId: 'blog-comment-text',
-			turnstileId: 'blog-turnstile-container',
-			placeholder: t('comment.commentPlaceholder'),
-		})
+				formId: 'blog-comment-form',
+				textareaId: 'blog-comment-text',
+				turnstileId: 'blog-turnstile-container',
+				placeholder: t('comment.commentPlaceholder'),
+			})
 		: `<p class="login-prompt"><a href="/login" data-link>${t('comment.loginToComment')}</a></p>`;
 
 	return `
@@ -162,8 +139,7 @@ export async function blogPostAfter(ctx: RouteContext): Promise<void> {
 	const contentEl = document.getElementById('blog-content');
 	if (contentEl) {
 		try {
-			const res = await fetch(`/api/blog/${id}`);
-			const post = (await res.json()) as BlogPost;
+			const post = await api.Blog.Get(id);
 			renderMarkdown(contentEl, post.content);
 		} catch {
 			/* ignore — content already shown */
@@ -173,9 +149,12 @@ export async function blogPostAfter(ctx: RouteContext): Promise<void> {
 	// Delete button
 	document.getElementById('blog-delete-btn')?.addEventListener('click', async () => {
 		if (!(await showConfirm({ message: t('blog.deleteConfirm') }))) return;
-		const res = await fetch(`/api/blog/${id}`, { method: 'DELETE' });
-		if (res.ok) navigateTo('/blog');
-		else showToast(t('common.error'), 'error');
+		try {
+			await api.Blog.Delete(id);
+			navigateTo('/blog');
+		} catch (error) {
+			showToast(error instanceof Error ? error.message : t('common.error'), 'error');
+		}
 	});
 
 	// Load comments
@@ -187,15 +166,7 @@ export async function blogPostAfter(ctx: RouteContext): Promise<void> {
 		textareaId: 'blog-comment-text',
 		turnstileId: 'blog-turnstile-container',
 		onSubmit: async (text, token) => {
-			const res = await fetch(`/api/blog/${id}/comments`, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ text, token }),
-			});
-			if (!res.ok) {
-				const err = (await res.json()) as { error?: string };
-				throw new Error(err.error ?? t('common.error'));
-			}
+			await api.Blog.Comments.Create(id, { text, token });
 		},
 		onSuccess: async () => {
 			await loadComments(id);

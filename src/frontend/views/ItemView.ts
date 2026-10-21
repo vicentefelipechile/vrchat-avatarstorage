@@ -3,7 +3,7 @@
 // =========================================================================
 
 import { t } from '../core/i18n';
-import { DataCache } from '../core/cache';
+import { api } from '../api';
 import { TimeUnit, mediaUrl, videoUrl, progressiveImg, htmlDecode, initLazyImages, initMediaPolling, metaLabel, showToast, showProgressToast, safeHttpUrl } from '../lib/utils';
 import { downloadHost, type HostInfo } from '../lib/download-hosts';
 import { deleteComment, approveResource, rejectResource, deactivateResource } from '../features/admin';
@@ -54,20 +54,13 @@ function renderCategoryMeta(res: Resource): string {
 		const m = res.meta as AvatarMeta;
 		if (m.author_name || m.author_name_raw) {
 			const name = m.author_name ?? m.author_name_raw ?? '';
-			const val = m.author_slug
-				? `<a href="/authors/${m.author_slug}" data-link class="meta-chip meta-chip--link">${name}</a>`
-				: chip(name);
+			const val = m.author_slug ? `<a href="/authors/${m.author_slug}" data-link class="meta-chip meta-chip--link">${name}</a>` : chip(name);
 			textRows.push(metaRow(t('meta.avatar.author').replace(/\s*\*/g, ''), val));
 		}
 		if (m.avatar_gender) textRows.push(metaRow(t('meta.avatar.gender').replace(/\s*\*/g, ''), chip(t('meta.avatar_gender.' + m.avatar_gender) || m.avatar_gender)));
-		if (m.avatar_size)
-			textRows.push(metaRow(t('meta.avatar.size').replace(/\s*\*/g, ''), chip(t('meta.avatar_size.' + m.avatar_size) || m.avatar_size)));
-		if (m.avatar_type)
-			textRows.push(
-				metaRow(t('meta.avatar.type').replace(/\s*\*/g, ''), chip(metaLabel('avatar_type', m.avatar_type))),
-			);
-		if (m.platform)
-			textRows.push(metaRow(t('meta.platform.title').replace(/\s*\*/g, ''), chip(t('meta.platform.' + m.platform) || m.platform)));
+		if (m.avatar_size) textRows.push(metaRow(t('meta.avatar.size').replace(/\s*\*/g, ''), chip(t('meta.avatar_size.' + m.avatar_size) || m.avatar_size)));
+		if (m.avatar_type) textRows.push(metaRow(t('meta.avatar.type').replace(/\s*\*/g, ''), chip(metaLabel('avatar_type', m.avatar_type))));
+		if (m.platform) textRows.push(metaRow(t('meta.platform.title').replace(/\s*\*/g, ''), chip(t('meta.platform.' + m.platform) || m.platform)));
 		if (m.sdk_version) textRows.push(metaRow('SDK', chip(m.sdk_version.toUpperCase())));
 
 		flagChips.push(flagChip('NSFW', m.is_nsfw));
@@ -79,12 +72,8 @@ function renderCategoryMeta(res: Resource): string {
 		flagChips.push(flagChip(t('meta.features.questOptimized').replace(/\s*\*/g, ''), m.is_quest_optimized));
 	} else if (res.category === 'assets') {
 		const m = res.meta as AssetMeta;
-		if (m.asset_type)
-			textRows.push(
-				metaRow(t('meta.asset.type').replace(/\s*\*/g, ''), chip(metaLabel('asset_type', m.asset_type))),
-			);
-		if (m.platform)
-			textRows.push(metaRow(t('meta.platform.title').replace(/\s*\*/g, ''), chip(t('meta.platform.' + m.platform) || m.platform)));
+		if (m.asset_type) textRows.push(metaRow(t('meta.asset.type').replace(/\s*\*/g, ''), chip(metaLabel('asset_type', m.asset_type))));
+		if (m.platform) textRows.push(metaRow(t('meta.platform.title').replace(/\s*\*/g, ''), chip(t('meta.platform.' + m.platform) || m.platform)));
 		if (m.sdk_version) textRows.push(metaRow('SDK', chip(m.sdk_version.toUpperCase())));
 		if (m.unity_version) textRows.push(metaRow('Unity', chip(m.unity_version)));
 
@@ -92,22 +81,12 @@ function renderCategoryMeta(res: Resource): string {
 	} else if (res.category === 'clothes') {
 		const m = res.meta as ClothesMeta;
 		const cTypes = Array.isArray(m.clothing_type) ? m.clothing_type : m.clothing_type ? [m.clothing_type as unknown as string] : [];
-		if (cTypes.length)
-			textRows.push(
-				metaRow(
-					t('meta.clothes.type').replace(/\s*\*/g, ''),
-					cTypes.map((ct) => chip(metaLabel('clothing_type', ct))).join(' '),
-				),
-			);
-		if (m.gender_fit)
-			textRows.push(metaRow(t('meta.clothes.gender').replace(/\s*\*/g, ''), chip(t('meta.avatar_gender.' + m.gender_fit) || m.gender_fit)));
-		if (m.platform)
-			textRows.push(metaRow(t('meta.platform.title').replace(/\s*\*/g, ''), chip(t('meta.platform.' + m.platform) || m.platform)));
+		if (cTypes.length) textRows.push(metaRow(t('meta.clothes.type').replace(/\s*\*/g, ''), cTypes.map((ct) => chip(metaLabel('clothing_type', ct))).join(' ')));
+		if (m.gender_fit) textRows.push(metaRow(t('meta.clothes.gender').replace(/\s*\*/g, ''), chip(t('meta.avatar_gender.' + m.gender_fit) || m.gender_fit)));
+		if (m.platform) textRows.push(metaRow(t('meta.platform.title').replace(/\s*\*/g, ''), chip(t('meta.platform.' + m.platform) || m.platform)));
 		if (m.base_avatar_name_raw) {
 			const name = m.base_avatar_name_raw;
-			const val = m.base_avatar_uuid
-				? `<a href="/item/${m.base_avatar_uuid}" data-link class="meta-chip meta-chip--link">${name}</a>`
-				: chip(name);
+			const val = m.base_avatar_uuid ? `<a href="/item/${m.base_avatar_uuid}" data-link class="meta-chip meta-chip--link">${name}</a>` : chip(name);
 			textRows.push(metaRow(t('meta.clothes.baseAvatar').replace(/\s*\*/g, ''), val));
 		}
 
@@ -147,7 +126,7 @@ function kindCaption(kind: HostInfo['kind']): string {
  *  other link is a secondary source that surfaces its origin site's brand mark and name. `label` names the
  *  button — a link's own title, else its recognised host, else "Backup N". */
 function downloadButton(url: string, title: string | null | undefined, fallbackIndex: number): string {
-	const safeUrl = safeHttpUrl(url);
+	const safeUrl = safeHttpUrl(api.Resources.ResolveDownloadUrl(url));
 	if (!safeUrl) return '';
 	const host = downloadHost(safeUrl);
 	const highlighted = host.kind === 'local';
@@ -172,21 +151,11 @@ function downloadButton(url: string, title: string | null | undefined, fallbackI
 		</a>`;
 }
 
-function extractR2Key(url: string): string | null {
-	try {
-		const u = new URL(url, location.origin);
-		const m = u.pathname.match(/^\/api\/download\/([^/?#]+)/);
-		return m ? m[1] : null;
-	} catch {
-		return null;
-	}
-}
-
 function downloadRow(url: string, title: string | null | undefined, fallbackIndex: number): string {
 	const host = downloadHost(url);
 	const btn = downloadButton(url, title, fallbackIndex);
 	if (host.kind !== 'local') return btn;
-	const r2Key = extractR2Key(url);
+	const r2Key = api.Resources.DownloadKey(url);
 	if (!r2Key) return btn;
 	return `<div class="download-row">${btn}<button type="button" class="download-drive-btn" data-r2="${r2Key}" title="${t('item.saveToDrive')}" aria-label="${t('item.saveToDrive')}">${getIcon('googledrive', 18)}</button><button type="button" class="download-share-btn" data-r2="${r2Key}" title="${t('item.shareLink')}" aria-label="${t('item.shareLink')}">${getIcon('link', 18)}</button></div>`;
 }
@@ -239,7 +208,12 @@ type LightboxSlide = LightboxImageSlide | LightboxVideoSlide;
 
 /** Turn a resource title into a safe download filename (`My Avatar` → `my-avatar.mp4`). */
 function videoFilename(title: string): string {
-	const base = title.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'video';
+	const base =
+		title
+			.trim()
+			.toLowerCase()
+			.replace(/[^a-z0-9]+/g, '-')
+			.replace(/^-+|-+$/g, '') || 'video';
 	return `${base}.mp4`;
 }
 
@@ -248,7 +222,6 @@ function buildGallery(res: Resource): { html: string; images: LightboxSlide[] } 
 	let html = '';
 
 	const hasMedia = (res.mediaFiles?.length ?? 0) > 0;
-	// const hasThumbnail = !!res.thumbnail_key;
 	const hasThumbnail = false;
 
 	if (!hasMedia && !hasThumbnail) return { html, images };
@@ -256,7 +229,7 @@ function buildGallery(res: Resource): { html: string; images: LightboxSlide[] } 
 	html = '<div class="gallery-grid">';
 
 	if (hasThumbnail) {
-		const url = `/api/download/${res.thumbnail_key}`;
+		const url = api.Resources.DownloadUrl(res.thumbnail_key!);
 		const idx = images.length;
 		images.push({ kind: 'image', preview: url, full: url });
 		html += `
@@ -269,7 +242,7 @@ function buildGallery(res: Resource): { html: string; images: LightboxSlide[] } 
 
 	if (hasMedia) {
 		res.mediaFiles!.forEach((media) => {
-			const fallbackUrl = `/api/download/${media.r2_key}`;
+			const fallbackUrl = api.Resources.DownloadUrl(media.r2_key);
 			if (media.media_type === 'video') {
 				// The gallery shows the video's poster (its animated GIF frame) with a play badge, not an
 				// inline player — clicking opens it full-size in the lightbox, where a native <video> player is
@@ -357,9 +330,7 @@ function renderCommentsList(comments: Comment[], isAdmin: boolean): string {
 			const content = parseMarkdownToHtml(c.text);
 			const when = new Date(c.timestamp).toLocaleString();
 
-			const del = isAdmin
-				? `<button type="button" class="comment-delete" data-comment-id="${c.uuid}" title="${t('admin.delete')}" aria-label="${t('admin.delete')}">${icons.trash(15)}</button>`
-				: '';
+			const del = isAdmin ? `<button type="button" class="comment-delete" data-comment-id="${c.uuid}" title="${t('admin.delete')}" aria-label="${t('admin.delete')}">${icons.trash(15)}</button>` : '';
 
 			const authorAvatar = safeHttpUrl(c.author_avatar);
 
@@ -578,7 +549,7 @@ export async function itemView(ctx: RouteContext): Promise<string> {
 	let res: Resource;
 	try {
 		// Auth-gated: don't persist, otherwise anonymous payload poisons logged-in view.
-		res = (await DataCache.fetch(`/api/resources/${uuid}`, { ttl: TimeUnit.Minute * 5 })) as Resource;
+		res = await api.Resources.Get(uuid, { cache: { ttl: TimeUnit.Minute * 5 } });
 		if (!res) throw new Error('Not found');
 	} catch {
 		return `<h1>${t('item.notFound')}</h1>`;
@@ -643,11 +614,7 @@ export async function itemView(ctx: RouteContext): Promise<string> {
 			<div id="comments-section" style="margin-top:40px">
 				<h2>${t('comment.comments')}</h2>
 				<div id="comments-container"><p>${t('common.loadingComments')}</p></div>
-				${
-					user
-						? commentEditorHtml({ formId: 'comment-form', textareaId: 'comment-text', turnstileId: 'turnstile-comment' })
-						: `<hr><h3>${t('comment.loginToComment')}</h3>`
-				}
+				${user ? commentEditorHtml({ formId: 'comment-form', textareaId: 'comment-text', turnstileId: 'turnstile-comment' }) : `<hr><h3>${t('comment.loginToComment')}</h3>`}
 			</div>
 		</div>
 
@@ -661,10 +628,6 @@ export async function itemView(ctx: RouteContext): Promise<string> {
 			<div id="lightbox-counter"></div>
 		</div>`;
 }
-
-// =========================================================================
-// After
-// =========================================================================
 
 // =========================================================================
 // Share-link modal (temporary links for local files)
@@ -738,15 +701,12 @@ function openShareModal(r2Key: string): void {
 	overlay.addEventListener('click', (e) => {
 		if (e.target === overlay) close();
 	});
-	document.addEventListener(
-		'keydown',
-		function onKey(e) {
-			if (e.key === 'Escape') {
-				close();
-				document.removeEventListener('keydown', onKey);
-			}
-		},
-	);
+	document.addEventListener('keydown', function onKey(e) {
+		if (e.key === 'Escape') {
+			close();
+			document.removeEventListener('keydown', onKey);
+		}
+	});
 
 	copyBtn.addEventListener('click', async () => {
 		try {
@@ -761,20 +721,11 @@ function openShareModal(r2Key: string): void {
 	createBtn.addEventListener('click', async () => {
 		createBtn.disabled = true;
 		try {
-			const res = await fetch('/api/share', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					r2_key: r2Key,
-					expires_in: SHARE_EXPIRY[Number(expiryInput.value)],
-					max_uses: SHARE_USES[Number(usesInput.value)],
-				}),
+			const data = await api.Share.Create({
+				r2_key: r2Key,
+				expires_in: SHARE_EXPIRY[Number(expiryInput.value)],
+				max_uses: SHARE_USES[Number(usesInput.value)],
 			});
-			if (!res.ok) {
-				const data = (await res.json().catch(() => ({}))) as { error?: string };
-				throw new Error(data.error ?? t('item.shareFailed'));
-			}
-			const data = (await res.json()) as { url: string };
 			urlInput.value = data.url;
 			form.hidden = true;
 			result.hidden = false;
@@ -797,6 +748,10 @@ function setupShareButtons(): void {
 	}
 }
 
+// =========================================================================
+// After
+// =========================================================================
+
 export async function itemAfter(ctx: RouteContext): Promise<void> {
 	const uuid = ctx.params.id;
 	const commentsContainer = document.getElementById('comments-container')!;
@@ -804,8 +759,8 @@ export async function itemAfter(ctx: RouteContext): Promise<void> {
 	// For Drive progress + notification avatar thumbnail (rehydration needs it even before polling)
 	let driveThumbUuid: string | null = null;
 	try {
-		const r = (await DataCache.fetch(`/api/resources/${uuid}`, { ttl: TimeUnit.Minute * 5 })) as Resource & { thumbnail_uuid?: string; thumbnail?: string };
-		driveThumbUuid = (r as unknown as { thumbnail_uuid?: string }).thumbnail_uuid ?? null;
+		const r = await api.Resources.Get(uuid, { cache: { ttl: TimeUnit.Minute * 5 } });
+		driveThumbUuid = r.thumbnail_uuid ?? null;
 	} catch {}
 
 	// Recover lightbox images from data attribute
@@ -835,8 +790,7 @@ export async function itemAfter(ctx: RouteContext): Promise<void> {
 		);
 	});
 
-	// Admin actions — re-render the view in place (the DataCache entry is cleared by the action, so this
-	// re-fetches the fresh resource) instead of a full page reload.
+	// The API invalidates moderated resources before this in-place refresh.
 	const rerender = () => navigateTo(location.pathname, true);
 	document.getElementById(`btn-approve-${uuid}`)?.addEventListener('click', () => approveResource(uuid, rerender));
 	document.getElementById(`btn-reject-${uuid}`)?.addEventListener('click', () => rejectResource(uuid));
@@ -853,8 +807,7 @@ export async function itemAfter(ctx: RouteContext): Promise<void> {
 	if (btnFavorite) {
 		const icon = btnFavorite.querySelector<SVGElement>('.favorite-icon');
 		try {
-			const res = await fetch(`/api/favorites/check/${uuid}`);
-			const data = (await res.json()) as { is_favorite?: boolean };
+			const data = await api.Favorites.Check(uuid);
 			if (data.is_favorite) {
 				icon?.setAttribute('fill', 'currentColor');
 				btnFavorite.classList.add('is-favorite');
@@ -866,33 +819,30 @@ export async function itemAfter(ctx: RouteContext): Promise<void> {
 		btnFavorite.addEventListener('click', async (e) => {
 			e.preventDefault();
 			const isFavorite = btnFavorite.classList.contains('is-favorite');
-			if (isFavorite) {
-				icon?.removeAttribute('fill');
-				btnFavorite.classList.remove('is-favorite');
-				fetch(`/api/favorites/${uuid}`, { method: 'DELETE' }).catch(() => {});
-			} else {
-				icon?.setAttribute('fill', 'currentColor');
-				btnFavorite.classList.add('is-favorite');
-				fetch('/api/favorites', {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ resource_uuid: uuid }),
-				}).catch(() => {});
+			btnFavorite.disabled = true;
+			try {
+				if (isFavorite) await api.Favorites.Remove(uuid);
+				else await api.Favorites.Add({ resource_uuid: uuid });
+				btnFavorite.classList.toggle('is-favorite', !isFavorite);
+				if (isFavorite) icon?.removeAttribute('fill');
+				else icon?.setAttribute('fill', 'currentColor');
+			} catch (error) {
+				showToast(error instanceof Error ? error.message : t('common.error'), 'error');
+			} finally {
+				btnFavorite.disabled = false;
 			}
 		});
 	}
 
 	// Load comments — always fresh, never cached
 	try {
-		const res = await fetch(`/api/comments/${uuid}`);
-		const comments = (await res.json()) as Comment[];
+		const comments = await api.Comments.List(uuid);
 		commentsContainer.innerHTML = renderCommentsList(comments, window.appState.isAdmin);
 	} catch {
 		commentsContainer.innerHTML = `<p>${t('item.errorLoadingComments')}</p>`;
 	}
 
 	// Drive Save-to-Drive icon buttons (right side of local download) — with progress toast + rehydration
-	type DriveJob = { uuid: string; r2_key: string; status: string; google_file_id: string | null; error: string | null; file_name: string; total_bytes: number | null; bytes_uploaded: number };
 
 	const formatBytes = (b: number) => {
 		if (b < 1024) return `${b} B`;
@@ -906,7 +856,7 @@ export async function itemAfter(ctx: RouteContext): Promise<void> {
 		let attempts = 0;
 		const poll = async (): Promise<void> => {
 			attempts++;
-			const j = await fetch(`/api/drive/jobs/${jobUuid}`).then((r) => r.json() as Promise<DriveJob>);
+			const j = await api.Drive.Job(jobUuid);
 			// Backend may still have no total_bytes if migration not applied — fall back to attempt-based pulse so bar never sticks at 0%
 			let pct: number;
 			let label: string;
@@ -933,7 +883,9 @@ export async function itemAfter(ctx: RouteContext): Promise<void> {
 						if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
 							let iconUrl = '/favicon.ico';
 							if (driveThumbUuid) {
-								try { iconUrl = mediaUrl(driveThumbUuid, 'low', 'webp'); } catch {}
+								try {
+									iconUrl = mediaUrl(driveThumbUuid, 'low', 'webp');
+								} catch {}
 							}
 							const n = new Notification(t('item.driveDone'), {
 								body: j.file_name ? `${j.file_name}` : driveUrl,
@@ -999,7 +951,7 @@ export async function itemAfter(ctx: RouteContext): Promise<void> {
 	// Rehydrate ongoing transfers when (re)entering the page
 	try {
 		if (window.appState.isLoggedIn) {
-			const jobs = (await fetch('/api/drive/jobs').then((r) => (r.ok ? r.json() : [])) as DriveJob[]);
+			const jobs = await api.Drive.Jobs();
 			const btnsByR2 = new Map<string, HTMLButtonElement>();
 			for (const b of Array.from(document.querySelectorAll<HTMLButtonElement>('.download-drive-btn'))) {
 				if (b.dataset.r2) btnsByR2.set(b.dataset.r2, b);
@@ -1033,9 +985,7 @@ export async function itemAfter(ctx: RouteContext): Promise<void> {
 			btn.style.opacity = '0.6';
 			let prog: ReturnType<typeof showProgressToast> | null = null;
 			try {
-				const statusRes = await fetch('/api/drive/status');
-				if (!statusRes.ok) throw new Error(t('common.networkError'));
-				const status = (await statusRes.json()) as { linked: boolean };
+				const status = await api.Drive.Status();
 				if (!status.linked) {
 					const ok = await showConfirm({
 						title: t('item.driveConsentTitle'),
@@ -1049,16 +999,7 @@ export async function itemAfter(ctx: RouteContext): Promise<void> {
 					btn.style.opacity = '';
 					return;
 				}
-				const tr = await fetch('/api/drive/transfer', {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ r2_key: r2Key }),
-				});
-				if (!tr.ok) {
-					const data = (await tr.json().catch(() => ({}))) as { error?: string };
-					throw new Error(data.error ?? t('common.error'));
-				}
-				const { job_uuid } = (await tr.json()) as { job_uuid: string };
+				const { job_uuid } = await api.Drive.Transfer({ r2_key: r2Key });
 				prog = showProgressToast(`${t('item.driveQueued')} — 0%`, 'info');
 				await drivePoll(job_uuid, btn, original, prog);
 			} catch (e) {
@@ -1080,20 +1021,10 @@ export async function itemAfter(ctx: RouteContext): Promise<void> {
 		textareaId: 'comment-text',
 		turnstileId: 'turnstile-comment',
 		onSubmit: async (text, token) => {
-			const res = await fetch(`/api/comments/${uuid}`, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ text, token }),
-			});
-			if (!res.ok) {
-				const data = (await res.json()) as { error?: string; details?: { message: string }[] };
-				let msg = data.error ?? 'Unknown';
-				if (data.details?.length) msg += ': ' + data.details.map((d) => d.message).join(', ');
-				throw new Error(msg);
-			}
+			await api.Comments.Create(uuid, { text, token });
 		},
 		onSuccess: async () => {
-			const updated = (await fetch(`/api/comments/${uuid}`).then((r) => r.json())) as Comment[];
+			const updated = await api.Comments.List(uuid);
 			commentsContainer.innerHTML = renderCommentsList(updated, window.appState.isAdmin);
 		},
 	});

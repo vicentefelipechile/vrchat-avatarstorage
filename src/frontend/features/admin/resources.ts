@@ -7,10 +7,10 @@ import { showToast } from '../../lib/utils';
 import { showConfirm } from '../../lib/confirm';
 import { icons } from '../../lib/icons';
 import { approveResource } from '../admin';
-import { adminGet, adminDelete, requestTwoFactorCode, AdminApiError } from './api';
+import { api, VrcStorageApiError } from '../../api';
+import { requestTwoFactorCode } from './two-factor';
 import { esc, fmtDate } from './esc';
 import { paginationBar, wirePagination, errorRow, emptyRow } from './admin-table';
-import type { ResourceRow, PaginationMeta } from './types';
 
 interface Filters {
 	q: string;
@@ -54,7 +54,7 @@ export function loadResources(el: HTMLElement, signal: AbortSignal): void {
 		if (filters.status) qp.set('status', filters.status);
 		if (filters.q) qp.set('q', filters.q);
 		try {
-			const data = await adminGet<{ resources: ResourceRow[]; pagination: PaginationMeta }>(`/api/admin/resources?${qp}`, signal);
+			const data = await api.Admin.Resources(qp, { signal });
 			if (signal.aborted) return;
 			tbody.innerHTML =
 				data.resources
@@ -71,7 +71,7 @@ export function loadResources(el: HTMLElement, signal: AbortSignal): void {
 		}
 	}
 
-	// Approve via the shared ItemView helper (single correct endpoint) — reject/deactivate stay on ItemView.
+	// Reuse the moderation UI action; rejection and deactivation remain on the detail screen.
 	tbody.addEventListener('click', async (e) => {
 		const approveBtn = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-approve]');
 		if (approveBtn) {
@@ -97,11 +97,11 @@ export function loadResources(el: HTMLElement, signal: AbortSignal): void {
 			if (!code) return;
 			deleteBtn.disabled = true;
 			try {
-				await adminDelete(`/api/resources/${uuid}`, { code });
+				await api.Resources.Delete(uuid, code);
 				showToast(t('admin.resources.toastDeleted'), 'success');
 				await refresh();
 			} catch (error) {
-				showToast(error instanceof AdminApiError ? error.message : t('admin.resources.toastDeleteError'), 'error');
+				showToast(error instanceof VrcStorageApiError ? error.message : t('admin.resources.toastDeleteError'), 'error');
 				deleteBtn.disabled = false;
 			}
 		}

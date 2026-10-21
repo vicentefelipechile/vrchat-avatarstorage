@@ -4,9 +4,8 @@
 
 import { t } from '../../core/i18n';
 import { showToast } from '../../lib/utils';
-import { adminGet, AdminApiError } from './api';
+import { api, VrcStorageApiError } from '../../api';
 import { esc, fmtDate } from './esc';
-import type { AdminStats, Timeseries } from './types';
 
 /** Minimal brutalist bar chart: flex bars normalized to the max value, exact count in title. */
 function barChart(days: string[], values: number[], cls: string): string {
@@ -19,18 +18,13 @@ export function loadOverview(el: HTMLElement, signal: AbortSignal): void {
 	el.innerHTML = `<h2 class="admin-section-title">${esc(t('admin.nav.overview'))}</h2>
 		<div class="admin-loading">${esc(t('common.loading'))}</div>`;
 
-	adminGet<AdminStats>('/api/admin/stats', signal)
+	api.Admin.Stats({ signal })
 		.then((stats) => {
 			if (signal.aborted) return;
 			const uploads = stats.latest_uploads
-				.map(
-					(r) =>
-						`<tr><td><a href="/item/${esc(r.uuid)}" data-link>${esc(r.title)}</a></td><td>${esc(r.category)}</td><td>${esc(r.author_username) || '—'}</td><td>${esc(fmtDate(r.created_at))}</td></tr>`,
-				)
+				.map((r) => `<tr><td><a href="/item/${esc(r.uuid)}" data-link>${esc(r.title)}</a></td><td>${esc(r.category)}</td><td>${esc(r.author_username) || '—'}</td><td>${esc(fmtDate(r.created_at))}</td></tr>`)
 				.join('');
-			const users = stats.latest_registrations
-				.map((u) => `<tr><td>${esc(u.username)}</td><td>${esc(fmtDate(u.created_at))}</td></tr>`)
-				.join('');
+			const users = stats.latest_registrations.map((u) => `<tr><td>${esc(u.username)}</td><td>${esc(fmtDate(u.created_at))}</td></tr>`).join('');
 			el.innerHTML = `<h2 class="admin-section-title">${esc(t('admin.nav.overview'))}</h2>
 			<div class="admin-stats-grid">
 				<div class="admin-stat-card"><div class="admin-stat-value">${stats.users}</div><div class="admin-stat-label">${esc(t('admin.stats.users'))}</div></div>
@@ -61,7 +55,7 @@ export function loadOverview(el: HTMLElement, signal: AbortSignal): void {
 			</div>`;
 
 			// Charts are best-effort: the stats above already rendered, a series failure just hides them.
-			adminGet<Timeseries>('/api/admin/stats/timeseries?days=30', signal)
+			api.Admin.Timeseries(30, { signal })
 				.then((series) => {
 					if (signal.aborted) return;
 					const charts = el.querySelector('[data-charts]');
@@ -79,8 +73,7 @@ export function loadOverview(el: HTMLElement, signal: AbortSignal): void {
 		})
 		.catch((e) => {
 			if (signal.aborted) return;
-			if (e instanceof AdminApiError && e.status === 403) showToast(t('common.accessDenied'), 'error');
+			if (e instanceof VrcStorageApiError && e.status === 403) showToast(t('common.accessDenied'), 'error');
 			el.innerHTML = `<p class="admin-error-message">${esc(t('admin.statsError'))}</p>`;
 		});
 }
-

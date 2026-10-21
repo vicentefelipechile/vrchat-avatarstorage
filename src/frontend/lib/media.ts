@@ -1,7 +1,13 @@
 // =========================================================================
-// lib/media.ts — Images: resizing, CDN URLs, download hosts, lazy/progressive
+// lib/media.ts — Images: resizing, CDN URLs, lazy/progressive
 //                loading, and the processing-status poll
 // =========================================================================
+
+// =========================================================================
+// Imports
+// =========================================================================
+
+import { api } from '../api';
 
 // =========================================================================
 // Image resizing
@@ -28,13 +34,7 @@ export async function resizeImage(file: File, maxWidth: number, maxHeight: numbe
 	image.close();
 
 	return new Promise((resolve, reject) => {
-		canvas.toBlob(
-			(blob) =>
-				blob
-					? resolve(new File([blob], file.name, { type: file.type, lastModified: Date.now() }))
-					: reject(new Error('Canvas to Blob failed')),
-			file.type,
-		);
+		canvas.toBlob((blob) => (blob ? resolve(new File([blob], file.name, { type: file.type, lastModified: Date.now() })) : reject(new Error('Canvas to Blob failed'))), file.type);
 	});
 }
 
@@ -74,15 +74,7 @@ export function videoUrl(uuid: string): string {
  */
 const loadedUrls = new Set<string>();
 
-export function progressiveImg(opts: {
-	uuid: string;
-	placeholder: string | null;
-	res?: 'low' | 'med' | 'original';
-	alt?: string;
-	className?: string;
-	processed?: boolean;
-	format?: 'webp' | 'png' | 'gif';
-}): string {
+export function progressiveImg(opts: { uuid: string; placeholder: string | null; res?: 'low' | 'med' | 'original'; alt?: string; className?: string; processed?: boolean; format?: 'webp' | 'png' | 'gif' }): string {
 	const { uuid, placeholder, res = 'med', alt = '', className = '', processed = true, format = 'webp' } = opts;
 	const dataSrc = mediaUrl(uuid, res, format);
 	const escapeAttr = (value: string): string => value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -216,14 +208,11 @@ function pollMediaStatus(uuid: string): void {
 		}
 
 		try {
-			const res = await fetch(`/api/media/${uuid}/status`);
-			if (res.ok) {
-				const { processed } = (await res.json()) as { processed: boolean };
-				if (processed) {
-					swapProcessedImages(uuid);
-					pollingUuids.delete(uuid);
-					return;
-				}
+			const { processed } = await api.Media.Status(uuid);
+			if (processed) {
+				swapProcessedImages(uuid);
+				pollingUuids.delete(uuid);
+				return;
 			}
 		} catch {
 			// Network hiccup — fall through to reschedule; the backoff keeps retries sane.

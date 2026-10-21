@@ -6,11 +6,10 @@ import { t } from '../../core/i18n';
 import { showToast } from '../../lib/utils';
 import { showConfirm } from '../../lib/confirm';
 import { icons } from '../../lib/icons';
-import { adminGet } from './api';
+import { api } from '../../api';
 import { esc, safeAvatarSrc, fmtDate } from './esc';
 import { paginationBar, wirePagination, errorRow, emptyRow } from './admin-table';
 import { showAuthorForm, fetchAuthorForEdit } from './author-form';
-import type { AuthorRow, PaginationMeta } from './types';
 
 export function loadAuthors(el: HTMLElement, signal: AbortSignal): void {
 	let page = 1;
@@ -32,7 +31,7 @@ export function loadAuthors(el: HTMLElement, signal: AbortSignal): void {
 
 	async function refresh(): Promise<void> {
 		try {
-			const data = await adminGet<{ authors: AuthorRow[]; pagination: PaginationMeta }>(`/api/authors?page=${page}&limit=30`, signal);
+			const data = await api.Authors.List({ page, limit: 30 }, { signal });
 			if (signal.aborted) return;
 			tbody.innerHTML =
 				data.authors
@@ -69,16 +68,11 @@ export function loadAuthors(el: HTMLElement, signal: AbortSignal): void {
 			const ok = await showConfirm({ message: `${t('admin.authors.confirmDelete')} "${slug}"?`, confirmText: t('admin.authors.btnDelete'), danger: true });
 			if (!ok) return;
 			try {
-				const r = await fetch(`/api/authors/${slug}`, { method: 'DELETE' });
-				if (r.ok) {
-					showToast(t('admin.authors.toastDeleted'), 'success');
-					await refresh();
-				} else {
-					const d = (await r.json()) as { error?: string };
-					showToast(d.error ?? 'Error', 'error');
-				}
-			} catch {
-				showToast(t('admin.networkError'), 'error');
+				await api.Authors.Delete(slug);
+				showToast(t('admin.authors.toastDeleted'), 'success');
+				await refresh();
+			} catch (error) {
+				showToast(error instanceof Error ? error.message : t('admin.networkError'), 'error');
 			}
 		}
 	});
