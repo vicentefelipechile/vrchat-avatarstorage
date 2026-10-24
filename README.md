@@ -77,6 +77,16 @@ Populates the local D1 database with initial data or mock users:
 npm run seed
 ```
 
+### Backend Tests
+
+```bash
+npm test
+npm run test:typecheck
+npm run test:coverage
+```
+
+Backend tests in `test/backend/` run the Worker locally with isolated D1/R2/KV and real migrations; Node-only 2FA tests and frontend API transport tests have separate Node runners. The frontend suite tests only API request modules and mocked fetch/XHR; it does not test views or rendering. Tests do not use the development seed or remote resources. Use `npm run test:frontend:api` for just frontend API tests, `npm run test:watch` for Workers, and `npm run test:watch:node` for Node tests.
+
 ### Generate Types
 
 Automatically updates `worker-configuration.d.ts` from `wrangler.jsonc` whenever bindings change:

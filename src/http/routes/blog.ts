@@ -81,7 +81,7 @@ blog.get('/', async (c) => {
 	const { data, total } = await new BlogService(c.env.DB).listPosts(limit, offset);
 
 	// Cache the raw data + total (5 min in legacy comment, 1h TTL in code — kept as-is).
-	c.env.VRCSTORAGE_KV.put(cacheKey, JSON.stringify({ data, total }), { expirationTtl: CACHE_TTL });
+	await c.env.VRCSTORAGE_KV.put(cacheKey, JSON.stringify({ data, total }), { expirationTtl: CACHE_TTL });
 
 	return c.json({
 		data,

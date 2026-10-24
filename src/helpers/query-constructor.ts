@@ -190,19 +190,20 @@ export class QueryBuilder {
 	/**
 	 * Adds LIMIT and OFFSET based on a 1-indexed page number.
 	 *
-	 * Uses the +1 trick: requests `limit + 1` rows so the caller can detect
-	 * whether a next page exists without running a separate COUNT(*) query.
+	 * A caller can request `pageSize + 1` rows to detect a next page without
+	 * using the extra row when calculating OFFSET.
 	 *
 	 * The caller is responsible for slicing:
 	 *   const hasNextPage = results.length > limit;
 	 *   const pageResults = results.slice(0, limit);
 	 *
 	 * @param page   Current page number (1-indexed)
-	 * @param limit  Number of results per page
+	 * @param limit  Number of rows to request
+	 * @param pageSize  Visible rows per page (defaults to limit)
 	 */
-	paginate(page: number, limit: number): this {
+	paginate(page: number, limit: number, pageSize = limit): this {
 		this._limit = limit;
-		this._offset = (page - 1) * limit;
+		this._offset = (page - 1) * pageSize;
 		return this;
 	}
 

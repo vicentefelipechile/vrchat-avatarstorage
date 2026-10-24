@@ -58,6 +58,12 @@ This guide is for agentic coding agents (like yourself) operating in the VRCStor
 | **Generate Types**       | `npm run cf-typegen` (updates `worker-configuration.d.ts` from `wrangler.jsonc`)         |
 | **Manage i18n**          | `npm run i18n-manager [ADD\|FILL\|LIST\|CHECK] ...` (see [i18n section](#i18n-frontend)) |
 | **Seed DB**              | `npm run seed [--count=N] [--no-r2] [--keep] [--remote]` (default 200, weighted 65/15/20) — see [Testing](#testing) |
+| **All tests**            | `npm test` (backend Workers, backend Node, frontend API)                                |
+| **Frontend API tests**   | `npm run test:frontend:api` (Node, mocked fetch/XHR; no DOM/UI)                        |
+| **Backend tests**        | `npm run test:backend` (isolated Workers runtime, local D1/R2/KV)                      |
+| **Backend test types**   | `npm run test:typecheck`                                                               |
+| **Frontend API test types** | `npm run test:typecheck:frontend-api`                                                |
+| **Backend coverage**     | `npm run test:coverage` (text summary + ignored HTML in `coverage/backend/`)           |
 | **Start (Dev)**          | `npm start` (shorthand for `wrangler dev`)                                               |
 | **Password Recovery**    | `npm run user-passrecover` (reset user password via wrangler d1)                         |
 | **Linting**              | `npx prettier --check src/` (Formatting check — only src/ directory)                     |
@@ -66,20 +72,21 @@ This guide is for agentic coding agents (like yourself) operating in the VRCStor
 
 ### Verifying a change
 
-There is no test suite (see [Testing](#testing)), so the build **is** the check. Before considering a change done:
+The backend has a test suite (see [Testing](#testing)); frontend changes still need type-checking and a build. Before considering a change done:
 
 - **Backend change:** `npx tsc -p tsconfig.json --noEmit`.
 - **Frontend change:** `npx tsc -p tsconfig.frontend.json --noEmit` **and** `npm run build-frontend` — they catch different failures (see [Type-checking the frontend](#type-checking-the-frontend)).
 - **Any change touching `src/`:** `npx prettier --check src/`.
+- **Backend tests:** `npm test` and `npm run test:typecheck` when changing backend behavior or test files.
 - **i18n change:** `npm run i18n-manager CHECK`.
 
 ## Testing
 
-**The repository has no tests and no test runner configured.** `vitest` is present in `devDependencies` but there is no `vitest.config.*`, no `*.test.ts`/`*.spec.ts` file anywhere, and no `test` script in `package.json`.
+Backend tests live in `test/backend/`; frontend API tests live in `test/frontend/api/`. `npm test` runs the backend Worker suite, Node-only 2FA tests, and the frontend API Node suite. `npm run test:watch` and `npm run test:watch:node` watch the Worker and Node runners; `npm run test:frontend:api` runs the frontend API suite alone. `test/vitest.config.ts` runs the real Worker inside `@cloudflare/vitest-plugin` with `test/wrangler.jsonc`, local-only D1/R2/KV/Queues/Durable Objects/Images and no remote Media binding or production resource IDs. `test/setup/migrations.ts` resets isolated storage and applies the real D1 migrations before each test. `test/setup/fixtures.ts` creates minimal DB rows; `test/fixtures/static.png` is the valid static image fixture for Images processing. Backend tests exercise HTTP routes, D1 repositories, R2 media/CDN, image variants, video processing with a typed stand-in for the remote Media binding, the queue, cron, the feed Durable Object, auth/validation and service helpers. The separate Node runner under `test/node/` covers backend 2FA encryption; `test/frontend/vitest.config.ts` runs API-domain and fetch/XHR transport tests in Node with browser globals and network mocked. Frontend tests exclude views, DOM rendering, HTML and CSS. `npm run test:typecheck` checks backend tests; `npm run test:typecheck:frontend-api` checks frontend API tests. The local test storage is separate from `npm run dev`/`npm run seed`; neither command is needed for tests. Real remote Media transformations are not emulated; external OAuth/Google HTTP is mocked. Do not claim exhaustive coverage.
 
-- Do **not** claim a change is "tested" or that tests pass. Verify with the type-check + build commands above and say what you actually ran.
-- `npm run seed` is **working** via `tsx src/test/setup/populate.ts` (`src/test/setup/`). It seeds D1 + R2 locally (default 200 resources, weighted 65% avatars / 15% assets / ~20% clothes) with production-like variety. Use `npm run seed -- --count=30` for a fast run, `--count=200` for full scale, `--no-r2` for DB-only, `--keep` to preserve existing data, `--remote` for prod (with care). Clothes items get 1..8 `clothing_type` values via `clothes_clothing_types` junction (weighted 1-2 common, 3-4 occasional, 5-8 rare, max 8 enforced by `ClothesMetaSchema`). Standard values only: avatar genders `male`/`female`/`both` (excludes internal `undefined` and legacy `androgynous`), avatar/assets/clothes `other` kept as rare exceptional fallback. R2 local upload uses `getPlatformProxy` with binding names `BUCKET`/`MEDIA_BUCKET` (not bucket names). The sample images in `public/test/` are the fallback when `.wrangler/img-seed/` is empty.
-- If you add the first test, also add the runner config and a `test` script, then update this section — do not leave the repo in a state where `npm test` is still undefined.
+- `npm run test:coverage` measures backend Worker code (excluding frontend and developer tooling); HTML is written to `coverage/backend/` (ignored). Node-only 2FA encryption tests are not included in that Worker coverage figure.
+- Report the actual commands run and their results; passing tests do not imply full backend coverage.
+- `npm run seed` uses `tsx test/setup/populate.ts`. It seeds the development D1 + R2 (not the test environment). Use `npm run seed -- --count=30` for a fast run, `--no-r2` for DB-only, `--keep` to preserve existing data, and `--remote` only deliberately (production data can be cleared). Sample images in `public/test/` are the fallback when `.wrangler/img-seed/` is empty.
 
 ## Code Style & Conventions
 
@@ -359,6 +366,37 @@ src/
                           # fetch/queue/scheduled entrypoints. No logic, no SQL.
   types.ts                # Shared backend TypeScript types
   validators.ts           # Zod schemas + sanitizeHtml helper
+
+test/                       # Backend Worker, backend Node and frontend API test suites
+  vitest.config.ts          # Worker test runner + real D1 migrations
+  wrangler.jsonc            # Local-only bindings; never use production Media/Images
+  tsconfig.json             # Type-check tests separately from backend/frontend builds
+  backend/
+    identity/               # Accounts, sessions, OAuth and 2FA
+    resources/              # Resource categories, authors and generic resource service
+    community/              # Comments, blog comments, favorites and share links
+    media/                  # Uploads, validation, CDN, processing and scheduled cleanup
+    validation/             # Backend request and metadata schema boundaries
+    admin/                  # Dashboard, moderation and sensitive admin operations
+    integrations/           # Drive request and transfer behavior
+    platform/               # Docs, feed Durable Object, system and Worker entrypoints
+  setup/
+    migrations.ts           # Reset and apply the real migrations before each test
+    fixtures.ts             # Minimal backend data fixtures
+    populate.ts             # Development seed CLI (npm run seed), not run by npm test
+  fixtures/static.png       # Valid small image for local Images processing tests
+  node/
+    vitest.config.ts        # Node-only backend tests for the CommonJS Iron dependency
+    two-factor.test.ts      # TOTP, encrypted secrets, single-use backup codes
+  frontend/
+    vitest.config.ts        # Node runner with mocked browser API transport
+    tsconfig.json           # Frontend API test type-check configuration
+    setup.ts                # Minimal window/localStorage globals; no DOM
+    api/
+      client.test.ts        # Fetch/XHR transport, parsing, errors and cache behavior
+      domain-requests.test.ts # API facade request contracts by domain
+      helpers.test.ts       # URL and repeated-query helpers
+      uploads.test.ts       # Multipart chunking, retries and progress
 
 public/
   _redirects              # Pages OAuth/Drive navigation entrypoints → canonical Worker (not API fetch rewriting)

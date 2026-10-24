@@ -1,0 +1,25 @@
+{
+	"$schema": "../node_modules/wrangler/config-schema.json",
+	"name": "vrcstorage-backend-tests",
+	"main": "../src/index.ts",
+	"compatibility_date": "2026-02-12",
+	"compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+	"version_metadata": { "binding": "CF_VERSION_METADATA" },
+	"assets": { "directory": "../public", "binding": "ASSETS", "run_worker_first": ["/api/auth/google", "/api/drive/auth"] },
+	"d1_databases": [{ "binding": "DB", "database_name": "vrcstorage-tests", "database_id": "00000000-0000-4000-8000-000000000001" }],
+	"r2_buckets": [
+		{ "binding": "BUCKET", "bucket_name": "vrcstorage-tests" },
+		{ "binding": "MEDIA_BUCKET", "bucket_name": "vrcstorage-media-tests" }
+	],
+	"kv_namespaces": [{ "binding": "VRCSTORAGE_KV", "id": "00000000000000000000000000000001" }],
+	"images": { "binding": "IMAGES" },
+	"ratelimits": [
+		{ "name": "RL_STRICT", "namespace_id": "2001", "simple": { "limit": 1, "period": 60 } },
+		{ "name": "RL_MEDIUM", "namespace_id": "2002", "simple": { "limit": 100, "period": 60 } },
+		{ "name": "RL_GLOBAL", "namespace_id": "2003", "simple": { "limit": 500, "period": 60 } },
+		{ "name": "RL_LOGIN", "namespace_id": "2004", "simple": { "limit": 10, "period": 60 } }
+	],
+	"queues": { "producers": [{ "binding": "UPLOAD_QUEUE", "queue": "vrcstorage-upload-processing" }, { "binding": "DRIVE_QUEUE", "queue": "vrcstorage-drive-transfer" }] },
+	"durable_objects": { "bindings": [{ "name": "FEED", "class_name": "FeedRoom" }] },
+	"migrations": [{ "tag": "v1", "new_sqlite_classes": ["FeedRoom"] }]
+}

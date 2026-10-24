@@ -150,7 +150,7 @@ export class DriveTransferService {
 			const msg_ = e instanceof Error ? e.message : String(e);
 			console.error(`[DRIVE_QUEUE] failed ${job_uuid}:`, msg_);
 			// Token/auth errors are retryable (refresh may fix); quota errors not
-			const retryable = msg_.includes('401') || msg_.includes('403') || msg_.includes('429') || msg_.includes('5');
+			const retryable = /(?:failed|error)\s+(?:HTTP\s*)?(?:401|403|429|5\d{2})\b/i.test(msg_);
 			if (retryable) throw e; // msg.retry() in handler
 			await this.driveRepo.updateFailed(job_uuid, msg_.slice(0, 500));
 		}

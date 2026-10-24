@@ -1,0 +1,11 @@
+{
+	"extends": "../../tsconfig.frontend.json",
+	"compilerOptions": {
+		"composite": true,
+		"rootDir": "../..",
+		"declaration": true,
+		"noEmit": true,
+		"types": ["node"]
+	},
+	"include": ["./**/*.ts", "../../src/frontend/api/**/*.ts", "../../src/frontend/core/cache.ts", "../../src/frontend/types.ts"]
+}

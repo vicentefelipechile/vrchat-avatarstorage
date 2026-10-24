@@ -144,7 +144,7 @@ export class ResourceRepository {
 			.whereIf(!!p.category && RESOURCE_CATEGORIES.includes(p.category as ResourceCategory), 'r.category = ?', p.category)
 			.whereIf(!!likePattern, `r.uuid IN (SELECT uuid FROM resources_fts WHERE title LIKE ? ESCAPE '\\')`, likePattern)
 			.orderBy(orderColumn, p.sortOrder)
-			.paginate(p.page, p.limit + 1);
+			.paginate(p.page, p.limit + 1, p.limit);
 
 		const { sql, params } = qb.build();
 		try {
