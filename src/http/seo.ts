@@ -16,6 +16,7 @@
 // =========================================================================================================
 
 import type { Hono } from 'hono';
+import { componentEmbed } from './component-embed';
 import { BlogPostRepository } from '../repositories/blog-post-repository';
 import { ResourceRepository } from '../repositories/resource-repository';
 
@@ -43,8 +44,8 @@ function escapeHtml(str: string): string {
  * "Avatar Details" markdown block before use.
  */
 function injectSEO(html: string, opts: { title: string; description: string; url: string; imageUrl: string }): string {
-	let res = html;
-	res = res.replace(/<title>[^<]*<\/title>/i, `<title>${opts.title}</title>`);
+	let res = html.replace(/<script id="discord:component-embed"[^>]*>.*?<\/script>/s, '');
+	res = res.replace(/<title>[^<]*<\/title>/i, `<title>${escapeHtml(opts.title)}</title>`);
 
 	// Remove the specific markdown block if it exists
 	const cleanDescription = opts.description
@@ -69,11 +70,12 @@ function injectSEO(html: string, opts: { title: string; description: string; url
 	for (const tag of tags) {
 		const regex = new RegExp(`<meta\\s+${tag.type}="${tag.key}"\\s+content="[^"]*"\\s*\\/?>`, 'i');
 		if (regex.test(res)) {
-			res = res.replace(regex, `<meta ${tag.type}="${tag.key}" content="${tag.val}" />`);
+			res = res.replace(regex, `<meta ${tag.type}="${tag.key}" content="${escapeHtml(tag.val)}" />`);
 		} else {
-			res = res.replace('</head>', `\t<meta ${tag.type}="${tag.key}" content="${tag.val}" />\n</head>`);
+			res = res.replace('</head>', `\t<meta ${tag.type}="${tag.key}" content="${escapeHtml(tag.val)}" />\n</head>`);
 		}
 	}
+	res = res.replace('</head>', `\t${componentEmbed({ ...opts, description: cleanDescription })}\n</head>`);
 	return res;
 }
 
@@ -132,8 +134,8 @@ export function registerSeoRoutes(app: Hono<{ Bindings: Env }>): void {
 			}
 
 			html = injectSEO(html, {
-				title: escapeHtml(title),
-				description: escapeHtml(description),
+				title,
+				description,
 				url,
 				imageUrl,
 			});
@@ -161,8 +163,8 @@ export function registerSeoRoutes(app: Hono<{ Bindings: Env }>): void {
 				let html = await indexResponse.text();
 				const urlOrigin = new URL(c.req.url).origin;
 
-				const postTitle = escapeHtml(`${post.title} - VRCStorage Blog`);
-				const postDesc = escapeHtml(post.excerpt || 'Read this article on the VRCStorage Blog.');
+				const postTitle = `${post.title} - VRCStorage Blog`;
+				const postDesc = post.excerpt || 'Read this article on the VRCStorage Blog.';
 				const imageUrl = post.cover_image_uuid ? cdnMediaUrl(post.cover_image_uuid) : `${urlOrigin}/favicon.svg`;
 				const postUrl = `${urlOrigin}/blog/${post.uuid}`;
 
@@ -192,8 +194,8 @@ export function registerSeoRoutes(app: Hono<{ Bindings: Env }>): void {
 				const urlOrigin = new URL(c.req.url).origin;
 
 				// Meta values — thumbnail served by the CDN, indexed by media uuid.
-				const title = escapeHtml(resource.title);
-				const description = escapeHtml(resource.description || 'VRCStorage & Asset Storage');
+				const title = resource.title;
+				const description = resource.description || 'VRCStorage & Asset Storage';
 				const imageUrl = resource.thumbnail_uuid ? cdnMediaUrl(resource.thumbnail_uuid) : `${urlOrigin}/favicon.svg`;
 				const url = `${urlOrigin}/item/${uuid}`;
 

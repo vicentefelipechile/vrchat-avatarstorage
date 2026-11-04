@@ -47,7 +47,12 @@ describe('private share links', () => {
 
 		const preview = await exports.default.fetch(link.url, { headers: { 'User-Agent': 'Discordbot/2.0' } });
 		expect(preview.status).toBe(200);
-		expect(await preview.text()).toContain('example&lt;&amp;&quot;.zip');
+		const html = await preview.text();
+		expect(html).toContain('example&lt;&amp;&quot;.zip');
+		const json = html.match(/<script id="discord:component-embed" type="application\/json">(.*?)<\/script>/s)?.[1];
+		const payload = JSON.parse(json!) as { component: { components: { content?: string; components?: { url: string }[] }[] } };
+		expect(payload.component.components[0].content).toContain('example\\<');
+		expect(payload.component.components[1].components?.[0].url).toBe(link.url);
 		expect((await exports.default.fetch(link.url, { method: 'HEAD' })).status).toBe(200);
 
 		const downloaded = await exports.default.fetch(link.url);

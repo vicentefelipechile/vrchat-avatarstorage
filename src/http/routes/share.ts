@@ -20,6 +20,7 @@
 import { Hono } from 'hono';
 import { requireAuth, type AuthVariables } from '../middleware/auth';
 import { ShareLinkService, isCrawler } from '../../services/share-link-service';
+import { componentEmbed } from '../component-embed';
 import { DownloadService } from '../../services/download-service';
 import { MediaRepository } from '../../repositories/media-repository';
 import { CreateShareLinkSchema } from '../../validators';
@@ -126,12 +127,14 @@ sharePublic.on(['GET', 'HEAD'], '/:token', async (c) => {
 		const link = await svc.preview(token); // throws NotFoundError → 404 when dead
 		const media = await new MediaRepository(c.env.DB).findByKey(link.r2_key);
 		const fileName = escapeAttr(media?.file_name ?? 'Shared file');
+		const description = `Shared file · available until ${formatExpiryUtc(link.expires_at)}`;
 		const html = `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">` +
 			`<meta property="og:type" content="website">` +
 			`<meta property="og:site_name" content="VRCStorage">` +
 			`<meta property="og:title" content="${fileName}">` +
-			`<meta property="og:description" content="Shared file · available until ${formatExpiryUtc(link.expires_at)}">` +
+			`<meta property="og:description" content="${description}">` +
 			`<meta name="theme-color" content="#333333">` +
+			componentEmbed({ title: media?.file_name ?? 'Shared file', description, url: c.req.url }) +
 			`<title>${fileName} — VRCStorage</title></head><body></body></html>`;
 		return new Response(html, { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } });
 	}
