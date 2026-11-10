@@ -16,7 +16,7 @@ import { parseMp4DurationSeconds } from '../../../src/helpers/mp4-duration';
 // Helpers
 // =========================================================================================================
 
-function box(type: string, payload: Uint8Array): Uint8Array {
+function box(type: string, payload: Uint8Array): Uint8Array<ArrayBuffer> {
 	const bytes = new Uint8Array(payload.length + 8);
 	const view = new DataView(bytes.buffer);
 	view.setUint32(0, bytes.length);

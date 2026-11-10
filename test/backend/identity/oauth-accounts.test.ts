@@ -21,7 +21,7 @@ import { createUser } from '../../setup/fixtures';
 // Helpers
 // =========================================================================================================
 
-function oauthRequest(path: string, init?: RequestInit): Promise<Response> {
+async function oauthRequest(path: string, init?: RequestInit): Promise<Response> {
 	return worker.fetch(new Request(`http://localhost:8787/api/auth${path}`, init), env, createExecutionContext());
 }
 

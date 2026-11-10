@@ -14,6 +14,7 @@ import { createExecutionContext, createMessageBatch, getQueueResult } from 'clou
 import { describe, expect, it, vi } from 'vitest';
 
 import worker from '../../../src/index';
+import type { UploadQueueMessage } from '../../../src/types';
 import { createMedia, createUser } from '../../setup/fixtures';
 import staticImage from '../../fixtures/static.png?inline';
 
@@ -41,7 +42,7 @@ describe('public Worker endpoints', () => {
 
 describe('upload queue', () => {
 	it('acknowledges archive uploads without image or video processing', async () => {
-		const batch = createMessageBatch('vrcstorage-upload-processing', [{
+		const batch = createMessageBatch<UploadQueueMessage>('vrcstorage-upload-processing', [{
 			id: 'archive-message',
 			attempts: 1,
 			timestamp: new Date(),
@@ -57,7 +58,7 @@ describe('upload queue', () => {
 	it('preserves animated originals and records the CDN variant', async () => {
 		const key = await createMedia('image', 'animated.gif');
 		await env.BUCKET.put(key, 'GIF89a-example');
-		const batch = createMessageBatch('vrcstorage-upload-processing', [{
+		const batch = createMessageBatch<UploadQueueMessage>('vrcstorage-upload-processing', [{
 			id: 'animated-message', attempts: 1, timestamp: new Date(),
 			body: { media_uuid: key, r2_key: key, media_type: 'image', file_name: 'animated.gif', uploaded_at: Date.now() },
 		}]);
@@ -72,7 +73,7 @@ describe('upload queue', () => {
 		const key = await createMedia('image', 'static.png');
 		const base64 = staticImage.split(',')[1];
 		await env.BUCKET.put(key, Uint8Array.from(atob(base64), (char) => char.charCodeAt(0)));
-		const batch = createMessageBatch('vrcstorage-upload-processing', [{
+		const batch = createMessageBatch<UploadQueueMessage>('vrcstorage-upload-processing', [{
 			id: 'static-message', attempts: 1, timestamp: new Date(),
 			body: { media_uuid: key, r2_key: key, media_type: 'image', file_name: 'static.png', uploaded_at: Date.now() },
 		}]);
@@ -90,7 +91,7 @@ describe('upload queue', () => {
 
 	it('retries an image whose original is missing instead of acknowledging data loss', async () => {
 		const key = crypto.randomUUID();
-		const batch = createMessageBatch('vrcstorage-upload-processing', [{
+		const batch = createMessageBatch<UploadQueueMessage>('vrcstorage-upload-processing', [{
 			id: 'missing-message', attempts: 1, timestamp: new Date(),
 			body: { media_uuid: key, r2_key: key, media_type: 'image', file_name: 'missing.png', uploaded_at: Date.now() },
 		}]);

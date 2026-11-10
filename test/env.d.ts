@@ -14,13 +14,11 @@ import type { D1Migration } from '@cloudflare/vitest-plugin';
 // Types
 // =========================================================================================================
 
-declare module 'cloudflare:workers' {
-	interface ProvidedEnv extends Env {
-		TEST_MIGRATIONS: D1Migration[];
-	}
-}
 
-declare module '*.png?inline' {
-	const data: string;
-	export default data;
+declare global {
+	namespace Cloudflare {
+		interface Env {
+			TEST_MIGRATIONS: D1Migration[];
+		}
+	}
 }

@@ -25,7 +25,7 @@ function drive(): DriveService {
 	return new DriveService(env.DB, env.VRCSTORAGE_KV, env.BUCKET, env.DRIVE_QUEUE, 'local-client', 'local-secret', env.JWT_SECRET);
 }
 
-function route(path: string, init?: RequestInit): Promise<Response> {
+async function route(path: string, init?: RequestInit): Promise<Response> {
 	return driveRoutes.fetch(new Request(`http://localhost${path}`, init), env);
 }
 

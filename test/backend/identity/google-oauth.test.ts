@@ -57,7 +57,9 @@ describe('Google OAuth', () => {
 
 	it('accepts a valid locally signed Google ID token and rejects wrong audience and expiry', async () => {
 		const keys = await crypto.subtle.generateKey({ name: 'RSASSA-PKCS1-v1_5', modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: 'SHA-256' }, true, ['sign', 'verify']);
+		if (!('publicKey' in keys)) throw new Error('RSA generation must return a key pair');
 		const jwk = await crypto.subtle.exportKey('jwk', keys.publicKey);
+		if (!('n' in jwk) || !('e' in jwk)) throw new Error('RSA export must return a JSON Web Key');
 		await env.VRCSTORAGE_KV.put('jwks:google', JSON.stringify({ keys: [{ kid: 'test-key', n: jwk.n, e: jwk.e, use: 'sig', alg: 'RS256' }] }));
 		const valid = await signedToken(keys.privateKey);
 		expect(await verifyGoogleIdToken(valid, 'local-client', env.VRCSTORAGE_KV)).toMatchObject({ sub: 'google-id', email: 'tester@example.com' });

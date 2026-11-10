@@ -28,8 +28,8 @@ describe('file signatures', () => {
 
 	it('rejects unknown and invalid container signatures', () => {
 		expect(isValidSignature(new Uint8Array([0x3c, 0x68, 0x74, 0x6d, 0x6c]).buffer).isValidFile).toBe(false);
-		expect(isValidSignature(new TextEncoder().encode('RIFF----FAKE').buffer).isValidFile).toBe(false);
-		expect(isValidSignature(new TextEncoder().encode('RIFF----WEBP').buffer).isValidFile).toBe(true);
+		expect(isValidSignature(new Uint8Array(new TextEncoder().encode('RIFF----FAKE')).buffer).isValidFile).toBe(false);
+		expect(isValidSignature(new Uint8Array(new TextEncoder().encode('RIFF----WEBP')).buffer).isValidFile).toBe(true);
 	});
 });
 
