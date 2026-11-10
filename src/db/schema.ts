@@ -222,3 +222,25 @@ export interface UserOAuthProviderRow {
 	drive_default_folder_id: string | null;
 	drive_default_folder_name: string | null;
 }
+// =========================================================================================================
+// Multipart upload state
+// =========================================================================================================
+
+export interface UploadSessionRow {
+	upload_id: string;
+	r2_key: string;
+	user_uuid: string;
+	filename: string;
+	media_type: 'image' | 'video' | 'file';
+	file_size: number;
+	state: 'uploading' | 'completing' | 'complete' | 'aborted';
+	created_at: number;
+	updated_at: number;
+}
+
+export interface UploadPartRow {
+	upload_id: string;
+	part_number: number;
+	etag: string;
+	byte_size: number;
+}

@@ -253,57 +253,18 @@ export const UNITY_VERSION = ['2019', '2022'] as const;
 const BOOLEAN_STRING = ['0', '1'] as const;
 
 // Avatars
-export const AVATAR_GENDER = [
-	'male',
-	'female',
-	'androgynous',
-	'undefined',
-	'both'
-] as const;
+export const AVATAR_GENDER = ['male', 'female', 'androgynous', 'undefined', 'both'] as const;
 
-export const AVATAR_SIZE = [
-	'tiny',
-	'small',
-	'medium',
-	'tall',
-	'giant'
-] as const;
+export const AVATAR_SIZE = ['tiny', 'small', 'medium', 'tall', 'giant'] as const;
 
-export const AVATAR_TYPE = [
-	'human',
-	'anime',
-	'furry',
-	'chibi',
-	'cartoon',
-	'semi-realistic',
-	'monster',
-	'fantasy',
-	'mecha',
-	'kemono',
-	'other'
-] as const;
-
-
+export const AVATAR_TYPE = ['human', 'anime', 'furry', 'chibi', 'cartoon', 'semi-realistic', 'monster', 'fantasy', 'mecha', 'kemono', 'other'] as const;
 
 // Assets
-export const ASSETS_TYPE = [
-	'prop',			'shader',		'particle',
-	'vfx',			'prefab',		'script',
-	'animation',	'avatar-base',	'texture-pack',
-	'sound',		'tool',			'hud',
-	'other',
-] as const;
+export const ASSETS_TYPE = ['prop', 'shader', 'particle', 'vfx', 'prefab', 'script', 'animation', 'avatar-base', 'texture-pack', 'sound', 'tool', 'hud', 'other'] as const;
 
 // Clothes
 export const CLOTHES_GENDER = ['male', 'female', 'unisex', 'kemono'] as const;
-export const CLOTHES_TYPES = [
-	'top',			'jacket',		'bottom',
-	'dress',		'fullbody',		'swimwear',
-	'shoes',		'legwear',		'hat',
-	'hair',			'accessory',	'tail',
-	'ears',			'wings',		'body-part',
-	'underwear',	'other',
-] as const
+export const CLOTHES_TYPES = ['top', 'jacket', 'bottom', 'dress', 'fullbody', 'swimwear', 'shoes', 'legwear', 'hat', 'hair', 'accessory', 'tail', 'ears', 'wings', 'body-part', 'underwear', 'other'] as const;
 
 export const AvatarAuthorSchema = z.object({
 	name: z
@@ -317,43 +278,43 @@ export const AvatarAuthorSchema = z.object({
 		.optional()
 		.nullable()
 		.transform((v) => (v ? sanitizeHtml(v) : v)),
-	avatar_url: 		z.string().min(1).max(500).optional().nullable(),
-	website_url: 		z.url().optional().nullable(),
-	twitter_url: 		z.url().optional().nullable(),
-	booth_url: 			z.url().optional().nullable(),
-	gumroad_url: 		z.url().optional().nullable(),
-	patreon_url: 		z.url().optional().nullable(),
-	discord_url: 		z.url().optional().nullable(),
+	avatar_url: z.string().min(1).max(500).optional().nullable(),
+	website_url: z.url().optional().nullable(),
+	twitter_url: z.url().optional().nullable(),
+	booth_url: z.url().optional().nullable(),
+	gumroad_url: z.url().optional().nullable(),
+	patreon_url: z.url().optional().nullable(),
+	discord_url: z.url().optional().nullable(),
 });
 
 export const AvatarMetaSchema = z.object({
-	author_uuid: 		z.uuid().optional().nullable(),
+	author_uuid: z.uuid().optional().nullable(),
 	author_name_raw: z
 		.string()
 		.max(70)
 		.optional()
 		.nullable()
 		.transform((v) => (v ? sanitizeHtml(v) : v)),
-	gender: 			z.enum(AVATAR_GENDER),
-	avatar_size: 		z.enum(AVATAR_SIZE),
-	avatar_type: 		z.enum(AVATAR_TYPE),
-	is_nsfw: 			z.number().int().min(0).max(1).default(0),
-	has_physbones: 		z.number().int().min(0).max(1).default(0),
-	has_face_tracking: 	z.number().int().min(0).max(1).default(0),
-	has_dps: 			z.number().int().min(0).max(1).default(0),
-	has_gogoloco: 		z.number().int().min(0).max(1).default(0),
-	has_toggles: 		z.number().int().min(0).max(1).default(0),
+	gender: z.enum(AVATAR_GENDER),
+	avatar_size: z.enum(AVATAR_SIZE),
+	avatar_type: z.enum(AVATAR_TYPE),
+	is_nsfw: z.number().int().min(0).max(1).default(0),
+	has_physbones: z.number().int().min(0).max(1).default(0),
+	has_face_tracking: z.number().int().min(0).max(1).default(0),
+	has_dps: z.number().int().min(0).max(1).default(0),
+	has_gogoloco: z.number().int().min(0).max(1).default(0),
+	has_toggles: z.number().int().min(0).max(1).default(0),
 	is_quest_optimized: z.number().int().min(0).max(1).default(0),
-	sdk_version: 		z.enum(SDK_VERSION).default(SDK_VERSION[0]),
-	platform: 			z.enum(PLATFORM).default(PLATFORM[1]),
+	sdk_version: z.enum(SDK_VERSION).default(SDK_VERSION[0]),
+	platform: z.enum(PLATFORM).default(PLATFORM[1]),
 });
 
 export const AssetMetaSchema = z.object({
-	asset_type: 		z.enum(ASSETS_TYPE),
-	is_nsfw: 			z.number().int().min(0).max(1).default(0),
-	unity_version: 		z.enum(UNITY_VERSION).default(UNITY_VERSION[1]),
-	platform: 			z.enum(PLATFORM).default(PLATFORM[0]),
-	sdk_version: 		z.enum(SDK_VERSION).default(SDK_VERSION[0]),
+	asset_type: z.enum(ASSETS_TYPE),
+	is_nsfw: z.number().int().min(0).max(1).default(0),
+	unity_version: z.enum(UNITY_VERSION).default(UNITY_VERSION[1]),
+	platform: z.enum(PLATFORM).default(PLATFORM[0]),
+	sdk_version: z.enum(SDK_VERSION).default(SDK_VERSION[0]),
 });
 
 /**
@@ -361,22 +322,34 @@ export const AssetMetaSchema = z.object({
  * unrecognized facet values are dropped and malformed pagination/sort falls back to defaults,
  * mirroring the legacy handler which silently ignored unsupported filters.
  */
-const assetTypeMulti = z.union([AssetMetaSchema.shape.asset_type, z.array(AssetMetaSchema.shape.asset_type)]).optional().catch(undefined);
-const assetPlatformMulti = z.union([AssetMetaSchema.shape.platform.unwrap(), z.array(AssetMetaSchema.shape.platform.unwrap())]).optional().catch(undefined);
-const assetSdkMulti = z.union([AssetMetaSchema.shape.sdk_version.unwrap(), z.array(AssetMetaSchema.shape.sdk_version.unwrap())]).optional().catch(undefined);
-const assetUnityMulti = z.union([AssetMetaSchema.shape.unity_version.unwrap(), z.array(AssetMetaSchema.shape.unity_version.unwrap())]).optional().catch(undefined);
+const assetTypeMulti = z
+	.union([AssetMetaSchema.shape.asset_type, z.array(AssetMetaSchema.shape.asset_type)])
+	.optional()
+	.catch(undefined);
+const assetPlatformMulti = z
+	.union([AssetMetaSchema.shape.platform.unwrap(), z.array(AssetMetaSchema.shape.platform.unwrap())])
+	.optional()
+	.catch(undefined);
+const assetSdkMulti = z
+	.union([AssetMetaSchema.shape.sdk_version.unwrap(), z.array(AssetMetaSchema.shape.sdk_version.unwrap())])
+	.optional()
+	.catch(undefined);
+const assetUnityMulti = z
+	.union([AssetMetaSchema.shape.unity_version.unwrap(), z.array(AssetMetaSchema.shape.unity_version.unwrap())])
+	.optional()
+	.catch(undefined);
 
 export const AssetFilterSchema = z.object({
-	asset_type: 		assetTypeMulti,
-	platform: 			assetPlatformMulti,
-	sdk_version: 		assetSdkMulti,
-	unity_version: 		assetUnityMulti,
-	is_nsfw: 			z.enum(BOOLEAN_STRING).optional().catch(undefined),
-	q: 					z.string().trim().min(1).max(100).optional().catch(undefined),
-	page: 				z.coerce.number().int().min(1).catch(1).default(1),
-	limit: 				z.coerce.number().int().min(1).max(60).catch(24).default(24),
-	sort_by: 			z.enum(['created_at', 'download_count', 'title']).catch('created_at').default('created_at'),
-	sort_order: 		z.enum(['asc', 'desc']).catch('desc').default('desc'),
+	asset_type: assetTypeMulti,
+	platform: assetPlatformMulti,
+	sdk_version: assetSdkMulti,
+	unity_version: assetUnityMulti,
+	is_nsfw: z.enum(BOOLEAN_STRING).optional().catch(undefined),
+	q: z.string().trim().min(1).max(100).optional().catch(undefined),
+	page: z.coerce.number().int().min(1).catch(1).default(1),
+	limit: z.coerce.number().int().min(1).max(60).catch(24).default(24),
+	sort_by: z.enum(['created_at', 'download_count', 'title']).catch('created_at').default('created_at'),
+	sort_order: z.enum(['asc', 'desc']).catch('desc').default('desc'),
 });
 
 export type AssetFilter = z.infer<typeof AssetFilterSchema>;
@@ -390,53 +363,72 @@ export type AssetFilter = z.infer<typeof AssetFilterSchema>;
  * back to their defaults. This mirrors the legacy handler, which silently ignored
  * unsupported filter keys instead of returning 400.
  */
-const avatarGenderMulti = z.union([AvatarMetaSchema.shape.gender, z.array(AvatarMetaSchema.shape.gender)]).optional().catch(undefined);
-const avatarSizeMulti = z.union([AvatarMetaSchema.shape.avatar_size, z.array(AvatarMetaSchema.shape.avatar_size)]).optional().catch(undefined);
-const avatarTypeMulti = z.union([AvatarMetaSchema.shape.avatar_type, z.array(AvatarMetaSchema.shape.avatar_type)]).optional().catch(undefined);
-const platformMulti = z.union([AvatarMetaSchema.shape.platform.unwrap(), z.array(AvatarMetaSchema.shape.platform.unwrap())]).optional().catch(undefined);
-const sdkVersionMulti = z.union([AvatarMetaSchema.shape.sdk_version.unwrap(), z.array(AvatarMetaSchema.shape.sdk_version.unwrap())]).optional().catch(undefined);
+const avatarGenderMulti = z
+	.union([AvatarMetaSchema.shape.gender, z.array(AvatarMetaSchema.shape.gender)])
+	.optional()
+	.catch(undefined);
+const avatarSizeMulti = z
+	.union([AvatarMetaSchema.shape.avatar_size, z.array(AvatarMetaSchema.shape.avatar_size)])
+	.optional()
+	.catch(undefined);
+const avatarTypeMulti = z
+	.union([AvatarMetaSchema.shape.avatar_type, z.array(AvatarMetaSchema.shape.avatar_type)])
+	.optional()
+	.catch(undefined);
+const platformMulti = z
+	.union([AvatarMetaSchema.shape.platform.unwrap(), z.array(AvatarMetaSchema.shape.platform.unwrap())])
+	.optional()
+	.catch(undefined);
+const sdkVersionMulti = z
+	.union([AvatarMetaSchema.shape.sdk_version.unwrap(), z.array(AvatarMetaSchema.shape.sdk_version.unwrap())])
+	.optional()
+	.catch(undefined);
 
 export const AvatarFilterSchema = z.object({
 	// Faceted filters — multi-value via repeated query params (?avatar_type=human&avatar_type=furry); single still accepted
-	avatar_gender: 		avatarGenderMulti,
-	avatar_size: 		avatarSizeMulti,
-	avatar_type: 		avatarTypeMulti,
-	platform: 			platformMulti,
-	sdk_version: 		sdkVersionMulti,
+	avatar_gender: avatarGenderMulti,
+	avatar_size: avatarSizeMulti,
+	avatar_type: avatarTypeMulti,
+	platform: platformMulti,
+	sdk_version: sdkVersionMulti,
 	// Boolean flags come as '0'/'1' strings from URLSearchParams
-	is_nsfw: 			z.enum(BOOLEAN_STRING).optional().catch(undefined),
-	has_physbones: 		z.enum(BOOLEAN_STRING).optional().catch(undefined),
-	has_face_tracking: 	z.enum(BOOLEAN_STRING).optional().catch(undefined),
-	has_dps: 			z.enum(BOOLEAN_STRING).optional().catch(undefined),
-	has_gogoloco: 		z.enum(BOOLEAN_STRING).optional().catch(undefined),
-	has_toggles: 		z.enum(BOOLEAN_STRING).optional().catch(undefined),
+	is_nsfw: z.enum(BOOLEAN_STRING).optional().catch(undefined),
+	has_physbones: z.enum(BOOLEAN_STRING).optional().catch(undefined),
+	has_face_tracking: z.enum(BOOLEAN_STRING).optional().catch(undefined),
+	has_dps: z.enum(BOOLEAN_STRING).optional().catch(undefined),
+	has_gogoloco: z.enum(BOOLEAN_STRING).optional().catch(undefined),
+	has_toggles: z.enum(BOOLEAN_STRING).optional().catch(undefined),
 	is_quest_optimized: z.enum(BOOLEAN_STRING).optional().catch(undefined),
 	// Author filter
-	author_uuid: 		z.uuid().optional().catch(undefined),
-	q: 					z.string().trim().min(1).max(100).optional().catch(undefined),
+	author_uuid: z.uuid().optional().catch(undefined),
+	q: z.string().trim().min(1).max(100).optional().catch(undefined),
 	// Pagination & sorting
-	page: 				z.coerce.number().int().min(1).catch(1).default(1),
-	limit: 				z.coerce.number().int().min(1).max(60).catch(24).default(24),
-	sort_by: 			z.enum(['created_at', 'download_count', 'title']).catch('created_at').default('created_at'),
-	sort_order: 		z.enum(['asc', 'desc']).catch('desc').default('desc'),
+	page: z.coerce.number().int().min(1).catch(1).default(1),
+	limit: z.coerce.number().int().min(1).max(60).catch(24).default(24),
+	sort_by: z.enum(['created_at', 'download_count', 'title']).catch('created_at').default('created_at'),
+	sort_order: z.enum(['asc', 'desc']).catch('desc').default('desc'),
 });
 
 export type AvatarFilter = z.infer<typeof AvatarFilterSchema>;
 
 export const ClothesMetaSchema = z.object({
-	gender_fit: 		z.enum(CLOTHES_GENDER),
-	clothing_type: 		z.array(z.enum(CLOTHES_TYPES)).min(1, 'Select at least one clothing type').max(8, 'Max 8 clothing types').refine((arr) => new Set(arr).size === arr.length, { message: 'Duplicate clothing types' }),
-	is_base: 			z.number().int().min(0).max(1).default(0),
-	base_avatar_uuid: 	z.uuid().optional().nullable(),
+	gender_fit: z.enum(CLOTHES_GENDER),
+	clothing_type: z
+		.array(z.enum(CLOTHES_TYPES))
+		.min(1, 'Select at least one clothing type')
+		.max(8, 'Max 8 clothing types')
+		.refine((arr) => new Set(arr).size === arr.length, { message: 'Duplicate clothing types' }),
+	is_base: z.number().int().min(0).max(1).default(0),
+	base_avatar_uuid: z.uuid().optional().nullable(),
 	base_avatar_name_raw: z
 		.string()
 		.max(200)
 		.optional()
 		.nullable()
 		.transform((v) => (v ? sanitizeHtml(v) : v)),
-	is_nsfw: 			z.number().int().min(0).max(1).default(0),
-	has_physbones: 		z.number().int().min(0).max(1).default(0),
-	platform: 			z.enum(PLATFORM).default(PLATFORM[0]),
+	is_nsfw: z.number().int().min(0).max(1).default(0),
+	has_physbones: z.number().int().min(0).max(1).default(0),
+	platform: z.enum(PLATFORM).default(PLATFORM[0]),
 });
 
 /**
@@ -446,22 +438,31 @@ export const ClothesMetaSchema = z.object({
  */
 const _clothesGenderEnum = z.enum(CLOTHES_GENDER);
 const _clothesTypeEnum = z.enum(CLOTHES_TYPES);
-const clothesGenderMulti = z.union([_clothesGenderEnum, z.array(_clothesGenderEnum)]).optional().catch(undefined);
-const clothesTypeMulti = z.union([_clothesTypeEnum, z.array(_clothesTypeEnum)]).optional().catch(undefined);
-const clothesPlatformMulti = z.union([ClothesMetaSchema.shape.platform.unwrap(), z.array(ClothesMetaSchema.shape.platform.unwrap())]).optional().catch(undefined);
+const clothesGenderMulti = z
+	.union([_clothesGenderEnum, z.array(_clothesGenderEnum)])
+	.optional()
+	.catch(undefined);
+const clothesTypeMulti = z
+	.union([_clothesTypeEnum, z.array(_clothesTypeEnum)])
+	.optional()
+	.catch(undefined);
+const clothesPlatformMulti = z
+	.union([ClothesMetaSchema.shape.platform.unwrap(), z.array(ClothesMetaSchema.shape.platform.unwrap())])
+	.optional()
+	.catch(undefined);
 
 export const ClothesFilterSchema = z.object({
-	gender_fit: 		clothesGenderMulti,
-	clothing_type: 		clothesTypeMulti,
-	platform: 			clothesPlatformMulti,
-	is_base: 			z.enum(BOOLEAN_STRING).optional().catch(undefined),
-	is_nsfw: 			z.enum(BOOLEAN_STRING).optional().catch(undefined),
-	has_physbones: 		z.enum(BOOLEAN_STRING).optional().catch(undefined),
-	q: 					z.string().trim().min(1).max(100).optional().catch(undefined),
-	page: 				z.coerce.number().int().min(1).catch(1).default(1),
-	limit: 				z.coerce.number().int().min(1).max(60).catch(24).default(24),
-	sort_by: 			z.enum(['created_at', 'download_count', 'title']).catch('created_at').default('created_at'),
-	sort_order: 		z.enum(['asc', 'desc']).catch('desc').default('desc'),
+	gender_fit: clothesGenderMulti,
+	clothing_type: clothesTypeMulti,
+	platform: clothesPlatformMulti,
+	is_base: z.enum(BOOLEAN_STRING).optional().catch(undefined),
+	is_nsfw: z.enum(BOOLEAN_STRING).optional().catch(undefined),
+	has_physbones: z.enum(BOOLEAN_STRING).optional().catch(undefined),
+	q: z.string().trim().min(1).max(100).optional().catch(undefined),
+	page: z.coerce.number().int().min(1).catch(1).default(1),
+	limit: z.coerce.number().int().min(1).max(60).catch(24).default(24),
+	sort_by: z.enum(['created_at', 'download_count', 'title']).catch('created_at').default('created_at'),
+	sort_order: z.enum(['asc', 'desc']).catch('desc').default('desc'),
 });
 
 export type ClothesFilter = z.infer<typeof ClothesFilterSchema>;
@@ -496,4 +497,29 @@ export const CreateShareLinkSchema = z.object({
 
 export type CreateShareLink = z.infer<typeof CreateShareLinkSchema>;
 
+// =========================================================================================================
+// Multipart uploads
+// =========================================================================================================
 
+export const UploadInitSchema = z.object({
+	filename: z.string().trim().min(1).max(255),
+	media_type: z.enum(['image', 'video', 'file']),
+	size: z
+		.number()
+		.int()
+		.positive()
+		.max(10000 * 30 * 1024 * 1024),
+});
+export const UploadSessionSchema = z.object({
+	uploadId: z.string().min(1).max(1024),
+	key: z.string().uuid(),
+});
+export const UploadPartSchema = UploadSessionSchema.extend({
+	partNumber: z.coerce.number().int().min(1).max(10000),
+});
+export const UploadCompleteSchema = UploadSessionSchema.extend({
+	parts: z
+		.array(z.object({ partNumber: z.number().int().min(1).max(10000), etag: z.string().min(1).max(256) }))
+		.min(1)
+		.max(10000),
+});

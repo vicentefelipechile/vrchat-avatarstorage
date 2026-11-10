@@ -1,19 +1,6 @@
 // =========================================================================================================
 // UPLOAD ROUTES (v2)
-// =========================================================================================================
-// HTTP layer for file uploads (single-shot + multipart), mounted under /api/upload. Handlers own the
-// env collaborators that can't leave the request — R2 (BUCKET), KV (upload session metadata), the
-// UPLOAD_QUEUE post-processing enqueue, and the raw request stream — while the pure validation /
-// mime rules live in UploadService and the single media INSERT lives in MediaRepository.
-//
-// The JSON responses are identical to the legacy handlers so the existing frontend works unchanged.
-//
-// ENDPOINTS
-// ---------
-// PUT  /            — Single-shot upload; validate → store to R2 → media row → enqueue post-processing.
-// POST /init        — Begin a multipart upload for large files (stores expected media_type in KV).
-// PUT  /part        — Upload one part; part 1 is signature-checked against the declared media_type.
-// POST /complete    — Finish a multipart upload; media_type is taken from KV (server-authoritative).
+// HTTP parsing, request-scoped storage and post-processing. Multipart state lives in D1, not KV.
 // =========================================================================================================
 
 // =========================================================================================================
@@ -21,16 +8,13 @@
 // =========================================================================================================
 
 import { Hono } from 'hono';
+
 import { requireAuth, type AuthVariables } from '../middleware/auth';
 import { UploadService } from '../../services/upload-service';
+import { MultipartUploadService } from '../../services/multipart-upload-service';
 import { MediaRepository } from '../../repositories/media-repository';
+import { UploadCompleteSchema, UploadInitSchema, UploadPartSchema, UploadSessionSchema } from '../../validators';
 import { fail } from '../responses';
-
-// =========================================================================================================
-// Constants
-// =========================================================================================================
-
-const UPLOAD_META_TTL = 3600; // 1 hour
 
 // =========================================================================================================
 // Endpoints
@@ -47,203 +31,86 @@ upload.put('/', requireAuth, async (c) => {
 	const formData = await c.req.parseBody();
 	const file = formData['file'];
 	if (!(file instanceof File)) return fail(c, 'No file uploaded', 400);
-
-	// Validation + mime derivation live in the service; failures bubble as ValidationError → 400.
-	const { mediaType, mimeType } = await new UploadService().validateFile(file);
-
+	const { mediaType, mimeType } = await new UploadService().validateFile(file, !!c.get('user').is_admin);
 	const filename = file.name;
-	// A media row has a single identity: its `uuid` doubles as its R2 key. The original lives in
-	// BUCKET under the uuid, and the CDN serves variants from MEDIA_BUCKET under `{uuid}/...`.
 	const mediaUuid = crypto.randomUUID();
-
 	try {
-		// Upload to R2 with a strict Content-Type. The object key is the media uuid.
 		await c.env.BUCKET.put(mediaUuid, file, { httpMetadata: { contentType: mimeType } });
-
-		// Persist the media record (r2_key === uuid).
 		await new MediaRepository(c.env.DB).insert(mediaUuid, mediaUuid, mediaType, filename);
-
-		// Enqueue async post-processing (runs after the response is sent).
-		c.executionCtx.waitUntil(
-			c.env.UPLOAD_QUEUE.send({
-				media_uuid: mediaUuid,
-				r2_key: mediaUuid,
-				media_type: mediaType,
-				file_name: filename,
-				uploaded_at: Date.now(),
-			}),
-		);
-
+		c.executionCtx.waitUntil(c.env.UPLOAD_QUEUE.send({ media_uuid: mediaUuid, r2_key: mediaUuid, media_type: mediaType, file_name: filename, uploaded_at: Date.now() }));
 		return c.json({ media_uuid: mediaUuid, r2_key: mediaUuid, media_type: mediaType, file_name: filename });
-	} catch (e) {
-		console.error('Upload error:', e);
+	} catch (error) {
+		console.error('Upload error:', error);
 		return fail(c, 'Upload failed', 500);
 	}
 });
 
 // =========================================================================================================
 // POST /api/upload/init
-// Begin a multipart upload for large files.
+// Begin a durable multipart session with a server-enforced size limit.
 // =========================================================================================================
 
 upload.post('/init', requireAuth, async (c) => {
-	const { filename, media_type } = await c.req.json();
+	const input = await c.req.json().catch(() => null);
+	const parsed = UploadInitSchema.safeParse(input);
+	if (!parsed.success) return fail(c, 'Invalid upload metadata', 400, parsed.error.issues);
+	const { filename, media_type, size } = parsed.data;
+	return c.json(await new MultipartUploadService(c.env.DB).init(c.get('user').uuid, filename, media_type, size, c.env.BUCKET, !!c.get('user').is_admin));
+});
 
-	if (!filename || !media_type) return fail(c, 'Missing filename or media_type', 400);
+// =========================================================================================================
+// GET /api/upload/status
+// Read acknowledged parts or recover a completed response after reconnecting.
+// =========================================================================================================
 
-	const service = new UploadService();
-	if (!service.isAllowedMultipartType(media_type)) {
-		return fail(c, 'Invalid media_type. Must be one of: image, video, file', 400);
-	}
-
-	// The R2 key IS the media uuid (single identity). Generated here so /complete can reuse it as
-	// the media row's uuid without minting a second, unrelated identifier.
-	const mediaUuid = crypto.randomUUID();
-	try {
-		const multipartUpload = await c.env.BUCKET.createMultipartUpload(mediaUuid, {
-			httpMetadata: { contentType: service.initMimeType(media_type) },
-		});
-
-		// Remember the expected media type + owner + key for this upload (validated on part 1, trusted on complete).
-		// Binding to the initiating user prevents one user from hijacking another's multipart session.
-		const meta = JSON.stringify({ media_type, user_uuid: c.get('user').uuid, key: mediaUuid });
-		await c.env.VRCSTORAGE_KV.put(`upload_meta:${multipartUpload.uploadId}`, meta, { expirationTtl: UPLOAD_META_TTL });
-
-		return c.json({ uploadId: multipartUpload.uploadId, key: mediaUuid });
-	} catch (e) {
-		console.error('Init multipart upload error:', e);
-		return fail(c, 'Failed to init upload', 500);
-	}
+upload.get('/status', requireAuth, async (c) => {
+	const parsed = UploadSessionSchema.safeParse(c.req.query());
+	if (!parsed.success) return fail(c, 'Invalid upload session', 400, parsed.error.issues);
+	c.header('Cache-Control', 'no-store');
+	return c.json(await new MultipartUploadService(c.env.DB).status(c.get('user').uuid, parsed.data.uploadId, parsed.data.key));
 });
 
 // =========================================================================================================
 // PUT /api/upload/part
-// Upload one part of a large file. Part 1 is signature-checked against the declared media_type.
+// Validate ownership on every part; storage failures leave acknowledged parts intact.
 // =========================================================================================================
 
 upload.put('/part', requireAuth, async (c) => {
-	const uploadId = c.req.header('X-Upload-ID');
-	const key = c.req.header('X-Key');
-	const partNumberStr = c.req.header('X-Part-Number');
-
-	if (!uploadId || !key || !partNumberStr) return fail(c, 'Missing upload headers', 400);
-
-	const partNumber = parseInt(partNumberStr);
-	if (isNaN(partNumber)) return fail(c, 'Invalid part number', 400);
-
+	const parsed = UploadPartSchema.safeParse({ uploadId: c.req.header('X-Upload-ID'), key: c.req.header('X-Key'), partNumber: c.req.header('X-Part-Number') });
+	if (!parsed.success) return fail(c, 'Invalid upload headers', 400, parsed.error.issues);
 	if (!c.req.raw.body) return fail(c, 'Missing request body', 400);
-
-	const multipartUpload = c.env.BUCKET.resumeMultipartUpload(key, uploadId);
-	try {
-		let bodyToUpload: ReadableStream | ArrayBuffer = c.req.raw.body;
-
-		// First part: enforce the magic-byte signature against the media_type declared at init + owner check.
-		if (partNumber === 1) {
-			const rawMeta = await c.env.VRCSTORAGE_KV.get(`upload_meta:${uploadId}`);
-			if (!rawMeta) return fail(c, 'Upload session expired or invalid', 400);
-			let expectedMediaType: string;
-			let ownerUuid: string | undefined;
-			let expectedKey: string | undefined;
-			try {
-				const parsed = JSON.parse(rawMeta) as { media_type: string; user_uuid?: string; key?: string };
-				if (parsed.media_type) {
-					expectedMediaType = parsed.media_type;
-					ownerUuid = parsed.user_uuid;
-					expectedKey = parsed.key;
-				} else {
-					expectedMediaType = rawMeta;
-				}
-			} catch {
-				expectedMediaType = rawMeta;
-			}
-			if (ownerUuid && ownerUuid !== c.get('user').uuid) return fail(c, 'Upload session does not belong to you', 403);
-			if (expectedKey && expectedKey !== key) return fail(c, 'Upload key mismatch', 400);
-
-			// We must buffer the part in memory to read its signature (R2 parts are ~5MB, fits in 128MB).
-			const buffer = await c.req.arrayBuffer();
-			const check = new UploadService().firstPartSignatureMatches(buffer, expectedMediaType!);
-
-			if (!check.ok) {
-				await multipartUpload.abort();
-				return fail(
-					c,
-					`Invalid file signature. Expected ${expectedMediaType}, but detected ${check.detectedType} (${check.detectedName}).`,
-					400,
-				);
-			}
-
-			bodyToUpload = buffer;
-		} else {
-			// Subsequent parts: verify session still belongs to the caller (no signature check needed)
-			const rawMeta = await c.env.VRCSTORAGE_KV.get(`upload_meta:${uploadId}`);
-			if (rawMeta) {
-				try {
-					const parsed = JSON.parse(rawMeta) as { user_uuid?: string; key?: string };
-					if (parsed.user_uuid && parsed.user_uuid !== c.get('user').uuid) return fail(c, 'Upload session does not belong to you', 403);
-					if (parsed.key && parsed.key !== key) return fail(c, 'Upload key mismatch', 400);
-				} catch {
-					// legacy string value — allow (already validated on part 1)
-				}
-			}
-		}
-
-		const uploadedPart = await multipartUpload.uploadPart(partNumber, bodyToUpload);
-		return c.json(uploadedPart);
-	} catch (e) {
-		await multipartUpload.abort();
-		console.error('Upload part error:', e);
-		return fail(c, 'Failed to upload part', 500);
-	}
+	const { uploadId, key, partNumber } = parsed.data;
+	return c.json(await new MultipartUploadService(c.env.DB).part(c.get('user').uuid, uploadId, key, partNumber, c.req.raw.body, c.env.BUCKET));
 });
 
 // =========================================================================================================
 // POST /api/upload/complete
-// Finish a multipart upload. media_type is taken from KV (server-authoritative), not the client.
+// Retryable confirmation recovers R2 success even when the D1 write previously failed.
 // =========================================================================================================
 
 upload.post('/complete', requireAuth, async (c) => {
-	const { key, uploadId, parts, filename } = await c.req.json();
-
-	if (!key || !uploadId || !parts || !Array.isArray(parts) || !filename) return fail(c, 'Missing required fields', 400);
-
-	// Use the media_type stored in KV during /init (already validated against magic bytes in /part).
-	const rawMeta = await c.env.VRCSTORAGE_KV.get(`upload_meta:${uploadId}`);
-	if (!rawMeta) return fail(c, 'Upload session expired or invalid', 400);
-	let media_type: string;
-	let ownerUuid: string | undefined;
-	let expectedKey: string | undefined;
-	try {
-		const parsed = JSON.parse(rawMeta) as { media_type: string; user_uuid?: string; key?: string };
-		if (parsed.media_type) {
-			media_type = parsed.media_type;
-			ownerUuid = parsed.user_uuid;
-			expectedKey = parsed.key;
-		} else {
-			media_type = rawMeta;
-		}
-	} catch {
-		media_type = rawMeta;
+	const input = await c.req.json().catch(() => null);
+	const parsed = UploadCompleteSchema.safeParse(input);
+	if (!parsed.success) return fail(c, 'Invalid completion payload', 400, parsed.error.issues);
+	const { uploadId, key, parts } = parsed.data;
+	const result = await new MultipartUploadService(c.env.DB).complete(c.get('user').uuid, uploadId, key, parts, c.env.BUCKET);
+	if (result.media_type !== 'file') {
+		// Processing is idempotent; retrying confirmation can safely re-enqueue it.
+		c.executionCtx.waitUntil(c.env.UPLOAD_QUEUE.send({ ...result, uploaded_at: Date.now() }));
 	}
-	if (ownerUuid && ownerUuid !== c.get('user').uuid) return fail(c, 'Upload session does not belong to you', 403);
-	if (expectedKey && expectedKey !== key) return fail(c, 'Upload key mismatch', 400);
+	return c.json(result);
+});
 
-	if (!new UploadService().isAllowedMultipartType(media_type!)) return fail(c, 'Invalid media type', 400);
+// =========================================================================================================
+// POST /api/upload/abort
+// Cancel only the caller's active session, never a confirming or completed object.
+// =========================================================================================================
 
-	try {
-		const multipartUpload = c.env.BUCKET.resumeMultipartUpload(key, uploadId);
-		await multipartUpload.complete(parts);
-
-		// Clean up the KV session entry.
-		await c.env.VRCSTORAGE_KV.delete(`upload_meta:${uploadId}`);
-
-		// The multipart key IS the media uuid (set in /init), so r2_key === uuid.
-		await new MediaRepository(c.env.DB).insert(key, key, media_type!, filename);
-
-		return c.json({ media_uuid: key, r2_key: key, media_type, file_name: filename });
-	} catch (e) {
-		console.error('Complete multipart upload error:', e);
-		return fail(c, 'Failed to complete upload', 500);
-	}
+upload.post('/abort', requireAuth, async (c) => {
+	const input = await c.req.json().catch(() => null);
+	const parsed = UploadSessionSchema.safeParse(input);
+	if (!parsed.success) return fail(c, 'Invalid upload session', 400, parsed.error.issues);
+	return c.json(await new MultipartUploadService(c.env.DB).abort(c.get('user').uuid, parsed.data.uploadId, parsed.data.key, c.env.BUCKET));
 });
 
 // =========================================================================================================

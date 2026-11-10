@@ -90,7 +90,8 @@ export function registerRateLimits(app: Hono<{ Bindings: Env }>): void {
 	// Sensitive endpoint overrides — medium binding, route-specific key prefix
 	app.use('/api/upload/*', async (c, next) => {
 		if (isLocalRequest(c)) return next();
-		return rateLimit({ binding: c.env.RL_MEDIUM, keyPrefix: 'upload' })(c, next);
+		// A three-file upload can exceed 100 parts/minute; retain the global IP ceiling for data parts.
+		return rateLimit({ binding: c.req.path === '/api/upload/part' ? c.env.RL_GLOBAL : c.env.RL_MEDIUM, keyPrefix: 'upload' })(c, next);
 	});
 	// Resource writes — POST (create) is STRICT (Turnstile + 1/60s anti-spam), other methods MEDIUM
 	// validate_only preflight uses MEDIUM to avoid consuming STRICT budget (UploadView does 2 POSTs in <1s)

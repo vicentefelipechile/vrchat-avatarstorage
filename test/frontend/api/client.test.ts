@@ -68,6 +68,11 @@ class FakeXMLHttpRequest {
 		this.headers.set(name.toLowerCase(), value);
 	}
 
+	getResponseHeader(name: string): string | null {
+		return name.toLowerCase() === 'retry-after' ? this.retryAfter : null;
+	}
+	retryAfter: string | null = null;
+
 	send(body: Document | XMLHttpRequestBodyInit | null): void {
 		this.sentBody = body;
 	}
@@ -90,6 +95,17 @@ class FakeXMLHttpRequestConstructor extends FakeXMLHttpRequest {
 // =========================================================================================================
 
 describe('ApiClient fetch transport', () => {
+	it('preserves numeric and HTTP-date Retry-After delays', async () => {
+		const now = Date.now();
+		vi.spyOn(Date, 'now').mockReturnValue(now);
+		stubFetch(
+			Response.json({ error: 'Slow down' }, { status: 429, headers: { 'Retry-After': '60' } }),
+			Response.json({ error: 'Unavailable' }, { status: 503, headers: { 'Retry-After': new Date(now + 120_000).toUTCString() } }),
+		);
+		const client = new ApiClient();
+		await expect(client.get('/api/limited')).rejects.toMatchObject({ retryAfterMs: 60_000 });
+		await expect(client.get('/api/unavailable')).rejects.toHaveProperty('retryAfterMs', Date.parse(new Date(now + 120_000).toUTCString()) - now);
+	});
 	it('sends JSON with credentials, preserves supplied headers and returns parsed JSON', async () => {
 		const fetchMock = stubFetch(Response.json({ success: true }));
 		const result = await new ApiClient().post('/api/test', { value: 1 }, { headers: { 'X-Trace': 'trace-1' } });

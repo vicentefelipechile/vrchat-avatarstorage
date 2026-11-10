@@ -1,7 +1,6 @@
 // =========================================================================================================
 // FRONTEND CHUNKED UPLOAD TESTS
-// =========================================================================================================
-// Exercise multipart chunk boundaries, ordered completion, progress and retry/abort behavior.
+// Bounded concurrency, retries, cancellation, progress and reload recovery without a browser DOM.
 // =========================================================================================================
 
 // =========================================================================================================
@@ -13,33 +12,41 @@ import { describe, expect, it, vi } from 'vitest';
 import { ApiClient } from '../../../src/frontend/api/client';
 import { VrcStorageApiError } from '../../../src/frontend/api/errors';
 import { CHUNK_SIZE, UploadsApi } from '../../../src/frontend/api/uploads';
-import type { UploadPart, UploadSession } from '../../../src/frontend/api/types';
+import type { RequestOptions, UploadPart, UploadSession, UploadStatus } from '../../../src/frontend/api/types';
 
 // =========================================================================================================
-// Helpers
+// Constants
 // =========================================================================================================
 
 const SESSION: UploadSession = { uploadId: 'upload-1', key: 'object-1' };
 const RESULT = { media_uuid: 'media-1', r2_key: 'object-1' };
 
-function fileOfSize(size: number): File {
+// =========================================================================================================
+// Helpers
+// =========================================================================================================
+
+function fileOfSize(size: number, marker = 1): File {
 	return {
-		name: 'large.bin',
-		size,
-		slice: (start: number, end: number) => ({
-			size: end - start,
-			arrayBuffer: async () => new ArrayBuffer(0),
-		}) as Blob,
-	} as unknown as File;
+		name: 'large.zip', size,
+		slice: (start: number, end: number) => ({ size: end - start, arrayBuffer: async () => new Uint8Array([marker, start / CHUNK_SIZE]).buffer }) as Blob,
+	} as File;
 }
 
-function uploadsClient(
-	put: (...args: unknown[]) => Promise<unknown> = async () => ({ partNumber: 1, etag: 'etag-1' }),
-): { uploads: UploadsApi; post: ReturnType<typeof vi.fn>; put: ReturnType<typeof vi.fn> } {
-	const post = vi.fn((path: string) => Promise.resolve(path.endsWith('/init') ? SESSION : RESULT));
-	const putMock = vi.fn(put);
-	const client = { post, put: putMock } as unknown as ApiClient;
-	return { uploads: new UploadsApi(client), post, put: putMock };
+function uploadsClient() {
+	const post = vi.fn(async (path: string, _body?: unknown, _options?: RequestOptions) => path.endsWith('/init') ? SESSION : path.endsWith('/abort') ? { success: true } : RESULT);
+	const get = vi.fn(async (_path: string, _options?: RequestOptions): Promise<UploadStatus> => ({ state: 'uploading', parts: [] }));
+	const upload = vi.fn(async (_path: string, _body: unknown, progress: (percent: number) => void, options: RequestOptions): Promise<UploadPart> => {
+		const partNumber = Number(new Headers(options.headers).get('X-Part-Number'));
+		progress(50);
+		progress(100);
+		return { partNumber, etag: `etag-${partNumber}` };
+	});
+	const client = { post, get, upload } as unknown as ApiClient;
+	return { uploads: new UploadsApi(client), client, post, get, upload };
+}
+
+function httpError(status: number, retryAfterMs?: number) {
+	return new VrcStorageApiError(status, `Failure ${status}`, 'PUT', '/api/upload/part', 'http', undefined, undefined, retryAfterMs);
 }
 
 // =========================================================================================================
@@ -47,66 +54,170 @@ function uploadsClient(
 // =========================================================================================================
 
 describe('UploadsApi.Chunked', () => {
-	it('sends sequential chunks and reports cumulative progress before completing', async () => {
-		let partNumber = 0;
-		const { uploads, post, put } = uploadsClient(async () => {
-			partNumber++;
+	it('validates part one alone, fills vacant slots immediately and completes in file order', async () => {
+		const { uploads, upload, post } = uploadsClient();
+		const pending = new Map<number, () => void>();
+		let active = 0;
+		let peak = 0;
+		upload.mockImplementation(async (_path, _body, progress, options) => {
+			const partNumber = Number(new Headers(options.headers).get('X-Part-Number'));
+			active++;
+			peak = Math.max(peak, active);
+			await new Promise<void>((resolve) => pending.set(partNumber, resolve));
+			progress(100);
+			active--;
 			return { partNumber, etag: `etag-${partNumber}` };
 		});
 		const progress = vi.fn();
-		const upload = await uploads.Chunked(fileOfSize(CHUNK_SIZE + 1), 'file', progress);
-		expect(upload).toEqual(RESULT);
-		expect(put).toHaveBeenCalledTimes(2);
-		expect(put.mock.calls.map((call) => call[2])).toEqual([
-			{ headers: { 'X-Upload-ID': 'upload-1', 'X-Key': 'object-1', 'X-Part-Number': '1', 'Content-Type': 'application/octet-stream' } },
-			{ headers: { 'X-Upload-ID': 'upload-1', 'X-Key': 'object-1', 'X-Part-Number': '2', 'Content-Type': 'application/octet-stream' } },
-		]);
-		expect(progress).toHaveBeenNthCalledWith(1, (CHUNK_SIZE / (CHUNK_SIZE + 1)) * 100);
-		expect(progress).toHaveBeenNthCalledWith(2, 100);
-		expect(post.mock.calls).toEqual([
-			['/api/upload/init', { filename: 'large.bin', media_type: 'file' }, {}],
-			['/api/upload/complete', { ...SESSION, parts: [{ partNumber: 1, etag: 'etag-1' }, { partNumber: 2, etag: 'etag-2' }], filename: 'large.bin', media_type: 'file' }, {}],
-		]);
+		const task = uploads.Chunked(fileOfSize(CHUNK_SIZE * 5 + 1), 'file', progress);
+		await vi.waitFor(() => expect([...pending.keys()]).toEqual([1]));
+		pending.get(1)!();
+		await vi.waitFor(() => expect([...pending.keys()]).toEqual([1, 2, 3, 4]));
+		pending.get(3)!();
+		await vi.waitFor(() => expect(pending.has(5)).toBe(true));
+		pending.get(5)!();
+		await vi.waitFor(() => expect(pending.has(6)).toBe(true));
+		pending.get(6)!(); pending.get(4)!(); pending.get(2)!();
+		expect(await task).toEqual(RESULT);
+		expect(peak).toBe(3);
+		expect(post.mock.calls.find(([path]) => path.endsWith('/complete'))?.[1]).toMatchObject({
+			parts: Array.from({ length: 6 }, (_, index) => ({ partNumber: index + 1, etag: `etag-${index + 1}` })),
+		});
+		expect(progress.mock.calls[progress.mock.calls.length - 1]).toEqual([100]);
+		expect(progress.mock.calls.slice(0, -1).every(([percent]) => percent <= 99)).toBe(true);
 	});
 
-	it('retries a failed part, but stops after the configured maximum attempts', async () => {
+	it('reports intra-part progress and does not count retried bytes twice', async () => {
 		vi.useFakeTimers();
-		let attempts = 0;
-		const { uploads, put } = uploadsClient(async () => {
-			attempts++;
-			if (attempts === 1) throw new Error('temporary failure');
-			return { partNumber: 1, etag: 'etag-1' } satisfies UploadPart;
-		});
-		const error = vi.spyOn(console, 'error').mockImplementation(() => {});
-		const successful = uploads.Chunked(fileOfSize(1), 'file', () => {});
+		const { uploads, upload, post } = uploadsClient();
+		upload.mockImplementationOnce(async (_path, _body, progress) => { progress(80); throw httpError(503); });
+		const progress = vi.fn();
+		const task = uploads.Chunked(fileOfSize(10), 'file', progress);
+		await vi.waitFor(() => expect(upload).toHaveBeenCalledTimes(1));
 		await vi.runAllTimersAsync();
-		expect(await successful).toEqual(RESULT);
-		expect(put).toHaveBeenCalledTimes(2);
+		expect(await task).toEqual(RESULT);
+		expect(upload).toHaveBeenCalledTimes(2);
+		expect(progress.mock.calls.map(([percent]) => percent)).toContain(80);
+		expect(progress.mock.calls.map(([percent]) => percent)).toContain(50);
+		expect(progress.mock.calls.every(([percent]) => percent >= 0 && percent <= 100)).toBe(true);
+		expect(post.mock.calls.filter(([path]) => path.endsWith('/abort'))).toHaveLength(0);
+	});
 
-		attempts = 0;
-		put.mockImplementation(async () => {
-			attempts++;
-			throw new Error('persistent failure');
+	it('honors Retry-After and retries completion without resending accepted parts', async () => {
+		vi.useFakeTimers();
+		const { uploads, upload, post } = uploadsClient();
+		upload.mockRejectedValueOnce(httpError(429, 60_000));
+		let confirmations = 0;
+		post.mockImplementation(async (path) => {
+			if (path.endsWith('/init')) return SESSION;
+			if (++confirmations === 1) throw httpError(502);
+			return RESULT;
 		});
-		const failed = uploads.Chunked(fileOfSize(1), 'file', () => {});
-		const failure = expect(failed).rejects.toThrow('persistent failure');
+		const task = uploads.Chunked(fileOfSize(1), 'file', () => {});
+		await vi.waitFor(() => expect(upload).toHaveBeenCalledTimes(1));
+		await vi.advanceTimersByTimeAsync(59_000);
+		expect(upload).toHaveBeenCalledTimes(1);
+		await vi.runAllTimersAsync();
+		expect(await task).toEqual(RESULT);
+		expect(upload).toHaveBeenCalledTimes(2);
+		expect(confirmations).toBe(2);
+	});
+
+	it('does not start other parts after an invalid first part', async () => {
+		const { uploads, upload, post } = uploadsClient();
+		upload.mockRejectedValue(httpError(400));
+		await expect(uploads.Chunked(fileOfSize(CHUNK_SIZE * 5), 'file', () => {})).rejects.toMatchObject({ status: 400 });
+		expect(upload).toHaveBeenCalledTimes(1);
+		expect(post.mock.calls.some(([path]) => path.endsWith('/complete'))).toBe(false);
+		expect(post.mock.calls.some(([path]) => path.endsWith('/abort'))).toBe(true);
+	});
+
+	it('cancels and settles active requests before reporting a definitive failure', async () => {
+		const { uploads, upload, post } = uploadsClient();
+		let fail: () => void = () => {};
+		let settled = 0;
+		upload.mockImplementation(async (_path, _body, _progress, options) => {
+			const partNumber = Number(new Headers(options.headers).get('X-Part-Number'));
+			if (partNumber === 1) return { partNumber, etag: 'etag-1' };
+			await new Promise<void>((_resolve, reject) => {
+				if (partNumber === 2) fail = () => reject(httpError(403));
+				options.signal!.addEventListener('abort', () => { settled++; reject(new VrcStorageApiError(0, 'Cancelled', 'PUT', '', 'abort')); }, { once: true });
+			});
+			throw new Error('unreachable');
+		});
+		const task = uploads.Chunked(fileOfSize(CHUNK_SIZE * 8), 'file', () => {});
+		const failure = expect(task).rejects.toMatchObject({ status: 403 });
+		await vi.waitFor(() => expect(upload).toHaveBeenCalledTimes(4));
+		fail();
+		await failure;
+		expect(settled).toBe(3);
+		expect(upload).toHaveBeenCalledTimes(4);
+		expect(post.mock.calls.some(([path]) => path.endsWith('/complete'))).toBe(false);
+	});
+
+	it('recovers server acknowledgements after reload, including a completed response', async () => {
+		const { uploads, upload, get, client, post } = uploadsClient();
+		const file = fileOfSize(CHUNK_SIZE + 1);
+		await uploads.Chunked(file, 'file', () => {});
+		upload.mockClear(); post.mockClear();
+		get.mockResolvedValue({ state: 'uploading', parts: [{ partNumber: 1, etag: 'etag-1' }] });
+		await new UploadsApi(client).Chunked(fileOfSize(CHUNK_SIZE + 1), 'file', () => {});
+		expect(upload).toHaveBeenCalledTimes(1);
+		expect(new Headers(upload.mock.calls[0]?.[3].headers).get('X-Part-Number')).toBe('2');
+		expect(post.mock.calls.some(([path]) => path.endsWith('/init'))).toBe(false);
+		upload.mockClear(); post.mockClear();
+		get.mockResolvedValue({ state: 'complete', parts: [], result: RESULT });
+		expect(await new UploadsApi(client).Chunked(file, 'file', () => {})).toEqual(RESULT);
+		expect(upload).not.toHaveBeenCalled();
+		expect(post).not.toHaveBeenCalled();
+	});
+
+	it('starts a new session for changed content or an expired/foreign checkpoint', async () => {
+		const { uploads, post, get } = uploadsClient();
+		await uploads.Chunked(fileOfSize(1), 'file', () => {});
+		get.mockRejectedValueOnce(httpError(410));
+		await uploads.Chunked(fileOfSize(1), 'file', () => {});
+		await uploads.Chunked(fileOfSize(1, 2), 'file', () => {});
+		expect(post.mock.calls.filter(([path]) => path.endsWith('/init'))).toHaveLength(3);
+		expect(get).toHaveBeenCalledTimes(1);
+	});
+
+	it('rejects empty and oversized files before creating a session', async () => {
+		const { uploads, post } = uploadsClient();
+		await expect(uploads.Chunked(fileOfSize(0), 'file', () => {})).rejects.toThrow('Invalid file size');
+		await expect(uploads.Chunked(fileOfSize(10000 * CHUNK_SIZE + 1), 'file', () => {})).rejects.toThrow('Invalid file size');
+		expect(post).not.toHaveBeenCalled();
+	});
+
+	it('keeps its checkpoint after exhausted transient retries and resumes without a new init', async () => {
+		vi.useFakeTimers();
+		const { uploads, upload, get, post } = uploadsClient();
+		upload.mockRejectedValue(httpError(503));
+		const task = uploads.Chunked(fileOfSize(1), 'file', () => {});
+		const failure = expect(task).rejects.toMatchObject({ status: 503 });
+		await vi.waitFor(() => expect(upload).toHaveBeenCalledTimes(1));
 		await vi.runAllTimersAsync();
 		await failure;
-		expect(put).toHaveBeenCalledTimes(5);
-		error.mockRestore();
+		expect(upload).toHaveBeenCalledTimes(3);
+		expect(post.mock.calls.some(([path]) => path.endsWith('/abort'))).toBe(false);
+		get.mockResolvedValue({ state: 'uploading', parts: [{ partNumber: 1, etag: 'etag-1' }] });
+		expect(await uploads.Chunked(fileOfSize(1), 'file', () => {})).toEqual(RESULT);
+		expect(post.mock.calls.filter(([path]) => path.endsWith('/init'))).toHaveLength(1);
+		expect(upload).toHaveBeenCalledTimes(3);
 	});
 
-	it('does not retry abort failures and still completes empty files with no parts', async () => {
-		const abort = new VrcStorageApiError(0, 'Request aborted', 'PUT', '/api/upload/part', 'abort');
-		const { uploads, post, put } = uploadsClient(async () => { throw abort; });
-		await expect(uploads.Chunked(fileOfSize(1), 'file', () => {})).rejects.toBe(abort);
-		expect(put).toHaveBeenCalledTimes(1);
-
-		const empty = uploadsClient();
-		const progress = vi.fn();
-		expect(await empty.uploads.Chunked(fileOfSize(0), 'file', progress)).toEqual(RESULT);
-		expect(progress).not.toHaveBeenCalled();
-		expect(empty.put).not.toHaveBeenCalled();
-		expect(empty.post.mock.calls[1]?.[1]).toMatchObject({ parts: [] });
+	it('explicit cancellation aborts active requests and abandons the server session', async () => {
+		const { uploads, upload, post } = uploadsClient();
+		const controller = new AbortController();
+		upload.mockImplementation(async (_path, _body, _progress, options) => new Promise((_resolve, reject) => {
+			options.signal!.addEventListener('abort', () => reject(new VrcStorageApiError(0, 'Cancelled', 'PUT', '', 'abort')), { once: true });
+		}));
+		const task = uploads.Chunked(fileOfSize(CHUNK_SIZE * 3), 'file', () => {}, { signal: controller.signal });
+		const failure = expect(task).rejects.toMatchObject({ kind: 'abort' });
+		await vi.waitFor(() => expect(upload).toHaveBeenCalledTimes(1));
+		controller.abort();
+		await failure;
+		expect(post.mock.calls.some(([path]) => path.endsWith('/abort'))).toBe(true);
+		expect(post.mock.calls.some(([path]) => path.endsWith('/complete'))).toBe(false);
 	});
 });

@@ -54,7 +54,7 @@ export const securityMiddleware = (app: any) => {
 			origin: origins,
 			allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
 			allowHeaders: ['Content-Type', 'Authorization', 'X-Upload-ID', 'X-Key', 'X-Part-Number'],
-			exposeHeaders: ['Content-Length'],
+			exposeHeaders: ['Content-Length', 'Retry-After'],
 			maxAge: 600,
 			credentials: true,
 		}),

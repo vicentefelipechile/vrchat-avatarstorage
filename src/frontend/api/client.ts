@@ -24,7 +24,7 @@ interface BackendError {
 // Helpers
 // =========================================================================================================
 
-function failure(status: number, body: unknown, method: string, url: string): VrcStorageApiError {
+function failure(status: number, body: unknown, method: string, url: string, retryAfter?: string | null): VrcStorageApiError {
 	const data = body && typeof body === 'object' ? (body as BackendError) : undefined;
 	let message = typeof data?.error === 'string' ? data.error : `Request failed (${status})`;
 	if (Array.isArray(data?.details)) {
@@ -35,7 +35,8 @@ function failure(status: number, body: unknown, method: string, url: string): Vr
 		});
 		if (messages.length) message += `: ${messages.join(', ')}`;
 	}
-	return new VrcStorageApiError(status, message, method, url, status === 429 ? 'rate-limit' : 'http', data?.details, body);
+	const delay = retryAfter ? (/^\d+(\.\d+)?$/.test(retryAfter) ? Number(retryAfter) * 1000 : Date.parse(retryAfter) - Date.now()) : undefined;
+	return new VrcStorageApiError(status, message, method, url, status === 429 ? 'rate-limit' : 'http', data?.details, body, delay !== undefined && Number.isFinite(delay) ? Math.max(0, delay) : undefined);
 }
 
 function transportFailure(error: unknown, method: string, url: string): VrcStorageApiError {
@@ -61,7 +62,7 @@ async function parse(response: Response, method: string, url: string, type: Requ
 			if (response.ok) throw new VrcStorageApiError(response.status, 'Invalid JSON response', method, url, 'malformed', undefined, text);
 		}
 	}
-	if (!response.ok) throw failure(response.status, body, method, url);
+	if (!response.ok) throw failure(response.status, body, method, url, response.headers.get('Retry-After'));
 	return body;
 }
 
@@ -135,7 +136,8 @@ export class ApiClient {
 			xhr.onload = async () => {
 				cleanup();
 				try {
-					const response = new Response(xhr.status === 204 ? null : xhr.responseText, { status: xhr.status });
+					const retryAfter = xhr.getResponseHeader('Retry-After');
+					const response = new Response(xhr.status === 204 ? null : xhr.responseText, { status: xhr.status, headers: retryAfter ? { 'Retry-After': retryAfter } : undefined });
 					const result = (await parse(response, method, url, options.responseType ?? 'json')) as T;
 					this.invalidate(...(options.invalidate ?? []));
 					resolve(result);

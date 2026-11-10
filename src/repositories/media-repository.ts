@@ -26,12 +26,13 @@ export class MediaRepository {
 	}
 
 	/** Insert a new media record after the file has been persisted to R2. */
+	buildInsertOnce(uuid: string, mediaType: string, fileName: string) {
+		return this.db.prepare('INSERT INTO media (uuid, r2_key, media_type, file_name) VALUES (?, ?, ?, ?) ON CONFLICT(uuid) DO NOTHING').bind(uuid, uuid, mediaType, fileName);
+	}
+
+	/** Insert a new media record after the file has been persisted to R2. */
 	async insert(uuid: string, r2Key: string, mediaType: string, fileName: string): Promise<void> {
-		await execute(
-			this.db,
-			'INSERT INTO media (uuid, r2_key, media_type, file_name) VALUES (?, ?, ?, ?)',
-			[uuid, r2Key, mediaType, fileName],
-		);
+		await execute(this.db, 'INSERT INTO media (uuid, r2_key, media_type, file_name) VALUES (?, ?, ?, ?)', [uuid, r2Key, mediaType, fileName]);
 	}
 
 	/**

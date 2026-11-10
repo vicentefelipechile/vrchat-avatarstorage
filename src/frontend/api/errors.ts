@@ -21,6 +21,7 @@ export class VrcStorageApiError extends Error {
 		readonly kind: ApiErrorKind = 'http',
 		readonly details?: unknown,
 		readonly body?: unknown,
+		readonly retryAfterMs?: number,
 	) {
 		super(message);
 		this.name = kind === 'abort' ? 'AbortError' : 'VrcStorageApiError';

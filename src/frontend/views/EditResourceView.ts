@@ -6,7 +6,8 @@ import type { RouteContext, Resource, ResourceLink, MediaFile } from '../types';
 import { htmlDecode, renderMarkdown, showToast, mediaUrl, videoUrl } from '../lib/utils';
 import { navigateTo } from '../core/router';
 import { t } from '../core/i18n';
-import { api, CHUNK_SIZE } from '../api';
+import { api } from '../api';
+import { createUploadDraft } from '../features/upload-draft';
 import type { ResourceUpdate } from '../api/types';
 import { showConfirm } from '../lib/confirm';
 
@@ -994,7 +995,7 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 		const maxMb = (SIZE_LIMITS.file / 1024 / 1024).toFixed(0);
 		selectedNewMainFiles.forEach((file, idx) => {
 			const isValidExt = VALID_EXTENSIONS.some((ext) => file.name.toLowerCase().endsWith(ext));
-			const isValidSize = file.size <= SIZE_LIMITS.file;
+			const isValidSize = isAdmin || file.size <= SIZE_LIMITS.file;
 			const mb = (file.size / 1024 / 1024).toFixed(2);
 			let color = 'green',
 				sym = '✓',
@@ -1075,14 +1076,27 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 	// Form submit
 	// -----------------------------------------------------------------------
 
+	const uploadFile = createUploadDraft();
 	form.addEventListener('submit', async (e) => {
 		e.preventDefault();
 		const btn = form.querySelector<HTMLButtonElement>('#edit-submit-btn')!;
+		const fieldset = form.querySelector<HTMLFieldSetElement>('#edit-fieldset')!;
+		if (btn.disabled) return;
+		if (selectedNewMainFiles.length > MAX_MAIN_FILES || newGalleryFiles.length > MAX_GALLERY_FILES) {
+			showToast(t(selectedNewMainFiles.length > MAX_MAIN_FILES ? 'upload.tooManyFiles' : 'upload.tooManyImages'), 'error');
+			return;
+		}
+		if (selectedNewMainFiles.some((file) => !file.size || (!isAdmin && file.size > SIZE_LIMITS.file) || !VALID_EXTENSIONS.some((ext) => file.name.toLowerCase().endsWith(ext)))) {
+			showToast(t('upload.errorMainFile'), 'error');
+			return;
+		}
 		const restore = () => {
+			fieldset.disabled = false;
 			btn.disabled = false;
 			btn.textContent = t('settings.save');
 		};
 
+		fieldset.disabled = true;
 		btn.disabled = true;
 		btn.textContent = t('edit.saving');
 		errorDiv.textContent = '';
@@ -1095,20 +1109,14 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 			// Upload new thumbnail
 			if (newThumbnailFile) {
 				showProgress(t('edit.uploadingThumbnail'));
-				const fd = new FormData();
-				fd.append('file', newThumbnailFile);
-				fd.append('media_type', newThumbnailFile.type.startsWith('video/') ? 'video' : 'image');
-				const thumbData = await api.Uploads.WithProgress(fd, updateProgressBar);
+				const thumbData = await uploadFile(newThumbnailFile, newThumbnailFile.type.startsWith('video/') ? 'video' : 'image', updateProgressBar);
 				newThumbnailUuid = thumbData.media_uuid;
 			}
 
 			// Upload new reference image
 			if (newReferenceFile) {
 				showProgress(t('edit.uploadingReference'));
-				const fd = new FormData();
-				fd.append('file', newReferenceFile);
-				fd.append('media_type', newReferenceFile.type.startsWith('video/') ? 'video' : 'image');
-				const refData = await api.Uploads.WithProgress(fd, updateProgressBar);
+				const refData = await uploadFile(newReferenceFile, newReferenceFile.type.startsWith('video/') ? 'video' : 'image', updateProgressBar);
 				newReferenceUuid = refData.media_uuid;
 			}
 
@@ -1117,11 +1125,8 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 				showProgress(t('edit.uploadingGallery'));
 				for (let i = 0; i < newGalleryFiles.length; i++) {
 					const file = newGalleryFiles[i];
-					const fd = new FormData();
-					fd.append('file', file);
-					fd.append('media_type', file.type.startsWith('video/') ? 'video' : 'image');
 					updateProgressBar(0);
-					const data = await api.Uploads.WithProgress(fd, updateProgressBar);
+					const data = await uploadFile(file, file.type.startsWith('video/') ? 'video' : 'image', updateProgressBar);
 					newGalleryUuids.push(data.media_uuid);
 				}
 			}
@@ -1142,15 +1147,7 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 					const label = `${t('upload.uploadingFile')} (${i + 1}/${selectedNewMainFiles.length})`;
 					showProgress(label);
 					updateProgressBar(0);
-					let fileData: { r2_key: string; media_uuid: string };
-					if (f.size > CHUNK_SIZE) {
-						fileData = await api.Uploads.Chunked(f, 'file', (p) => updateProgressBar(p));
-					} else {
-						const fd = new FormData();
-						fd.append('file', f);
-						fd.append('media_type', 'file');
-						fileData = await api.Uploads.WithProgress(fd, updateProgressBar);
-					}
+					const fileData = await uploadFile(f, 'file', updateProgressBar);
 					newMainFileData.push({ ...fileData, originalName: f.name, size: f.size });
 				}
 			}
@@ -1285,6 +1282,7 @@ export async function editResourceAfter(ctx: RouteContext): Promise<void> {
 			}
 
 			showToast(t('settings.save') + ' \u2713', 'success');
+			restore();
 			navigateTo(`/item/${id}`);
 		} catch (err) {
 			hideProgress();

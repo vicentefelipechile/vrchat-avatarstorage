@@ -130,6 +130,11 @@ export interface UploadPart {
 	partNumber: number;
 	etag: string;
 }
+export interface UploadStatus {
+	state: 'uploading' | 'completing' | 'complete';
+	parts: UploadPart[];
+	result?: UploadResult;
+}
 // =========================================================================================================
 // Favorites and collections
 // =========================================================================================================

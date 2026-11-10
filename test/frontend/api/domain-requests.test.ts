@@ -215,7 +215,7 @@ const requests: RequestCase[] = [
 	requestCase('Admin.DeleteUser', 'delete', '/api/admin/users/tester', (api) => api.Admin.DeleteUser('tester', '123456'), { invalidate: ['/api/'] }, { code: '123456' }),
 	requestCase('Uploads.Single sends FormData', 'put', '/api/upload', (api) => api.Uploads.Single(form), undefined, form),
 	requestCase('Uploads.WithProgress delegates to XHR transport', 'upload', '/api/upload', (api) => api.Uploads.WithProgress(form, () => {}), undefined, form),
-	requestCase('Uploads.Init maps mediaType to media_type', 'post', '/api/upload/init', (api) => api.Uploads.Init('file.zip', 'file'), undefined, { filename: 'file.zip', media_type: 'file' }),
+	requestCase('Uploads.Init maps mediaType to media_type', 'post', '/api/upload/init', (api) => api.Uploads.Init('file.zip', 'file', 123), undefined, { filename: 'file.zip', media_type: 'file', size: 123 }),
 	requestCase('Uploads.Part sends binary body and upload headers', 'put', '/api/upload/part', (api) => api.Uploads.Part(session, 2, new ArrayBuffer(3)), { headers: { 'X-Upload-ID': 'upload-1', 'X-Key': 'r2-key', 'X-Part-Number': '2', 'Content-Type': 'application/octet-stream' } }, new ArrayBuffer(3)),
 	requestCase('Uploads.Complete sends ordered parts and session', 'post', '/api/upload/complete', (api) => api.Uploads.Complete(session, parts, 'file.zip', 'file'), undefined, { ...session, parts, filename: 'file.zip', media_type: 'file' }),
 ];

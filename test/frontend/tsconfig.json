@@ -7,5 +7,5 @@
 		"noEmit": true,
 		"types": ["node"]
 	},
-	"include": ["./**/*.ts", "../../src/frontend/api/**/*.ts", "../../src/frontend/core/cache.ts", "../../src/frontend/types.ts"]
+	"include": ["./**/*.ts", "../../src/frontend/api/**/*.ts", "../../src/frontend/core/cache.ts", "../../src/frontend/core/upload-checkpoints.ts", "../../src/frontend/features/upload-draft.ts", "../../src/frontend/types.ts"]
 }

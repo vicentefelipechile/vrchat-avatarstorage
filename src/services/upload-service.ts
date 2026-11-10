@@ -52,7 +52,7 @@ export class UploadService {
 	 * strict mime type to store in R2. Throws ValidationError on any failed check; the dimension
 	 * failure carries the legacy `{ width, height, fileSize }` details.
 	 */
-	async validateFile(file: File): Promise<ValidatedUpload> {
+	async validateFile(file: File, isAdmin = false): Promise<ValidatedUpload> {
 		// Step 1: magic bytes → file type.
 		const validation = await isValidFileType(file);
 		if (!validation.isValidFile || validation.mediaType === 'unknown') {
@@ -62,8 +62,10 @@ export class UploadService {
 		}
 
 		// Step 2: size limit for the detected media type.
-		const sizeValidation = validateFileSize(file.size, validation.mediaType);
-		if (!sizeValidation.isValid) throw new ValidationError(sizeValidation.error ?? 'Invalid file size');
+		if (!isAdmin || validation.mediaType !== 'file') {
+			const sizeValidation = validateFileSize(file.size, validation.mediaType);
+			if (!sizeValidation.isValid) throw new ValidationError(sizeValidation.error ?? 'Invalid file size');
+		}
 
 		// Step 3: images get an extra dimension check.
 		if (validation.mediaType === 'image') {

@@ -3,7 +3,8 @@
 // =========================================================================
 
 import { t } from '../core/i18n';
-import { api, CHUNK_SIZE } from '../api';
+import { api } from '../api';
+import { createUploadDraft } from '../features/upload-draft';
 import type { ResourceWrite } from '../api/types';
 import { renderMarkdown, showToast } from '../lib/utils';
 import { navigateTo } from '../core/router';
@@ -405,6 +406,7 @@ export async function uploadView(_ctx: RouteContext): Promise<string> {
 // =========================================================================
 
 export async function uploadAfter(_ctx: RouteContext): Promise<void> {
+	const isAdmin = window.appState?.isAdmin ?? false;
 	const form = document.getElementById('upload-form') as HTMLFormElement;
 	const descriptionField = document.getElementById('description') as HTMLTextAreaElement;
 	const markdownPreview = document.getElementById('markdown-preview')!;
@@ -737,7 +739,7 @@ export async function uploadAfter(_ctx: RouteContext): Promise<void> {
 		const maxMb = (SIZE_LIMITS.file / 1024 / 1024).toFixed(0);
 		selectedMainFiles.forEach((file, idx) => {
 			const isValidExt = VALID_EXTENSIONS.some((ext) => file.name.toLowerCase().endsWith(ext));
-			const isValidSize = file.size <= SIZE_LIMITS.file;
+			const isValidSize = isAdmin || file.size <= SIZE_LIMITS.file;
 			const mb = (file.size / 1024 / 1024).toFixed(2);
 			let color = 'green',
 				sym = '✓',
@@ -937,8 +939,10 @@ export async function uploadAfter(_ctx: RouteContext): Promise<void> {
 	// Form submit
 	// -----------------------------------------------------------------------
 
+	const uploadFile = createUploadDraft();
 	form.addEventListener('submit', async (e) => {
 		e.preventDefault();
+		if (form.querySelector<HTMLButtonElement>('#upload-submit-btn')?.disabled) return;
 
 		const btn = form.querySelector<HTMLButtonElement>('#upload-submit-btn')!;
 		const fieldset = form.querySelector<HTMLFieldSetElement>('#upload-fieldset')!;
@@ -970,6 +974,10 @@ export async function uploadAfter(_ctx: RouteContext): Promise<void> {
 		if (selectedMainFiles.length > MAX_MAIN_FILES) {
 			uploadError.textContent = t('upload.tooManyFiles');
 			showToast(t('upload.tooManyFiles'), 'error');
+			return;
+		}
+		if (selectedMainFiles.some((file) => !file.size || (!isAdmin && file.size > SIZE_LIMITS.file))) {
+			showToast(t('upload.errorMainFile'), 'error');
 			return;
 		}
 
@@ -1024,30 +1032,24 @@ export async function uploadAfter(_ctx: RouteContext): Promise<void> {
 
 		try {
 			// 0. Pre-flight Validation (validate_only bypasses Turnstile, no real token needed here)
-			updateProgress(t('upload.validating') ?? 'Validating...', 0);
+			updateProgress(t('upload.validating'), 0);
 			const dummyUuid = '00000000-0000-0000-0000-000000000000';
 			const categoryApi = category === 'avatars' ? api.Categories.Avatars : category === 'assets' ? api.Categories.Assets : category === 'clothes' ? api.Categories.Clothes : null;
 			if (!categoryApi) throw new Error(t('upload.errorCreateResource'));
 			await categoryApi.Preflight({ title, description, category, meta, token: 'dummy', thumbnail_uuid: dummyUuid, reference_image_uuid: null, media_files: [], links: [] });
 
 			// 1. Thumbnail
-			const thumbFd = new FormData();
-			thumbFd.append('file', thumbnail);
-			thumbFd.append('media_type', thumbnail.type.startsWith('video/') ? 'video' : 'image');
 			updateProgress(t('upload.uploadingThumbnail'), 0);
-			const thumbData = await api.Uploads.WithProgress(thumbFd, (p) => updateProgress(t('upload.uploadingThumbnail'), p));
+			const thumbData = await uploadFile(thumbnail, thumbnail.type.startsWith('video/') ? 'video' : 'image', (p) => updateProgress(t('upload.uploadingThumbnail'), p));
 
 			// 2. Reference images
 			const galleryUuids: string[] = [];
 			if (referenceFiles?.length) {
 				for (let i = 0; i < referenceFiles.length; i++) {
 					const ref = referenceFiles[i];
-					const fd = new FormData();
-					fd.append('file', ref);
-					fd.append('media_type', ref.type.startsWith('video/') ? 'video' : 'image');
 					const label = `${t('upload.uploadingReference')} (${i + 1}/${referenceFiles.length})`;
 					updateProgress(label, 0);
-					const refData = await api.Uploads.WithProgress(fd, (p) => updateProgress(label, p));
+					const refData = await uploadFile(ref, ref.type.startsWith('video/') ? 'video' : 'image', (p) => updateProgress(label, p));
 					galleryUuids.push(refData.media_uuid);
 				}
 			}
@@ -1060,15 +1062,7 @@ export async function uploadAfter(_ctx: RouteContext): Promise<void> {
 				const label = `${t('upload.uploadingFile')} (${i + 1}/${mainFiles.length})`;
 				updateProgress(label, 0);
 
-				let fileData: { r2_key: string; media_uuid: string };
-				if (f.size > CHUNK_SIZE) {
-					fileData = await api.Uploads.Chunked(f, 'file', (p) => updateProgress(label, p));
-				} else {
-					const fd = new FormData();
-					fd.append('file', f);
-					fd.append('media_type', 'file');
-					fileData = await api.Uploads.WithProgress(fd, (p) => updateProgress(label, p));
-				}
+				const fileData = await uploadFile(f, 'file', (p) => updateProgress(label, p));
 				uploadedFiles.push({ ...fileData, originalName: f.name, size: f.size });
 			}
 
@@ -1107,6 +1101,7 @@ export async function uploadAfter(_ctx: RouteContext): Promise<void> {
 			navigateTo('/item/' + data.uuid);
 		} catch (err) {
 			uploadError.textContent = `${t('common.error')}: ${(err as Error).message}`;
+			showToast((err as Error).message, 'error');
 			progressContainer.style.display = 'none';
 			window.turnstile?.reset(turnstileWidgetId ?? undefined);
 			turnstileToken = null;
