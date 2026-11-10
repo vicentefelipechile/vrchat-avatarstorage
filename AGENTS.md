@@ -505,7 +505,7 @@ STOP. Your knowledge of Cloudflare Workers APIs and limits may be outdated. Alwa
 
 ### Middleware Details
 
-- `securityMiddleware`: Sets `HSTS`, `Content-Security-Policy`, `X-Content-Type-Options`, `X-Frame-Options`, and `CORS`. `img-src`/`media-src` allow `https:` (prod `cdn.vrcstorage.lat`) plus `http://localhost:8788`/`http://127.0.0.1:8788` for the local CDN worker — without it, `http://localhost:8788` images are blocked on hard reload at `/avatars`.
+- `securityMiddleware`: Sets `HSTS`, `Content-Security-Policy`, `X-Content-Type-Options`, `X-Frame-Options`, and `CORS`. `img-src`/`media-src` allow `https:` (prod `cdn.vrcstorage.lat`) and `blob:` previews. Local CDN exceptions (`http://localhost:8788`/`http://127.0.0.1:8788` and their existing port wildcards) are added only when the request URL's exact hostname is `localhost` or `127.0.0.1`, never from query strings or the Host header. Production/preview responses omit these loopback exceptions; local hard reloads at `/avatars` still work.
 - `rateLimit` (legacy): KV-based rate limiter in `src/http/middleware/rate-limit.ts`. Key format: `rate_limit:{prefix}:{key}`. Most endpoints now use the **Cloudflare native Rate Limiting bindings** (`RL_STRICT`, `RL_MEDIUM`, `RL_GLOBAL`, `RL_LOGIN`) configured directly in `wrangler.jsonc` and applied in `src/http/rate-limits.ts` via `rateLimit({ binding: c.env.RL_*, keyPrefix: '...' })`. `isLocalRequest` checks exact hostname (`localhost`/`127.0.0.1`/`::1` via `Host` header + `new URL(...).hostname`) to bypass limits only in `wrangler dev`; substring checks are forbidden (would be exploitable via `?q=localhost`). `isValidationRequest` routes `validate_only=true` preflights to `RL_MEDIUM` so `UploadView` 2× POST in <1s doesn't burn `RL_STRICT`.
 - `getAuthUser`: Helper in `src/auth.ts` to retrieve user from session/cookie.
 
@@ -524,6 +524,21 @@ Located in `src/helpers/file-validation.ts`.
 - **Magic Bytes:** We validate file types using byte signatures (magic bytes) rather than just extensions.
 - **Size Limits:** Enforced per media type (Images: 20MB, Videos: 100MB, Files: 1500MB).
 - Use `isValidFileType(file)` to verify uploads.
+
+### Multipart Upload Recovery
+
+- `src/services/multipart-upload-service.ts` owns multipart rules; `src/repositories/upload-session-repository.ts` stores sessions and acknowledged parts in D1 (`migrations/0027_upload_sessions.sql`). KV is no longer used for multipart coordination.
+- `/api/upload/init` requires `filename`, `media_type` and `size`. Normal archive uploads remain capped at 1500 MiB; the existing admin-only archive bypass is checked server-side. The protocol permits at most 10,000 parts of 30 MiB. Image/video limits still apply to admins.
+- Every part, status, completion and abort checks the authenticated owner and R2 key. Parts must match their exact expected byte length, part 1 must pass signature validation before any other part, and completion verifies stored ETags, contiguous numbering and R2's actual final size.
+- Multipart signature validation reads only 12 bytes and replays them into the stored stream. Bulk reads use Workers' BYOB `readAtLeast` in at most 1 MiB blocks, avoiding both a full 30 MiB first-part buffer and JS work for every small network packet. Actual byte lengths are still checked before acknowledging. Later parts check the indexed first-part row, not the whole acknowledgement list.
+- Sessions expire after 24 hours of inactivity and at most six days from creation (before R2's default seven-day incomplete-upload expiry). Activity renews on accepted parts/status checks. Old D1 session records are pruned after seven days when another upload starts.
+- The client sends part 1 alone, then fills three concurrent slots. Network/408/429/5xx failures get up to three attempts; `Retry-After` is preserved by both fetch and XHR. The global IP limit still applies; multipart parts use the 500/minute binding rather than the 100/minute upload control budget.
+- `GET /api/upload/status?uploadId=...&key=...` returns authoritative acknowledgements or the completed result. `POST /api/upload/abort` cancels active sessions only; confirming/completed uploads cannot be aborted. Transient failures preserve the session.
+- Completion transitions `uploading → completing → complete`. An R2 `head` recovers an already-completed object; the media insert and completed state commit in one D1 batch. Repeating confirmation returns the same media identity.
+- Recovery requires a client confirmation retry before session expiry; there is no automatic cron reconciliation of abandoned `completing` sessions. If R2 succeeds but D1 remains unavailable and the client never retries, the R2 object has no media row and is outside the existing orphan-media cron.
+- `src/frontend/core/upload-checkpoints.ts` persists session identities for 23 hours. Reselecting the same file after a reload recomputes a full-content, bounded-memory SHA-256 fingerprint and asks the server which parts remain. The local file and form fields are not persisted. Browser storage must be available for reload recovery.
+- `src/frontend/features/upload-draft.ts` retains completed file results for the current form's retries (up to 23 hours, before the orphan-cleanup grace period). Both create and edit use it, so CAPTCHA/publication failures do not resend completed files. Progress stays below 100 until confirmation succeeds.
+- **Rollout:** apply migration `0027` before deploying the Worker and rebuilt frontend together. Legacy KV sessions cannot resume under the new protocol; old clients lacking `size` must refresh. Do not deploy or apply remote migrations without authorization. Local Uploads/presigned R2 uploads are unchanged; real-world speed gains require measurement.
 
 ### Turnstile (CAPTCHA)
 
@@ -762,6 +777,16 @@ Resource revision snapshots retain referenced media so before/after previews rem
 One link = one local (private) file: `POST /api/share { r2_key, expires_in, max_uses }` (auth) returns an opaque token URL `GET /share/:token` (anonymous — the token IS the authorization). Expiry ladder `300s..604800s` (`SHARE_EXPIRY_OPTIONS`) and uses ladder `1,5,10,25,100,null=∞` (`SHARE_USES_OPTIONS`) live in `src/validators.ts`; `CreateShareLinkSchema` rejects anything off-ladder. `ShareLinkRepository.consume` folds check+increment into one atomic `UPDATE` (`revoked=0 AND expires_at>? AND (max_uses IS NULL OR uses<max_uses)`), so concurrent GETs with `max_uses=1` cannot both succeed. Dead links (unknown/expired/exhausted/revoked) all throw `NotFoundError` → 404, indistinguishable by design. Only private files are shareable — image/video resolve to 404 via the same `DownloadService` hard cut. Owner management: `GET /api/share/mine` + `DELETE /api/share/:uuid` (revoke = force-expire, 403 for other owners), surfaced in Settings (`#panel-shares`) and created from `ItemView`'s `.download-share-btn` modal next to Save-to-Drive. Rate limits: creation `RL_STRICT`, consumption `RL_MEDIUM` (`src/http/rate-limits.ts`).
 
 Link-preview fetchers (Discord/Telegram/…) `GET` every shared URL within seconds and would burn a use: `GET /share/:token` short-circuits them via `isCrawler()` (`CRAWLER_PATTERN` in `src/services/share-link-service.ts` — tokens verified against vendor docs) and serves a small OG HTML page (`og:title` = escaped file name, `og:description` = UTC expiry, no `og:image`) without touching the counter. `HEAD` never consumes either. Spoofing the UA is safe — the crawler branch never serves file bytes. Discord caches the card past expiry (card only, the file still 404s).
+
+### Contact Email Proxy
+
+- All backend email logic lives in `src/email/` (handlers, service, repositories, Resend transport, validation and admin routes). This domain intentionally keeps its layers together instead of placing them in the global service/repository directories.
+- Cloudflare Email Routing receives `contact@vrcstorage.lat` and `reply+TOKEN@vrcstorage.lat`; Resend sends all outbound mail. Enable Routing subaddressing for the configured `reply@vrcstorage.lat` rule. Do not replace Cloudflare's receiving MX records with Resend inbound MX records.
+- Bindings: `EMAIL_BUCKET` (private `vrcstorage-email` bucket), `EMAIL_QUEUE` (`vrcstorage-email` queue), `RESEND_API_KEY` and `EMAIL_ADMIN`. Never serve the email bucket through public media/download/CDN routes.
+- Migration `0028_email_proxy.sql` stores permanent conversation and delivery metadata, hashed reply tokens and leased outbox jobs, never bodies or attachments. Accepted deliveries delete their temporary R2 originals; failures retain originals for 30 days and can be inspected, downloaded or deleted at `/admin#email`. There is no manual resend action.
+- The email cron `*/5 * * * *` recovers pending jobs and cleans content; the existing media cron `0 3 * * *` remains unchanged. Retry window: 23 hours. Resend idempotency lasts 24 hours; an unknown response can still mean the email was accepted.
+- Setup and operational limitations: `src/email/README.md`. Apply migration 0028 and create the private bucket/queue before deployment; configure the documented 32-day R2 lifecycle safety net. Remote setup/deployment requires authorization.
+- Tests: `test/backend/platform/email-proxy.test.ts`, with local bindings and mocked Resend; frontend API contract tests cover admin operations. Real Gmail/provider behavior and near-limit memory usage require separate staging checks.
 
 ### Change Feed (Real-Time Updates)
 
