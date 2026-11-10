@@ -1,6 +1,32 @@
+// =========================================================================================================
+// SECURITY MIDDLEWARE
+// Security headers, exact CORS origins and development-only local media sources.
+// =========================================================================================================
+
+// =========================================================================================================
+// Imports
+// =========================================================================================================
+
 import { cors } from 'hono/cors';
-import { secureHeaders } from 'hono/secure-headers';
+import { secureHeaders, type ContentSecurityPolicyOptionHandler } from 'hono/secure-headers';
 import { csrf } from 'hono/csrf';
+
+// =========================================================================================================
+// Helpers
+// =========================================================================================================
+
+const mediaSources: ContentSecurityPolicyOptionHandler = (c) => {
+	const sources = ["'self'", 'https:', 'data:', 'blob:'];
+	const hostname = new URL(c.req.url).hostname;
+	if (hostname === 'localhost' || hostname === '127.0.0.1') {
+		sources.push('http://localhost:8788', 'http://127.0.0.1:8788', 'http://localhost:*', 'http://127.0.0.1:*');
+	}
+	return sources.join(' ');
+};
+
+// =========================================================================================================
+// Registration
+// =========================================================================================================
 
 export const securityMiddleware = (app: any) => {
 	// M-1: Permissive CSP — blocks the most dangerous vectors (unknown-origin scripts, plugin embeds)
@@ -13,9 +39,8 @@ export const securityMiddleware = (app: any) => {
 			contentSecurityPolicy: {
 				defaultSrc: ["'self'", 'https:', 'data:', "'unsafe-inline'"],
 				scriptSrc: ["'self'", 'https://challenges.cloudflare.com', "'unsafe-inline'", "'unsafe-eval'"],
-				// cdn.vrcstorage.lat is https (prod) → covered by https:. Local dev CDN is http://localhost:8788 / 127.0.0.1:8788 → needs explicit http allow
-				imgSrc: ["'self'", 'https:', 'data:', 'blob:', 'http://localhost:8788', 'http://127.0.0.1:8788', 'http://localhost:*', 'http://127.0.0.1:*'],
-				mediaSrc: ["'self'", 'https:', 'data:', 'blob:', 'http://localhost:8788', 'http://127.0.0.1:8788', 'http://localhost:*', 'http://127.0.0.1:*'],
+				imgSrc: [mediaSources],
+				mediaSrc: [mediaSources],
 				objectSrc: ["'none'"],
 			},
 		}),
