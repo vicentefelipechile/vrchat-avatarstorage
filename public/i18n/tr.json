@@ -648,6 +648,19 @@
 			"toastDeleteError": "Yorum silinirken hata",
 			"toastDeleted": "Yorum silindi"
 		},
+		"email": {
+			"actions": "İşlemler",
+			"attempts": "Denemeler",
+			"deleteConfirm": "Bu başarısız e-posta ve ekleri kalıcı olarak silinsin mi?",
+			"deleted": "Başarısız e-posta silindi",
+			"download": "Özgün iletiyi indir",
+			"empty": "Başarısız e-posta teslimatı yok.",
+			"error": "Hata nedeni",
+			"expired": "Özgün ileti kullanılamıyor",
+			"recipient": "Alıcı",
+			"retention": "Başarısız e-postaların özgün iletileri 30 gün saklanır. Başarıyla gönderilen e-postalar arşivlenmez. Bilinmeyen sonuç, Resend’in e-postayı onay vermeden kabul ettiği anlamına gelebilir.",
+			"title": "Başarısız e-postalar"
+		},
 		"media": {
 			"btnDeleteOrphaned": "Sahipsiz dosyaları sil",
 			"confirmDelete": "Tüm sahipsiz dosyalar silinsin mi?",

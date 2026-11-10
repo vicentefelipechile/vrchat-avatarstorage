@@ -9,7 +9,7 @@
 import { ApiClient } from './client';
 import { RESOURCE_CACHE_PREFIXES } from './resources';
 import { query, type ApiOptions, type Filters, type Pagination, type Success } from './types';
-import type { AdminStats, OrphanStats, PendingResource, UserRow, ResourceRow, AdminCommentRow, Timeseries } from './admin-types';
+import type { AdminStats, OrphanStats, PendingResource, UserRow, ResourceRow, AdminCommentRow, Timeseries, FailedEmail } from './admin-types';
 
 // =========================================================================================================
 // Domain
@@ -17,6 +17,15 @@ import type { AdminStats, OrphanStats, PendingResource, UserRow, ResourceRow, Ad
 
 export class AdminApi {
 	constructor(private readonly client: ApiClient) {}
+	EmailFailures(page = 1, options?: ApiOptions) {
+		return this.client.get<{ deliveries: FailedEmail[]; pagination: Pagination }>(`/api/admin/email${query({ page })}`, { signal: options?.signal });
+	}
+	EmailOriginal(uuid: string, options?: ApiOptions) {
+		return this.client.get<Blob>(`/api/admin/email/${encodeURIComponent(uuid)}/original`, { signal: options?.signal, responseType: 'blob' });
+	}
+	DeleteEmail(uuid: string) {
+		return this.client.delete<Success>(`/api/admin/email/${encodeURIComponent(uuid)}`);
+	}
 	Pending(options?: ApiOptions) {
 		return this.client.get<PendingResource[]>('/api/admin/pending', options);
 	}

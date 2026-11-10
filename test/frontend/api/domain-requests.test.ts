@@ -93,6 +93,9 @@ function requestCase(
 // =========================================================================================================
 
 const requests: RequestCase[] = [
+	requestCase('Admin.EmailFailures', 'get', '/api/admin/email?page=2', (api) => api.Admin.EmailFailures(2), { signal: undefined }),
+	requestCase('Admin.EmailOriginal', 'get', '/api/admin/email/job%2F1/original', (api) => api.Admin.EmailOriginal('job/1'), { signal: undefined, responseType: 'blob' }),
+	requestCase('Admin.DeleteEmail', 'delete', '/api/admin/email/job%2F1', (api) => api.Admin.DeleteEmail('job/1')),
 	requestCase('Auth.Register', 'post', '/api/auth/register', (api) => api.Auth.Register(loginData), { invalidate: ['/api/'] }, loginData),
 	requestCase('Auth.Login', 'post', '/api/auth/login', (api) => api.Auth.Login(loginData), { invalidate: ['/api/'] }, loginData),
 	requestCase('Auth.LoginTwoFactor', 'post', '/api/auth/login/2fa', (api) => api.Auth.LoginTwoFactor({ username: 'tester', code: '123456', pre_auth_token: 'pre-auth' }), { invalidate: ['/api/'] }, { username: 'tester', code: '123456', pre_auth_token: 'pre-auth' }),

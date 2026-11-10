@@ -55,6 +55,19 @@
 		"toastDeleteError": "Erreur lors de la suppression",
 		"toastDeleted": "Commentaire supprimé"
 	},
+	"email": {
+		"actions": "Actions disponibles",
+		"attempts": "Tentatives",
+		"deleteConfirm": "Supprimer définitivement ce courriel en échec et ses pièces jointes ?",
+		"deleted": "Courriel en échec supprimé",
+		"download": "Télécharger l’original",
+		"empty": "Aucun échec de livraison de courriel.",
+		"error": "Motif de l’échec",
+		"expired": "Original indisponible",
+		"recipient": "Destinataire",
+		"retention": "Les originaux des courriels en échec sont disponibles pendant 30 jours. Les courriels envoyés avec succès ne sont pas archivés. Un résultat inconnu peut signifier que Resend a accepté le courriel sans le confirmer.",
+		"title": "Courriels en échec"
+	},
 	"media": {
 		"btnDeleteOrphaned": "Supprimer les fichiers orphelins",
 		"confirmDelete": "Supprimer tous les fichiers orphelins ?",

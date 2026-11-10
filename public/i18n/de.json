@@ -648,6 +648,19 @@
 			"toastDeleteError": "Fehler beim Löschen des Kommentars",
 			"toastDeleted": "Kommentar gelöscht"
 		},
+		"email": {
+			"actions": "Aktionen",
+			"attempts": "Versuche",
+			"deleteConfirm": "Diese fehlgeschlagene E-Mail samt Anhängen endgültig löschen?",
+			"deleted": "Fehlgeschlagene E-Mail gelöscht",
+			"download": "Original herunterladen",
+			"empty": "Keine fehlgeschlagenen E-Mail-Zustellungen.",
+			"error": "Fehlergrund",
+			"expired": "Original nicht verfügbar",
+			"recipient": "Empfänger",
+			"retention": "Originale fehlgeschlagener E-Mails sind 30 Tage verfügbar. Erfolgreich gesendete E-Mails werden nicht archiviert. Bei unbekanntem Ergebnis hat Resend die E-Mail möglicherweise ohne Bestätigung angenommen.",
+			"title": "Fehlgeschlagene E-Mails"
+		},
 		"media": {
 			"btnDeleteOrphaned": "Verwaiste Dateien löschen",
 			"confirmDelete": "Alle verwaisten Dateien löschen?",

@@ -9,6 +9,7 @@
 	"d1_databases": [{ "binding": "DB", "database_name": "vrcstorage-tests", "database_id": "00000000-0000-4000-8000-000000000001" }],
 	"r2_buckets": [
 		{ "binding": "BUCKET", "bucket_name": "vrcstorage-tests" },
+		{ "binding": "EMAIL_BUCKET", "bucket_name": "vrcstorage-email-tests" },
 		{ "binding": "MEDIA_BUCKET", "bucket_name": "vrcstorage-media-tests" }
 	],
 	"kv_namespaces": [{ "binding": "VRCSTORAGE_KV", "id": "00000000000000000000000000000001" }],
@@ -19,7 +20,7 @@
 		{ "name": "RL_GLOBAL", "namespace_id": "2003", "simple": { "limit": 500, "period": 60 } },
 		{ "name": "RL_LOGIN", "namespace_id": "2004", "simple": { "limit": 10, "period": 60 } }
 	],
-	"queues": { "producers": [{ "binding": "UPLOAD_QUEUE", "queue": "vrcstorage-upload-processing" }, { "binding": "DRIVE_QUEUE", "queue": "vrcstorage-drive-transfer" }] },
+	"queues": { "producers": [{ "binding": "UPLOAD_QUEUE", "queue": "vrcstorage-upload-processing" }, { "binding": "DRIVE_QUEUE", "queue": "vrcstorage-drive-transfer" }, { "binding": "EMAIL_QUEUE", "queue": "vrcstorage-email" }] },
 	"durable_objects": { "bindings": [{ "name": "FEED", "class_name": "FeedRoom" }] },
 	"migrations": [{ "tag": "v1", "new_sqlite_classes": ["FeedRoom"] }]
 }

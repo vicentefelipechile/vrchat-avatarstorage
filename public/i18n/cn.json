@@ -648,6 +648,19 @@
 			"toastDeleteError": "删除评论出错",
 			"toastDeleted": "评论已删除"
 		},
+		"email": {
+			"actions": "操作",
+			"attempts": "尝试次数",
+			"deleteConfirm": "永久删除此发送失败的邮件及其附件？",
+			"deleted": "已删除发送失败的邮件",
+			"download": "下载原始邮件",
+			"empty": "没有投递失败的邮件。",
+			"error": "失败原因",
+			"expired": "原始邮件不可用",
+			"recipient": "收件人",
+			"retention": "发送失败的原始邮件保留30天。成功发送的邮件不会存档。结果未知可能表示Resend已接受邮件但未返回确认。",
+			"title": "发送失败的邮件"
+		},
 		"media": {
 			"btnDeleteOrphaned": "删除孤立文件",
 			"confirmDelete": "删除所有孤立文件吗？",

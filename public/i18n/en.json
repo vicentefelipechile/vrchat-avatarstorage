@@ -648,6 +648,19 @@
 			"toastDeleteError": "Error deleting comment",
 			"toastDeleted": "Comment deleted"
 		},
+		"email": {
+			"actions": "Actions",
+			"attempts": "Attempts",
+			"deleteConfirm": "Permanently delete this failed email and its attachments?",
+			"deleted": "Failed email deleted",
+			"download": "Download original",
+			"empty": "No failed email deliveries.",
+			"error": "Failure reason",
+			"expired": "Original unavailable",
+			"recipient": "Recipient",
+			"retention": "Originals of failed emails are available for 30 days. Successful emails are not archived. An unknown outcome may mean Resend accepted the email without confirming it.",
+			"title": "Failed emails"
+		},
 		"media": {
 			"btnDeleteOrphaned": "Delete orphaned files",
 			"confirmDelete": "Delete all orphaned files?",

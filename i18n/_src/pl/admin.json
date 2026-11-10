@@ -55,6 +55,19 @@
 		"toastDeleteError": "Błąd usuwania komentarza",
 		"toastDeleted": "Komentarz usunięty"
 	},
+	"email": {
+		"actions": "Działania",
+		"attempts": "Próby",
+		"deleteConfirm": "Trwale usunąć tę niedostarczoną wiadomość i jej załączniki?",
+		"deleted": "Niedostarczona wiadomość usunięta",
+		"download": "Pobierz oryginał",
+		"empty": "Brak nieudanych dostarczeń wiadomości.",
+		"error": "Przyczyna błędu",
+		"expired": "Oryginał niedostępny",
+		"recipient": "Odbiorca",
+		"retention": "Oryginały niedostarczonych wiadomości są dostępne przez 30 dni. Poprawnie wysłane wiadomości nie są archiwizowane. Nieznany wynik może oznaczać, że Resend przyjął wiadomość bez potwierdzenia.",
+		"title": "Niedostarczone wiadomości"
+	},
 	"media": {
 		"btnDeleteOrphaned": "Usuń osierocone pliki",
 		"confirmDelete": "Usunąć wszystkie osierocone pliki?",

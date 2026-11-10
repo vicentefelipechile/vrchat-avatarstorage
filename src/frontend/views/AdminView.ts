@@ -17,6 +17,7 @@ import { loadComments } from '../features/admin/comments';
 import { loadAuthors } from '../features/admin/authors';
 import { loadMedia } from '../features/admin/media';
 import { loadCache } from '../features/admin/cache';
+import { loadEmailFailures } from '../features/admin/email';
 import type { RouteContext } from '../types';
 
 // =========================================================================
@@ -32,6 +33,7 @@ function navItems(): { id: string; label: string }[] {
 		{ id: 'authors', label: t('admin.nav.authors') },
 		{ id: 'media', label: t('admin.nav.media') },
 		{ id: 'cache', label: t('admin.nav.cache') },
+		{ id: 'email', label: t('admin.email.title') },
 	];
 }
 
@@ -48,9 +50,7 @@ export async function adminView(_ctx: RouteContext): Promise<string> {
 
 	const items = navItems();
 	const navHtml = items.map((item) => `<li class="admin-sidebar-nav-item" data-section="${item.id}">${esc(item.label)}</li>`).join('');
-	const sectionsHtml = items
-		.map((item) => `<div class="admin-section" id="section-${item.id}" aria-label="${esc(item.label)}"></div>`)
-		.join('');
+	const sectionsHtml = items.map((item) => `<div class="admin-section" id="section-${item.id}" aria-label="${esc(item.label)}"></div>`).join('');
 
 	return `<div class="admin-desktop-only-warning">
 		<h2>${esc(t('admin.desktopWarningTitle'))}</h2>
@@ -109,6 +109,8 @@ export async function adminAfter(_ctx: RouteContext): Promise<void> {
 				return loadMedia(sectionEl, signal);
 			case 'cache':
 				return loadCache(sectionEl);
+			case 'email':
+				return loadEmailFailures(sectionEl, signal);
 		}
 	}
 

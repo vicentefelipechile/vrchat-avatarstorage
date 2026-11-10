@@ -55,6 +55,19 @@
 		"toastDeleteError": "Erro ao excluir o comentário",
 		"toastDeleted": "Comentário excluído"
 	},
+	"email": {
+		"actions": "Ações",
+		"attempts": "Tentativas",
+		"deleteConfirm": "Excluir definitivamente este e-mail com falha e seus anexos?",
+		"deleted": "E-mail com falha excluído",
+		"download": "Baixar original",
+		"empty": "Nenhuma falha na entrega de e-mails.",
+		"error": "Motivo da falha",
+		"expired": "Original indisponível",
+		"recipient": "Destinatário",
+		"retention": "Os originais dos e-mails com falha ficam disponíveis por 30 dias. Os e-mails enviados com sucesso não são arquivados. Um resultado desconhecido pode significar que o Resend aceitou o e-mail sem confirmar.",
+		"title": "E-mails com falha"
+	},
 	"media": {
 		"btnDeleteOrphaned": "Excluir arquivos órfãos",
 		"confirmDelete": "Excluir todos os arquivos órfãos?",

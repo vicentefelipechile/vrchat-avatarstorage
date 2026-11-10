@@ -16,7 +16,7 @@ import { AdminService } from '../services/admin-service';
 // Handler
 // =========================================================================================================
 
-export async function handleScheduled(_event: ScheduledEvent, env: Env): Promise<void> {
+export async function handleScheduled(_event: ScheduledController, env: Env): Promise<void> {
 	console.log('[CRON] Running scheduled cleanup task');
 	try {
 		const deleted = await new AdminService(env.DB).cleanupOrphanedMedia(env.BUCKET, env.MEDIA_BUCKET);

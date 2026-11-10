@@ -21,6 +21,9 @@ import { DomainError } from './domain/errors';
 import { handleQueue, handleDriveQueue } from './http/queue';
 import { handleScheduled } from './http/scheduled';
 import { FeedRoom } from './durable-objects/feed-room';
+import { handleEmailMaintenance, handleEmailQueue, handleIncomingEmail } from './email/handlers';
+import { EMAIL_CRON, EMAIL_QUEUE_NAME, type EmailQueueMessage } from './email/types';
+import emailRoutes from './email/routes';
 
 import resourceRoutes from './http/routes/resources';
 import userRoutes from './http/routes/users';
@@ -59,12 +62,7 @@ const app = new Hono<{ Bindings: Env }>();
 // the restrictive header with *.
 app.use('*', async (c, next) => {
 	const path = c.req.path;
-	const isPermissive =
-		path === '/llms.txt' ||
-		path === '/llms-full.txt' ||
-		path === '/api/docs' ||
-		path === '/api-docs.json' ||
-		path.startsWith('/api/docs/');
+	const isPermissive = path === '/llms.txt' || path === '/llms-full.txt' || path === '/api/docs' || path === '/api-docs.json' || path.startsWith('/api/docs/');
 	if (!isPermissive) {
 		await next();
 		return;
@@ -106,7 +104,7 @@ app.onError((err, c) => {
 		return c.json({ error: 'Validation error', details: err.issues }, 400);
 	}
 	// Log the message and stack (not the bare Error object, which tail renders as just "Error").
-	console.error('Unhandled error:', err instanceof Error ? err.stack ?? err.message : String(err));
+	console.error('Unhandled error:', err instanceof Error ? (err.stack ?? err.message) : String(err));
 	return c.json({ error: 'Internal Server Error' }, 500);
 });
 
@@ -127,6 +125,7 @@ app.route('/api/download', downloadRoutes);
 app.route('/api/favorites', favoritesRoutes);
 app.route('/api/collections', collectionsRoutes);
 app.route('/api/admin', adminRoutes);
+app.route('/api/admin/email', emailRoutes);
 app.route('/api', systemRoutes);
 app.route('/api/avatars', avatarsRoutes);
 app.route('/api/assets', assetsRoutes);
@@ -173,23 +172,27 @@ export { FeedRoom };
 // =========================================================================================================
 // Worker Entrypoints
 // =========================================================================================================
-// `fetch` is the Hono app. `scheduled` (daily orphan cleanup) and `queue` (upload post-processing /
-// image variants) are thin handlers in src/http/; their logic lives in the service + repository
-// layers. See src/http/scheduled.ts and src/http/queue.ts.
+// HTTP, media and Drive entrypoints delegate to src/http/. Contact email, email queue consumption
+// and five-minute outbox maintenance delegate to src/email/; no email business logic lives here.
 // =========================================================================================================
 
 export default {
 	fetch: app.fetch,
-	scheduled: async (event: ScheduledEvent, env: Env, ctx: ExecutionContext) => {
-		ctx.waitUntil(handleScheduled(event, env));
+	email: async (message: ForwardableEmailMessage, env: Env, _ctx: ExecutionContext) => {
+		await handleIncomingEmail(message, env);
 	},
-	queue: async (batch: MessageBatch<UploadQueueMessage | DriveTransferMessage>, env: Env, _ctx: ExecutionContext) => {
+	scheduled: async (event: ScheduledController, env: Env, ctx: ExecutionContext) => {
+		ctx.waitUntil(event.cron === EMAIL_CRON ? handleEmailMaintenance(env) : handleScheduled(event, env));
+	},
+	queue: async (batch: MessageBatch<UploadQueueMessage | DriveTransferMessage | EmailQueueMessage>, env: Env, _ctx: ExecutionContext) => {
 		// Dispatch by queue name — upload and Drive share the same Worker entrypoint.
-		const queueName = (batch as unknown as { queue: string }).queue;
-		if (queueName === 'vrcstorage-drive-transfer') {
+		const queueName = batch.queue;
+		if (queueName === EMAIL_QUEUE_NAME) {
+			await handleEmailQueue(batch as MessageBatch<EmailQueueMessage>, env);
+		} else if (queueName === 'vrcstorage-drive-transfer') {
 			await handleDriveQueue(batch as unknown as MessageBatch<DriveTransferMessage>, env);
 		} else {
 			await handleQueue(batch as unknown as MessageBatch<UploadQueueMessage>, env);
 		}
 	},
-};
+} satisfies ExportedHandler<Env, UploadQueueMessage | DriveTransferMessage | EmailQueueMessage>;

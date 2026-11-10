@@ -82,3 +82,15 @@ export interface Timeseries {
 	uploads: number[];
 	registrations: number[];
 }
+
+export interface FailedEmail {
+	uuid: string;
+	recipient: string;
+	direction: 'admin' | 'user';
+	attempts: number;
+	created_at: number;
+	failed_at: number | null;
+	last_error: string | null;
+	content_expires_at: number | null;
+	content_available: boolean;
+}

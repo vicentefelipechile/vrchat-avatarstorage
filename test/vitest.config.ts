@@ -8,7 +8,7 @@
 // Imports
 // =========================================================================================================
 
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, URL } from 'node:url';
 
 import { cloudflareTest, readD1Migrations } from '@cloudflare/vitest-plugin';
 import { defineConfig } from 'vitest/config';
@@ -24,6 +24,8 @@ export default defineConfig({
 			miniflare: {
 				bindings: {
 					JWT_SECRET: 'backend-tests-only-secret',
+					RESEND_API_KEY: 're_tests_only',
+					EMAIL_ADMIN: 'admin@gmail.com',
 					TEST_MIGRATIONS: await readD1Migrations(fileURLToPath(new URL('../migrations', import.meta.url))),
 				},
 			},

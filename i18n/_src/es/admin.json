@@ -55,6 +55,19 @@
 		"toastDeleteError": "Error al eliminar el comentario",
 		"toastDeleted": "Comentario eliminado"
 	},
+	"email": {
+		"actions": "Acciones",
+		"attempts": "Intentos",
+		"deleteConfirm": "¿Eliminar definitivamente este correo fallido y sus adjuntos?",
+		"deleted": "Correo fallido eliminado",
+		"download": "Descargar original",
+		"empty": "No hay entregas de correo fallidas.",
+		"error": "Motivo del fallo",
+		"expired": "Original no disponible",
+		"recipient": "Destinatario",
+		"retention": "Los originales de correos fallidos están disponibles durante 30 días. Los correos enviados correctamente no se archivan. Un resultado desconocido puede significar que Resend aceptó el correo sin confirmarlo.",
+		"title": "Correos fallidos"
+	},
 	"media": {
 		"btnDeleteOrphaned": "Eliminar archivos huérfanos",
 		"confirmDelete": "¿Eliminar todos los archivos huérfanos?",

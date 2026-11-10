@@ -55,6 +55,19 @@
 		"toastDeleteError": "Errore durante l'eliminazione",
 		"toastDeleted": "Commento eliminato"
 	},
+	"email": {
+		"actions": "Azioni",
+		"attempts": "Tentativi",
+		"deleteConfirm": "Eliminare definitivamente questa email non inviata e i suoi allegati?",
+		"deleted": "Email non inviata eliminata",
+		"download": "Scarica originale",
+		"empty": "Nessun invio di email non riuscito.",
+		"error": "Motivo dell’errore",
+		"expired": "Originale non disponibile",
+		"recipient": "Destinatario",
+		"retention": "Gli originali delle email non inviate sono disponibili per 30 giorni. Le email inviate correttamente non vengono archiviate. Un esito sconosciuto può significare che Resend ha accettato l’email senza confermarlo.",
+		"title": "Email non inviate"
+	},
 	"media": {
 		"btnDeleteOrphaned": "Elimina i file orfani",
 		"confirmDelete": "Eliminare tutti i file orfani?",

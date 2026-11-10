@@ -648,6 +648,19 @@
 			"toastDeleteError": "Fout bij verwijderen",
 			"toastDeleted": "Reactie verwijderd"
 		},
+		"email": {
+			"actions": "Acties",
+			"attempts": "Pogingen",
+			"deleteConfirm": "Deze mislukte e-mail en bijlagen definitief verwijderen?",
+			"deleted": "Mislukte e-mail verwijderd",
+			"download": "Origineel downloaden",
+			"empty": "Geen mislukte e-mailbezorgingen.",
+			"error": "Reden van mislukking",
+			"expired": "Origineel niet beschikbaar",
+			"recipient": "Ontvanger",
+			"retention": "Originelen van mislukte e-mails zijn 30 dagen beschikbaar. Succesvol verzonden e-mails worden niet gearchiveerd. Een onbekend resultaat kan betekenen dat Resend de e-mail zonder bevestiging heeft geaccepteerd.",
+			"title": "Mislukte e-mails"
+		},
 		"media": {
 			"btnDeleteOrphaned": "Verweesde bestanden verwijderen",
 			"confirmDelete": "Alle verweesde bestanden verwijderen?",
