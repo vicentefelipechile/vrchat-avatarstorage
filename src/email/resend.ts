@@ -11,7 +11,8 @@
 import PostalMime, { type Attachment, type Email } from 'postal-mime';
 
 import { cleanProxyBlocks, proxyBodies, replyAddress } from './message';
-import { EMAIL_ADDRESS, type EmailConversation, type EmailDelivery } from './types';
+import { renderEmail } from './template';
+import { EMAIL_ADDRESS, EMAIL_BODY_TEMPLATE, type EmailConversation, type EmailDelivery } from './types';
 
 // =========================================================================================================
 // Constants
@@ -54,9 +55,14 @@ function* attachmentJson(attachment: Attachment, index: number): Generator<strin
 	yield '"}';
 }
 
-function* payloadJson(parsed: Email, delivery: EmailDelivery, conversation: EmailConversation, token: string): Generator<string> {
+function* payloadJson(parsed: Email, delivery: EmailDelivery, conversation: EmailConversation, token: string, bodyTemplate?: string): Generator<string> {
+	// Existing queued retries must retain their original payload for Resend idempotency.
 	const bodies =
-		delivery.direction === 'admin' ? proxyBodies(delivery.uuid, conversation.author_email, parsed.text ?? '', parsed.html) : { text: cleanProxyBlocks(parsed.text ?? ''), html: parsed.html ? cleanProxyBlocks(parsed.html) : undefined };
+		bodyTemplate === EMAIL_BODY_TEMPLATE
+			? renderEmail(delivery.direction === 'admin' ? conversation.author_email : EMAIL_ADDRESS, parsed.text ?? '', parsed.html)
+			: delivery.direction === 'admin'
+				? proxyBodies(delivery.uuid, conversation.author_email, parsed.text ?? '', parsed.html)
+				: { text: cleanProxyBlocks(parsed.text ?? ''), html: parsed.html ? cleanProxyBlocks(parsed.html) : undefined };
 	const fields = {
 		from: `VRCStorage <${EMAIL_ADDRESS}>`,
 		to: [delivery.recipient],
@@ -102,7 +108,7 @@ function jsonStream(parts: Generator<string>): ReadableStream<Uint8Array> {
 // Sending
 // =========================================================================================================
 
-export async function sendEmail(raw: ReadableStream<Uint8Array>, delivery: EmailDelivery, conversation: EmailConversation, token: string, apiKey: string): Promise<string> {
+export async function sendEmail(raw: ReadableStream<Uint8Array>, delivery: EmailDelivery, conversation: EmailConversation, token: string, apiKey: string, bodyTemplate?: string): Promise<string> {
 	let parsed: Email;
 	try {
 		parsed = await PostalMime.parse(raw, { attachmentEncoding: 'base64', forceRfc822Attachments: true, maxNestingDepth: 32, maxHeadersSize: 256 * 1024, maxPartCount: 1000 });
@@ -117,7 +123,7 @@ export async function sendEmail(raw: ReadableStream<Uint8Array>, delivery: Email
 		response = await fetch(RESEND_URL, {
 			method: 'POST',
 			headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json', 'Idempotency-Key': `contact/${delivery.uuid}` },
-			body: jsonStream(payloadJson(parsed, delivery, conversation, token)),
+			body: jsonStream(payloadJson(parsed, delivery, conversation, token, bodyTemplate)),
 			signal: AbortSignal.timeout(SEND_TIMEOUT_MS),
 		});
 	} catch {

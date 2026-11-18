@@ -26,16 +26,12 @@ const TOKEN_ADDRESS = new RegExp(`^reply\\+([a-f0-9]{32})@${EMAIL_DOMAIN.replace
 const PROXY_BLOCK = /\[VRCStorage proxy ([a-f0-9-]{36})\][\s\S]*?\[\/VRCStorage proxy \1\]/gi;
 
 // =========================================================================================================
-// Helpers
-// =========================================================================================================
-
-function escapeHtml(value: string): string {
-	return value.replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]!);
-}
-
-// =========================================================================================================
 // Public helpers
 // =========================================================================================================
+
+export function escapeHtml(value: string): string {
+	return value.replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]!);
+}
 
 export function emailAddress(value: string): string {
 	const parsed = ADDRESS_SCHEMA.safeParse(value.trim());

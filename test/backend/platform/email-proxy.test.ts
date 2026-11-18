@@ -14,6 +14,7 @@ import { EmailDeliveryRepository } from '../../../src/email/delivery-repository'
 import { authenticatedAdmin, cleanProxyBlocks, proxyBodies, replyToken, singleMailbox } from '../../../src/email/message';
 import { EmailService } from '../../../src/email/service';
 import { sendEmail } from '../../../src/email/resend';
+import { renderEmail } from '../../../src/email/template';
 import { FAILED_RETENTION_MS, MAX_EMAIL_BYTES, type EmailCollaborators, type EmailDelivery, type IncomingEmail } from '../../../src/email/types';
 import { createUser } from '../../setup/fixtures';
 
@@ -40,6 +41,19 @@ function collaborators(): EmailCollaborators {
 	return { bucket: env.EMAIL_BUCKET, queue: env.EMAIL_QUEUE, adminEmail: 'admin@gmail.com', apiKey: 're_tests_only' };
 }
 
+// Response(string).body has native length metadata that would hide the Email Routing failure.
+function emailStream(bytes: Uint8Array): ReadableStream<Uint8Array> {
+	let offset = 0;
+	return new ReadableStream({
+		pull(controller) {
+			if (offset === bytes.length) return controller.close();
+			const end = Math.min(offset + 97, bytes.length);
+			controller.enqueue(bytes.slice(offset, end));
+			offset = end;
+		},
+	});
+}
+
 function incoming(from = 'person@example.com', to = 'contact@vrcstorage.lat', extra: Record<string, string> = {}, text = 'Hello', html = '<p>Hello <img src="cid:picture"></p>'): IncomingEmail {
 	const headers = new Headers({ From: from, To: to, Subject: 'Contact question', 'Message-ID': `<${crypto.randomUUID()}@example.com>`, ...extra });
 	const lines = [...headers].map(([key, value]) => `${key}: ${value}`);
@@ -52,7 +66,8 @@ function incoming(from = 'person@example.com', to = 'contact@vrcstorage.lat', ex
 		'--mixed', 'Content-Type: image/png', 'Content-Disposition: inline; filename="picture.png"', 'Content-ID: <picture>', 'Content-Transfer-Encoding: base64', '', 'aGVsbG8=',
 		'--mixed', 'Content-Type: application/pdf', 'Content-Disposition: attachment; filename="document.pdf"', 'Content-Transfer-Encoding: base64', '', 'cGRm', '--mixed--', '',
 	].join('\r\n');
-	return { from, to, headers, raw: new Response(raw).body!, rawSize: new TextEncoder().encode(raw).length };
+	const bytes = new TextEncoder().encode(raw);
+	return { from, to, headers, raw: emailStream(bytes), rawSize: bytes.length };
 }
 
 function mockResend(status = 200, name?: string) {
@@ -86,6 +101,57 @@ async function failedEmail(): Promise<{ uuid: string; contentKey: string }> {
 afterEach(() => vi.restoreAllMocks());
 
 describe('email proxy routing', () => {
+	it('sends a branded HTML alternative even when the original contains only plain text', async () => {
+		const service = new EmailService(env.DB);
+		const resend = mockResend();
+		const uuid = await service.receive(incoming(undefined, undefined, {}, 'Solo texto\n<sin HTML>', ''), collaborators());
+		await service.deliver(uuid, collaborators());
+		expect(resend.payloads[0].html).toContain('VRCStorage');
+		expect(resend.payloads[0].html).toContain('Solo texto<br>&lt;sin HTML&gt;');
+		expect(resend.payloads[0].text).not.toContain('[VRCStorage proxy');
+	});
+
+	it('stores unknown-length email streams byte-for-byte before admitting the delivery', async () => {
+		const input = incoming(undefined, undefined, {}, 'Mensaje con acentos: áéíóú. 日本語');
+		const bytes = new Uint8Array(await new Response(input.raw).arrayBuffer());
+		const queue = { send: vi.fn(), sendBatch: vi.fn(), metrics: vi.fn() };
+		const uuid = await new EmailService(env.DB).receive({ ...input, raw: emailStream(bytes) }, { ...collaborators(), queue });
+		const row = await delivery(uuid);
+		const stored = await env.EMAIL_BUCKET.get(row.content_key!);
+		expect(new Uint8Array(await stored!.arrayBuffer())).toEqual(bytes);
+		expect(stored!.size).toBe(input.rawSize);
+		expect(row.status).toBe('pending');
+		expect(queue.send).toHaveBeenCalledWith({ delivery_uuid: uuid });
+	});
+
+	it.each([-1, 1])('does not admit a message whose declared length differs by %s bytes', async (difference) => {
+		const input = incoming();
+		const queue = { send: vi.fn(), sendBatch: vi.fn(), metrics: vi.fn() };
+		await expect(new EmailService(env.DB).receive({ ...input, rawSize: input.rawSize + difference }, { ...collaborators(), queue })).rejects.toThrow();
+		expect(queue.send).not.toHaveBeenCalled();
+		expect(await env.DB.prepare('SELECT uuid FROM email_deliveries').first()).toBeNull();
+		expect((await env.EMAIL_BUCKET.list()).objects).toHaveLength(0);
+	});
+
+	it('cancels the incoming stream when R2 rejects the write', async () => {
+		const cancel = vi.fn();
+		const raw = new ReadableStream<Uint8Array>({
+			pull(controller) { controller.enqueue(new Uint8Array(64)); },
+			cancel,
+		});
+		const put = vi.fn().mockRejectedValue(new Error('R2 unavailable'));
+		const bucket = new Proxy(env.EMAIL_BUCKET, {
+			get(target, property) {
+				if (property === 'put') return put;
+				const value = Reflect.get(target, property);
+				return typeof value === 'function' ? value.bind(target) : value;
+			},
+		});
+		await expect(new EmailService(env.DB).receive({ ...incoming(), raw }, { ...collaborators(), bucket })).rejects.toThrow('R2 unavailable');
+		expect(cancel).toHaveBeenCalledTimes(1);
+		expect(await env.DB.prepare('SELECT uuid FROM email_deliveries').first()).toBeNull();
+	});
+
 	it('preserves HTML, attachments and CID images through a full conversation without exposing the admin address', async () => {
 		const service = new EmailService(env.DB);
 		const resend = mockResend();
@@ -95,6 +161,10 @@ describe('email proxy routing', () => {
 		expect(await service.deliver(first, collaborators())).toBeNull();
 		const adminCopy = resend.payloads[0];
 		expect(adminCopy.to).toEqual(['admin@gmail.com']);
+		expect(adminCopy.html).toContain('VRCStorage');
+		expect(adminCopy.html).toContain('person@example.com');
+		expect(adminCopy.text).not.toContain('[VRCStorage proxy');
+		expect(adminCopy.html).not.toContain('[VRCStorage proxy');
 		expect(adminCopy.html).toContain('cid:picture');
 		expect(adminCopy.attachments).toEqual(expect.arrayContaining([
 			expect.objectContaining({ filename: 'picture.png', content: 'aGVsbG8=', content_id: 'picture' }),
@@ -110,6 +180,8 @@ describe('email proxy routing', () => {
 		const userCopy = resend.payloads[1];
 		await expect(service.receive(incoming('stranger@example.com', userCopy.reply_to), collaborators())).rejects.toThrow('does not belong');
 		expect(userCopy.to).toEqual(['answer@example.net']);
+		expect(userCopy.html).toContain('VRCStorage');
+		expect(userCopy.html).toContain('contact@vrcstorage.lat');
 		expect(userCopy.headers['In-Reply-To']).toBe(sourceId);
 		expect(userCopy.text).toContain('My answer');
 		expect(userCopy.text).not.toContain('VRCStorage proxy');
@@ -173,6 +245,21 @@ describe('email proxy routing', () => {
 });
 
 describe('email proxy recovery', () => {
+	it('keeps the original legacy payload for already queued messages without a template version', async () => {
+		const service = new EmailService(env.DB);
+		const uuid = await service.receive(incoming(), collaborators());
+		const row = await delivery(uuid);
+		const original = (await env.EMAIL_BUCKET.get(row.content_key!))!;
+		await env.EMAIL_BUCKET.put(row.content_key!, original.body, { customMetadata: { reply_token: original.customMetadata!.reply_token } });
+		const resend = mockResend(503, 'service_unavailable');
+		await service.deliver(uuid, collaborators());
+		expect(resend.payloads[0].text).toContain(`[VRCStorage proxy ${uuid}]`);
+		await env.DB.prepare('UPDATE email_deliveries SET next_attempt_at = 0 WHERE uuid = ?').bind(uuid).run();
+		await service.deliver(uuid, collaborators());
+		expect(resend.payloads[1]).toEqual(resend.payloads[0]);
+		expect(resend.keys).toEqual([`contact/${uuid}`, `contact/${uuid}`]);
+	});
+
 	it('distinguishes transient original-stream failures from permanent MIME safety-limit failures', async () => {
 		const uuid = (await new EmailService(env.DB).receive(incoming(), collaborators()))!;
 		const row = await delivery(uuid);
@@ -251,7 +338,8 @@ describe('email proxy recovery', () => {
 		expect(row.status).toBe('failed');
 		expect(row.content_expires_at! - row.failed_at!).toBe(FAILED_RETENTION_MS);
 		expect(await env.EMAIL_BUCKET.head(contentKey)).not.toBeNull();
-		expect((await new EmailService(env.DB).failures(1)).deliveries[0].content_available).toBe(true);
+		expect(row.recipient).toBe('admin@gmail.com');
+		expect((await new EmailService(env.DB).failures(1)).deliveries[0]).toMatchObject({ content_available: true, recipient: null, direction: 'admin' });
 	});
 
 	it('removes expired originals without expiring the conversation or its delivery metadata', async () => {
@@ -277,6 +365,12 @@ describe('email proxy recovery', () => {
 });
 
 describe('failed email administration', () => {
+	it('keeps user recipients visible without exposing the administrator mailbox', async () => {
+		const { uuid } = await failedEmail();
+		await env.DB.prepare("UPDATE email_deliveries SET direction = 'user', recipient = ? WHERE uuid = ?").bind('person@example.com', uuid).run();
+		expect((await new EmailService(env.DB).failures(1)).deliveries[0]).toMatchObject({ recipient: 'person@example.com', direction: 'user' });
+	});
+
 	it('requires administrator authentication for listing, downloading and deleting originals', async () => {
 		const { uuid, contentKey } = await failedEmail();
 		const base = 'http://localhost:8787/api/admin/email';
@@ -293,6 +387,8 @@ describe('failed email administration', () => {
 		const json = await listing.text();
 		expect(json).not.toContain('reply_token');
 		expect(json).not.toContain('content_key');
+		expect(json).not.toContain('admin@gmail.com');
+		expect(JSON.parse(json).deliveries[0].recipient).toBeNull();
 		expect(json).toContain(uuid);
 		const original = await exports.default.fetch(`${base}/${uuid}/original`, { headers });
 		expect(original.status).toBe(200);
@@ -306,6 +402,26 @@ describe('failed email administration', () => {
 });
 
 describe('email message boundaries', () => {
+	it('renders a branded HTML body for plain text without exposing markup or internal markers', () => {
+		const rendered = renderEmail('person@example.com', 'Primera línea\n<script>alert("hello")</script>');
+		expect(rendered.html).toContain('VRCStorage');
+		expect(rendered.html).toContain('person@example.com');
+		expect(rendered.html).toContain('Primera línea<br>&lt;script&gt;');
+		expect(rendered.html).not.toContain('<script>');
+		expect(rendered.html).not.toContain('[VRCStorage proxy');
+		expect(rendered.text).toBe('VRCStorage\nperson@example.com\n\nPrimera línea\n<script>alert("hello")</script>');
+	});
+
+	it('preserves original HTML and removes legacy proxy marks without truncating quoted content', () => {
+		const old = proxyBodies(crypto.randomUUID(), 'person@example.com', 'Original message', '<p>Original <img src="cid:picture"></p>');
+		const rendered = renderEmail('contact@vrcstorage.lat', `Answer\n${old.text}\nSignature`, `<p>Answer</p>${old.html}<p>Signature</p>`);
+		expect(rendered.html).toContain('<img src="cid:picture">');
+		expect(rendered.html).toContain('<p>Signature</p>');
+		expect(rendered.text).toContain('Signature');
+		expect(rendered.html).not.toContain('[VRCStorage proxy');
+		expect(rendered.text).not.toContain('[VRCStorage proxy');
+	});
+
 	it('only trusts Cloudflare authentication and strips marked proxy blocks without truncating signatures', () => {
 		expect(authenticatedAdmin(new Headers({ 'Authentication-Results': 'attacker.example; dmarc=pass' }))).toBe(false);
 		expect(authenticatedAdmin(new Headers({ 'Authentication-Results': 'mx.cloudflare.net; dmarc=fail, mx.cloudflare.net; dmarc=pass' }))).toBe(false);

@@ -17,6 +17,7 @@ export const RETRY_WINDOW_MS = 23 * 60 * 60 * 1000;
 export const FAILED_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
 export const DELIVERY_LEASE_MS = 5 * 60 * 1000;
 export const EMAIL_PAGE_SIZE = 25;
+export const EMAIL_BODY_TEMPLATE = 'branded-v1';
 // Keep the worst-case maintenance pass below the Workers Free subrequest budget.
 export const EMAIL_MAINTENANCE_BATCH_SIZE = 15;
 

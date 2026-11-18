@@ -85,7 +85,7 @@ export interface Timeseries {
 
 export interface FailedEmail {
 	uuid: string;
-	recipient: string;
+	recipient: string | null;
 	direction: 'admin' | 'user';
 	attempts: number;
 	created_at: number;

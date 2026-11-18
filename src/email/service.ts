@@ -14,7 +14,7 @@ import { EmailConversationRepository } from './conversation-repository';
 import { EmailDeliveryRepository } from './delivery-repository';
 import { authenticatedAdmin, automatedEmail, emailAddress, hashEmailValue, messageId, replyToken, singleMailbox } from './message';
 import { EmailSendError, sendEmail } from './resend';
-import { DELIVERY_LEASE_MS, EMAIL_ADDRESS, EMAIL_DOMAIN, EMAIL_PAGE_SIZE, MAX_EMAIL_BYTES, RETRY_WINDOW_MS, type EmailCollaborators, type EmailConversation, type EmailDelivery, type IncomingEmail } from './types';
+import { DELIVERY_LEASE_MS, EMAIL_ADDRESS, EMAIL_BODY_TEMPLATE, EMAIL_DOMAIN, EMAIL_PAGE_SIZE, MAX_EMAIL_BYTES, RETRY_WINDOW_MS, type EmailCollaborators, type EmailConversation, type EmailDelivery, type IncomingEmail } from './types';
 
 // =========================================================================================================
 // Service
@@ -96,7 +96,38 @@ export class EmailService {
 			failed_at: null,
 			content_expires_at: null,
 		};
-		const stored = await collaborators.bucket.put(row.content_key!, message.raw, { httpMetadata: { contentType: 'message/rfc822' }, customMetadata: { reply_token: outgoingToken } });
+		// Email event streams do not carry the known-length metadata required by R2.
+		const fixed = new FixedLengthStream(message.rawSize);
+		const reader = message.raw.getReader();
+		const writer = fixed.writable.getWriter();
+		const transferring = async () => {
+			try {
+				while (true) {
+					const { done, value } = await reader.read();
+					if (done) break;
+					await writer.write(value);
+				}
+				await writer.close();
+			} catch (error) {
+				await Promise.allSettled([writer.abort(error), reader.cancel(error)]);
+				throw error;
+			}
+		};
+		const storing = Promise.resolve()
+			.then(() => collaborators.bucket.put(row.content_key!, fixed.readable, { httpMetadata: { contentType: 'message/rfc822' }, customMetadata: { reply_token: outgoingToken, body_template: EMAIL_BODY_TEMPLATE } }))
+			.catch(async (error) => {
+				await Promise.allSettled([reader.cancel(error), ...(fixed.readable.locked ? [] : [fixed.readable.cancel(error)]), writer.abort(error)]);
+				throw error;
+			});
+		const [write, transfer] = await Promise.allSettled([storing, transferring(), reader.closed, writer.closed]);
+		reader.releaseLock();
+		writer.releaseLock();
+		if (write.status === 'rejected') throw write.reason;
+		if (transfer.status === 'rejected') {
+			await collaborators.bucket.delete(row.content_key!);
+			throw transfer.reason;
+		}
+		const stored = write.value;
 		if (stored.size > MAX_EMAIL_BYTES) {
 			await collaborators.bucket.delete(row.content_key!);
 			throw new ValidationError('Email exceeds the 25 MiB message limit');
@@ -136,7 +167,7 @@ export class EmailService {
 			const token = original.customMetadata?.reply_token;
 			if (!token || (await hashEmailValue(token)) !== row.reply_token_hash) throw new EmailSendError('Reply token metadata is unavailable', false);
 			if (!collaborators.apiKey) throw new EmailSendError('Resend API key is not configured', true);
-			const resendId = await sendEmail(original.body, row, conversation, token, collaborators.apiKey);
+			const resendId = await sendEmail(original.body, row, conversation, token, collaborators.apiKey, original.customMetadata?.body_template);
 			if (!(await this.deliveries.sent(uuid, leaseId, resendId))) return null;
 		} catch (error) {
 			if (!(error instanceof EmailSendError)) throw error;
@@ -182,7 +213,7 @@ export class EmailService {
 		return {
 			deliveries: deliveries.map((row) => ({
 				uuid: row.uuid,
-				recipient: row.recipient,
+				recipient: row.direction === 'admin' ? null : row.recipient,
 				direction: row.direction,
 				attempts: row.attempts,
 				created_at: row.created_at,

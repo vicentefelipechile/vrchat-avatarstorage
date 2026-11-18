@@ -16,7 +16,7 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
 	test: {
-		include: ['test/frontend/api/**/*.test.ts'],
+		include: ['test/frontend/api/**/*.test.ts', 'test/frontend/core/**/*.test.ts'],
 		environment: 'node',
 		setupFiles: ['test/frontend/setup.ts'],
 	},

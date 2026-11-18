@@ -11,7 +11,7 @@ All backend email logic lives in this directory. The main Worker only mounts the
 - Conversation participants, message IDs and delivery states do not expire automatically. Neither bodies nor attachments are stored in D1.
 - Respect one valid `Reply-To` on the initial contact; otherwise use `From`. Later replies cannot change the conversation's destination.
 - Forward text, HTML, attachments and CID images. A provider rejection fails the entire message. MIME safety limits are 32 nesting levels, 1,000 parts and 256 KiB of aggregate headers. Attached RFC822 messages remain attachments.
-- Strip only explicitly marked proxy blocks. Do not remove arbitrary signatures or quoted history. Personal information written in a signature or attached message is not anonymized.
+- New messages use a monochrome VRCStorage HTML template in both directions, including when the original is plain text. The header shows the contact author's address to the administrator and only `contact@vrcstorage.lat` to the user. No visible routing/debug markers or automatic instructions are added. Legacy marked blocks are removed from quoted content; arbitrary signatures and quoted history remain. Personal information written in a signature or attached message is not anonymized.
 - Reject automatic responses, mailing lists, delivery reports, unknown addresses and proxy loops. Administrator replies require an exact `From` match and a passing DMARC result from Cloudflare's first `Authentication-Results` header. Do not trust envelope sender equality as authentication.
 - Maximum incoming message size: 25 MiB, including MIME encoding and attachments. Unsupported Resend attachment types become failed deliveries, not silently discarded files.
 - Per-envelope-sender admission uses the existing login rate-limit binding with a separate hashed email key: 10 messages/minute. This is not a global spam filter or a guarantee against exhausting Resend's quota.
@@ -27,7 +27,7 @@ All backend email logic lives in this directory. The main Worker only mounts the
 
 Maintenance runs every five minutes. It recovers missed queue admissions, expired consumer leases, exhausted retry windows and deferred content deletion. The existing daily media cleanup retains its original schedule. Each maintenance invocation handles up to 15 due jobs and 15 cleanup objects to stay within the Workers Free subrequest budget; backlogs can delay cleanup. Access to an expired original is denied immediately even if physical deletion is delayed.
 
-Repeated SMTP deliveries with the same `From`, envelope recipient and valid `Message-ID` share one delivery. Messages without a valid ID cannot be reliably deduplicated. Queue messages may be duplicated and are protected by D1 leases and Resend idempotency; exactly-once delivery is not guaranteed. If Resend accepted a request but its response was lost, a final failure can have an unknown delivery outcome.
+Repeated SMTP deliveries with the same `From`, envelope recipient and valid `Message-ID` share one delivery. Messages without a valid ID cannot be reliably deduplicated. Queue messages may be duplicated and are protected by D1 leases and Resend idempotency; exactly-once delivery is not guaranteed. If Resend accepted a request but its response was lost, a final failure can have an unknown delivery outcome. The body template version is retained in R2 metadata so previously queued messages keep their original rendering when retried after a template deployment.
 
 ## Production setup (not performed automatically)
 

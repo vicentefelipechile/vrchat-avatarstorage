@@ -65,7 +65,12 @@ export function loadEmailFailures(root: HTMLElement, signal: AbortSignal): void 
 			const body = table.createTBody();
 			for (const delivery of result.deliveries) {
 				const row = body.insertRow();
-				row.append(textCell(new Date(delivery.failed_at ?? delivery.created_at).toLocaleString()), textCell(delivery.recipient), textCell(delivery.last_error ?? t('common.unknown')), textCell(String(delivery.attempts)));
+				row.append(
+					textCell(new Date(delivery.failed_at ?? delivery.created_at).toLocaleString()),
+					textCell(delivery.direction === 'admin' ? t('admin.users.roleAdmin') : (delivery.recipient ?? t('common.unknown'))),
+					textCell(delivery.last_error ?? t('common.unknown')),
+					textCell(String(delivery.attempts)),
+				);
 				const actions = document.createElement('td');
 				const buttons = document.createElement('div');
 				buttons.className = 'admin-row-actions';
