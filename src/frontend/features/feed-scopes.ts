@@ -26,13 +26,13 @@ export type FeedScope = 'avatars' | 'assets' | 'clothes' | 'blog' | 'comments';
 // Maps
 // =========================================================================================================
 
-const SCOPE_INVALIDATORS: Record<FeedScope, () => void> = {
-	avatars: () => api.Categories.Avatars.Invalidate(),
-	assets: () => api.Categories.Assets.Invalidate(),
-	clothes: () => api.Categories.Clothes.Invalidate(),
-	blog: () => api.Blog.Invalidate(),
-	comments: () => api.Comments.Invalidate(),
-};
+const SCOPE_INVALIDATORS = new Map<FeedScope, () => void>([
+	['avatars', () => api.Categories.Avatars.Invalidate()],
+	['assets', () => api.Categories.Assets.Invalidate()],
+	['clothes', () => api.Categories.Clothes.Invalidate()],
+	['blog', () => api.Blog.Invalidate()],
+	['comments', () => api.Comments.Invalidate()],
+]);
 
 /** i18n leaf key naming each scope in a toast. */
 const SCOPE_LABELS: Record<FeedScope, string> = {
@@ -50,7 +50,7 @@ const SCOPE_LABELS: Record<FeedScope, string> = {
 /** Lets each domain invalidate its own cached data before the view refreshes. */
 export function invalidateScopes(scopes: FeedScope[]): void {
 	for (const scope of scopes) {
-		SCOPE_INVALIDATORS[scope]();
+		SCOPE_INVALIDATORS.get(scope)?.();
 	}
 }
 
@@ -59,7 +59,7 @@ export function invalidateScopes(scopes: FeedScope[]): void {
  * message so a burst of changes never stacks into a wall of toasts.
  */
 export function notifyScopes(scopes: FeedScope[]): void {
-	const unique = [...new Set(scopes)];
+	const unique = [...new Set(scopes.filter((scope) => SCOPE_INVALIDATORS.has(scope)))];
 	if (unique.length === 0) return;
 	const message = unique.length === 1 ? t(SCOPE_LABELS[unique[0]]) : t('updates.multiple');
 	showToast(message, 'info', TimeUnit.Second * 4);
@@ -71,8 +71,9 @@ export function notifyScopes(scopes: FeedScope[]): void {
  * live client and the poller call so their behaviour stays identical.
  */
 export function reconcileScopes(scopes: FeedScope[]): void {
-	if (scopes.length === 0) return;
-	invalidateScopes(scopes);
-	notifyScopes(scopes);
-	window.dispatchEvent(new CustomEvent('content-updated', { detail: { scopes } }));
+	const validScopes = scopes.filter((scope) => SCOPE_INVALIDATORS.has(scope));
+	if (validScopes.length === 0) return;
+	invalidateScopes(validScopes);
+	notifyScopes(validScopes);
+	window.dispatchEvent(new CustomEvent('content-updated', { detail: { scopes: validScopes } }));
 }
